@@ -62,10 +62,10 @@ interface RaceState {
                                                                                                                                           setEvent(data.event);
                                                                                                                                                   return;
                                                                                                                                                         }
-                                                                                                                                                              const saved = localStorage.getItem('fuelos_plan');
+                                                                                                                                                              const saved = localStorage.getItem('fuelos_active_plan');
                                                                                                                                                                     if (saved) {
                                                                                                                                                                             const data = JSON.parse(saved);
-                                                                                                                                                                                    setPlan(data.plan);
+                                                                                                                                                                                    setPlan(data.fuelPlan);
                                                                                                                                                                                             setProfile(data.profile);
                                                                                                                                                                                                     setEvent(data.event);
                                                                                                                                                                                                           }
