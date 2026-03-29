@@ -221,5 +221,3 @@ function ProductCard({ product: p }: { product: Product }) {
     </div>
   );
 }
-
->>>>>>> f869e669e240ddb3afafe9c9d4f408d811da5e5c
