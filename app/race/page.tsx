@@ -146,7 +146,39 @@ interface RaceState {
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   }
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       }
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         }, [raceState.elapsedMs, raceState.status, plan, notifEnabled]);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        // Écouter les actions depuis les notifications (boutons Pris/Passer)
+useEffect(() => {
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'NOTIFICATION_ACTION') {
+        const { action, tag } = event.data;
+        
+        console.log('📨 Action notification reçue:', action, tag);
+        
+        // Extraire l'index de l'item depuis le tag
+        // Ex: "alert-due-5" → 5 ou "alert-soon-3" → 3
+        const match = tag.match(/(\d+)$/);
+        if (match) {
+          const itemIndex = parseInt(match[1]);
+          
+          if (action === 'consumed') {
+            handleConsumed(itemIndex);
+            console.log('✅ Item marqué comme consommé:', itemIndex);
+          } else if (action === 'skip') {
+            handleSkipped(itemIndex);
+            console.log('⏭️ Item passé:', itemIndex);
+          }
+        }
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleMessage);
+
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handleMessage);
+    };
+  }
+}, [handleConsumed, handleSkipped]);
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           const handleStart = useCallback(async () => {
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               // Request notification permission on start
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   const granted = await requestNotificationPermission();
