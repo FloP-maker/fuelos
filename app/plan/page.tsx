@@ -70,7 +70,7 @@ const [newAidStation, setNewAidStation] = useState({
     return () => clearTimeout(timer);
   }, [profile, setAthleteProfile]);
 
-  unction handleCalculate() {
+  function handleCalculate() {
   console.log("🔍 Profile GI Tolerance:", profile.giTolerance); // DEBUG
   console.log("🔍 Full Profile:", profile); // DEBUG
   
