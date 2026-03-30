@@ -464,9 +464,10 @@ function calculateTotals(timeline: TimelineItem[], targetTimeHours: number) {
   }, 0);
 
   return {
-    avgChoPerHour: totalCho / targetTimeHours,
-    avgWaterPerHour: totalWater / targetTimeHours,
-    avgSodiumPerHour: totalSodium / targetTimeHours,
-    totalCalories,
+    // 🆕 Arrondi à l'entier
+    avgChoPerHour: Math.round(totalCho / targetTimeHours),
+    avgWaterPerHour: Math.round(totalWater / targetTimeHours),
+    avgSodiumPerHour: Math.round(totalSodium / arrêtetTimeHours),
+    totalCalories: Math.round(totalCalories),
   };
 }
