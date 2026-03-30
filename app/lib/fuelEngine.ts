@@ -253,12 +253,21 @@ function generateTimeline(
       }
     }
 
-    // Vérifier le quota horaire
+    // Vérifier le quota horaire avec tolérance scientifique
     const choThisHour = choPerHourTracker[currentHour] || 0;
     
-    // Helper : peut-on ajouter ce produit sans dépasser ?
+    // Helper avec tolérance de 5% (scientifiquement acceptable)
     const canAddProduct = (productCho: number) => {
-      return (choThisHour + productCho) <= choTarget;
+      const strictTarget = choTarget;
+      const maxTolerance = strictTarget * 1.05; // 5% de marge
+      
+      // Stop si on a déjà atteint le target strict
+      if (choThisHour >= strictTarget) {
+        return false;
+      }
+      
+      // Accepter si ça ne dépasse pas la tolérance
+      return (choThisHour + productCho) <= maxTolerance;
     };
 
     const isHourMark = timeMin % 60 === 0;
