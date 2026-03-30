@@ -71,6 +71,7 @@ const [newAidStation, setNewAidStation] = useState({
   }, [profile, setAthleteProfile]);
 
   function handleCalculate() {
+      console.log("Event avec aid stations:", event);
     const result = calculateFuelPlan(profile, event);
     setPlan(result);
     localStorage.setItem('fuelos_active_plan', JSON.stringify({ fuelPlan: result, profile, event }));

@@ -217,9 +217,11 @@ function generateTimeline(
     const choTarget = currentPhase.choPerHour;
 
     // Vérifier si on est à un ravitaillement fixe
-    const aidStation = event.aidStations?.find(
-      station => Math.abs(station.estimatedTimeMin! - timeMin) < 5
-    );
+    const aidStation = event.aidStations?.find(station => {
+  const stationTime = station.estimatedTimeMin || 0;
+  // Tolérance de ±10 minutes pour matcher
+  return Math.abs(stationTime - timeMin) <= 10;
+});
 
     if (aidStation) {
       // Utiliser les produits du ravitaillement
@@ -464,7 +466,7 @@ function calculateTotals(timeline: TimelineItem[], targetTimeHours: number) {
   }, 0);
 
   return {
-    
+
     avgChoPerHour: Math.round(totalCho / targetTimeHours),
     avgWaterPerHour: Math.round(totalWater / targetTimeHours),
     avgSodiumPerHour: Math.round(totalSodium / targetTimeHours),
