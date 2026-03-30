@@ -70,13 +70,19 @@ const [newAidStation, setNewAidStation] = useState({
     return () => clearTimeout(timer);
   }, [profile, setAthleteProfile]);
 
-  function handleCalculate() {
-      console.log("Event avec aid stations:", event);
-    const result = calculateFuelPlan(profile, event);
-    setPlan(result);
-    localStorage.setItem('fuelos_active_plan', JSON.stringify({ fuelPlan: result, profile, event }));
-    setStep("result");
-  }
+  unction handleCalculate() {
+  console.log("🔍 Profile GI Tolerance:", profile.giTolerance); // DEBUG
+  console.log("🔍 Full Profile:", profile); // DEBUG
+  
+  const result = calculateFuelPlan(profile, event);
+  
+  console.log("🔍 CHO Strategy:", result.choStrategy); // DEBUG
+  console.log("🔍 CHO per hour:", result.choPerHour); // DEBUG
+  
+  setPlan(result);
+  localStorage.setItem('fuelos_active_plan', JSON.stringify({ fuelPlan: result, profile, event }));
+  setStep("result");
+}
 
   return (
     <div style={S.page}>
