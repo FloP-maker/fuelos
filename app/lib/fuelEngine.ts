@@ -231,6 +231,12 @@ function generateTimeline(
     if (!currentPhase) continue;
 
     const choTarget = currentPhase.choPerHour;
+    const currentHour = Math.floor(timeMin / 60);
+
+    // Vérifier si on a déjà atteint le target de cette heure
+    const choThisHour = choPerHourTracker[currentHour] || 0;
+    if (choThisHour >= choTarget) {
+      continue; // Ne pas ajouter de produit
 
     // Vérifier si on est à un ravitaillement fixe
     const aidStation = event.aidStations?.find(station => {
@@ -479,7 +485,7 @@ function generateTimeline(
 
             // 🆕 Tracker
   choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
-  
+
             gelIndex++;
           }
         }
