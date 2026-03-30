@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import useLocalStorage from '../../lib/hooks/useLocalStorage';
+import useLocalStorage from '../lib/hooks/useLocalStorage';
 import { calculateFuelPlan } from "../lib/fuelCalculator";
 import { PRODUCTS } from "../lib/products";
 import type { AthleteProfile, EventDetails, FuelPlan } from "../lib/types";
