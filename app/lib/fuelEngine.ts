@@ -22,9 +22,9 @@ import {
 
 const CHO_PROGRESSION_PROFILES = {
   conservative: {
-    phase1: 30, // g CHO/h - Phase échauffement (0-60min)
-    phase2: 50, // g CHO/h - Montée progressive (60-120min)
-    phase3: 70, // g CHO/h - Croisière (120min+)
+    phase1: 30,
+    phase2: 50,
+    phase3: 70,
   },
   moderate: {
     phase1: 40,
@@ -40,31 +40,17 @@ const CHO_PROGRESSION_PROFILES = {
 
 // ============ FONCTION PRINCIPALE ============
 
-/**
- * Génère un plan de ravitaillement complet avec charge glucidique progressive
- */
 export function generateFuelPlan(
   profile: AthleteProfile,
   event: EventDetails
 ): FuelPlan {
   const warnings: string[] = [];
 
-  // 1. Déterminer la stratégie CHO progressive
   const choStrategy = determineChoStrategy(profile, event, warnings);
-
-  // 2. Sélectionner les produits recommandés
   const productMix = selectProducts(profile, event, choStrategy);
-
-  // 3. Générer la timeline
   const timeline = generateTimeline(profile, event, choStrategy, productMix, warnings);
-
-  // 4. Générer la liste de courses
   const shoppingList = generateShoppingList(timeline, event);
-
-  // 5. Calculer les totaux
   const totals = calculateTotals(timeline, event.targetTime);
-
-  // 6. Calculer le coût estimé
   const estimatedCost = calculatePlanCost(shoppingList);
 
   return {
@@ -89,7 +75,6 @@ function determineChoStrategy(
 ): ChoStrategy {
   const durationMin = event.targetTime * 60;
 
-  // Caps absolus selon tolérance GI
   const giCaps = {
     sensitive: 45,
     normal: 60,
@@ -98,7 +83,6 @@ function determineChoStrategy(
   
   const maxCHO = giCaps[profile.giTolerance];
 
-  // Choisir le profil de progression selon la tolérance GI
   let progressionProfile = CHO_PROGRESSION_PROFILES.moderate;
   
   if (profile.giTolerance === "sensitive") {
@@ -110,14 +94,12 @@ function determineChoStrategy(
     progressionProfile = CHO_PROGRESSION_PROFILES.aggressive;
   }
 
-  // 🆕 APPLIQUER LE CAP ABSOLU sur chaque phase
   progressionProfile = {
     phase1: Math.min(progressionProfile.phase1, maxCHO),
     phase2: Math.min(progressionProfile.phase2, maxCHO),
     phase3: Math.min(progressionProfile.phase3, maxCHO),
   };
 
-  // Définir les phases
   const phases: ChoPhase[] = [];
 
   if (durationMin <= 90) {
@@ -182,7 +164,6 @@ function selectProducts(
 ) {
   const maxChoPerHour = Math.max(...choStrategy.phases.map(p => p.choPerHour));
 
-  // Utiliser la fonction de recommandation intelligente
   const productMix = getRecommendedProductMix(
     maxChoPerHour,
     event.targetTime,
@@ -212,18 +193,15 @@ function generateTimeline(
   const timeline: TimelineItem[] = [];
   const durationMin = event.targetTime * 60;
 
-  // 🆕 Tracker les aid stations déjà utilisées
   const usedAidStations = new Set<number>();
+  const choPerHourTracker: { [hour: number]: number } = {}; // ✅ DÉCLARATION
 
-  // Index pour alterner les produits
   let gelIndex = 0;
   let drinkIndex = 0;
   let barIndex = 0;
   let realFoodIndex = 0;
 
-  // Parcourir la course par intervalles de 15 minutes
   for (let timeMin = 0; timeMin < durationMin; timeMin += 15) {
-    // Déterminer la phase actuelle et l'objectif CHO/h
     const currentPhase = choStrategy.phases.find(
       p => timeMin >= p.startTimeMin && timeMin < p.endTimeMin
     );
@@ -233,31 +211,26 @@ function generateTimeline(
     const choTarget = currentPhase.choPerHour;
     const currentHour = Math.floor(timeMin / 60);
 
-    // Vérifier si on a déjà atteint le target de cette heure
     const choThisHour = choPerHourTracker[currentHour] || 0;
     if (choThisHour >= choTarget) {
-      continue; // Ne pas ajouter de produit
+      continue;
+    } // ✅ ACCOLADE FERMANTE
 
-    // Vérifier si on est à un ravitaillement fixe
     const aidStation = event.aidStations?.find(station => {
       const stationTime = station.estimatedTimeMin || 0;
       const stationIndex = event.aidStations?.indexOf(station) || -1;
       
-      // Ne pas réutiliser une aid station déjà utilisée
       if (usedAidStations.has(stationIndex)) {
         return false;
       }
       
-      // Tolérance de ±10 minutes pour matcher
       return Math.abs(stationTime - timeMin) <= 10;
     });
 
     if (aidStation) {
-      // Marquer cette aid station comme utilisée
       const stationIndex = event.aidStations?.indexOf(aidStation) || -1;
       usedAidStations.add(stationIndex);
       
-      // Utiliser les produits du ravitaillement
       const aidProducts = aidStation.availableProducts
         .map(id => getProductById(id))
         .filter(Boolean) as Product[];
@@ -280,18 +253,14 @@ function generateTimeline(
           alert: `📍 Ravitaillement ${aidStation.name || ""}`,
         });
 
-        // 🆕 Tracker
-  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
-
+        choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
         continue;
       }
     }
 
-    // Logique de variation des produits (reste du code existant)
     const isHourMark = timeMin % 60 === 0;
     const isHalfHour = timeMin % 30 === 0 && timeMin % 60 !== 0;
 
-    // Début de course : gel + boisson
     if (timeMin < 60) {
       if (timeMin === 0) {
         const drink = productMix.drinks[drinkIndex % productMix.drinks.length];
@@ -308,10 +277,7 @@ function generateTimeline(
             choTarget,
             source: "personal",
           });
-
-          // 🆕 Tracker
-  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
-
+          choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + drink.cho_per_unit; // ✅ DRINK
           drinkIndex++;
         }
       } else if (timeMin === 30) {
@@ -328,15 +294,11 @@ function generateTimeline(
             choTarget,
             source: "personal",
           });
-
-          // 🆕 Tracker
-  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
-
+          choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + gel.cho_per_unit; // ✅ GEL
           gelIndex++;
         }
       }
     } 
-    // Phase intermédiaire : alterner gel/boisson + barres
     else if (timeMin < durationMin * 0.7) {
       if (isHourMark) {
         const drink = productMix.drinks[drinkIndex % productMix.drinks.length];
@@ -353,10 +315,7 @@ function generateTimeline(
             choTarget,
             source: "personal",
           });
-
-          // 🆕 Tracker
-  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
-
+          choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + drink.cho_per_unit;
           drinkIndex++;
         }
       } else if (isHalfHour) {
@@ -376,10 +335,7 @@ function generateTimeline(
             source: "personal",
             alert: "Variété : barre énergétique",
           });
-
-          // 🆕 Tracker
-  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
-
+          choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + bar.cho_per_unit; // ✅ BAR
           barIndex++;
         } else {
           const gel = productMix.gels[gelIndex % productMix.gels.length];
@@ -395,16 +351,12 @@ function generateTimeline(
               choTarget,
               source: "personal",
             });
-
-            // 🆕 Tracker
-  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
-
+            choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + gel.cho_per_unit;
             gelIndex++;
           }
         }
       }
     }
-    // Phase finale : boost caféine + real food
     else {
       if (isHourMark) {
         const drink = productMix.drinks[drinkIndex % productMix.drinks.length];
@@ -421,10 +373,7 @@ function generateTimeline(
             choTarget,
             source: "personal",
           });
-
-          // 🆕 Tracker
-  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
-
+          choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + drink.cho_per_unit;
           drinkIndex++;
         }
       } else if (isHalfHour) {
@@ -444,10 +393,7 @@ function generateTimeline(
             source: "personal",
             alert: `⚡ Boost caféine (${cafGel.caffeineContent}mg)`,
           });
-
-          // 🆕 Tracker
-  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
-
+          choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + cafGel.cho_per_unit; // ✅ CAFGEL
           gelIndex++;
         } else if (productMix.realFood.length > 0 && timeMin % 90 === 45) {
           const realFood = productMix.realFood[realFoodIndex % productMix.realFood.length];
@@ -463,10 +409,7 @@ function generateTimeline(
             source: "personal",
             alert: "🍌 Variété : aliment naturel",
           });
-
-          // 🆕 Tracker
-  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
-
+          choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + realFood.cho_per_unit; // ✅ REALFOOD
           realFoodIndex++;
         } else {
           const gel = productMix.gels[gelIndex % productMix.gels.length];
@@ -482,10 +425,7 @@ function generateTimeline(
               choTarget,
               source: "personal",
             });
-
-            // 🆕 Tracker
-  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
-
+            choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + gel.cho_per_unit;
             gelIndex++;
           }
         }
@@ -504,7 +444,6 @@ function generateShoppingList(
 ): ShoppingItem[] {
   const productCounts = new Map<string, number>();
 
-  // Compter les produits personnels uniquement (pas les aid stations)
   timeline
     .filter(item => item.source === "personal")
     .forEach(item => {
@@ -531,7 +470,6 @@ function calculateTotals(timeline: TimelineItem[], targetTimeHours: number) {
   }, 0);
 
   return {
-
     avgChoPerHour: Math.round(totalCho / targetTimeHours),
     avgWaterPerHour: Math.round(totalWater / targetTimeHours),
     avgSodiumPerHour: Math.round(totalSodium / targetTimeHours),
