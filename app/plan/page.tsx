@@ -771,29 +771,102 @@ function PlanResult({ plan, profile, event, onBack }: { plan: FuelPlan; profile:
       </div>
 
       {activeTab === "plan" && (
-        <div style={S.card}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <h3 style={{ fontWeight: 700 }}>Timeline in-race</h3>
-            <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Durée totale: {event.targetTime}h</span>
+  <div style={S.card}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+      <h3 style={{ fontWeight: 700 }}>Timeline in-race</h3>
+      <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Durée totale: {event.targetTime}h</span>
+    </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {plan.timeline.map((item, i) => (
+        <div key={i} style={{ 
+          display: "flex", 
+          alignItems: "flex-start", 
+          gap: 12, 
+          padding: "12px 14px", 
+          borderRadius: 8, 
+          background: item.source === "aid-station" 
+            ? "rgba(96,165,250,0.08)"  // Bleu pour aid station
+            : i === 0 ? "rgba(34,197,94,0.05)" : "var(--color-bg)", 
+          border: `1px solid ${
+            item.source === "aid-station" 
+              ? "#60a5fa"  // Bordure bleue
+              : i === 0 ? "var(--color-accent)" : "var(--color-border)"
+          }` 
+        }}>
+          <div style={{ minWidth: 60, fontWeight: 700, color: "var(--color-accent)", fontSize: 14 }}>
+            {Math.floor(item.timeMin / 60)}h{String(item.timeMin % 60).padStart(2, "0")}
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {plan.timeline.map((item, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 14px", borderRadius: 8, background: i === 0 ? "rgba(34,197,94,0.05)" : "var(--color-bg)", border: `1px solid ${i === 0 ? "var(--color-accent)" : "var(--color-border)"}` }}>
-                <div style={{ minWidth: 60, fontWeight: 700, color: "var(--color-accent)", fontSize: 14 }}>
-                  {Math.floor(item.timeMin / 60)}h{String(item.timeMin % 60).padStart(2, "0")}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{item.product}</div>
-                  <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{item.quantity} · {item.cho}g CHO{item.water ? ` · ${item.water}ml eau` : ""}{item.sodium ? ` · ${item.sodium}mg Na+` : ""}</div>
-                </div>
-                <div style={{ fontSize: 11, padding: "3px 8px", borderRadius: 99, background: item.type === "gel" ? "rgba(34,197,94,0.15)" : item.type === "drink" ? "rgba(96,165,250,0.15)" : "rgba(245,158,11,0.15)", color: item.type === "gel" ? "var(--color-accent)" : item.type === "drink" ? "#60a5fa" : "#f59e0b", fontWeight: 600 }}>
-                  {item.type}
-                </div>
+          <div style={{ flex: 1 }}>
+            {/* 🆕 Badge aid station si applicable */}
+            {item.source === "aid-station" && (
+              <div style={{ 
+                display: "inline-flex", 
+                alignItems: "center", 
+                gap: 4,
+                padding: "2px 8px", 
+                borderRadius: 12, 
+                background: "#60a5fa", 
+                color: "#000",
+                fontSize: 10,
+                fontWeight: 700,
+                marginBottom: 4
+              }}>
+                📍 {item.aidStationName || "RAVITAILLEMENT"}
               </div>
-            ))}
+            )}
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>
+              {item.product}
+              {item.source === "aid-station" && (
+                <span style={{ 
+                  fontSize: 11, 
+                  color: "#60a5fa", 
+                  marginLeft: 6,
+                  fontWeight: 500
+                }}>
+                  (fourni)
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+              {item.quantity} · {item.cho}g CHO
+              {item.water ? ` · ${item.water}ml eau` : ""}
+              {item.sodium ? ` · ${item.sodium}mg Na+` : ""}
+            </div>
+            {/* 🆕 Afficher l'alerte si présente */}
+            {item.alert && (
+              <div style={{ 
+                fontSize: 11, 
+                color: item.source === "aid-station" ? "#60a5fa" : "var(--color-accent)", 
+                marginTop: 4,
+                fontStyle: "italic"
+              }}>
+                {item.alert}
+              </div>
+            )}
+          </div>
+          <div style={{ 
+            fontSize: 11, 
+            padding: "3px 8px", 
+            borderRadius: 99, 
+            background: item.type === "gel" 
+              ? "rgba(34,197,94,0.15)" 
+              : item.type === "drink" 
+              ? "rgba(96,165,250,0.15)" 
+              : "rgba(245,158,11,0.15)", 
+            color: item.type === "gel" 
+              ? "var(--color-accent)" 
+              : item.type === "drink" 
+              ? "#60a5fa" 
+              : "#f59e0b", 
+            fontWeight: 600 
+          }}>
+            {item.type}
           </div>
         </div>
-      )}
+      ))}
+    </div>
+  </div>
+)}
 
       {activeTab === "shop" && (
         <div>
