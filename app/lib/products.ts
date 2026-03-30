@@ -2002,30 +2002,7 @@ export const PRODUCTS: Product[] = [
   },
 ];
 
-// ===== FONCTIONS UTILITAIRES =====
 
-export function getProductsByCategory(category: Product["category"]): Product[] {
-  return PRODUCTS.filter(p => p.category === category);
-}
-
-export function getProductById(id: string): Product | undefined {
-  return PRODUCTS.find(p => p.id === id);
-}
-
-export function getProductsByBrand(brand: string): Product[] {
-  return PRODUCTS.filter(p => p.brand === brand);
-}
-
-export function searchProducts(query: string): Product[] {
-  const q = query.toLowerCase();
-  return PRODUCTS.filter(p =>
-    p.name.toLowerCase().includes(q) ||
-    p.brand.toLowerCase().includes(q) ||
-    (p.description || "").toLowerCase().includes(q)
-  );
-}
-
-export const BRANDS = [...new Set(PRODUCTS.map(p => p.brand))].sort();
 // ===== FONCTIONS UTILITAIRES EXISTANTES =====
 
 export function getProductsByCategory(category: Product["category"]): Product[] {
