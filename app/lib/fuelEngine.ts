@@ -249,25 +249,26 @@ function generateTimeline(
           alert: `📍 Ravitaillement ${aidStation.name || ""}`,
         });
 
-        // Les aid stations ne comptent PAS dans le quota horaire
         continue;
       }
     }
 
-    // Vérifier le quota horaire pour les produits personnels
+    // Vérifier le quota horaire
     const choThisHour = choPerHourTracker[currentHour] || 0;
-    if (choThisHour >= choTarget) {
-      continue; // Skip si quota atteint
-    }
+    
+    // Helper : peut-on ajouter ce produit sans dépasser ?
+    const canAddProduct = (productCho: number) => {
+      return (choThisHour + productCho) <= choTarget;
+    };
 
     const isHourMark = timeMin % 60 === 0;
     const isHalfHour = timeMin % 30 === 0 && timeMin % 60 !== 0;
 
-    // Début de course : gel + boisson
+    // Début de course
     if (timeMin < 60) {
       if (timeMin === 0) {
         const drink = productMix.drinks[drinkIndex % productMix.drinks.length];
-        if (drink) {
+        if (drink && canAddProduct(drink.cho_per_unit)) {
           timeline.push({
             timeMin,
             product: drink.name,
@@ -280,12 +281,12 @@ function generateTimeline(
             choTarget,
             source: "personal",
           });
-          choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + drink.cho_per_unit;
+          choPerHourTracker[currentHour] = choThisHour + drink.cho_per_unit;
           drinkIndex++;
         }
       } else if (timeMin === 30) {
         const gel = productMix.gels[gelIndex % productMix.gels.length];
-        if (gel) {
+        if (gel && canAddProduct(gel.cho_per_unit)) {
           timeline.push({
             timeMin,
             product: gel.name,
@@ -297,16 +298,15 @@ function generateTimeline(
             choTarget,
             source: "personal",
           });
-          choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + gel.cho_per_unit;
+          choPerHourTracker[currentHour] = choThisHour + gel.cho_per_unit;
           gelIndex++;
         }
       }
     } 
-    // Phase intermédiaire
     else if (timeMin < durationMin * 0.7) {
       if (isHourMark) {
         const drink = productMix.drinks[drinkIndex % productMix.drinks.length];
-        if (drink) {
+        if (drink && canAddProduct(drink.cho_per_unit)) {
           timeline.push({
             timeMin,
             product: drink.name,
@@ -319,7 +319,7 @@ function generateTimeline(
             choTarget,
             source: "personal",
           });
-          choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + drink.cho_per_unit;
+          choPerHourTracker[currentHour] = choThisHour + drink.cho_per_unit;
           drinkIndex++;
         }
       } else if (isHalfHour) {
@@ -327,23 +327,25 @@ function generateTimeline(
         
         if (useBar) {
           const bar = productMix.bars[barIndex % productMix.bars.length];
-          timeline.push({
-            timeMin,
-            product: bar.name,
-            productId: bar.id,
-            quantity: "1 barre",
-            type: "bar",
-            cho: bar.cho_per_unit,
-            sodium: bar.sodium_per_unit,
-            choTarget,
-            source: "personal",
-            alert: "Variété : barre énergétique",
-          });
-          choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + bar.cho_per_unit;
-          barIndex++;
+          if (canAddProduct(bar.cho_per_unit)) {
+            timeline.push({
+              timeMin,
+              product: bar.name,
+              productId: bar.id,
+              quantity: "1 barre",
+              type: "bar",
+              cho: bar.cho_per_unit,
+              sodium: bar.sodium_per_unit,
+              choTarget,
+              source: "personal",
+              alert: "Variété : barre énergétique",
+            });
+            choPerHourTracker[currentHour] = choThisHour + bar.cho_per_unit;
+            barIndex++;
+          }
         } else {
           const gel = productMix.gels[gelIndex % productMix.gels.length];
-          if (gel) {
+          if (gel && canAddProduct(gel.cho_per_unit)) {
             timeline.push({
               timeMin,
               product: gel.name,
@@ -355,17 +357,16 @@ function generateTimeline(
               choTarget,
               source: "personal",
             });
-            choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + gel.cho_per_unit;
+            choPerHourTracker[currentHour] = choThisHour + gel.cho_per_unit;
             gelIndex++;
           }
         }
       }
     }
-    // Phase finale
     else {
       if (isHourMark) {
         const drink = productMix.drinks[drinkIndex % productMix.drinks.length];
-        if (drink) {
+        if (drink && canAddProduct(drink.cho_per_unit)) {
           timeline.push({
             timeMin,
             product: drink.name,
@@ -378,7 +379,7 @@ function generateTimeline(
             choTarget,
             source: "personal",
           });
-          choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + drink.cho_per_unit;
+          choPerHourTracker[currentHour] = choThisHour + drink.cho_per_unit;
           drinkIndex++;
         }
       } else if (isHalfHour) {
@@ -386,39 +387,43 @@ function generateTimeline(
         
         if (caffeineGels.length > 0 && timeMin > durationMin * 0.8) {
           const cafGel = caffeineGels[gelIndex % caffeineGels.length];
-          timeline.push({
-            timeMin,
-            product: cafGel.name,
-            productId: cafGel.id,
-            quantity: "1 gel",
-            type: "gel",
-            cho: cafGel.cho_per_unit,
-            sodium: cafGel.sodium_per_unit,
-            choTarget,
-            source: "personal",
-            alert: `⚡ Boost caféine (${cafGel.caffeineContent}mg)`,
-          });
-          choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + cafGel.cho_per_unit;
-          gelIndex++;
+          if (canAddProduct(cafGel.cho_per_unit)) {
+            timeline.push({
+              timeMin,
+              product: cafGel.name,
+              productId: cafGel.id,
+              quantity: "1 gel",
+              type: "gel",
+              cho: cafGel.cho_per_unit,
+              sodium: cafGel.sodium_per_unit,
+              choTarget,
+              source: "personal",
+              alert: `⚡ Boost caféine (${cafGel.caffeineContent}mg)`,
+            });
+            choPerHourTracker[currentHour] = choThisHour + cafGel.cho_per_unit;
+            gelIndex++;
+          }
         } else if (productMix.realFood.length > 0 && timeMin % 90 === 45) {
           const realFood = productMix.realFood[realFoodIndex % productMix.realFood.length];
-          timeline.push({
-            timeMin,
-            product: realFood.name,
-            productId: realFood.id,
-            quantity: "1 portion",
-            type: "real-food",
-            cho: realFood.cho_per_unit,
-            sodium: realFood.sodium_per_unit,
-            choTarget,
-            source: "personal",
-            alert: "🍌 Variété : aliment naturel",
-          });
-          choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + realFood.cho_per_unit;
-          realFoodIndex++;
+          if (canAddProduct(realFood.cho_per_unit)) {
+            timeline.push({
+              timeMin,
+              product: realFood.name,
+              productId: realFood.id,
+              quantity: "1 portion",
+              type: "real-food",
+              cho: realFood.cho_per_unit,
+              sodium: realFood.sodium_per_unit,
+              choTarget,
+              source: "personal",
+              alert: "🍌 Variété : aliment naturel",
+            });
+            choPerHourTracker[currentHour] = choThisHour + realFood.cho_per_unit;
+            realFoodIndex++;
+          }
         } else {
           const gel = productMix.gels[gelIndex % productMix.gels.length];
-          if (gel) {
+          if (gel && canAddProduct(gel.cho_per_unit)) {
             timeline.push({
               timeMin,
               product: gel.name,
@@ -430,7 +435,7 @@ function generateTimeline(
               choTarget,
               source: "personal",
             });
-            choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + gel.cho_per_unit;
+            choPerHourTracker[currentHour] = choThisHour + gel.cho_per_unit;
             gelIndex++;
           }
         }
