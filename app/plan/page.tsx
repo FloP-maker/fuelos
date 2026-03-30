@@ -426,7 +426,7 @@ const [newAidStation, setNewAidStation] = useState({
                                                                                                                                                                     <option value="sensitive" title="Digestif fragile · profil conservateur (30→45g CHO/h) · risque GI réduit">Sensible (≤45g CHO/h)</option>
                                                                                                                                                                                       <option value="normal" title="Tolérance standard · profil modéré (40→60g CHO/h) · recommandé pour la plupart des athlètes">Normal (≤60g CHO/h)</option>
                                                                                                                                                                                                         <option value="robust" title="Haute absorption · profil agressif (50→90g CHO/h) · adapté aux athlètes entraînés">Robuste (≤90g CHO/h)</option>
-                                                                                                                                                                                                                        </select>>
+                                                                                                                                                                                                                        </select>
                 </div>
               </div>
             </div>
@@ -835,7 +835,7 @@ function PlanResult({ plan, profile, event, onBack }: { plan: FuelPlan; profile:
                                                                                                                                                                                                                                                                                                   </div>
                                                                                                                                                                                                                                                                                                         </div>
                                                                                                                                                                                                                                                                                                             )}
-                                                                                                                                                                                                                                                                                                            
+
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid var(--color-border)", paddingBottom: 0 }}>
         {(["plan", "shop", "export"] as const).map(tab => (
