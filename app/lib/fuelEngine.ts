@@ -274,6 +274,9 @@ function generateTimeline(
           alert: `📍 Ravitaillement ${aidStation.name || ""}`,
         });
 
+        // 🆕 Tracker
+  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
+
         continue;
       }
     }
@@ -299,6 +302,10 @@ function generateTimeline(
             choTarget,
             source: "personal",
           });
+
+          // 🆕 Tracker
+  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
+
           drinkIndex++;
         }
       } else if (timeMin === 30) {
@@ -315,6 +322,10 @@ function generateTimeline(
             choTarget,
             source: "personal",
           });
+
+          // 🆕 Tracker
+  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
+
           gelIndex++;
         }
       }
@@ -336,6 +347,10 @@ function generateTimeline(
             choTarget,
             source: "personal",
           });
+
+          // 🆕 Tracker
+  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
+
           drinkIndex++;
         }
       } else if (isHalfHour) {
@@ -355,6 +370,10 @@ function generateTimeline(
             source: "personal",
             alert: "Variété : barre énergétique",
           });
+
+          // 🆕 Tracker
+  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
+
           barIndex++;
         } else {
           const gel = productMix.gels[gelIndex % productMix.gels.length];
@@ -370,6 +389,10 @@ function generateTimeline(
               choTarget,
               source: "personal",
             });
+
+            // 🆕 Tracker
+  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
+
             gelIndex++;
           }
         }
@@ -392,6 +415,10 @@ function generateTimeline(
             choTarget,
             source: "personal",
           });
+
+          // 🆕 Tracker
+  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
+
           drinkIndex++;
         }
       } else if (isHalfHour) {
@@ -411,6 +438,10 @@ function generateTimeline(
             source: "personal",
             alert: `⚡ Boost caféine (${cafGel.caffeineContent}mg)`,
           });
+
+          // 🆕 Tracker
+  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
+
           gelIndex++;
         } else if (productMix.realFood.length > 0 && timeMin % 90 === 45) {
           const realFood = productMix.realFood[realFoodIndex % productMix.realFood.length];
@@ -426,6 +457,10 @@ function generateTimeline(
             source: "personal",
             alert: "🍌 Variété : aliment naturel",
           });
+
+          // 🆕 Tracker
+  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
+
           realFoodIndex++;
         } else {
           const gel = productMix.gels[gelIndex % productMix.gels.length];
@@ -441,6 +476,10 @@ function generateTimeline(
               choTarget,
               source: "personal",
             });
+
+            // 🆕 Tracker
+  choPerHourTracker[currentHour] = (choPerHourTracker[currentHour] || 0) + product.cho_per_unit;
+  
             gelIndex++;
           }
         }
