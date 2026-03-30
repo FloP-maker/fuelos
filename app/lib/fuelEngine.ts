@@ -23,13 +23,13 @@ import {
 const CHO_PROGRESSION_PROFILES = {
   conservative: {
     phase1: 30,
-    phase2: 45,
-    phase3: 45,
+    phase2: 50,
+    phase3: 70,
   },
   moderate: {
     phase1: 40,
     phase2: 60,
-    phase3: 60,
+    phase3: 80,
   },
   aggressive: {
     phase1: 50,
