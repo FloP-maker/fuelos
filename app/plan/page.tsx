@@ -52,7 +52,13 @@ export default function PlanPage() {
     targetTime: 6, 
     weather: "Tempéré (10-20°C)", 
     elevation: "Montagneux (1500-3000m D+)",
-  });
+    });
+const [showAidStationForm, setShowAidStationForm] = useState(false);
+const [newAidStation, setNewAidStation] = useState({
+  distanceKm: 0,
+  name: "",
+  availableProducts: [] as string[],
+});
   const [plan, setPlan] = useState<FuelPlan | null>(null);
 
   // Sauvegarder automatiquement le profil quand il change
@@ -460,6 +466,249 @@ export default function PlanPage() {
                     {w.split(" ")[0]}<br/><span style={{ fontSize: 10, fontWeight: 400 }}>{w.split(" ").slice(1).join(" ")}</span>
                   </button>
                 ))}
+            {/* 🆕 NOUVELLE SECTION - Ravitaillements fixes */}
+<div style={S.card}>
+  <div style={S.sectionTitle}><span>📍</span> Ravitaillements fixes (optionnel)</div>
+  <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 16 }}>
+    Ajoute les points de ravitaillement où des produits seront fournis
+  </p>
+
+  {/* Liste des aid stations existantes */}
+  {event.aidStations && event.aidStations.length > 0 && (
+    <div style={{ marginBottom: 16 }}>
+      {event.aidStations.map((station, idx) => (
+        <div key={idx} style={{ 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "space-between",
+          padding: "12px 14px", 
+          borderRadius: 8, 
+          background: "rgba(96,165,250,0.08)", 
+          border: "1px solid #60a5fa", 
+          marginBottom: 8 
+        }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 600, fontSize: 14, color: "#60a5fa", marginBottom: 2 }}>
+              📍 {station.name || `Ravito ${idx + 1}`}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+              Km {station.distanceKm} · {station.availableProducts.length} produit(s) disponible(s)
+            </div>
+            {station.availableProducts.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+                {station.availableProducts.slice(0, 3).map(prodId => {
+                  const product = PRODUCTS.find(p => p.id === prodId);
+                  return product ? (
+                    <span key={prodId} style={{ 
+                      fontSize: 10, 
+                      padding: "2px 6px", 
+                      borderRadius: 4, 
+                      background: "rgba(96,165,250,0.15)", 
+                      color: "#60a5fa" 
+                    }}>
+                      {product.brand} {product.name}
+                    </span>
+                  ) : null;
+                })}
+                {station.availableProducts.length > 3 && (
+                  <span style={{ fontSize: 10, color: "var(--color-text-muted)" }}>
+                    +{station.availableProducts.length - 3} autre(s)
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => {
+              setEvent({
+                ...event,
+                aidStations: event.aidStations?.filter((_, i) => i !== idx)
+              });
+            }}
+            style={{ 
+              background: "none", 
+              border: "none", 
+              color: "#ef4444", 
+              cursor: "pointer", 
+              fontSize: 18, 
+              padding: "0 8px" 
+            }}
+          >
+            ×
+          </button>
+        </div>
+      ))}
+    </div>
+  )}
+
+  {/* Bouton pour ajouter une aid station */}
+  {!showAidStationForm ? (
+    <button
+      onClick={() => setShowAidStationForm(true)}
+      style={{ 
+        width: "100%",
+        padding: "12px", 
+        borderRadius: 8, 
+        background: "var(--color-bg)", 
+        border: "1px dashed var(--color-border)", 
+        color: "var(--color-text-muted)", 
+        fontSize: 13, 
+        cursor: "pointer",
+        fontWeight: 600
+      }}
+    >
+      + Ajouter un point de ravitaillement
+    </button>
+  ) : (
+    <div style={{ 
+      padding: 16, 
+      borderRadius: 8, 
+      background: "var(--color-bg)", 
+      border: "1px solid var(--color-border)" 
+    }}>
+      <div style={{ marginBottom: 12 }}>
+        <label style={S.label}>NOM DU RAVITAILLEMENT</label>
+        <input 
+          style={S.input} 
+          type="text" 
+          placeholder="Ex: Ravito 1, Col du Tourmalet..."
+          value={newAidStation.name}
+          onChange={e => setNewAidStation({...newAidStation, name: e.target.value})}
+        />
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <label style={S.label}>POSITION (km)</label>
+        <input 
+          style={S.input} 
+          type="number" 
+          placeholder="Distance en km"
+          value={newAidStation.distanceKm || ""}
+          onChange={e => setNewAidStation({...newAidStation, distanceKm: +e.target.value})}
+          min={0}
+          max={event.distance}
+        />
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <label style={S.label}>PRODUITS DISPONIBLES</label>
+        <p style={{ fontSize: 11, color: "var(--color-text-muted)", marginBottom: 8 }}>
+          Sélectionne les produits qui seront fournis à ce ravitaillement
+        </p>
+        
+        {/* Sélecteur simple de produits */}
+        <div style={{ 
+          maxHeight: 150, 
+          overflowY: "auto", 
+          border: "1px solid var(--color-border)", 
+          borderRadius: 6,
+          padding: 8
+        }}>
+          {["gel", "drink", "bar", "real-food"].map(category => (
+            <div key={category} style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 4, textTransform: "uppercase" }}>
+                {category === "gel" ? "Gels" : category === "drink" ? "Boissons" : category === "bar" ? "Barres" : "Aliments"}
+              </div>
+              {getProductsByCategory(category as any).slice(0, 5).map(product => (
+                <label key={product.id} style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: 8, 
+                  padding: "4px 8px",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  borderRadius: 4
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+                >
+                  <input 
+                    type="checkbox"
+                    checked={newAidStation.availableProducts.includes(product.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setNewAidStation({
+                          ...newAidStation,
+                          availableProducts: [...newAidStation.availableProducts, product.id]
+                        });
+                      } else {
+                        setNewAidStation({
+                          ...newAidStation,
+                          availableProducts: newAidStation.availableProducts.filter(id => id !== product.id)
+                        });
+                      }
+                    }}
+                  />
+                  <span>{product.brand} - {product.name}</span>
+                </label>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          onClick={() => {
+            setShowAidStationForm(false);
+            setNewAidStation({ distanceKm: 0, name: "", availableProducts: [] });
+          }}
+          style={{
+            flex: 1,
+            padding: "10px",
+            borderRadius: 6,
+            background: "var(--color-bg-card)",
+            border: "1px solid var(--color-border)",
+            color: "var(--color-text-muted)",
+            cursor: "pointer",
+            fontSize: 13,
+            fontWeight: 600
+          }}
+        >
+          Annuler
+        </button>
+        <button
+          onClick={() => {
+            if (newAidStation.distanceKm > 0 && newAidStation.availableProducts.length > 0) {
+              // Calculer le temps estimé d'arrivée
+              const avgSpeed = event.distance / event.targetTime; // km/h
+              const estimatedTimeMin = (newAidStation.distanceKm / avgSpeed) * 60;
+              
+              setEvent({
+                ...event,
+                aidStations: [
+                  ...(event.aidStations || []),
+                  {
+                    ...newAidStation,
+                    estimatedTimeMin: Math.round(estimatedTimeMin)
+                  }
+                ].sort((a, b) => a.distanceKm - b.distanceKm) // Trier par distance
+              });
+              
+              setShowAidStationForm(false);
+              setNewAidStation({ distanceKm: 0, name: "", availableProducts: [] });
+            } else {
+              alert("Veuillez remplir la position et sélectionner au moins un produit");
+            }
+          }}
+          style={{
+            flex: 2,
+            padding: "10px",
+            borderRadius: 6,
+            background: "var(--color-accent)",
+            border: "none",
+            color: "#000",
+            cursor: "pointer",
+            fontSize: 13,
+            fontWeight: 700
+          }}
+        >
+          Ajouter le ravitaillement
+        </button>
+      </div>
+    </div>
+  )}
+</div>
               </div>
             </div>
             <div style={{ display: "flex", gap: 12 }}>
