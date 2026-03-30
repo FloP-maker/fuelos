@@ -234,7 +234,7 @@ function generateTimeline(
     });
 
     if (aidStation) {
-      // 🆕 Marquer cette aid station comme utilisée
+      // Marquer cette aid station comme utilisée
       const stationIndex = event.aidStations?.indexOf(aidStation) || -1;
       usedAidStations.add(stationIndex);
       
@@ -244,7 +244,7 @@ function generateTimeline(
         .filter(Boolean) as Product[];
 
       if (aidProducts.length > 0) {
-        const product = aidProducts[0]; // Prendre le premier produit disponible
+        const product = aidProducts[0];
         
         timeline.push({
           timeMin,
@@ -261,73 +261,17 @@ function generateTimeline(
           alert: `📍 Ravitaillement ${aidStation.name || ""}`,
         });
 
-        continue; // ✅ Passer au prochain intervalle sans ajouter d'autres produits
-      }
-    }
-): TimelineItem[] {
-  const timeline: TimelineItem[] = [];
-  const durationMin = event.targetTime * 60;
-
-  // Index pour alterner les produits
-  let gelIndex = 0;
-  let drinkIndex = 0;
-  let barIndex = 0;
-  let realFoodIndex = 0;
-
-  // Parcourir la course par intervalles de 15 minutes
-  for (let timeMin = 0; timeMin < durationMin; timeMin += 15) {
-    // Déterminer la phase actuelle et l'objectif CHO/h
-    const currentPhase = choStrategy.phases.find(
-      p => timeMin >= p.startTimeMin && timeMin < p.endTimeMin
-    );
-    
-    if (!currentPhase) continue;
-
-    const choTarget = currentPhase.choPerHour;
-
-    // Vérifier si on est à un ravitaillement fixe
-    const aidStation = event.aidStations?.find(station => {
-  const stationTime = station.estimatedTimeMin || 0;
-  // Tolérance de ±10 minutes pour matcher
-  return Math.abs(stationTime - timeMin) <= 10;
-});
-
-    if (aidStation) {
-      // Utiliser les produits du ravitaillement
-      const aidProducts = aidStation.availableProducts
-        .map(id => getProductById(id))
-        .filter(Boolean) as Product[];
-
-      if (aidProducts.length > 0) {
-        const product = aidProducts[0]; // Prendre le premier produit disponible
-        
-        timeline.push({
-          timeMin,
-          product: product.name,
-          productId: product.id,
-          quantity: `1 ${product.category}`,
-          type: product.category as any,
-          cho: product.cho_per_unit,
-          water: product.water_per_unit,
-          sodium: product.sodium_per_unit,
-          choTarget,
-          source: "aid-station",
-          aidStationName: aidStation.name,
-          alert: `📍 Ravitaillement ${aidStation.name || ""}`,
-        });
-
-        continue; // Passer au prochain intervalle
+        continue;
       }
     }
 
-    // Logique de variation des produits
+    // Logique de variation des produits (reste du code existant)
     const isHourMark = timeMin % 60 === 0;
     const isHalfHour = timeMin % 30 === 0 && timeMin % 60 !== 0;
 
     // Début de course : gel + boisson
     if (timeMin < 60) {
       if (timeMin === 0) {
-        // Premier ravito : boisson
         const drink = productMix.drinks[drinkIndex % productMix.drinks.length];
         if (drink) {
           timeline.push({
@@ -345,7 +289,6 @@ function generateTimeline(
           drinkIndex++;
         }
       } else if (timeMin === 30) {
-        // Gel léger
         const gel = productMix.gels[gelIndex % productMix.gels.length];
         if (gel) {
           timeline.push({
@@ -366,7 +309,6 @@ function generateTimeline(
     // Phase intermédiaire : alterner gel/boisson + barres
     else if (timeMin < durationMin * 0.7) {
       if (isHourMark) {
-        // Toutes les heures : boisson
         const drink = productMix.drinks[drinkIndex % productMix.drinks.length];
         if (drink) {
           timeline.push({
@@ -384,7 +326,6 @@ function generateTimeline(
           drinkIndex++;
         }
       } else if (isHalfHour) {
-        // Alterner gel et barre/aliment solide
         const useBar = timeMin % 120 === 90 && productMix.bars.length > 0;
         
         if (useBar) {
@@ -424,7 +365,6 @@ function generateTimeline(
     // Phase finale : boost caféine + real food
     else {
       if (isHourMark) {
-        // Boisson
         const drink = productMix.drinks[drinkIndex % productMix.drinks.length];
         if (drink) {
           timeline.push({
@@ -442,7 +382,6 @@ function generateTimeline(
           drinkIndex++;
         }
       } else if (isHalfHour) {
-        // Caféine si disponible, sinon gel classique
         const caffeineGels = getCaffeinatedProducts(50).filter(p => p.category === "gel");
         
         if (caffeineGels.length > 0 && timeMin > durationMin * 0.8) {
@@ -461,7 +400,6 @@ function generateTimeline(
           });
           gelIndex++;
         } else if (productMix.realFood.length > 0 && timeMin % 90 === 45) {
-          // Aliment solide pour varier
           const realFood = productMix.realFood[realFoodIndex % productMix.realFood.length];
           timeline.push({
             timeMin,
