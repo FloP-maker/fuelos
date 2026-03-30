@@ -199,6 +199,75 @@ function generateTimeline(
   const timeline: TimelineItem[] = [];
   const durationMin = event.targetTime * 60;
 
+  // 🆕 Tracker les aid stations déjà utilisées
+  const usedAidStations = new Set<number>();
+
+  // Index pour alterner les produits
+  let gelIndex = 0;
+  let drinkIndex = 0;
+  let barIndex = 0;
+  let realFoodIndex = 0;
+
+  // Parcourir la course par intervalles de 15 minutes
+  for (let timeMin = 0; timeMin < durationMin; timeMin += 15) {
+    // Déterminer la phase actuelle et l'objectif CHO/h
+    const currentPhase = choStrategy.phases.find(
+      p => timeMin >= p.startTimeMin && timeMin < p.endTimeMin
+    );
+    
+    if (!currentPhase) continue;
+
+    const choTarget = currentPhase.choPerHour;
+
+    // Vérifier si on est à un ravitaillement fixe
+    const aidStation = event.aidStations?.find(station => {
+      const stationTime = station.estimatedTimeMin || 0;
+      const stationIndex = event.aidStations?.indexOf(station) || -1;
+      
+      // Ne pas réutiliser une aid station déjà utilisée
+      if (usedAidStations.has(stationIndex)) {
+        return false;
+      }
+      
+      // Tolérance de ±10 minutes pour matcher
+      return Math.abs(stationTime - timeMin) <= 10;
+    });
+
+    if (aidStation) {
+      // 🆕 Marquer cette aid station comme utilisée
+      const stationIndex = event.aidStations?.indexOf(aidStation) || -1;
+      usedAidStations.add(stationIndex);
+      
+      // Utiliser les produits du ravitaillement
+      const aidProducts = aidStation.availableProducts
+        .map(id => getProductById(id))
+        .filter(Boolean) as Product[];
+
+      if (aidProducts.length > 0) {
+        const product = aidProducts[0]; // Prendre le premier produit disponible
+        
+        timeline.push({
+          timeMin,
+          product: product.name,
+          productId: product.id,
+          quantity: `1 ${product.category}`,
+          type: product.category as any,
+          cho: product.cho_per_unit,
+          water: product.water_per_unit,
+          sodium: product.sodium_per_unit,
+          choTarget,
+          source: "aid-station",
+          aidStationName: aidStation.name,
+          alert: `📍 Ravitaillement ${aidStation.name || ""}`,
+        });
+
+        continue; // ✅ Passer au prochain intervalle sans ajouter d'autres produits
+      }
+    }
+): TimelineItem[] {
+  const timeline: TimelineItem[] = [];
+  const durationMin = event.targetTime * 60;
+
   // Index pour alterner les produits
   let gelIndex = 0;
   let drinkIndex = 0;
