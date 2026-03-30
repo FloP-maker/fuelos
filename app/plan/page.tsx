@@ -415,12 +415,18 @@ const [newAidStation, setNewAidStation] = useState({
                   <p style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 4 }}>Effectuez un test sudation pour plus de précision</p>
                 </div>
                 <div>
-                  <label style={S.label}>TOLÉRANCE GI</label>
-                  <select style={S.select} value={profile.giTolerance} onChange={e => setProfile({...profile, giTolerance: e.target.value as "sensitive"|"normal"|"robust"})}>
-                    <option value="sensitive">Sensible (≤45g CHO/h)</option>
-                    <option value="normal">Normal (≤60g CHO/h)</option>
-                    <option value="robust">Robuste (≤90g CHO/h)</option>
-                  </select>
+                  <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6 }}>
+                                      <label style={S.label}>TOLÉRANCE GI</label>
+                                                        <div
+                                                                            title="Sensible : Système digestif fragile, max ~45g CHO/h&#10;Normal : Tolérance standard, max ~60g CHO/h&#10;Robuste : Haute capacité d'absorption, max ~90g CHO/h"
+                                                                                                style={{ cursor: "help", fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1 }}
+                                                                                                                  >ⓘ</div>
+                                                                                                                                  </div>
+                                                                                                                                                  <select style={S.select} value={profile.giTolerance} onChange={e => setProfile({...profile, giTolerance: e.target.value as "sensitive"|"normal"|"robust"})}>
+                                                                                                                                                                    <option value="sensitive" title="Digestif fragile · profil conservateur (30→45g CHO/h) · risque GI réduit">Sensible (≤45g CHO/h)</option>
+                                                                                                                                                                                      <option value="normal" title="Tolérance standard · profil modéré (40→60g CHO/h) · recommandé pour la plupart des athlètes">Normal (≤60g CHO/h)</option>
+                                                                                                                                                                                                        <option value="robust" title="Haute absorption · profil agressif (50→90g CHO/h) · adapté aux athlètes entraînés">Robuste (≤90g CHO/h)</option>
+                                                                                                                                                                                                                        </select>>
                 </div>
               </div>
             </div>
@@ -798,6 +804,38 @@ function PlanResult({ plan, profile, event, onBack }: { plan: FuelPlan; profile:
   </div>
 )}
 
+
+    {/* CHO Strategy Visual Display */}
+        {plan.choStrategy && (
+              <div style={{ marginBottom: 24, padding: "16px 20px", borderRadius: 12, background: "var(--color-bg-card)", border: "1px solid var(--color-border)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                                <span style={{ fontSize: 16 }}>⚡</span>
+                                          <h4 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: "var(--color-text)" }}>Stratégie glucidique</h4>
+                                                    <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 99, background: plan.choStrategy.type === "constant" ? "rgba(96,165,250,0.15)" : "rgba(251,146,60,0.15)", color: plan.choStrategy.type === "constant" ? "#60a5fa" : "#fb923c", fontWeight: 600, letterSpacing: "0.3px" }}>
+                                                                {plan.choStrategy.type === "constant" ? "Intensité constante" : "Progression par phases"}
+                                                                          </span>
+                                                                                  </div>
+                                                                                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                                                                                    {plan.choStrategy.phases.map((phase, i) => (
+                                                                                                                <div key={i} style={{ flex: 1, minWidth: 100, padding: "10px 14px", borderRadius: 10, background: `rgba(${i === 0 ? "96,165,250" : i === 1 ? "52,211,153" : "251,146,60"},0.08)`, border: `1px solid rgba(${i === 0 ? "96,165,250" : i === 1 ? "52,211,153" : "251,146,60"},0.25)` }}>
+                                                                                                                              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--color-text-muted)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                                                                                                                              {i === 0 ? "Phase 1" : i === 1 ? "Phase 2" : "Phase 3"} · {phase.startTimeMin}–{phase.endTimeMin}min
+                                                                                                                                                            </div>
+                                                                                                                                                                          <div style={{ fontSize: 22, fontWeight: 800, color: i === 0 ? "#60a5fa" : i === 1 ? "#34d399" : "#fb923c" }}>
+                                                                                                                                                                                          {phase.choPerHour}<span style={{ fontSize: 12, fontWeight: 500, color: "var(--color-text-muted)" }}>g/h</span>
+                                                                                                                                                                                                        </div>
+                                                                                                                                                                                                                      <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 2 }}>{phase.description}</div>
+                                                                                                                                                                                                                                  </div>
+                                                                                                                                                                                                                                            ))}
+                                                                                                                                                                                                                                                    </div>
+                                                                                                                                                                                                                                                            <div style={{ marginTop: 10, fontSize: 11, color: "var(--color-text-muted)", display: "flex", gap: 16 }}>
+                                                                                                                                                                                                                                                                      <span>🎯 Objectif moyen : <strong style={{ color: "var(--color-accent)" }}>{plan.choPerHour}g CHO/h</strong></span>
+                                                                                                                                                                                                                                                                                <span>💧 Hydratation : <strong>{plan.waterPerHour}ml/h</strong></span>
+                                                                                                                                                                                                                                                                                          <span>🧂 Sodium : <strong>{plan.sodiumPerHour}mg/h</strong></span>
+                                                                                                                                                                                                                                                                                                  </div>
+                                                                                                                                                                                                                                                                                                        </div>
+                                                                                                                                                                                                                                                                                                            )}
+                                                                                                                                                                                                                                                                                                            
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid var(--color-border)", paddingBottom: 0 }}>
         {(["plan", "shop", "export"] as const).map(tab => (

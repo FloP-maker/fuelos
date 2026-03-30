@@ -97,8 +97,7 @@ function determineChoStrategy(
     progressionProfile = CHO_PROGRESSION_PROFILES.conservative;
     warnings.push(
       "Stratégie conservatrice appliquée en raison d'une tolérance GI sensible"
-    );
-  } else if (profile.giTolerance === "robust" && event.targetTime < 6) {
+    ); } else if (profile.giTolerance === "robust") {}
     progressionProfile = CHO_PROGRESSION_PROFILES.aggressive;
   }
 
