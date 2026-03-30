@@ -6,10 +6,12 @@ import useLocalStorage from '../lib/hooks/useLocalStorage';
 import { calculateFuelPlan } from "../lib/fuelCalculator";
 import { PRODUCTS } from "../lib/products";
 import type { AthleteProfile, EventDetails, FuelPlan } from "../lib/types";
+import { getProductsByCategory, ALL_FLAVORS } from "../lib/products";
 
 const SPORTS = ["Course à pied", "Trail", "Cyclisme", "Triathlon", "Ultra-trail"];
 const WEATHER = ["Froid (<10°C)", "Tempéré (10-20°C)", "Chaud (20-30°C)", "Très chaud (>30°C)"];
 const ELEVATION = ["Plat (0-500m D+)", "Vallonné (500-1500m D+)", "Montagneux (1500-3000m D+)", "Alpin (>3000m D+)"];
+const [showProductSelector, setShowProductSelector] = useState<"gels" | "drinks" | "bars" | null>(null);
 
 const S = {
   page: { minHeight: "100vh", background: "var(--color-bg)", color: "var(--color-text)", fontFamily: "system-ui, sans-serif" } as React.CSSProperties,
@@ -122,6 +124,264 @@ export default function PlanPage() {
               </div>
             </div>
             <div style={S.card}>
+              {/* 🆕 NOUVELLE SECTION - Préférences produits */}
+<div style={S.card}>
+  <div style={S.sectionTitle}><span>⭐</span> Préférences produits</div>
+  <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 16 }}>
+    Sélectionne tes produits préférés pour un plan personnalisé
+  </p>
+  
+  {/* Sélecteur de gels préférés */}
+  <div style={{ marginBottom: 16 }}>
+    <label style={S.label}>GELS PRÉFÉRÉS</label>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+      {profile.preferredProducts?.gels?.map(gelId => {
+        const product = getProductsByCategory("gel").find(p => p.id === gelId);
+        return product ? (
+          <div key={gelId} style={{ 
+            display: "inline-flex", 
+            alignItems: "center", 
+            gap: 6, 
+            padding: "6px 12px", 
+            borderRadius: 20, 
+            background: "rgba(34,197,94,0.15)", 
+            border: "1px solid var(--color-accent)", 
+            fontSize: 12, 
+            fontWeight: 600,
+            color: "var(--color-accent)"
+          }}>
+            {product.brand} {product.name}
+            <button 
+              onClick={() => setProfile({
+                ...profile, 
+                preferredProducts: {
+                  ...profile.preferredProducts,
+                  gels: profile.preferredProducts?.gels?.filter(id => id !== gelId) || []
+                }
+              })}
+              style={{ 
+                background: "none", 
+                border: "none", 
+                color: "var(--color-accent)", 
+                cursor: "pointer", 
+                fontSize: 14, 
+                padding: 0, 
+                marginLeft: 2 
+              }}
+            >
+              ×
+            </button>
+          </div>
+        ) : null;
+      })}
+      <button 
+        onClick={() => setShowProductSelector("gels")}
+        style={{ 
+          padding: "6px 12px", 
+          borderRadius: 20, 
+          background: "var(--color-bg)", 
+          border: "1px dashed var(--color-border)", 
+          color: "var(--color-text-muted)", 
+          fontSize: 12, 
+          cursor: "pointer",
+          fontWeight: 600
+        }}
+      >
+        + Ajouter un gel
+      </button>
+    </div>
+    
+    {showProductSelector === "gels" && (
+      <div style={{ 
+        padding: 12, 
+        borderRadius: 8, 
+        background: "var(--color-bg)", 
+        border: "1px solid var(--color-border)", 
+        maxHeight: 200, 
+        overflowY: "auto" 
+      }}>
+        {getProductsByCategory("gel").slice(0, 15).map(gel => (
+          <button
+            key={gel.id}
+            onClick={() => {
+              const currentGels = profile.preferredProducts?.gels || [];
+              if (!currentGels.includes(gel.id)) {
+                setProfile({
+                  ...profile,
+                  preferredProducts: {
+                    ...profile.preferredProducts,
+                    gels: [...currentGels, gel.id]
+                  }
+                });
+              }
+              setShowProductSelector(null);
+            }}
+            style={{ 
+              display: "block",
+              width: "100%",
+              padding: "8px 12px", 
+              background: "none", 
+              border: "none", 
+              color: "var(--color-text)", 
+              textAlign: "left", 
+              cursor: "pointer", 
+              fontSize: 13,
+              borderRadius: 6
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+            onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+          >
+            <div style={{ fontWeight: 600 }}>{gel.brand} - {gel.name}</div>
+            <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
+              {gel.cho_per_unit}g CHO · {gel.price_per_unit.toFixed(2)}€
+            </div>
+          </button>
+        ))}
+      </div>
+    )}
+  </div>
+
+  {/* Sélecteur de boissons préférées */}
+  <div style={{ marginBottom: 16 }}>
+    <label style={S.label}>BOISSONS PRÉFÉRÉES</label>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+      {profile.preferredProducts?.drinks?.map(drinkId => {
+        const product = getProductsByCategory("drink").find(p => p.id === drinkId);
+        return product ? (
+          <div key={drinkId} style={{ 
+            display: "inline-flex", 
+            alignItems: "center", 
+            gap: 6, 
+            padding: "6px 12px", 
+            borderRadius: 20, 
+            background: "rgba(96,165,250,0.15)", 
+            border: "1px solid #60a5fa", 
+            fontSize: 12, 
+            fontWeight: 600,
+            color: "#60a5fa"
+          }}>
+            {product.brand} {product.name}
+            <button 
+              onClick={() => setProfile({
+                ...profile, 
+                preferredProducts: {
+                  ...profile.preferredProducts,
+                  drinks: profile.preferredProducts?.drinks?.filter(id => id !== drinkId) || []
+                }
+              })}
+              style={{ 
+                background: "none", 
+                border: "none", 
+                color: "#60a5fa", 
+                cursor: "pointer", 
+                fontSize: 14, 
+                padding: 0, 
+                marginLeft: 2 
+              }}
+            >
+              ×
+            </button>
+          </div>
+        ) : null;
+      })}
+      <button 
+        onClick={() => setShowProductSelector("drinks")}
+        style={{ 
+          padding: "6px 12px", 
+          borderRadius: 20, 
+          background: "var(--color-bg)", 
+          border: "1px dashed var(--color-border)", 
+          color: "var(--color-text-muted)", 
+          fontSize: 12, 
+          cursor: "pointer",
+          fontWeight: 600
+        }}
+      >
+        + Ajouter une boisson
+      </button>
+    </div>
+    
+    {showProductSelector === "drinks" && (
+      <div style={{ 
+        padding: 12, 
+        borderRadius: 8, 
+        background: "var(--color-bg)", 
+        border: "1px solid var(--color-border)", 
+        maxHeight: 200, 
+        overflowY: "auto" 
+      }}>
+        {getProductsByCategory("drink").slice(0, 15).map(drink => (
+          <button
+            key={drink.id}
+            onClick={() => {
+              const currentDrinks = profile.preferredProducts?.drinks || [];
+              if (!currentDrinks.includes(drink.id)) {
+                setProfile({
+                  ...profile,
+                  preferredProducts: {
+                    ...profile.preferredProducts,
+                    drinks: [...currentDrinks, drink.id]
+                  }
+                });
+              }
+              setShowProductSelector(null);
+            }}
+            style={{ 
+              display: "block",
+              width: "100%",
+              padding: "8px 12px", 
+              background: "none", 
+              border: "none", 
+              color: "var(--color-text)", 
+              textAlign: "left", 
+              cursor: "pointer", 
+              fontSize: 13,
+              borderRadius: 6
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+            onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+          >
+            <div style={{ fontWeight: 600 }}>{drink.brand} - {drink.name}</div>
+            <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
+              {drink.cho_per_unit}g CHO · {drink.price_per_unit.toFixed(2)}€
+            </div>
+          </button>
+        ))}
+      </div>
+    )}
+  </div>
+  {/* Préférences de goût */}
+  <div>
+    <label style={S.label}>NIVEAU DE SUCRÉ</label>
+    <div style={{ display: "flex", gap: 8 }}>
+      {(["low", "medium", "high"] as const).map(level => (
+        <button
+          key={level}
+          onClick={() => setProfile({
+            ...profile,
+            tastePreferences: {
+              ...profile.tastePreferences,
+              sweetness: level
+            }
+          })}
+          style={{
+            flex: 1,
+            padding: "10px 16px",
+            borderRadius: 8,
+            border: `2px solid ${profile.tastePreferences?.sweetness === level ? "var(--color-accent)" : "var(--color-border)"}`,
+            background: profile.tastePreferences?.sweetness === level ? "rgba(34,197,94,0.1)" : "var(--color-bg-card)",
+            color: profile.tastePreferences?.sweetness === level ? "var(--color-accent)" : "var(--color-text-muted)",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer"
+          }}
+        >
+          {level === "low" ? "🍃 Peu sucré" : level === "medium" ? "🍯 Modéré" : "🍬 Très sucré"}
+        </button>
+      ))}
+    </div>
+  </div>
+</div>
               <div style={S.sectionTitle}><span>💧</span> Hydratation & tolérance</div>
               <div style={S.grid2}>
                 <div>
