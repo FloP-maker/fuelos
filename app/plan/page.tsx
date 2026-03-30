@@ -767,6 +767,37 @@ function PlanResult({ plan, profile, event, onBack }: { plan: FuelPlan; profile:
         ))}
       </div>
 
+      {plan.warnings && plan.warnings.length > 0 && (
+  <div style={{ marginBottom: 24 }}>
+    {plan.warnings.map((warning, idx) => (
+      <div key={idx} style={{ 
+        padding: "14px 16px", 
+        borderRadius: 8, 
+        background: warning.includes("⚠️") 
+          ? "rgba(245,158,11,0.1)" 
+          : "rgba(96,165,250,0.1)", 
+        border: `1px solid ${warning.includes("⚠️") ? "#f59e0b" : "#60a5fa"}`, 
+        marginBottom: 8,
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 10
+      }}>
+        <span style={{ fontSize: 18, flexShrink: 0 }}>
+          {warning.includes("⚠️") ? "⚠️" : warning.includes("💡") ? "💡" : "ℹ️"}
+        </span>
+        <div style={{ 
+          fontSize: 13, 
+          color: warning.includes("⚠️") ? "#f59e0b" : "#60a5fa", 
+          lineHeight: 1.5,
+          flex: 1
+        }}>
+          {warning.replace(/^(⚠️|💡|ℹ️)\s*/, "")}
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid var(--color-border)", paddingBottom: 0 }}>
         {(["plan", "shop", "export"] as const).map(tab => (
