@@ -89,6 +89,15 @@ function determineChoStrategy(
 ): ChoStrategy {
   const durationMin = event.targetTime * 60;
 
+  // Caps absolus selon tolérance GI
+  const giCaps = {
+    sensitive: 45,
+    normal: 60,
+    robust: 90
+  };
+  
+  const maxCHO = giCaps[profile.giTolerance];
+
   // Choisir le profil de progression selon la tolérance GI
   let progressionProfile = CHO_PROGRESSION_PROFILES.moderate;
   
@@ -101,11 +110,17 @@ function determineChoStrategy(
     progressionProfile = CHO_PROGRESSION_PROFILES.aggressive;
   }
 
+  // 🆕 APPLIQUER LE CAP ABSOLU sur chaque phase
+  progressionProfile = {
+    phase1: Math.min(progressionProfile.phase1, maxCHO),
+    phase2: Math.min(progressionProfile.phase2, maxCHO),
+    phase3: Math.min(progressionProfile.phase3, maxCHO),
+  };
+
   // Définir les phases
   const phases: ChoPhase[] = [];
 
   if (durationMin <= 90) {
-    // Course courte : CHO constant
     phases.push({
       startTimeMin: 0,
       endTimeMin: durationMin,
@@ -113,7 +128,6 @@ function determineChoStrategy(
       description: "Intensité constante",
     });
   } else if (durationMin <= 180) {
-    // Course moyenne : 2 phases
     phases.push(
       {
         startTimeMin: 0,
@@ -129,7 +143,6 @@ function determineChoStrategy(
       }
     );
   } else {
-    // Course longue : 3 phases
     const phase2End = Math.min(120, durationMin * 0.4);
     
     phases.push(
