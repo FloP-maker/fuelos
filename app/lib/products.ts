@@ -2026,3 +2026,335 @@ export function searchProducts(query: string): Product[] {
 }
 
 export const BRANDS = [...new Set(PRODUCTS.map(p => p.brand))].sort();
+// ===== FONCTIONS UTILITAIRES EXISTANTES =====
+
+export function getProductsByCategory(category: Product["category"]): Product[] {
+  return PRODUCTS.filter(p => p.category === category);
+}
+
+export function getProductById(id: string): Product | undefined {
+  return PRODUCTS.find(p => p.id === id);
+}
+
+export function getProductsByBrand(brand: string): Product[] {
+  return PRODUCTS.filter(p => p.brand === brand);
+}
+
+export function searchProducts(query: string): Product[] {
+  const q = query.toLowerCase();
+  return PRODUCTS.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    p.brand.toLowerCase().includes(q) ||
+    (p.description || "").toLowerCase().includes(q)
+  );
+}
+
+export const BRANDS = [...new Set(PRODUCTS.map(p => p.brand))].sort();
+
+// ===== 🆕 NOUVELLES FONCTIONS UTILITAIRES - FILTRAGE PAR PRÉFÉRENCES =====
+
+/**
+ * Filtre les produits selon les préférences utilisateur
+ */
+export function getProductsByPreferences(
+  category: Product["category"],
+  preferences?: {
+    preferredBrands?: string[];
+    avoidProducts?: string[];
+    sweetness?: "low" | "medium" | "high";
+    flavors?: string[];
+    caffeinePreference?: "none" | "optional" | "required";
+    dietTags?: string[];
+    allergens?: string[];
+  }
+): Product[] {
+  let products = getProductsByCategory(category);
+
+  if (!preferences) return products;
+
+  // Exclure les produits à éviter
+  if (preferences.avoidProducts && preferences.avoidProducts.length > 0) {
+    products = products.filter(p => !preferences.avoidProducts!.includes(p.id));
+  }
+
+  // Exclure les allergènes
+  if (preferences.allergens && preferences.allergens.length > 0) {
+    products = products.filter(p => 
+      !p.allergens.some(allergen => preferences.allergens!.includes(allergen))
+    );
+  }
+
+  // Filtrer par régime alimentaire (vegan, gluten-free, etc.)
+  if (preferences.dietTags && preferences.dietTags.length > 0) {
+    products = products.filter(p =>
+      preferences.dietTags!.every(tag => p.diet_tags.includes(tag))
+    );
+  }
+
+  // Filtrer par niveau de sucré
+  if (preferences.sweetness) {
+    products = products.filter(p => p.sweetness === preferences.sweetness);
+  }
+
+  // Filtrer par saveurs préférées
+  if (preferences.flavors && preferences.flavors.length > 0) {
+    products = products.filter(p =>
+      p.flavors?.some(flavor => preferences.flavors!.includes(flavor))
+    );
+  }
+
+  // Filtrer par caféine
+  if (preferences.caffeinePreference === "none") {
+    products = products.filter(p => (p.caffeineContent || 0) === 0);
+  } else if (preferences.caffeinePreference === "required") {
+    products = products.filter(p => (p.caffeineContent || 0) > 0);
+  }
+
+  // Prioriser les marques préférées (tri, pas filtre)
+  if (preferences.preferredBrands && preferences.preferredBrands.length > 0) {
+    products = products.sort((a, b) => {
+      const aPreferred = preferences.preferredBrands!.includes(a.brand);
+      const bPreferred = preferences.preferredBrands!.includes(b.brand);
+      if (aPreferred && !bPreferred) return -1;
+      if (!aPreferred && bPreferred) return 1;
+      return 0;
+    });
+  }
+
+  return products;
+}
+
+/**
+ * Filtre les produits par tolérance gastro-intestinale
+ */
+export function getProductsByGITolerance(
+  category: Product["category"],
+  giTolerance: "sensitive" | "normal" | "robust"
+): Product[] {
+  let products = getProductsByCategory(category);
+
+  if (giTolerance === "sensitive") {
+    // Privilégier les produits liquides, neutres, et recommandés pour estomacs sensibles
+    products = products.filter(p => 
+      p.texture === "liquid" || 
+      p.texture === "gel" ||
+      p.recommended_for?.includes("sensitive-stomach") ||
+      p.sweetness === "low"
+    );
+  } else if (giTolerance === "normal") {
+    // Éviter les produits trop sucrés ou trop solides
+    products = products.filter(p => p.sweetness !== "high" || p.texture !== "solid");
+  }
+  // "robust" : pas de filtre, tout passe
+
+  return products;
+}
+
+/**
+ * Filtre les produits par texture
+ */
+export function getProductsByTexture(
+  texture: "liquid" | "gel" | "chewy" | "solid"
+): Product[] {
+  return PRODUCTS.filter(p => p.texture === texture);
+}
+
+/**
+ * Filtre les produits par niveau de sucré
+ */
+export function getProductsBySweetness(
+  sweetness: "low" | "medium" | "high"
+): Product[] {
+  return PRODUCTS.filter(p => p.sweetness === sweetness);
+}
+
+/**
+ * Filtre les produits par contenu en caféine
+ */
+export function getCaffeinatedProducts(minCaffeine: number = 1): Product[] {
+  return PRODUCTS.filter(p => (p.caffeineContent || 0) >= minCaffeine);
+}
+
+/**
+ * Filtre les produits par tag de recommandation
+ */
+export function getProductsByRecommendation(
+  recommendationTag: string
+): Product[] {
+  return PRODUCTS.filter(p => 
+    p.recommended_for?.includes(recommendationTag)
+  );
+}
+
+/**
+ * Filtre les produits compatibles avec un régime alimentaire
+ */
+export function getProductsByDiet(dietTags: string[]): Product[] {
+  return PRODUCTS.filter(p =>
+    dietTags.every(tag => p.diet_tags.includes(tag))
+  );
+}
+
+/**
+ * Filtre les produits sans allergènes spécifiques
+ */
+export function getProductsWithoutAllergens(allergens: string[]): Product[] {
+  return PRODUCTS.filter(p =>
+    !p.allergens.some(allergen => allergens.includes(allergen))
+  );
+}
+
+/**
+ * Filtre les produits par gamme de prix
+ */
+export function getProductsByPriceRange(
+  minPrice: number = 0,
+  maxPrice: number = Infinity
+): Product[] {
+  return PRODUCTS.filter(p => 
+    p.price_per_unit >= minPrice && p.price_per_unit <= maxPrice
+  );
+}
+
+/**
+ * Filtre les produits "real food" (aliments naturels)
+ */
+export function getRealFoodProducts(): Product[] {
+  return PRODUCTS.filter(p => 
+    p.diet_tags.includes("real-food") || p.category === "real-food"
+  );
+}
+
+/**
+ * Recommande des produits pour une phase de course spécifique
+ */
+export function getProductsForRacePhase(
+  phase: "pre-race" | "early-race" | "mid-race" | "late-race" | "recovery"
+): Product[] {
+  switch (phase) {
+    case "pre-race":
+      return PRODUCTS.filter(p =>
+        p.recommended_for?.includes("pre-race") ||
+        p.category === "bar" ||
+        (p.category === "real-food" && p.texture === "solid")
+      );
+    
+    case "early-race":
+      return PRODUCTS.filter(p =>
+        p.category === "gel" || p.category === "drink"
+      ).filter(p => 
+        (p.caffeineContent || 0) === 0 && 
+        p.sweetness !== "high"
+      );
+    
+    case "mid-race":
+      return PRODUCTS.filter(p =>
+        p.recommended_for?.includes("long-distance") ||
+        p.recommended_for?.includes("ultra-endurance")
+      );
+    
+    case "late-race":
+      return PRODUCTS.filter(p =>
+        p.recommended_for?.includes("late-race") ||
+        p.recommended_for?.includes("mental-boost") ||
+        (p.caffeineContent || 0) > 0
+      );
+    
+    case "recovery":
+      return PRODUCTS.filter(p =>
+        p.category === "drink" || 
+        (p.category === "bar" && p.calories_per_unit > 200)
+      );
+    
+    default:
+      return [];
+  }
+}
+
+/**
+ * Recommande un mix de produits pour un profil donné
+ */
+export function getRecommendedProductMix(
+  targetCHOPerHour: number,
+  duration: number, // heures
+  preferences?: {
+    giTolerance?: "sensitive" | "normal" | "robust";
+    preferredBrands?: string[];
+    avoidProducts?: string[];
+    varietyLevel?: "low" | "medium" | "high"; // Niveau de variété souhaité
+    allergens?: string[];
+  }
+): {
+  gels: Product[];
+  drinks: Product[];
+  bars: Product[];
+  realFood: Product[];
+} {
+  const giTolerance = preferences?.giTolerance || "normal";
+  
+  // Récupérer les produits par catégorie avec filtres
+  let gels = getProductsByGITolerance("gel", giTolerance);
+  let drinks = getProductsByGITolerance("drink", giTolerance);
+  let bars = getProductsByGITolerance("bar", giTolerance);
+  let realFood = getRealFoodProducts();
+
+  // Appliquer les préférences utilisateur
+  if (preferences) {
+    const filterOptions = {
+      preferredBrands: preferences.preferredBrands,
+      avoidProducts: preferences.avoidProducts,
+      allergens: preferences.allergens,
+    };
+
+    gels = getProductsByPreferences("gel", filterOptions);
+    drinks = getProductsByPreferences("drink", filterOptions);
+    bars = getProductsByPreferences("bar", filterOptions);
+    realFood = realFood.filter(p => 
+      !preferences.avoidProducts?.includes(p.id) &&
+      !p.allergens.some(a => preferences.allergens?.includes(a))
+    );
+  }
+
+  // Niveau de variété (nombre de produits différents)
+  const varietyCount = preferences?.varietyLevel === "high" ? 5 :
+                       preferences?.varietyLevel === "medium" ? 3 : 2;
+
+  return {
+    gels: gels.slice(0, varietyCount),
+    drinks: drinks.slice(0, varietyCount),
+    bars: duration > 3 ? bars.slice(0, Math.min(2, varietyCount)) : [],
+    realFood: duration > 4 ? realFood.slice(0, Math.min(3, varietyCount)) : [],
+  };
+}
+
+/**
+ * Calcule le coût estimé pour un plan
+ */
+export function calculatePlanCost(shoppingList: { productId: string; quantity: number }[]): number {
+  return shoppingList.reduce((total, item) => {
+    const product = getProductById(item.productId);
+    if (!product) return total;
+    return total + (product.price_per_unit * item.quantity);
+  }, 0);
+}
+
+/**
+ * Exporte toutes les saveurs disponibles
+ */
+export const ALL_FLAVORS = [
+  ...new Set(PRODUCTS.flatMap(p => p.flavors || []))
+].sort();
+
+/**
+ * Exporte tous les tags de recommandation disponibles
+ */
+export const ALL_RECOMMENDATION_TAGS = [
+  ...new Set(PRODUCTS.flatMap(p => p.recommended_for || []))
+].sort();
+
+/**
+ * Exporte tous les tags de régime alimentaire disponibles
+ */
+export const ALL_DIET_TAGS = [
+  ...new Set(PRODUCTS.flatMap(p => p.diet_tags || []))
+].sort();
