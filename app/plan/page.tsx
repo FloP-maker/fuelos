@@ -351,35 +351,34 @@ export default function PlanPage() {
     )}
   </div>
   {/* Préférences de goût */}
-  <div>
-    <label style={S.label}>NIVEAU DE SUCRÉ</label>
-    <div style={{ display: "flex", gap: 8 }}>
-      {(["low", "medium", "high"] as const).map(level => (
-        <button
-          key={level}
-          onClick={() => setProfile({
-            ...profile,
-            tastePreferences: {
-              ...profile.tastePreferences,
-              sweetness: level
-            }
-          })}
-          style={{
-            flex: 1,
-            padding: "10px 16px",
-            borderRadius: 8,
-            border: `2px solid ${profile.tastePreferences?.sweetness === level ? "var(--color-accent)" : "var(--color-border)"}`,
-            background: profile.tastePreferences?.sweetness === level ? "rgba(34,197,94,0.1)" : "var(--color-bg-card)",
-            color: profile.tastePreferences?.sweetness === level ? "var(--color-accent)" : "var(--color-text-muted)",
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: "pointer"
-          }}
-        >
-          {level === "low" ? "🍃 Peu sucré" : level === "medium" ? "🍯 Modéré" : "🍬 Très sucré"}
-        </button>
-      ))}
-    </div>
+<div>
+  <label style={S.label}>NIVEAU DE SUCRÉ</label>
+  <div style={{ display: "flex", gap: 8 }}>
+    {(["low", "medium", "high"] as const).map(level => (
+      <button
+        key={level}
+        onClick={() => setProfile({
+          ...profile,
+          tastePreferences: {
+            sweetness: level,
+            flavors: profile.tastePreferences?.flavors || [] // ✅ FIX
+          }
+        })}
+        style={{
+          flex: 1,
+          padding: "10px 16px",
+          borderRadius: 8,
+          border: `2px solid ${profile.tastePreferences?.sweetness === level ? "var(--color-accent)" : "var(--color-border)"}`,
+          background: profile.tastePreferences?.sweetness === level ? "rgba(34,197,94,0.1)" : "var(--color-bg-card)",
+          color: profile.tastePreferences?.sweetness === level ? "var(--color-accent)" : "var(--color-text-muted)",
+          fontSize: 13,
+          fontWeight: 600,
+          cursor: "pointer"
+        }}
+      >
+        {level === "low" ? "🍃 Peu sucré" : level === "medium" ? "🍯 Modéré" : "🍬 Très sucré"}
+      </button>
+    ))}
   </div>
 </div>
               <div style={S.sectionTitle}><span>💧</span> Hydratation & tolérance</div>
