@@ -53,6 +53,14 @@ export function generateFuelPlan(
   const totals = calculateTotals(timeline, event.targetTime);
   const estimatedCost = calculatePlanCost(shoppingList);
 
+  // 🆕 Warning pédagogique pour apport conservateur
+  if (profile.giTolerance === "sensitive" && totals.avgChoPerHour < 40) {
+    warnings.push(
+      "💡 Apport glucidique conservateur adapté à votre sensibilité digestive. " +
+      "Testez ce plan à l'entraînement avant de l'augmenter progressivement sur 8-12 semaines."
+    );
+  }
+
   return {
     choPerHour: totals.avgChoPerHour,
     waterPerHour: totals.avgWaterPerHour,
