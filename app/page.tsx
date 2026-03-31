@@ -9,7 +9,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">⚡</span>
-            <span className="text-xl font-bold text-orange-400">FuelOS</span>
+            <span className="text-xl font-bold ext-orange-400">FuelOS</span>
           </div>
           <nav className="flex gap-6 text-sm text-gray-400">
             <Link href="/plan" className="hover:text-white transition-colors">Plan</Link>
@@ -67,7 +67,6 @@ export default function Home() {
             desc="Timer intelligent + notifications push. Recalcul dynamique si vous déviez du plan"
             href="/race"
             color="orange"
-            badge="#1 différenciateur"
           />
           <FeatureCard
             icon="📊"
