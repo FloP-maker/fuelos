@@ -956,6 +956,17 @@ function PlanResult({ plan, profile, event, onBack }: { plan: FuelPlan; profile:
     URL.revokeObjectURL(url);
   };
 
+  const handleCopyShareLink = async () => {
+    try {
+      const payload = encodeURIComponent(JSON.stringify({ plan, profile, event }));
+      const shareUrl = `${window.location.origin}/race?plan=${payload}`;
+      await navigator.clipboard.writeText(shareUrl);
+      alert("Lien de partage copié !");
+    } catch {
+      alert("Impossible de copier le lien automatiquement.");
+    }
+  };
+
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
@@ -1208,6 +1219,7 @@ function PlanResult({ plan, profile, event, onBack }: { plan: FuelPlan; profile:
               }},
               { icon: "🖨️", label: "Exporter PDF", desc: "Format A4 imprimable (mise en page propre)", action: handlePrintPdf },
               { icon: "📅", label: "Exporter ICS", desc: "Rappels timeline dans le calendrier", action: handleExportIcs },
+              { icon: "🔗", label: "Lien de partage", desc: "URL avec plan encodé (ouvre Race Mode)", action: handleCopyShareLink },
               { icon: "📋", label: "Copier JSON", desc: "Pour développeurs / backup", action: () => {
                 navigator.clipboard.writeText(JSON.stringify({ plan, profile, event }, null, 2));
                 alert("Plan copié dans le presse-papier !");
