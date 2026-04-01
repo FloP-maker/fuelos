@@ -71,7 +71,7 @@ export default function ShopPage() {
           <span style={{ fontWeight: 700, fontSize: 20 }}>FuelOS</span>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          {[{ href: "/plan", label: "Plan" }, { href: "/shop", label: "Shop" }, { href: "/race", label: "Race" }].map(item => (
+          {[{ href: "/plan", label: "Plan" }, { href: "/shop", label: "Shop" }, { href: "/race", label: "Race" }, { href: "/learn", label: "Learn" }].map(item => (
             <Link key={item.href} href={item.href}
               style={item.href === "/shop"
                 ? { padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "var(--color-accent)", border: "1px solid var(--color-accent)", background: "rgba(34,197,94,0.08)" }
