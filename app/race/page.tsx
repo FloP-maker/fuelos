@@ -336,11 +336,16 @@ function RaceContent() {
         <div className="fixed top-4 right-4">
           <Link
             href="/"
-            className="rounded-lg px-3 py-1.5 text-sm transition-colors"
             style={{
-              border: '1px solid rgba(255,255,255,0.10)',
-              color: '#cbd5e1',
-              background: 'rgba(255,255,255,0.03)',
+              padding: '10px 20px',
+              borderRadius: 8,
+              background: 'transparent',
+              color: 'var(--color-text)',
+              fontWeight: 600,
+              fontSize: 14,
+              border: '1px solid var(--color-border)',
+              cursor: 'pointer',
+              textDecoration: 'none',
             }}
           >
             Accueil
@@ -470,11 +475,16 @@ function RaceContent() {
 
             <Link
               href="/"
-              className="rounded-lg px-3 py-1.5 text-sm transition-colors"
               style={{
-                border: '1px solid rgba(255,255,255,0.10)',
-                color: '#cbd5e1',
-                background: 'rgba(255,255,255,0.03)',
+                padding: '10px 20px',
+                borderRadius: 8,
+                background: 'transparent',
+                color: 'var(--color-text)',
+                fontWeight: 600,
+                fontSize: 14,
+                border: '1px solid var(--color-border)',
+                cursor: 'pointer',
+                textDecoration: 'none',
               }}
             >
               Accueil

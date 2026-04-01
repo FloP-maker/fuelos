@@ -288,6 +288,12 @@ export default function ShopPage() {
               {item.label}
             </Link>
           ))}
+          <Link
+            href="/"
+            style={{ padding: "10px 20px", borderRadius: 8, background: "transparent", color: "var(--color-text)", fontWeight: 600, fontSize: 14, border: "1px solid var(--color-border)", cursor: "pointer", textDecoration: "none" }}
+          >
+            Accueil
+          </Link>
         </div>
       </header>
 

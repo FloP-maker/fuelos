@@ -251,11 +251,15 @@ export default function LearnPage() {
         <Link
           href="/"
           style={{
-            border: '1px solid var(--color-border)',
-            borderRadius: 10,
-            padding: '8px 12px',
+            padding: '10px 20px',
+            borderRadius: 8,
+            background: 'transparent',
             textDecoration: 'none',
             color: 'var(--color-text)',
+            fontWeight: 600,
+            fontSize: 14,
+            border: '1px solid var(--color-border)',
+            cursor: 'pointer',
           }}
         >
           Accueil
