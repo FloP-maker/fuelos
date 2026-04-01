@@ -748,6 +748,18 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#039;");
 }
 
+function formatIcsDate(date: Date): string {
+  return date.toISOString().replaceAll("-", "").replaceAll(":", "").replace(/\.\d{3}Z$/, "Z");
+}
+
+function escapeIcsText(value: string): string {
+  return value
+    .replaceAll("\\", "\\\\")
+    .replaceAll(";", "\\;")
+    .replaceAll(",", "\\,")
+    .replaceAll("\n", "\\n");
+}
+
 function PlanResult({ plan, profile, event, onBack }: { plan: FuelPlan; profile: AthleteProfile; event: EventDetails; onBack: () => void }) {
   const [activeTab, setActiveTab] = useState<"plan"|"shop"|"export">("plan");
   const estimatedCost = plan.shoppingList.reduce((sum, item) => {
@@ -878,6 +890,70 @@ function PlanResult({ plan, profile, event, onBack }: { plan: FuelPlan; profile:
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();
+  };
+
+  const handleExportIcs = () => {
+    const now = new Date();
+    const defaultStart = new Date(now.getTime() + 5 * 60000).toISOString().slice(0, 16);
+    const startInput = window.prompt(
+      "Date/heure de départ de course (format: YYYY-MM-DDTHH:mm)",
+      defaultStart
+    );
+
+    if (!startInput) return;
+    const raceStart = new Date(startInput);
+    if (Number.isNaN(raceStart.getTime())) {
+      alert("Format invalide. Utilise par exemple: 2026-04-01T08:30");
+      return;
+    }
+
+    const calendarLines: string[] = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//FuelOS//Nutrition Plan//FR",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      "X-WR-CALNAME:FuelOS - Plan nutrition",
+      "X-WR-TIMEZONE:UTC",
+    ];
+
+    plan.timeline.forEach((item, index) => {
+      const eventStart = new Date(raceStart.getTime() + item.timeMin * 60000);
+      const eventEnd = new Date(eventStart.getTime() + 5 * 60000);
+      const uid = `fuelos-${Date.now()}-${index}@fuelos.app`;
+      const details = `${item.quantity} · ${item.cho}g CHO${item.water ? ` · ${item.water}ml eau` : ""}${item.sodium ? ` · ${item.sodium}mg Na+` : ""}`;
+      const source = item.source === "aid-station" ? ` (ravitaillement${item.aidStationName ? `: ${item.aidStationName}` : ""})` : "";
+
+      calendarLines.push(
+        "BEGIN:VEVENT",
+        `UID:${uid}`,
+        `DTSTAMP:${formatIcsDate(new Date())}`,
+        `DTSTART:${formatIcsDate(eventStart)}`,
+        `DTEND:${formatIcsDate(eventEnd)}`,
+        `SUMMARY:${escapeIcsText(`FuelOS · ${item.product}`)}`,
+        `DESCRIPTION:${escapeIcsText(`${details}${source}`)}`,
+        `CATEGORIES:${escapeIcsText("Nutrition,Sport")}`,
+        "BEGIN:VALARM",
+        "ACTION:DISPLAY",
+        `DESCRIPTION:${escapeIcsText(`Rappel FuelOS: ${item.product}`)}`,
+        "TRIGGER:-PT1M",
+        "END:VALARM",
+        "END:VEVENT"
+      );
+    });
+
+    calendarLines.push("END:VCALENDAR");
+
+    const icsContent = calendarLines.join("\r\n");
+    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `fuelos-plan-${event.sport.toLowerCase().replaceAll(" ", "-")}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -1131,6 +1207,7 @@ function PlanResult({ plan, profile, event, onBack }: { plan: FuelPlan; profile:
                 alert("Plan sauvegardé ! Accédez à Race Mode pour l'utiliser.");
               }},
               { icon: "🖨️", label: "Exporter PDF", desc: "Format A4 imprimable (mise en page propre)", action: handlePrintPdf },
+              { icon: "📅", label: "Exporter ICS", desc: "Rappels timeline dans le calendrier", action: handleExportIcs },
               { icon: "📋", label: "Copier JSON", desc: "Pour développeurs / backup", action: () => {
                 navigator.clipboard.writeText(JSON.stringify({ plan, profile, event }, null, 2));
                 alert("Plan copié dans le presse-papier !");
