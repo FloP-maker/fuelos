@@ -79,8 +79,8 @@ function FeatureCard({ icon, title, desc, href, color, badge }: {
   desc: string;
   href: string;
   color: 'blue' | 'green' | 'orange' | 'purple';
-  badge?: string;'use client';
-
+  badge?: string;
+  'use client';
   import Link from 'next/link';
   import { ThemeToggle } from './components/ThemeToggle';
 
