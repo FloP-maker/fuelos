@@ -78,9 +78,22 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const idsParam = searchParams.get("ids");
   const ids = idsParam ? idsParam.split(",").map((v) => v.trim()).filter(Boolean) : [];
+  return NextResponse.json(await resolvePrices(ids));
+}
 
+export async function POST(request: Request) {
+  try {
+    const body = (await request.json()) as { ids?: string[] };
+    const ids = Array.isArray(body.ids) ? body.ids.map((v) => v.trim()).filter(Boolean) : [];
+    return NextResponse.json(await resolvePrices(ids));
+  } catch {
+    return NextResponse.json({ prices: {}, metadata: {} }, { status: 400 });
+  }
+}
+
+async function resolvePrices(ids: string[]) {
   if (ids.length === 0) {
-    return NextResponse.json({ prices: {}, metadata: {} });
+    return { prices: {}, metadata: {} };
   }
 
   const prices: Record<string, number> = {};
@@ -123,5 +136,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ prices, metadata });
+  return { prices, metadata };
 }

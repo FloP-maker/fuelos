@@ -93,6 +93,16 @@ export default function ShopPage() {
     return Boolean(product.imageUrl && /^https?:\/\//.test(product.imageUrl));
   };
 
+  const getFallbackImageFromProductUrl = (product: Product): string | null => {
+    if (!product.productUrl || !/^https?:\/\//.test(product.productUrl)) return null;
+    try {
+      const domain = new URL(product.productUrl).hostname;
+      return `https://www.google.com/s2/favicons?sz=128&domain=${encodeURIComponent(domain)}`;
+    } catch {
+      return null;
+    }
+  };
+
   const toggleDiet = (id: string) => {
     setDietFilters(prev =>
       prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]
@@ -136,8 +146,11 @@ export default function ShopPage() {
   const syncRealPrices = async () => {
     try {
       setIsSyncingPrices(true);
-      const ids = allProducts.map((p) => p.id).join(",");
-      const response = await fetch(`/api/prices?ids=${encodeURIComponent(ids)}`);
+      const response = await fetch("/api/prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: allProducts.map((p) => p.id) }),
+      });
       if (!response.ok) throw new Error("failed");
       const data = (await response.json()) as {
         prices: Record<string, number>;
@@ -333,6 +346,7 @@ export default function ShopPage() {
                 product={p}
                 effectivePrice={getProductPrice(p)}
                 priceMeta={priceMetadata[p.id]}
+                fallbackImageUrl={getFallbackImageFromProductUrl(p)}
                 onDelete={p.id.startsWith("custom-") ? () => setCustomProducts((prev) => prev.filter((x) => x.id !== p.id)) : undefined}
               />
             ))}
@@ -364,11 +378,13 @@ function ProductCard({
   product: p,
   effectivePrice,
   priceMeta,
+  fallbackImageUrl,
   onDelete,
 }: {
   product: Product;
   effectivePrice: number;
   priceMeta?: PriceMeta;
+  fallbackImageUrl?: string | null;
   onDelete?: () => void;
 }) {
   const catColor = CAT_COLORS[p.category] || { bg: "#1a1a1a", color: "#888" };
@@ -408,6 +424,8 @@ function ProductCard({
       </div>
       {p.imageUrl && /^https?:\/\//.test(p.imageUrl) ? (
         <img src={p.imageUrl} alt={p.name} style={{ width: "100%", height: 140, objectFit: "contain", borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-bg)" }} />
+      ) : fallbackImageUrl ? (
+        <img src={fallbackImageUrl} alt={p.name} style={{ width: "100%", height: 80, objectFit: "contain", borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-bg)", padding: 12 }} />
       ) : (
         <div style={{ width: "100%", height: 80, borderRadius: 8, border: "1px dashed #f59e0b", color: "#f59e0b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>
           Photo à revoir
