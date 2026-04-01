@@ -5,12 +5,12 @@ import Link from "next/link";
 import useLocalStorage from '../lib/hooks/useLocalStorage';
 import { calculateFuelPlan } from "../lib/fuelCalculator";
 import { PRODUCTS } from "../lib/products";
-import type { AthleteProfile, EventDetails, FuelPlan } from "../lib/types";
-import { getProductsByCategory } from "../lib/products";
+import type { AthleteProfile, EventDetails, FuelPlan, Product } from "../lib/types";
 
 const SPORTS = ["Course à pied", "Trail", "Cyclisme", "Triathlon", "Ultra-trail"];
 const WEATHER = ["Froid (<10°C)", "Tempéré (10-20°C)", "Chaud (20-30°C)", "Très chaud (>30°C)"];
 const ELEVATION = ["Plat (0-500m D+)", "Vallonné (500-1500m D+)", "Montagneux (1500-3000m D+)", "Alpin (>3000m D+)"];
+const CUSTOM_PRODUCTS_STORAGE_KEY = "fuelos_custom_products";
 
 const S = {
   page: { minHeight: "100vh", background: "var(--color-bg)", color: "var(--color-text)", fontFamily: "system-ui, sans-serif" } as React.CSSProperties,
@@ -59,7 +59,36 @@ const [newAidStation, setNewAidStation] = useState({
   name: "",
   availableProducts: [] as string[],
 });
+  const [customProducts, setCustomProducts] = useState<Product[]>([]);
+  const [newCustomProduct, setNewCustomProduct] = useState({
+    name: "",
+    brand: "",
+    category: "gel" as Product["category"],
+    cho_per_unit: 25,
+    water_per_unit: 0,
+    sodium_per_unit: 0,
+    calories_per_unit: 100,
+    price_per_unit: 2,
+    weight_g: 40,
+  });
   const [plan, setPlan] = useState<FuelPlan | null>(null);
+  const allProducts = [...PRODUCTS, ...customProducts];
+  const getProductsByCategoryWithCustom = (category: Product["category"]) =>
+    allProducts.filter(p => p.category === category);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(CUSTOM_PRODUCTS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Product[];
+        setCustomProducts(parsed);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(CUSTOM_PRODUCTS_STORAGE_KEY, JSON.stringify(customProducts));
+  }, [customProducts]);
 
   // Sauvegarder automatiquement le profil quand il change
   useEffect(() => {
@@ -151,7 +180,7 @@ const [newAidStation, setNewAidStation] = useState({
                 <label style={S.label}>GELS PRÉFÉRÉS</label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                   {profile.preferredProducts?.gels?.map(gelId => {
-                    const product = getProductsByCategory("gel").find(p => p.id === gelId);
+                    const product = getProductsByCategoryWithCustom("gel").find(p => p.id === gelId);
                     return product ? (
                       <div key={gelId} style={{ 
                         display: "inline-flex", 
@@ -215,7 +244,7 @@ const [newAidStation, setNewAidStation] = useState({
                     maxHeight: 200, 
                     overflowY: "auto" 
                   }}>
-                    {getProductsByCategory("gel").slice(0, 15).map(gel => (
+                    {getProductsByCategoryWithCustom("gel").slice(0, 20).map(gel => (
                       <button
                         key={gel.id}
                         onClick={() => {
@@ -261,7 +290,7 @@ const [newAidStation, setNewAidStation] = useState({
                 <label style={S.label}>BOISSONS PRÉFÉRÉES</label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                   {profile.preferredProducts?.drinks?.map(drinkId => {
-                    const product = getProductsByCategory("drink").find(p => p.id === drinkId);
+                    const product = getProductsByCategoryWithCustom("drink").find(p => p.id === drinkId);
                     return product ? (
                       <div key={drinkId} style={{ 
                         display: "inline-flex", 
@@ -325,7 +354,7 @@ const [newAidStation, setNewAidStation] = useState({
                     maxHeight: 200, 
                     overflowY: "auto" 
                   }}>
-                    {getProductsByCategory("drink").slice(0, 15).map(drink => (
+                    {getProductsByCategoryWithCustom("drink").slice(0, 20).map(drink => (
                       <button
                         key={drink.id}
                         onClick={() => {
@@ -397,6 +426,88 @@ const [newAidStation, setNewAidStation] = useState({
                   ))}
                 </div>
               </div>
+            </div>
+
+            <div style={S.card}>
+              <div style={S.sectionTitle}><span>🧪</span> Produits custom</div>
+              <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 16 }}>
+                Ajoute tes propres produits (gel, boisson, barre, chew, real-food ou électrolyte). Ils seront disponibles dans les sélecteurs.
+              </p>
+              <div style={{ ...S.grid3, marginBottom: 10 }}>
+                <div>
+                  <label style={S.label}>NOM</label>
+                  <input style={S.input} value={newCustomProduct.name} onChange={e => setNewCustomProduct({ ...newCustomProduct, name: e.target.value })} placeholder="Ex: Gel maison" />
+                </div>
+                <div>
+                  <label style={S.label}>MARQUE</label>
+                  <input style={S.input} value={newCustomProduct.brand} onChange={e => setNewCustomProduct({ ...newCustomProduct, brand: e.target.value })} placeholder="Ex: Perso" />
+                </div>
+                <div>
+                  <label style={S.label}>CATÉGORIE</label>
+                  <select style={S.select} value={newCustomProduct.category} onChange={e => setNewCustomProduct({ ...newCustomProduct, category: e.target.value as Product["category"] })}>
+                    {["gel", "drink", "bar", "chew", "real-food", "electrolyte"].map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={S.grid3}>
+                <div><label style={S.label}>CHO / unité (g)</label><input style={S.input} type="number" value={newCustomProduct.cho_per_unit} onChange={e => setNewCustomProduct({ ...newCustomProduct, cho_per_unit: +e.target.value })} min={0} /></div>
+                <div><label style={S.label}>EAU / unité (ml)</label><input style={S.input} type="number" value={newCustomProduct.water_per_unit} onChange={e => setNewCustomProduct({ ...newCustomProduct, water_per_unit: +e.target.value })} min={0} /></div>
+                <div><label style={S.label}>SODIUM / unité (mg)</label><input style={S.input} type="number" value={newCustomProduct.sodium_per_unit} onChange={e => setNewCustomProduct({ ...newCustomProduct, sodium_per_unit: +e.target.value })} min={0} /></div>
+                <div><label style={S.label}>CALORIES / unité</label><input style={S.input} type="number" value={newCustomProduct.calories_per_unit} onChange={e => setNewCustomProduct({ ...newCustomProduct, calories_per_unit: +e.target.value })} min={0} /></div>
+                <div><label style={S.label}>PRIX / unité (€)</label><input style={S.input} type="number" value={newCustomProduct.price_per_unit} onChange={e => setNewCustomProduct({ ...newCustomProduct, price_per_unit: +e.target.value })} min={0} step={0.1} /></div>
+                <div><label style={S.label}>POIDS (g)</label><input style={S.input} type="number" value={newCustomProduct.weight_g} onChange={e => setNewCustomProduct({ ...newCustomProduct, weight_g: +e.target.value })} min={0} /></div>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <button
+                  style={{ ...S.btnOutline, width: "100%" }}
+                  onClick={() => {
+                    if (!newCustomProduct.name.trim()) return alert("Nom requis");
+                    const id = `custom-${Date.now()}`;
+                    const product: Product = {
+                      id,
+                      name: newCustomProduct.name.trim(),
+                      brand: newCustomProduct.brand.trim() || "Custom",
+                      category: newCustomProduct.category,
+                      cho_per_unit: newCustomProduct.cho_per_unit,
+                      water_per_unit: newCustomProduct.water_per_unit || undefined,
+                      sodium_per_unit: newCustomProduct.sodium_per_unit || undefined,
+                      calories_per_unit: newCustomProduct.calories_per_unit,
+                      price_per_unit: newCustomProduct.price_per_unit,
+                      weight_g: newCustomProduct.weight_g,
+                      allergens: [],
+                      diet_tags: [],
+                      description: "Produit personnalisé",
+                    };
+                    setCustomProducts(prev => [product, ...prev]);
+                    setNewCustomProduct({
+                      name: "",
+                      brand: "",
+                      category: "gel",
+                      cho_per_unit: 25,
+                      water_per_unit: 0,
+                      sodium_per_unit: 0,
+                      calories_per_unit: 100,
+                      price_per_unit: 2,
+                      weight_g: 40,
+                    });
+                  }}
+                >
+                  + Ajouter le produit custom
+                </button>
+              </div>
+              {customProducts.length > 0 && (
+                <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
+                  {customProducts.map(item => (
+                    <div key={item.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)" }}>
+                      <div style={{ fontSize: 12 }}>
+                        <div style={{ fontWeight: 700 }}>{item.brand} - {item.name}</div>
+                        <div style={{ color: "var(--color-text-muted)" }}>{item.category} · {item.cho_per_unit}g CHO</div>
+                      </div>
+                      <button style={{ ...S.btnOutline, padding: "6px 10px", fontSize: 12 }} onClick={() => setCustomProducts(prev => prev.filter(p => p.id !== item.id))}>Supprimer</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Card 3 : Hydratation & tolérance */}
@@ -510,7 +621,7 @@ const [newAidStation, setNewAidStation] = useState({
             {station.availableProducts.length > 0 && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
                 {station.availableProducts.slice(0, 3).map(prodId => {
-                  const product = PRODUCTS.find(p => p.id === prodId);
+                  const product = allProducts.find(p => p.id === prodId);
                   return product ? (
                     <span key={prodId} style={{ 
                       fontSize: 10, 
@@ -622,7 +733,7 @@ const [newAidStation, setNewAidStation] = useState({
               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 4, textTransform: "uppercase" }}>
                 {category === "gel" ? "Gels" : category === "drink" ? "Boissons" : category === "bar" ? "Barres" : "Aliments"}
               </div>
-              {getProductsByCategory(category as any).slice(0, 5).map(product => (
+              {getProductsByCategoryWithCustom(category as Product["category"]).slice(0, 8).map(product => (
                 <label key={product.id} style={{ 
                   display: "flex", 
                   alignItems: "center", 
@@ -732,7 +843,7 @@ const [newAidStation, setNewAidStation] = useState({
         )}
 
         {step === "result" && plan && (
-          <PlanResult plan={plan} profile={profile} event={event} onBack={() => setStep("event")} />
+          <PlanResult plan={plan} profile={profile} event={event} onBack={() => setStep("event")} customProducts={customProducts} />
         )}
       </div>
     </div>
@@ -760,10 +871,11 @@ function escapeIcsText(value: string): string {
     .replaceAll("\n", "\\n");
 }
 
-function PlanResult({ plan, profile, event, onBack }: { plan: FuelPlan; profile: AthleteProfile; event: EventDetails; onBack: () => void }) {
+function PlanResult({ plan, profile, event, onBack, customProducts }: { plan: FuelPlan; profile: AthleteProfile; event: EventDetails; onBack: () => void; customProducts: Product[] }) {
   const [activeTab, setActiveTab] = useState<"plan"|"shop"|"export">("plan");
+  const productsCatalog = [...PRODUCTS, ...customProducts];
   const estimatedCost = plan.shoppingList.reduce((sum, item) => {
-    const prod = PRODUCTS.find(p => p.id === item.productId);
+    const prod = productsCatalog.find(p => p.id === item.productId);
     return sum + (prod?.price_per_unit || 0) * item.quantity;
   }, 0);
 
@@ -820,7 +932,7 @@ function PlanResult({ plan, profile, event, onBack }: { plan: FuelPlan; profile:
 
     const shoppingRows = plan.shoppingList
       .map(item => {
-        const prod = PRODUCTS.find(p => p.id === item.productId);
+        const prod = productsCatalog.find(p => p.id === item.productId);
         const unitPrice = prod?.price_per_unit || 0;
         return `
           <tr>
@@ -1180,7 +1292,7 @@ function PlanResult({ plan, profile, event, onBack }: { plan: FuelPlan; profile:
             <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Liste de courses</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
               {plan.shoppingList.map((item, i) => {
-                const prod = PRODUCTS.find(p => p.id === item.productId);
+                const prod = productsCatalog.find(p => p.id === item.productId);
                 return (
                   <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)" }}>
                     <div>
@@ -1199,7 +1311,7 @@ function PlanResult({ plan, profile, event, onBack }: { plan: FuelPlan; profile:
               <span style={{ fontWeight: 600 }}>Coût total estimé</span>
               <span style={{ fontWeight: 800, fontSize: 20, color: "var(--color-accent)" }}>
                 ~{plan.shoppingList.reduce((sum, item) => {
-                  const prod = PRODUCTS.find(p => p.id === item.productId);
+                  const prod = productsCatalog.find(p => p.id === item.productId);
                   return sum + (prod?.price_per_unit || 0) * item.quantity;
                 }, 0).toFixed(2)}€
               </span>
