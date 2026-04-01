@@ -11,6 +11,12 @@ type PriceResult = {
   fetchedAt: string;
 };
 
+type CachedEntry = PriceResult & { expiresAt: number };
+const PRICE_CACHE = new Map<string, CachedEntry>();
+const TTL_MS = 15 * 60 * 1000;
+const REQUEST_TIMEOUT_MS = 5000;
+const MAX_RETRIES = 2;
+
 function detectProvider(url?: string): Provider {
   if (!url) return "other";
   const lower = url.toLowerCase();
@@ -30,21 +36,42 @@ async function fetchProviderPrice(provider: Provider, productUrl?: string): Prom
 
   if (!baseUrl) return null;
 
-  try {
-    const url = `${baseUrl}?url=${encodeURIComponent(productUrl)}`;
-    const response = await fetch(url, { cache: "no-store" });
-    if (!response.ok) return null;
-    const data = (await response.json()) as { price?: number; source?: string; confidence?: PriceConfidence };
-    if (typeof data.price !== "number" || Number.isNaN(data.price)) return null;
+  const cacheKey = `${provider}:${productUrl}`;
+  const now = Date.now();
+  const cached = PRICE_CACHE.get(cacheKey);
+  if (cached && cached.expiresAt > now) {
     return {
-      price: data.price,
-      source: data.source || `${provider}-api`,
-      confidence: data.confidence || "high",
-      fetchedAt: new Date().toISOString(),
+      price: cached.price,
+      source: `${cached.source}-cache`,
+      confidence: cached.confidence,
+      fetchedAt: cached.fetchedAt,
     };
-  } catch {
-    return null;
   }
+
+  const url = `${baseUrl}?url=${encodeURIComponent(productUrl)}`;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      const response = await fetch(url, { cache: "no-store", signal: controller.signal });
+      clearTimeout(timeout);
+      if (!response.ok) continue;
+      const data = (await response.json()) as { price?: number; source?: string; confidence?: PriceConfidence };
+      if (typeof data.price !== "number" || Number.isNaN(data.price)) continue;
+
+      const result: PriceResult = {
+        price: data.price,
+        source: data.source || `${provider}-api`,
+        confidence: data.confidence || "high",
+        fetchedAt: new Date().toISOString(),
+      };
+      PRICE_CACHE.set(cacheKey, { ...result, expiresAt: Date.now() + TTL_MS });
+      return result;
+    } catch {
+      // retry
+    }
+  }
+  return null;
 }
 
 export async function GET(request: Request) {
@@ -58,29 +85,42 @@ export async function GET(request: Request) {
 
   const prices: Record<string, number> = {};
   const metadata: Record<string, Omit<PriceResult, "price">> = {};
-
-  for (const id of ids) {
-    const product = PRODUCTS.find((p) => p.id === id);
-    if (!product) continue;
-
+  const products = ids
+    .map((id) => PRODUCTS.find((p) => p.id === id))
+    .filter((p): p is (typeof PRODUCTS)[number] => Boolean(p));
+  const grouped = new Map<Provider, (typeof products)>();
+  for (const product of products) {
     const provider = detectProvider(product.productUrl);
-    const remotePrice = await fetchProviderPrice(provider, product.productUrl);
-    if (remotePrice) {
-      prices[id] = remotePrice.price;
-      metadata[id] = {
-        source: remotePrice.source,
-        confidence: remotePrice.confidence,
-        fetchedAt: remotePrice.fetchedAt,
-      };
-      continue;
-    }
+    const list = grouped.get(provider) || [];
+    list.push(product);
+    grouped.set(provider, list);
+  }
 
-    prices[id] = product.price_per_unit;
-    metadata[id] = {
-      source: provider === "other" ? "catalog-static" : `${provider}-fallback`,
-      confidence: "low",
-      fetchedAt: new Date().toISOString(),
-    };
+  for (const [provider, providerProducts] of grouped.entries()) {
+    const results = await Promise.all(
+      providerProducts.map(async (product) => {
+        const remotePrice = await fetchProviderPrice(provider, product.productUrl);
+        return { product, remotePrice };
+      })
+    );
+
+    for (const { product, remotePrice } of results) {
+      if (remotePrice) {
+        prices[product.id] = remotePrice.price;
+        metadata[product.id] = {
+          source: remotePrice.source,
+          confidence: remotePrice.confidence,
+          fetchedAt: remotePrice.fetchedAt,
+        };
+      } else {
+        prices[product.id] = product.price_per_unit;
+        metadata[product.id] = {
+          source: provider === "other" ? "catalog-static" : `${provider}-fallback`,
+          confidence: "low",
+          fetchedAt: new Date().toISOString(),
+        };
+      }
+    }
   }
 
   return NextResponse.json({ prices, metadata });

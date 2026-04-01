@@ -372,6 +372,9 @@ function ProductCard({
   onDelete?: () => void;
 }) {
   const catColor = CAT_COLORS[p.category] || { bg: "#1a1a1a", color: "#888" };
+  const fetchedAtLabel = priceMeta
+    ? new Date(priceMeta.fetchedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+    : null;
   return (
     <div style={{ background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 12, padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -395,6 +398,7 @@ function ProductCard({
               }}
             >
               {priceMeta.source} · {priceMeta.confidence}
+              {fetchedAtLabel ? ` · ${fetchedAtLabel}` : ""}
             </div>
           )}
           <div style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, fontWeight: 700, background: catColor.bg, color: catColor.color, marginTop: 4, display: "inline-block" }}>
