@@ -139,20 +139,24 @@ function FeatureCard({ icon, title, desc, href, color, badge }: {
   badge?: string;
 }) {
   const colors = {
-    blue: 'border-blue-500/30 hover:border-blue-500/60 bg-blue-500/5',
-    green: 'border-green-500/30 hover:border-green-500/60 bg-green-500/5',
-    orange: 'border-orange-500/30 hover:border-orange-500/60 bg-orange-500/5',
-    purple: 'border-purple-500/30 hover:border-purple-500/60 bg-purple-500/5',
+    blue: 'border-blue-500/30 hover:border-blue-500/60 bg-blue-500/10 dark:bg-blue-500/5 hover:bg-blue-500/20',
+    green: 'border-green-500/30 hover:border-green-500/60 bg-green-500/10 dark:bg-green-500/5 hover:bg-green-500/20',
+    orange: 'border-orange-500/30 hover:border-orange-500/60 bg-orange-500/10 dark:bg-orange-500/5 hover:bg-orange-500/20',
+    purple: 'border-purple-500/30 hover:border-purple-500/60 bg-purple-500/10 dark:bg-purple-500/5 hover:bg-purple-500/20',
   };
+  
   return (
-    <Link href={href} className={`border rounded-xl p-6 transition-all cursor-pointer ${colors[color]}`}>
+    <Link 
+      href={href} 
+      className={`border rounded-xl p-6 transition-all cursor-pointer ${colors[color]} backdrop-blur-sm`}
+    >
       {badge && (
-        <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full mb-3 inline-block">
+        <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full mb-3 inline-block border border-orange-500/30">
           {badge}
         </span>
       )}
       <div className="text-3xl mb-3">{icon}</div>
-      <h3 className="font-bold text-lg mb-2">{title}</h3>
+      <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-white">{title}</h3>
       <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{desc}</p>
     </Link>
   );
