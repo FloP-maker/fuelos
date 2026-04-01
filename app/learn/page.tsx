@@ -1,3 +1,7 @@
+'use client';
+
+import usePageTitle from '../lib/hooks/usePageTitle';
+
 type LearnItem = {
   id: string;
   category: 'Repere' | 'Conseil';
@@ -210,6 +214,7 @@ const heroCardStyle = {
 };
 
 export default function LearnPage() {
+  usePageTitle('Learn');
   const firstItem = keyNumbers[0];
 
   return (

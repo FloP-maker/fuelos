@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import useLocalStorage from "../lib/hooks/useLocalStorage";
+import usePageTitle from "../lib/hooks/usePageTitle";
 import { calculateFuelPlan } from "../lib/fuelCalculator";
 import { PRODUCTS } from "../lib/products";
 import type { AthleteProfile, EventDetails, FuelPlan, Product } from "../lib/types";
@@ -200,6 +201,7 @@ function ProductThumb({
 }
 
 export default function PlanPage() {
+  usePageTitle("Plan");
   const [athleteProfile, setAthleteProfile] = useLocalStorage<AthleteProfile | null>("athlete-profile", null);
 
   const [step, setStep] = useState<"profile" | "event" | "result">("profile");

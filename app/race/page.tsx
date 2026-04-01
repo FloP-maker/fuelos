@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import type { FuelPlan, AthleteProfile, EventDetails, TimelineItem } from '../lib/types';
+import usePageTitle from '../lib/hooks/usePageTitle';
 
 interface RaceState {
   status: 'idle' | 'running' | 'paused' | 'finished';
@@ -818,6 +819,7 @@ function RaceContent() {
 }
 
 export default function RacePage() {
+  usePageTitle('Race Mode');
   return (
     <Suspense
       fallback={

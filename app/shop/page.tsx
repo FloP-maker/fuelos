@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { PRODUCTS } from "../lib/products";
 import type { Product } from "../lib/types";
+import usePageTitle from "../lib/hooks/usePageTitle";
 
 const CATEGORIES = [
   { id: "all", label: "Tout" },
@@ -32,6 +33,7 @@ const CAT_COLORS: Record<string, { bg: string; color: string }> = {
 };
 
 export default function ShopPage() {
+  usePageTitle("Shop");
   const [category, setCategory] = useState("all");
   const [brand, setBrand] = useState("Tous");
   const [search, setSearch] = useState("");
