@@ -1478,6 +1478,10 @@ function PlanResult({
   customProducts: Product[];
 }) {
   const [activeTab, setActiveTab] = useState<"plan" | "shop" | "export">("plan");
+  const [compareCategory, setCompareCategory] = useState<
+    "all" | "gel" | "drink" | "bar" | "chew" | "real-food" | "electrolyte"
+  >("all");
+  const [compareSort, setCompareSort] = useState<"cho-euro" | "efficiency" | "price">("cho-euro");
   const productsCatalog = [...PRODUCTS, ...customProducts];
 
   const estimatedCost = plan.shoppingList.reduce((sum, item) => {
@@ -1498,6 +1502,26 @@ function PlanResult({
     },
     []
   );
+
+  const comparedProducts = productsCatalog
+    .filter((product) => (compareCategory === "all" ? true : product.category === compareCategory))
+    .map((product) => {
+      const choPerEuro = product.price_per_unit > 0 ? product.cho_per_unit / product.price_per_unit : 0;
+      const sodiumPerEuro =
+        product.price_per_unit > 0 ? (product.sodium_per_unit || 0) / product.price_per_unit : 0;
+      const caloriesPerEuro =
+        product.price_per_unit > 0 ? product.calories_per_unit / product.price_per_unit : 0;
+
+      // Score synthétique orienté endurance: priorité CHO/€ + bonus sodium/calories.
+      const efficiencyScore = choPerEuro * 0.7 + sodiumPerEuro * 0.0002 + caloriesPerEuro * 0.001;
+      return { product, choPerEuro, efficiencyScore };
+    })
+    .sort((a, b) => {
+      if (compareSort === "price") return a.product.price_per_unit - b.product.price_per_unit;
+      if (compareSort === "efficiency") return b.efficiencyScore - a.efficiencyScore;
+      return b.choPerEuro - a.choPerEuro;
+    })
+    .slice(0, 12);
 
   const handlePrintPdf = () => {
     const printWindow = window.open("", "_blank", "width=1000,height=800");
@@ -2210,6 +2234,92 @@ function PlanResult({
 
       {activeTab === "shop" && (
         <div>
+          <div style={{ ...S.card, marginBottom: 14 }}>
+            <h3 style={{ fontWeight: 700, marginBottom: 12 }}>Comparateur produits</h3>
+            <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 14 }}>
+              Compare rapidement les produits selon le rendement glucidique et un score global.
+            </p>
+
+            <div style={{ ...S.grid2, marginBottom: 12 }}>
+              <div>
+                <label style={S.label}>CATÉGORIE</label>
+                <select
+                  style={S.select}
+                  value={compareCategory}
+                  onChange={(e) =>
+                    setCompareCategory(
+                      e.target.value as "all" | "gel" | "drink" | "bar" | "chew" | "real-food" | "electrolyte"
+                    )
+                  }
+                >
+                  <option value="all">Toutes</option>
+                  <option value="gel">Gels</option>
+                  <option value="drink">Boissons</option>
+                  <option value="bar">Barres</option>
+                  <option value="chew">Chews</option>
+                  <option value="real-food">Real food</option>
+                  <option value="electrolyte">Electrolytes</option>
+                </select>
+              </div>
+              <div>
+                <label style={S.label}>TRI</label>
+                <select
+                  style={S.select}
+                  value={compareSort}
+                  onChange={(e) => setCompareSort(e.target.value as "cho-euro" | "efficiency" | "price")}
+                >
+                  <option value="cho-euro">CHO / EUR</option>
+                  <option value="efficiency">Efficacite globale</option>
+                  <option value="price">Prix / unite</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {comparedProducts.map(({ product, choPerEuro, efficiencyScore }) => (
+                <div
+                  key={`compare-${product.id}`}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(180px, 2fr) repeat(4, 1fr)",
+                    gap: 10,
+                    alignItems: "center",
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    background: "var(--color-bg)",
+                    border: "1px solid var(--color-border)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <ProductThumb product={product} alt={`${product.brand} ${product.name}`} />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>
+                        {product.brand} - {product.name}
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>{product.category}</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 12 }}>
+                    <div style={{ color: "var(--color-text-muted)" }}>CHO/EUR</div>
+                    <div style={{ fontWeight: 700, color: "var(--color-accent)" }}>{choPerEuro.toFixed(1)} g</div>
+                  </div>
+                  <div style={{ fontSize: 12 }}>
+                    <div style={{ color: "var(--color-text-muted)" }}>Efficacite</div>
+                    <div style={{ fontWeight: 700 }}>{efficiencyScore.toFixed(1)}</div>
+                  </div>
+                  <div style={{ fontSize: 12 }}>
+                    <div style={{ color: "var(--color-text-muted)" }}>CHO/unite</div>
+                    <div style={{ fontWeight: 700 }}>{product.cho_per_unit} g</div>
+                  </div>
+                  <div style={{ fontSize: 12, textAlign: "right" }}>
+                    <div style={{ color: "var(--color-text-muted)" }}>Prix</div>
+                    <div style={{ fontWeight: 700 }}>{product.price_per_unit.toFixed(2)} EUR</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div style={S.card}>
             <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Liste de courses</h3>
 
