@@ -33,7 +33,7 @@ function ThemeToggle() {
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-white">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 text-gray-900 dark:text-white">
       {/* Header */}
       <header className="border-b border-gray-200 dark:border-gray-800 px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
