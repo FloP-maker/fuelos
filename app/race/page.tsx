@@ -333,17 +333,25 @@ function RaceContent() {
             'radial-gradient(circle at top, rgba(239,68,68,0.18), transparent 35%), linear-gradient(180deg, #020617 0%, #000000 100%)',
         }}
       >
+        <div className="fixed top-4 right-4">
+          <Link
+            href="/"
+            className="rounded-lg px-3 py-1.5 text-sm transition-colors"
+            style={{
+              border: '1px solid rgba(255,255,255,0.10)',
+              color: '#cbd5e1',
+              background: 'rgba(255,255,255,0.03)',
+            }}
+          >
+            Accueil
+          </Link>
+        </div>
         <div className="text-6xl mb-6">⚡</div>
         <h1 className="text-2xl font-bold mb-3">Race Mode</h1>
         <p className="text-gray-400 text-center mb-8">Aucun plan actif. Crée ton plan d&apos;abord.</p>
-        <div className="flex gap-3">
-          <Link href="/" className="border border-white/20 text-slate-200 font-semibold py-3 px-5 rounded-xl text-base">
-            Accueil
-          </Link>
-          <Link href="/plan" className="bg-green-500 text-black font-bold py-3 px-6 rounded-xl text-base">
-            Créer mon plan →
-          </Link>
-        </div>
+        <Link href="/plan" className="bg-green-500 text-black font-bold py-3 px-6 rounded-xl text-base">
+          Créer mon plan →
+        </Link>
       </div>
     );
   }

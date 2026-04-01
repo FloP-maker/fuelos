@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import usePageTitle from '../lib/hooks/usePageTitle';
 
 type LearnItem = {
@@ -218,7 +219,49 @@ export default function LearnPage() {
   const firstItem = keyNumbers[0];
 
   return (
-    <main style={{ maxWidth: 1120, margin: '0 auto', padding: '28px 20px 48px' }}>
+    <div>
+      <header
+        style={{
+          borderBottom: '1px solid var(--color-border)',
+          padding: '16px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              background: 'var(--color-accent)',
+              borderRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: 18,
+              color: '#000',
+            }}
+          >
+            F
+          </div>
+          <span style={{ fontWeight: 700, fontSize: 20 }}>FuelOS</span>
+        </div>
+        <Link
+          href="/"
+          style={{
+            border: '1px solid var(--color-border)',
+            borderRadius: 10,
+            padding: '8px 12px',
+            textDecoration: 'none',
+            color: 'var(--color-text)',
+          }}
+        >
+          Accueil
+        </Link>
+      </header>
+      <main style={{ maxWidth: 1120, margin: '0 auto', padding: '28px 20px 48px' }}>
       <div
         style={{
           display: 'flex',
@@ -238,17 +281,7 @@ export default function LearnPage() {
             Bibliotheque educationnelle: articles cliquables, details pratiques et sources verifiables.
           </p>
         </div>
-        <a
-          href="/"
-          style={{
-            border: '1px solid var(--color-border)',
-            borderRadius: 10,
-            padding: '8px 12px',
-            textDecoration: 'none',
-          }}
-        >
-          Accueil
-        </a>
+        <div />
       </div>
 
       <section style={{ marginTop: 24, display: 'grid', gap: 16, gridTemplateColumns: '1.6fr 1fr' }}>
@@ -298,6 +331,7 @@ export default function LearnPage() {
           ))}
         </div>
       </section>
-    </main>
+      </main>
+    </div>
   );
 }
