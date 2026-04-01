@@ -5,45 +5,9 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --color-bg: #0a0a0a;
-    --color-bg-card: #111111;
-    --color-text: #ffffff;
-    --color-text-muted: #a0a0a0;
-    --color-border: #2a2a2a;
-    --color-accent: #22c55e;
-
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --border: 214.3 31.8% 91.4%;
-    --accent: 21 90% 48%;
-  }
-
-  .dark {
-    --color-bg: #0a0a0a;
-    --color-bg-card: #111111;
-    --color-text: #ffffff;
-    --color-text-muted: #a0a0a0;
-    --color-border: #2a2a2a;
-    --color-accent: #22c55e;
-
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --accent: 21 90% 48%;
-  }
-
+  html,
   body {
+    @apply bg-gray-950 text-white;
     font-family: 'Inter', system-ui, sans-serif;
-  }
-}
-
-@layer utilities {
-  * {
-    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
   }
 }
