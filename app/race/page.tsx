@@ -336,9 +336,14 @@ function RaceContent() {
         <div className="text-6xl mb-6">⚡</div>
         <h1 className="text-2xl font-bold mb-3">Race Mode</h1>
         <p className="text-gray-400 text-center mb-8">Aucun plan actif. Crée ton plan d&apos;abord.</p>
-        <Link href="/plan" className="bg-green-500 text-black font-bold py-4 px-8 rounded-xl text-lg">
-          Créer mon plan →
-        </Link>
+        <div className="flex gap-3">
+          <Link href="/" className="border border-white/20 text-slate-200 font-semibold py-3 px-5 rounded-xl text-base">
+            Accueil
+          </Link>
+          <Link href="/plan" className="bg-green-500 text-black font-bold py-3 px-6 rounded-xl text-base">
+            Créer mon plan →
+          </Link>
+        </div>
       </div>
     );
   }
@@ -464,7 +469,7 @@ function RaceContent() {
                 background: 'rgba(255,255,255,0.03)',
               }}
             >
-              ← Accueil
+              Accueil
             </Link>
           </div>
         </div>

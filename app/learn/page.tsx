@@ -247,7 +247,7 @@ export default function LearnPage() {
             textDecoration: 'none',
           }}
         >
-          Retour accueil
+          Accueil
         </a>
       </div>
 

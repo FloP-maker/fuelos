@@ -331,7 +331,7 @@ export default function PlanPage() {
         </div>
 
         <Link href="/" style={{ ...S.btnOutline, textDecoration: "none" }}>
-          ← Accueil
+          Accueil
         </Link>
       </header>
 

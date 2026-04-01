@@ -58,13 +58,6 @@ function getProductExternalLink(product: Product): { href: string; label: string
   if (rawUrl && /^https?:\/\//.test(rawUrl)) {
     try {
       const host = new URL(rawUrl).hostname.toLowerCase();
-      const looksLikeDirectProductPage =
-        /\/products?\/|\/p\/|\/dp\/|\/R-p-|\/shop\//i.test(rawUrl) && !/\/search|\/recherche/i.test(rawUrl);
-
-      if (looksLikeDirectProductPage) {
-        return { href: rawUrl, label: `${getMerchantLabel(rawUrl)} - Voir la page produit` };
-      }
-
       if (host.includes("decathlon")) {
         return {
           href: `https://www.decathlon.fr/search?Ntt=${q}`,
@@ -77,6 +70,11 @@ function getProductExternalLink(product: Product): { href: string; label: string
           label: "i-Run - Rechercher le produit",
         };
       }
+
+      return {
+        href: `https://www.google.com/search?q=${encodeURIComponent(`${product.brand} ${product.name} site:${host}`)}`,
+        label: `${getMerchantLabel(rawUrl)} - Rechercher le produit`,
+      };
     } catch {
       // fallback below
     }
@@ -202,6 +200,22 @@ export default function ShopPage() {
   }, [filtered, priceOverrides]);
 
   const syncRealPrices = async () => {
+    const applyLocalCatalogPrices = () => {
+      const localPrices: Record<string, number> = {};
+      const localMetadata: Record<string, PriceMeta> = {};
+      allProducts.forEach((p) => {
+        localPrices[p.id] = p.price_per_unit;
+        localMetadata[p.id] = {
+          source: "catalog-local",
+          confidence: "low",
+          fetchedAt: new Date().toISOString(),
+        };
+      });
+      setPriceOverrides(localPrices);
+      setPriceMetadata(localMetadata);
+      setLastPriceSyncAt(new Date().toISOString());
+    };
+
     try {
       setIsSyncingPrices(true);
       const ids = allProducts.map((p) => p.id);
@@ -213,20 +227,7 @@ export default function ShopPage() {
 
       if (!response.ok) {
         if (response.status === 404) {
-          // En mode statique (sans serveur API), fallback local sans erreur bloquante.
-          const localPrices: Record<string, number> = {};
-          const localMetadata: Record<string, PriceMeta> = {};
-          allProducts.forEach((p) => {
-            localPrices[p.id] = p.price_per_unit;
-            localMetadata[p.id] = {
-              source: "catalog-local",
-              confidence: "low",
-              fetchedAt: new Date().toISOString(),
-            };
-          });
-          setPriceOverrides(localPrices);
-          setPriceMetadata(localMetadata);
-          setLastPriceSyncAt(new Date().toISOString());
+          applyLocalCatalogPrices();
           alert("API prix non disponible dans cet environnement. Prix catalogue local appliqués.");
           return;
         }
@@ -239,7 +240,9 @@ export default function ShopPage() {
           const chunk = ids.slice(i, i + chunkSize);
           const r = await fetch(`/api/prices?ids=${encodeURIComponent(chunk.join(","))}`);
           if (!r.ok) {
-            throw new Error(`sync-failed-${response.status}-${r.status}`);
+            applyLocalCatalogPrices();
+            alert("API prix indisponible. Prix catalogue local appliqués.");
+            return;
           }
           const part = (await r.json()) as {
             prices: Record<string, number>;
@@ -261,9 +264,9 @@ export default function ShopPage() {
       setPriceOverrides(data.prices || {});
       setPriceMetadata(data.metadata || {});
       setLastPriceSyncAt(new Date().toISOString());
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "unknown";
-      alert(`Impossible de synchroniser les prix réels pour le moment. (${message})`);
+    } catch {
+      applyLocalCatalogPrices();
+      alert("Synchronisation distante indisponible. Prix catalogue local appliqués.");
     } finally {
       setIsSyncingPrices(false);
     }
