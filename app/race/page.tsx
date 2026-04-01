@@ -289,34 +289,50 @@ function RaceContent() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.15),_transparent_45%),radial-gradient(circle_at_80%_20%,_rgba(59,130,246,0.14),_transparent_35%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(239,68,68,0.20),_transparent_40%),radial-gradient(circle_at_80%_20%,_rgba(16,185,129,0.14),_transparent_35%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_rgba(15,23,42,0.25),_rgba(2,6,23,0.92))]" />
+        <div className="absolute inset-0 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.2)_1px,transparent_1px)] [background-size:30px_30px]" />
       </div>
       {/* Header */}
       <div className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/75 backdrop-blur">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-4">
         <div className="flex items-center gap-2">
-          <span className="text-lg font-extrabold tracking-tight text-emerald-300">⚡ FuelOS Race Mode</span>
+          <span className="text-lg font-black uppercase tracking-[0.08em] text-white">⚡ FuelOS Race Mode</span>
           {notifEnabled && <span className="rounded-full border border-emerald-400/30 bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-300">🔔 ON</span>}
+          {raceState.status === 'running' && <span className="rounded-full border border-red-400/40 bg-red-500/15 px-2.5 py-1 text-xs font-bold text-red-300">LIVE</span>}
         </div>
         <Link href="/" className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-300 transition-colors hover:border-white/25 hover:text-white">← Accueil</Link>
         </div>
       </div>
       
       <div className="mx-auto max-w-3xl space-y-5 p-4 md:p-6">
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-center">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-red-200/80">Status</div>
+            <div className="text-sm font-bold text-red-200">{raceState.status.toUpperCase()}</div>
+          </div>
+          <div className="rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-center">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-200/80">Cible</div>
+            <div className="text-sm font-bold text-cyan-200">{event ? `${event.targetTime}h` : '--'}</div>
+          </div>
+          <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-center">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-200/80">Reste</div>
+            <div className="text-sm font-bold text-amber-200">{Math.max(0, totalItems - consumedCount - skippedCount)}</div>
+          </div>
+        </div>
         {/* Timer Card */}
-        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 text-center shadow-2xl shadow-emerald-900/20 backdrop-blur-xl">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 text-center shadow-2xl shadow-red-900/20 backdrop-blur-xl">
           <div className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-400">
             {event ? `${event.sport.toUpperCase()} · ${event.distance}KM · ${event.targetTime}H` : 'RACE'}
           </div>
-          <div className="mb-4 text-6xl font-mono font-black tracking-tight text-white drop-shadow-[0_0_14px_rgba(16,185,129,0.35)]">
+          <div className="mb-4 text-6xl font-mono font-black tracking-tight text-white drop-shadow-[0_0_16px_rgba(239,68,68,0.45)]">
             {formatDuration(raceState.elapsedMs)}
           </div>
           
           {/* Progress bar */}
           <div className="mb-5 h-2.5 w-full overflow-hidden rounded-full bg-slate-800/70">
             <div
-              className="h-2.5 rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 transition-all duration-1000"
+              className="h-2.5 rounded-full bg-gradient-to-r from-red-500 via-orange-400 to-amber-300 transition-all duration-1000"
               style={{ width: `${Math.min(100, (elapsedMin / ((event?.targetTime || 1) * 60)) * 100)}%` }}
             />
           </div>
@@ -325,21 +341,21 @@ function RaceContent() {
           {raceState.status === 'idle' && (
             <button
               onClick={handleStart}
-              className="w-full rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 px-6 py-4 text-xl font-black text-slate-950 shadow-lg shadow-emerald-500/25 transition-all active:scale-95"
+              className="w-full rounded-2xl bg-gradient-to-r from-red-500 via-orange-400 to-amber-300 px-6 py-4 text-xl font-black text-slate-950 shadow-lg shadow-red-500/30 transition-all active:scale-95"
             >
               🏁 DÉMARRER
             </button>
           )}
           {raceState.status === 'running' && (
             <div className="flex gap-3">
-              <button onClick={handlePause} className="flex-1 rounded-xl bg-amber-400 py-4 text-lg font-bold text-slate-950 transition-transform active:scale-95">⏸ Pause</button>
-              <button onClick={handleFinish} className="flex-1 rounded-xl bg-rose-600 py-4 text-lg font-bold text-white transition-transform active:scale-95">🏆 Finir</button>
+              <button onClick={handlePause} className="flex-1 rounded-xl border border-amber-300/30 bg-amber-400 py-4 text-lg font-bold text-slate-950 transition-transform active:scale-95">⏸ Pause</button>
+              <button onClick={handleFinish} className="flex-1 rounded-xl border border-rose-300/20 bg-rose-600 py-4 text-lg font-bold text-white transition-transform active:scale-95">🏆 Finir</button>
             </div>
           )}
           {raceState.status === 'paused' && (
             <div className="flex gap-3">
-              <button onClick={handleResume} className="flex-1 rounded-xl bg-emerald-400 py-4 text-lg font-bold text-slate-950 transition-transform active:scale-95">▶ Reprendre</button>
-              <button onClick={handleFinish} className="flex-1 rounded-xl bg-rose-600 py-4 text-lg font-bold text-white transition-transform active:scale-95">🏆 Finir</button>
+              <button onClick={handleResume} className="flex-1 rounded-xl border border-emerald-300/30 bg-emerald-400 py-4 text-lg font-bold text-slate-950 transition-transform active:scale-95">▶ Reprendre</button>
+              <button onClick={handleFinish} className="flex-1 rounded-xl border border-rose-300/20 bg-rose-600 py-4 text-lg font-bold text-white transition-transform active:scale-95">🏆 Finir</button>
             </div>
           )}
           {raceState.status === 'finished' && (
