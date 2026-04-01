@@ -28,6 +28,10 @@ function formatDuration(ms: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
 function sendNotification(title: string, body: string, tag: string) {
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({ type: 'SHOW_NOTIFICATION', title, body, tag });
@@ -66,9 +70,12 @@ function RaceContent() {
   const [showAlert, setShowAlert] = useState(false);
   const [choDeficit, setChoDeficit] = useState(0);
   const [notifEnabled, setNotifEnabled] = useState(false);
+  const [timingOffsetMin, setTimingOffsetMin] = useState(0);
+  const [completedAtMinByItem, setCompletedAtMinByItem] = useState<Record<number, number>>({});
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const alertShownRef = useRef<Set<number>>(new Set());
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     try {
@@ -119,7 +126,7 @@ function RaceContent() {
 
     for (let i = 0; i < plan.timeline.length; i++) {
       const item = plan.timeline[i];
-      const dueMin = item.timeMin;
+      const dueMin = item.timeMin + timingOffsetMin;
       const isConsumed = raceState.consumedItems.includes(i);
       const isSkipped = raceState.skippedItems.includes(i);
 
@@ -128,6 +135,7 @@ function RaceContent() {
       const alertKey = i * 1000 + 1;
       if (elapsedMin >= dueMin - 1 && elapsedMin < dueMin && !alertShownRef.current.has(alertKey)) {
         alertShownRef.current.add(alertKey);
+        playSoundCue('soon');
         if (notifEnabled) {
           sendNotification('⏰ FuelOS', `Dans 1 min : ${item.product} · ${item.cho}g CHO`, `alert-soon-${i}`);
         }
@@ -138,6 +146,7 @@ function RaceContent() {
         setAlertItem(item);
         setShowAlert(true);
         setRaceState((prev) => ({ ...prev, currentItemIndex: i }));
+        playSoundCue('due');
 
         if (notifEnabled) {
           sendNotification(
@@ -150,9 +159,49 @@ function RaceContent() {
         setTimeout(() => setShowAlert(false), 30000);
       }
     }
-  }, [raceState.elapsedMs, raceState.status, plan, notifEnabled]);
+  }, [raceState.elapsedMs, raceState.status, plan, notifEnabled, timingOffsetMin]);
+
+  const ensureAudioContext = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    if (!audioContextRef.current) {
+      audioContextRef.current = new window.AudioContext();
+    }
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume().catch(() => undefined);
+    }
+  }, []);
+
+  const playSoundCue = useCallback(
+    (type: 'soon' | 'due' | 'confirm') => {
+      const ctx = audioContextRef.current;
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const pattern =
+        type === 'soon'
+          ? [740]
+          : type === 'due'
+          ? [880, 1100]
+          : [660];
+
+      pattern.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, now + idx * 0.16);
+        gain.gain.exponentialRampToValueAtTime(0.09, now + idx * 0.16 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.16 + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.16);
+        osc.stop(now + idx * 0.16 + 0.13);
+      });
+    },
+    []
+  );
 
   const handleStart = useCallback(async () => {
+    ensureAudioContext();
     const granted = await requestNotificationPermission();
     setNotifEnabled(granted);
     setRaceState((prev) => ({
@@ -160,7 +209,7 @@ function RaceContent() {
       status: 'running',
       startTime: Date.now(),
     }));
-  }, []);
+  }, [ensureAudioContext]);
 
   const handlePause = useCallback(() => {
     setRaceState((prev) => ({ ...prev, status: 'paused', startTime: null }));
@@ -202,11 +251,13 @@ function RaceContent() {
         waterConsumed: prev.waterConsumed + (item.water || 0),
         sodiumConsumed: prev.sodiumConsumed + (item.sodium || 0),
       }));
+      setCompletedAtMinByItem((prev) => ({ ...prev, [itemIndex]: raceState.elapsedMs / 60000 }));
 
       setShowAlert(false);
       setChoDeficit((prev) => Math.max(0, prev - (item.cho || 0)));
+      playSoundCue('confirm');
     },
-    [plan]
+    [plan, raceState.elapsedMs, playSoundCue]
   );
 
   const handleSkipped = useCallback(
@@ -218,12 +269,34 @@ function RaceContent() {
         ...prev,
         skippedItems: [...prev.skippedItems, itemIndex],
       }));
+      setCompletedAtMinByItem((prev) => ({ ...prev, [itemIndex]: raceState.elapsedMs / 60000 }));
 
       setChoDeficit((prev) => prev + (item.cho || 0));
       setShowAlert(false);
     },
-    [plan]
+    [plan, raceState.elapsedMs]
   );
+
+  useEffect(() => {
+    if (!plan) return;
+    const completedDeltas = Object.keys(completedAtMinByItem)
+      .map((indexText) => {
+        const index = Number(indexText);
+        const actualMin = completedAtMinByItem[index] ?? 0;
+        const scheduledMin = plan.timeline[index]?.timeMin ?? actualMin;
+        return { actualMin, deltaMin: actualMin - scheduledMin };
+      })
+      .sort((a, b) => a.actualMin - b.actualMin);
+
+    if (completedDeltas.length === 0) {
+      setTimingOffsetMin(0);
+      return;
+    }
+
+    const recent = completedDeltas.slice(-3);
+    const average = recent.reduce((sum, value) => sum + value.deltaMin, 0) / recent.length;
+    setTimingOffsetMin(clamp(average, -12, 12));
+  }, [completedAtMinByItem, plan]);
 
   useEffect(() => {
     if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return;
@@ -280,13 +353,15 @@ function RaceContent() {
     (_, i) => !raceState.consumedItems.includes(i) && !raceState.skippedItems.includes(i)
   );
   const nextItem = nextItemIndex >= 0 ? plan.timeline[nextItemIndex] : null;
-  const nextItemMinFromNow = nextItem ? Math.max(0, nextItem.timeMin - elapsedMin) : null;
+  const nextItemMinFromNow = nextItem ? Math.max(0, nextItem.timeMin + timingOffsetMin - elapsedMin) : null;
 
   const remainingTimeH = plan && event ? Math.max(0.1, event.targetTime - elapsedMin / 60) : 1;
   const adjustedChoPerH =
     choDeficit > 0
       ? Math.round((plan.choPerHour * remainingTimeH + choDeficit) / remainingTimeH)
       : plan.choPerHour;
+  const paceStatus =
+    timingOffsetMin > 0.5 ? `Retard ${timingOffsetMin.toFixed(1)} min` : timingOffsetMin < -0.5 ? `Avance ${Math.abs(timingOffsetMin).toFixed(1)} min` : 'Dans le timing';
 
   const timelineByHour = plan.timeline.reduce<
     Array<{ hour: number; items: Array<{ item: TimelineItem; index: number }> }>
@@ -691,6 +766,19 @@ function RaceContent() {
               </div>
             </div>
           )}
+
+          <div
+            className="rounded-xl p-4"
+            style={{
+              border: '1px solid rgba(56,189,248,0.35)',
+              background: 'rgba(14,116,144,0.12)',
+            }}
+          >
+            <div className="mb-1 text-sm font-bold text-cyan-300">⏱ Adaptation temps reel</div>
+            <div className="text-sm text-cyan-100/90">
+              {paceStatus} · Les rappels futurs sont automatiquement decalés de {Math.abs(timingOffsetMin).toFixed(1)} min.
+            </div>
+          </div>
 
           {/* Timeline */}
           <div

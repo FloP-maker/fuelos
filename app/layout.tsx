@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ServiceWorkerRegistration from "./ServiceWorkerRegistration";
 
 export const metadata: Metadata = {
   title: "FuelOS",
   description: "Votre nutrition endurance pilotée par la data",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
@@ -13,7 +15,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body>{children}</body>
+      <body>
+        <ServiceWorkerRegistration />
+        {children}
+      </body>
     </html>
   );
 }
