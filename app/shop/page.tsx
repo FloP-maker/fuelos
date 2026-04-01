@@ -51,6 +51,50 @@ function getMerchantLabel(productUrl?: string): string {
   }
 }
 
+function getProductExternalLink(product: Product): { href: string; label: string } {
+  const rawUrl = product.productUrl?.trim();
+  const q = encodeURIComponent(`${product.brand} ${product.name}`);
+
+  if (rawUrl && /^https?:\/\//.test(rawUrl)) {
+    try {
+      const host = new URL(rawUrl).hostname.toLowerCase();
+      const looksLikeDirectProductPage =
+        /\/products?\/|\/p\/|\/dp\/|\/R-p-|\/shop\//i.test(rawUrl) && !/\/search|\/recherche/i.test(rawUrl);
+
+      if (looksLikeDirectProductPage) {
+        return { href: rawUrl, label: `${getMerchantLabel(rawUrl)} - Voir la page produit` };
+      }
+
+      if (host.includes("decathlon")) {
+        return {
+          href: `https://www.decathlon.fr/search?Ntt=${q}`,
+          label: "Decathlon - Rechercher le produit",
+        };
+      }
+      if (host.includes("i-run")) {
+        return {
+          href: `https://www.i-run.fr/search/?q=${q}`,
+          label: "i-Run - Rechercher le produit",
+        };
+      }
+    } catch {
+      // fallback below
+    }
+  }
+
+  if (product.brand.toLowerCase().includes("decathlon") || product.name.toLowerCase().includes("aptonia")) {
+    return {
+      href: `https://www.decathlon.fr/search?Ntt=${q}`,
+      label: "Decathlon - Rechercher le produit",
+    };
+  }
+
+  return {
+    href: `https://www.google.com/search?q=${q}`,
+    label: "Voir chez le commerçant",
+  };
+}
+
 export default function ShopPage() {
   usePageTitle("Shop");
   const [category, setCategory] = useState("all");
@@ -168,6 +212,25 @@ export default function ShopPage() {
       });
 
       if (!response.ok) {
+        if (response.status === 404) {
+          // En mode statique (sans serveur API), fallback local sans erreur bloquante.
+          const localPrices: Record<string, number> = {};
+          const localMetadata: Record<string, PriceMeta> = {};
+          allProducts.forEach((p) => {
+            localPrices[p.id] = p.price_per_unit;
+            localMetadata[p.id] = {
+              source: "catalog-local",
+              confidence: "low",
+              fetchedAt: new Date().toISOString(),
+            };
+          });
+          setPriceOverrides(localPrices);
+          setPriceMetadata(localMetadata);
+          setLastPriceSyncAt(new Date().toISOString());
+          alert("API prix non disponible dans cet environnement. Prix catalogue local appliqués.");
+          return;
+        }
+
         // Fallback: GET par lots pour éviter tout problème de body/proxy.
         const mergedPrices: Record<string, number> = {};
         const mergedMetadata: Record<string, PriceMeta> = {};
@@ -176,7 +239,7 @@ export default function ShopPage() {
           const chunk = ids.slice(i, i + chunkSize);
           const r = await fetch(`/api/prices?ids=${encodeURIComponent(chunk.join(","))}`);
           if (!r.ok) {
-            throw new Error(`sync-failed-${r.status}`);
+            throw new Error(`sync-failed-${response.status}-${r.status}`);
           }
           const part = (await r.json()) as {
             prices: Record<string, number>;
@@ -428,6 +491,7 @@ function ProductCard({
   onDelete?: () => void;
 }) {
   const catColor = CAT_COLORS[p.category] || { bg: "#1a1a1a", color: "#888" };
+  const externalLink = getProductExternalLink(p);
   const fetchedAtLabel = priceMeta
     ? new Date(priceMeta.fetchedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
     : null;
@@ -473,14 +537,14 @@ function ProductCard({
           </div>
         </div>
       </div>
-      {p.productUrl && (
+      {externalLink.href && (
         <a
-          href={p.productUrl}
+          href={externalLink.href}
           target="_blank"
           rel="noreferrer"
           style={{ fontSize: 12, color: "#60a5fa", textDecoration: "none", fontWeight: 600 }}
         >
-          {getMerchantLabel(p.productUrl)} - Voir la page produit
+          {externalLink.label}
         </a>
       )}
       {p.description && (
