@@ -4,62 +4,28 @@ import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 export function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
 
-      // Avoid hydration mismatch
-        useEffect(() => setMounted(true), []);
+  useEffect(() => setMounted(true), []);
 
-          if (!mounted) {
-              return (
-                    <button
-                            className="w-9 h-9 rounded-lg border border-gray-700 flex items-center justify-center opacity-0"
-                                    aria-label="Toggle theme"
-                                          />
-                                              );
-                                                }
+  if (!mounted) return null;
 
-                                                  const isDark = resolvedTheme === 'dark';
-
-                                                    return (
-                                                        <button
-                                                              onClick={() => setTheme(isDark ? 'light' : 'dark')}
-                                                                    className="w-9 h-9 rounded-lg border border-gray-700 dark:border-gray-700 light:border-gray-300 flex items-center justify-center transition-all duration-200 hover:border-orange-500/60 hover:bg-orange-500/10 text-gray-400 hover:text-orange-400"
-                                                                          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                                                                                title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                                                                                    >
-                                                                                          {isDark ? (
-                                                                                                  // Sun icon for switching to light
-                                                                                                          <svg
-                                                                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                                                                              width="16"
-                                                                                                                                        height="16"
-                                                                                                                                                  viewBox="0 0 24 24"
-                                                                                                                                                            fill="none"
-                                                                                                                                                                      stroke="currentColor"
-                                                                                                                                                                                strokeWidth="2"
-                                                                                                                                                                                          strokeLinecap="round"
-                                                                                                                                                                                                    strokeLinejoin="round"
-                                                                                                                                                                                                            >
-                                                                                                                                                                                                                      <circle cx="12" cy="12" r="4" />
-                                                                                                                                                                                                                                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-                                                                                                                                                                                                                                        </svg>
-                                                                                                                                                                                                                                              ) : (
-                                                                                                                                                                                                                                                      // Moon icon for switching to dark
-                                                                                                                                                                                                                                                              <svg
-                                                                                                                                                                                                                                                                        xmlns="http://www.w3.org/2000/svg"
-                                                                                                                                                                                                                                                                                  width="16"
-                                                                                                                                                                                                                                                                                            height="16"
-                                                                                                                                                                                                                                                                                                      viewBox="0 0 24 24"
-                                                                                                                                                                                                                                                                                                                fill="none"
-                                                                                                                                                                                                                                                                                                                          stroke="currentColor"
-                                                                                                                                                                                                                                                                                                                                    strokeWidth="2"
-                                                                                                                                                                                                                                                                                                                                              strokeLinecap="round"
-                                                                                                                                                                                                                                                                                                                                                        strokeLinejoin="round"
-                                                                                                                                                                                                                                                                                                                                                                >
-                                                                                                                                                                                                                                                                                                                                                                          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                                                                                                                                                                                                                                                                                                                                                                                  </svg>
-                                                                                                                                                                                                                                                                                                                                                                                        )}
-                                                                                                                                                                                                                                                                                                                                                                                            </button>
-                                                                                                                                                                                                                                                                                                                                                                                              );
-                                                                                                                                                                                                                                                                                                                                                                                              }
+  return (
+    <button
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      className="p-2 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      aria-label="Toggle theme"
+    >
+      {theme === 'dark' ? (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ) : (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+      )}
+    </button>
+  );
+}
