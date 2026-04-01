@@ -272,6 +272,19 @@ function RaceContent() {
   const adjustedChoPerH = choDeficit > 0
     ? Math.round((plan.choPerHour * remainingTimeH + choDeficit) / remainingTimeH)
     : plan.choPerHour;
+  const timelineByHour = plan.timeline.reduce<Array<{ hour: number; items: Array<{ item: TimelineItem; index: number }> }>>(
+    (groups, item, index) => {
+      const hour = Math.floor(item.timeMin / 60);
+      const existingGroup = groups[groups.length - 1];
+      if (!existingGroup || existingGroup.hour !== hour) {
+        groups.push({ hour, items: [{ item, index }] });
+      } else {
+        existingGroup.items.push({ item, index });
+      }
+      return groups;
+    },
+    []
+  );
   
   return (
     <div className="min-h-screen bg-black text-white">
@@ -406,43 +419,52 @@ function RaceContent() {
             <span className="text-gray-500 text-sm">{consumedCount} pris · {skippedCount} passés · {totalItems - consumedCount - skippedCount} restants</span>
           </div>
           <div className="max-h-64 overflow-y-auto">
-            {plan.timeline.map((item, i) => {
-              const isConsumed = raceState.consumedItems.includes(i);
-              const isSkipped = raceState.skippedItems.includes(i);
-              const isCurrent = i === raceState.currentItemIndex && showAlert;
-              const isPast = item.timeMin <= elapsedMin && !isConsumed && !isSkipped;
-              return (
-                <div
-                  key={i}
-                  className={`flex items-center gap-3 px-4 py-3 border-b border-gray-800 last:border-0 ${
-                    isCurrent ? 'bg-yellow-500/10' : isConsumed ? 'opacity-40' : isSkipped ? 'opacity-30 line-through' : ''
-                  }`}
-                >
-                  <div className={`text-sm font-mono w-10 flex-shrink-0 ${isPast && !isConsumed ? 'text-red-400' : 'text-gray-400'}`}>
-                    {Math.floor(item.timeMin)}min
-                  </div>
-                  <div className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs ${
-                    isConsumed ? 'bg-green-500 text-black' : isSkipped ? 'bg-red-500/40 text-red-300' : isCurrent ? 'bg-yellow-500 text-black' : 'bg-gray-700'
-                  }`}>
-                    {isConsumed ? '✓' : isSkipped ? '×' : isCurrent ? '!' : ''}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm truncate">{item.product}</div>
-                    <div className="text-gray-500 text-xs flex gap-2">
-                      <span>⚡{item.cho}g</span>
-                      {item.water && <span>💧{item.water}ml</span>}
-                    </div>
-                  </div>
-                  {/* Quick action buttons when item is past due */}
-                  {isPast && raceState.status === 'running' && (
-                    <div className="flex gap-1 flex-shrink-0">
-                      <button onClick={() => handleConsumed(i)} className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-lg active:scale-95">Pris</button>
-                      <button onClick={() => handleSkipped(i)} className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded-lg active:scale-95">Pass</button>
-                    </div>
-                  )}
+            {timelineByHour.map(group => (
+              <div key={group.hour}>
+                <div className="px-4 py-2 bg-gray-800/60 border-y border-gray-800 sticky top-0 z-10">
+                  <span className="text-xs font-semibold text-gray-300 uppercase tracking-wide">
+                    Heure {group.hour} ({group.hour * 60}-{group.hour * 60 + 59} min)
+                  </span>
                 </div>
-              );
-            })}
+                {group.items.map(({ item, index }) => {
+                  const isConsumed = raceState.consumedItems.includes(index);
+                  const isSkipped = raceState.skippedItems.includes(index);
+                  const isCurrent = index === raceState.currentItemIndex && showAlert;
+                  const isPast = item.timeMin <= elapsedMin && !isConsumed && !isSkipped;
+                  return (
+                    <div
+                      key={index}
+                      className={`flex items-center gap-3 px-4 py-3 border-b border-gray-800 last:border-0 ${
+                        isCurrent ? 'bg-yellow-500/10' : isConsumed ? 'opacity-40' : isSkipped ? 'opacity-30 line-through' : ''
+                      }`}
+                    >
+                      <div className={`text-sm font-mono w-10 flex-shrink-0 ${isPast && !isConsumed ? 'text-red-400' : 'text-gray-400'}`}>
+                        {Math.floor(item.timeMin)}min
+                      </div>
+                      <div className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs ${
+                        isConsumed ? 'bg-green-500 text-black' : isSkipped ? 'bg-red-500/40 text-red-300' : isCurrent ? 'bg-yellow-500 text-black' : 'bg-gray-700'
+                      }`}>
+                        {isConsumed ? '✓' : isSkipped ? '×' : isCurrent ? '!' : ''}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">{item.product}</div>
+                        <div className="text-gray-500 text-xs flex gap-2">
+                          <span>⚡{item.cho}g</span>
+                          {item.water && <span>💧{item.water}ml</span>}
+                        </div>
+                      </div>
+                      {/* Quick action buttons when item is past due */}
+                      {isPast && raceState.status === 'running' && (
+                        <div className="flex gap-1 flex-shrink-0">
+                          <button onClick={() => handleConsumed(index)} className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-lg active:scale-95">Pris</button>
+                          <button onClick={() => handleSkipped(index)} className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded-lg active:scale-95">Pass</button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </div>
       </div>
