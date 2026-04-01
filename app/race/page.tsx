@@ -287,30 +287,36 @@ function RaceContent() {
   );
   
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-slate-950 text-white">
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.15),_transparent_45%),radial-gradient(circle_at_80%_20%,_rgba(59,130,246,0.14),_transparent_35%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_rgba(15,23,42,0.25),_rgba(2,6,23,0.92))]" />
+      </div>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-800">
+      <div className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/75 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-4">
         <div className="flex items-center gap-2">
-          <span className="text-yellow-400 font-bold text-lg">⚡ FuelOS Race Mode</span>
-          {notifEnabled && <span className="text-xs text-green-400 bg-green-400/10 px-2 py-1 rounded">🔔 ON</span>}
+          <span className="text-lg font-extrabold tracking-tight text-emerald-300">⚡ FuelOS Race Mode</span>
+          {notifEnabled && <span className="rounded-full border border-emerald-400/30 bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-300">🔔 ON</span>}
         </div>
-        <Link href="/" className="text-gray-400 text-sm">← Accueil</Link>
+        <Link href="/" className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-300 transition-colors hover:border-white/25 hover:text-white">← Accueil</Link>
+        </div>
       </div>
       
-      <div className="max-w-lg mx-auto p-4 space-y-4">
+      <div className="mx-auto max-w-3xl space-y-5 p-4 md:p-6">
         {/* Timer Card */}
-        <div className="bg-gray-900 rounded-2xl p-6 text-center">
-          <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 text-center shadow-2xl shadow-emerald-900/20 backdrop-blur-xl">
+          <div className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-400">
             {event ? `${event.sport.toUpperCase()} · ${event.distance}KM · ${event.targetTime}H` : 'RACE'}
           </div>
-          <div className="text-6xl font-mono font-bold tracking-tight mb-4">
+          <div className="mb-4 text-6xl font-mono font-black tracking-tight text-white drop-shadow-[0_0_14px_rgba(16,185,129,0.35)]">
             {formatDuration(raceState.elapsedMs)}
           </div>
           
           {/* Progress bar */}
-          <div className="w-full bg-gray-800 rounded-full h-2 mb-4">
+          <div className="mb-5 h-2.5 w-full overflow-hidden rounded-full bg-slate-800/70">
             <div
-              className="bg-green-500 h-2 rounded-full transition-all duration-1000"
+              className="h-2.5 rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 transition-all duration-1000"
               style={{ width: `${Math.min(100, (elapsedMin / ((event?.targetTime || 1) * 60)) * 100)}%` }}
             />
           </div>
@@ -319,46 +325,46 @@ function RaceContent() {
           {raceState.status === 'idle' && (
             <button
               onClick={handleStart}
-              className="w-full bg-green-500 text-black font-bold py-4 px-6 rounded-xl text-xl active:scale-95 transition-transform"
+              className="w-full rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 px-6 py-4 text-xl font-black text-slate-950 shadow-lg shadow-emerald-500/25 transition-all active:scale-95"
             >
               🏁 DÉMARRER
             </button>
           )}
           {raceState.status === 'running' && (
             <div className="flex gap-3">
-              <button onClick={handlePause} className="flex-1 bg-yellow-500 text-black font-bold py-4 rounded-xl text-lg active:scale-95 transition-transform">⏸ Pause</button>
-              <button onClick={handleFinish} className="flex-1 bg-red-600 text-white font-bold py-4 rounded-xl text-lg active:scale-95 transition-transform">🏆 Finir</button>
+              <button onClick={handlePause} className="flex-1 rounded-xl bg-amber-400 py-4 text-lg font-bold text-slate-950 transition-transform active:scale-95">⏸ Pause</button>
+              <button onClick={handleFinish} className="flex-1 rounded-xl bg-rose-600 py-4 text-lg font-bold text-white transition-transform active:scale-95">🏆 Finir</button>
             </div>
           )}
           {raceState.status === 'paused' && (
             <div className="flex gap-3">
-              <button onClick={handleResume} className="flex-1 bg-green-500 text-black font-bold py-4 rounded-xl text-lg active:scale-95 transition-transform">▶ Reprendre</button>
-              <button onClick={handleFinish} className="flex-1 bg-red-600 text-white font-bold py-4 rounded-xl text-lg active:scale-95 transition-transform">🏆 Finir</button>
+              <button onClick={handleResume} className="flex-1 rounded-xl bg-emerald-400 py-4 text-lg font-bold text-slate-950 transition-transform active:scale-95">▶ Reprendre</button>
+              <button onClick={handleFinish} className="flex-1 rounded-xl bg-rose-600 py-4 text-lg font-bold text-white transition-transform active:scale-95">🏆 Finir</button>
             </div>
           )}
           {raceState.status === 'finished' && (
-            <div className="text-green-400 font-bold text-xl">🏆 Course terminée !</div>
+            <div className="text-xl font-bold text-emerald-300">🏆 Course terminée !</div>
           )}
         </div>
         
         {/* Alert Card — shown when item is due */}
         {showAlert && alertItem && raceState.status === 'running' && (
-          <div className="bg-yellow-500/20 border-2 border-yellow-500 rounded-2xl p-5 animate-pulse">
-            <div className="text-yellow-400 font-bold text-sm uppercase mb-1">⚡ Ravitaillement maintenant</div>
-            <div className="text-white font-bold text-xl mb-1">{alertItem.product}</div>
-            <div className="text-gray-300 text-sm mb-4">
+          <div className="animate-pulse rounded-2xl border border-amber-300/50 bg-amber-400/15 p-5 shadow-lg shadow-amber-500/10">
+            <div className="mb-1 text-sm font-bold uppercase text-amber-300">⚡ Ravitaillement maintenant</div>
+            <div className="mb-1 text-xl font-bold text-white">{alertItem.product}</div>
+            <div className="mb-4 text-sm text-amber-50/85">
               {alertItem.cho}g CHO{alertItem.water ? ` · ${alertItem.water}ml` : ''}{alertItem.sodium ? ` · ${alertItem.sodium}mg Na+` : ''}
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => handleConsumed(raceState.currentItemIndex)}
-                className="flex-1 bg-green-500 text-black font-bold py-4 rounded-xl text-lg active:scale-95 transition-transform"
+                className="flex-1 rounded-xl bg-emerald-400 py-4 text-lg font-bold text-slate-950 transition-transform active:scale-95"
               >
                 ✓ Pris
               </button>
               <button
                 onClick={() => handleSkipped(raceState.currentItemIndex)}
-                className="flex-1 bg-gray-700 text-white font-bold py-4 rounded-xl text-lg active:scale-95 transition-transform"
+                className="flex-1 rounded-xl border border-white/20 bg-slate-800/90 py-4 text-lg font-bold text-white transition-transform active:scale-95"
               >
                 Passé
               </button>
@@ -368,15 +374,15 @@ function RaceContent() {
         
         {/* Next Item */}
         {nextItem && !showAlert && raceState.status !== 'finished' && (
-          <div className="bg-gray-900 rounded-2xl p-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-gray-400 text-sm">PROCHAIN</span>
-              <span className={`text-sm font-bold ${nextItemMinFromNow !== null && nextItemMinFromNow < 5 ? 'text-yellow-400' : 'text-gray-400'}`}>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs font-semibold tracking-[0.18em] text-slate-400">PROCHAIN</span>
+              <span className={`text-sm font-bold ${nextItemMinFromNow !== null && nextItemMinFromNow < 5 ? 'text-amber-300' : 'text-slate-400'}`}>
                 {nextItemMinFromNow !== null ? `dans ${Math.round(nextItemMinFromNow)}min` : ''}
               </span>
             </div>
-            <div className="font-bold text-lg">{nextItem.product}</div>
-            <div className="text-gray-400 text-sm mt-1 flex gap-3 flex-wrap">
+            <div className="text-lg font-bold text-slate-100">{nextItem.product}</div>
+            <div className="mt-1 flex flex-wrap gap-3 text-sm text-slate-300">
               <span>⚡ {nextItem.cho}g CHO</span>
               {nextItem.water && <span>💧 {nextItem.water}ml</span>}
               {nextItem.sodium && <span>🧂 {nextItem.sodium}mg Na+</span>}
@@ -386,43 +392,43 @@ function RaceContent() {
         
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-gray-900 rounded-xl p-3 text-center">
-            <div className="text-green-400 font-bold text-xl">{raceState.choConsumed}g</div>
-            <div className="text-gray-500 text-xs mt-1">CHO pris</div>
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-center">
+            <div className="text-xl font-bold text-emerald-300">{raceState.choConsumed}g</div>
+            <div className="mt-1 text-xs text-slate-400">CHO pris</div>
           </div>
-          <div className="bg-gray-900 rounded-xl p-3 text-center">
-            <div className="text-blue-400 font-bold text-xl">{raceState.waterConsumed}ml</div>
-            <div className="text-gray-500 text-xs mt-1">Eau</div>
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-center">
+            <div className="text-xl font-bold text-sky-300">{raceState.waterConsumed}ml</div>
+            <div className="mt-1 text-xs text-slate-400">Eau</div>
           </div>
-          <div className="bg-gray-900 rounded-xl p-3 text-center">
-            <div className={`font-bold text-xl ${compliance >= 80 ? 'text-green-400' : compliance >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-center">
+            <div className={`text-xl font-bold ${compliance >= 80 ? 'text-emerald-300' : compliance >= 50 ? 'text-amber-300' : 'text-rose-300'}`}>
               {compliance}%
             </div>
-            <div className="text-gray-500 text-xs mt-1">Compliance</div>
+            <div className="mt-1 text-xs text-slate-400">Compliance</div>
           </div>
         </div>
         
         {/* Recalcul dynamique — show if there's a deficit */}
         {choDeficit > 0 && (
-          <div className="bg-orange-500/10 border border-orange-500/40 rounded-xl p-4">
-            <div className="text-orange-400 font-bold text-sm mb-1">🔄 Recalcul dynamique</div>
-            <div className="text-gray-300 text-sm">
-              {choDeficit}g CHO manquants redistribués · Objectif ajusté : <span className="text-orange-400 font-bold">{adjustedChoPerH}g/h</span>
+          <div className="rounded-xl border border-orange-400/45 bg-orange-400/10 p-4">
+            <div className="mb-1 text-sm font-bold text-orange-300">🔄 Recalcul dynamique</div>
+            <div className="text-sm text-orange-100/90">
+              {choDeficit}g CHO manquants redistribués · Objectif ajusté : <span className="font-bold text-orange-300">{adjustedChoPerH}g/h</span>
             </div>
           </div>
         )}
         
         {/* Timeline */}
-        <div className="bg-gray-900 rounded-2xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-800 flex justify-between items-center">
-            <span className="font-bold">📋 Timeline</span>
-            <span className="text-gray-500 text-sm">{consumedCount} pris · {skippedCount} passés · {totalItems - consumedCount - skippedCount} restants</span>
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl">
+          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+            <span className="font-bold text-slate-100">📋 Timeline</span>
+            <span className="text-sm text-slate-400">{consumedCount} pris · {skippedCount} passés · {totalItems - consumedCount - skippedCount} restants</span>
           </div>
           <div className="max-h-64 overflow-y-auto">
             {timelineByHour.map(group => (
               <div key={group.hour}>
-                <div className="px-4 py-2 bg-gray-800/60 border-y border-gray-800 sticky top-0 z-10">
-                  <span className="text-xs font-semibold text-gray-300 uppercase tracking-wide">
+                <div className="sticky top-0 z-10 border-y border-white/10 bg-slate-900/90 px-4 py-2 backdrop-blur">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-300">
                     Heure {group.hour} ({group.hour * 60}-{group.hour * 60 + 59} min)
                   </span>
                 </div>
@@ -434,21 +440,21 @@ function RaceContent() {
                   return (
                     <div
                       key={index}
-                      className={`flex items-center gap-3 px-4 py-3 border-b border-gray-800 last:border-0 ${
-                        isCurrent ? 'bg-yellow-500/10' : isConsumed ? 'opacity-40' : isSkipped ? 'opacity-30 line-through' : ''
+                      className={`flex items-center gap-3 border-b border-white/10 px-4 py-3 last:border-0 ${
+                        isCurrent ? 'bg-amber-300/10' : isConsumed ? 'opacity-45' : isSkipped ? 'opacity-35 line-through' : ''
                       }`}
                     >
-                      <div className={`text-sm font-mono w-10 flex-shrink-0 ${isPast && !isConsumed ? 'text-red-400' : 'text-gray-400'}`}>
+                      <div className={`w-10 flex-shrink-0 text-sm font-mono ${isPast && !isConsumed ? 'text-rose-300' : 'text-slate-400'}`}>
                         {Math.floor(item.timeMin)}min
                       </div>
-                      <div className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs ${
-                        isConsumed ? 'bg-green-500 text-black' : isSkipped ? 'bg-red-500/40 text-red-300' : isCurrent ? 'bg-yellow-500 text-black' : 'bg-gray-700'
+                      <div className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-xs ${
+                        isConsumed ? 'bg-emerald-400 text-slate-950' : isSkipped ? 'bg-rose-500/40 text-rose-200' : isCurrent ? 'bg-amber-400 text-slate-950' : 'bg-slate-700'
                       }`}>
                         {isConsumed ? '✓' : isSkipped ? '×' : isCurrent ? '!' : ''}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">{item.product}</div>
-                        <div className="text-gray-500 text-xs flex gap-2">
+                        <div className="truncate text-sm font-medium text-slate-100">{item.product}</div>
+                        <div className="flex gap-2 text-xs text-slate-400">
                           <span>⚡{item.cho}g</span>
                           {item.water && <span>💧{item.water}ml</span>}
                         </div>
@@ -456,8 +462,8 @@ function RaceContent() {
                       {/* Quick action buttons when item is past due */}
                       {isPast && raceState.status === 'running' && (
                         <div className="flex gap-1 flex-shrink-0">
-                          <button onClick={() => handleConsumed(index)} className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-lg active:scale-95">Pris</button>
-                          <button onClick={() => handleSkipped(index)} className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded-lg active:scale-95">Pass</button>
+                          <button onClick={() => handleConsumed(index)} className="rounded-lg bg-emerald-400/15 px-2 py-1 text-xs text-emerald-300 active:scale-95">Pris</button>
+                          <button onClick={() => handleSkipped(index)} className="rounded-lg bg-slate-700 px-2 py-1 text-xs text-slate-300 active:scale-95">Pass</button>
                         </div>
                       )}
                     </div>
