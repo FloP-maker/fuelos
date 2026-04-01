@@ -31,6 +31,12 @@ const CAT_COLORS: Record<string, { bg: string; color: string }> = {
   "real-food": { bg: "rgba(34,197,94,0.12)", color: "#4ade80" },
 };
 
+type PriceMeta = {
+  source: string;
+  confidence: "high" | "medium" | "low";
+  fetchedAt: string;
+};
+
 export default function ShopPage() {
   usePageTitle("Shop");
   const [category, setCategory] = useState("all");
@@ -41,6 +47,7 @@ export default function ShopPage() {
   const [customProducts, setCustomProducts] = useState<Product[]>([]);
   const [showOnlyPhotosToReview, setShowOnlyPhotosToReview] = useState(false);
   const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({});
+  const [priceMetadata, setPriceMetadata] = useState<Record<string, PriceMeta>>({});
   const [isSyncingPrices, setIsSyncingPrices] = useState(false);
   const [lastPriceSyncAt, setLastPriceSyncAt] = useState<string | null>(null);
   const [newCustomProduct, setNewCustomProduct] = useState({
@@ -132,8 +139,12 @@ export default function ShopPage() {
       const ids = allProducts.map((p) => p.id).join(",");
       const response = await fetch(`/api/prices?ids=${encodeURIComponent(ids)}`);
       if (!response.ok) throw new Error("failed");
-      const data = (await response.json()) as { prices: Record<string, number> };
+      const data = (await response.json()) as {
+        prices: Record<string, number>;
+        metadata?: Record<string, PriceMeta>;
+      };
       setPriceOverrides(data.prices || {});
+      setPriceMetadata(data.metadata || {});
       setLastPriceSyncAt(new Date().toISOString());
     } catch {
       alert("Impossible de synchroniser les prix réels pour le moment.");
@@ -321,6 +332,7 @@ export default function ShopPage() {
                 key={p.id}
                 product={p}
                 effectivePrice={getProductPrice(p)}
+                priceMeta={priceMetadata[p.id]}
                 onDelete={p.id.startsWith("custom-") ? () => setCustomProducts((prev) => prev.filter((x) => x.id !== p.id)) : undefined}
               />
             ))}
@@ -351,10 +363,12 @@ export default function ShopPage() {
 function ProductCard({
   product: p,
   effectivePrice,
+  priceMeta,
   onDelete,
 }: {
   product: Product;
   effectivePrice: number;
+  priceMeta?: PriceMeta;
   onDelete?: () => void;
 }) {
   const catColor = CAT_COLORS[p.category] || { bg: "#1a1a1a", color: "#888" };
@@ -367,6 +381,22 @@ function ProductCard({
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: 16, fontWeight: 700 }}>{effectivePrice.toFixed(2)} €</div>
+          {priceMeta && (
+            <div
+              style={{
+                fontSize: 10,
+                marginTop: 2,
+                color:
+                  priceMeta.confidence === "high"
+                    ? "#34d399"
+                    : priceMeta.confidence === "medium"
+                    ? "#f59e0b"
+                    : "var(--color-text-muted)",
+              }}
+            >
+              {priceMeta.source} · {priceMeta.confidence}
+            </div>
+          )}
           <div style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, fontWeight: 700, background: catColor.bg, color: catColor.color, marginTop: 4, display: "inline-block" }}>
             {p.category}
           </div>

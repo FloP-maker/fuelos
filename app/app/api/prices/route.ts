@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
-import { PRODUCTS } from "../../../lib/products";
+import { PRODUCTS } from "../../lib/products";
 
 type Provider = "decathlon" | "i-run" | "other";
+type PriceConfidence = "high" | "medium" | "low";
+
+type PriceResult = {
+  price: number;
+  source: string;
+  confidence: PriceConfidence;
+  fetchedAt: string;
+};
 
 function detectProvider(url?: string): Provider {
   if (!url) return "other";
@@ -11,7 +19,7 @@ function detectProvider(url?: string): Provider {
   return "other";
 }
 
-async function fetchProviderPrice(provider: Provider, productUrl?: string): Promise<number | null> {
+async function fetchProviderPrice(provider: Provider, productUrl?: string): Promise<PriceResult | null> {
   if (!productUrl) return null;
   const baseUrl =
     provider === "decathlon"
@@ -26,9 +34,14 @@ async function fetchProviderPrice(provider: Provider, productUrl?: string): Prom
     const url = `${baseUrl}?url=${encodeURIComponent(productUrl)}`;
     const response = await fetch(url, { cache: "no-store" });
     if (!response.ok) return null;
-    const data = (await response.json()) as { price?: number };
+    const data = (await response.json()) as { price?: number; source?: string; confidence?: PriceConfidence };
     if (typeof data.price !== "number" || Number.isNaN(data.price)) return null;
-    return data.price;
+    return {
+      price: data.price,
+      source: data.source || `${provider}-api`,
+      confidence: data.confidence || "high",
+      fetchedAt: new Date().toISOString(),
+    };
   } catch {
     return null;
   }
@@ -40,10 +53,11 @@ export async function GET(request: Request) {
   const ids = idsParam ? idsParam.split(",").map((v) => v.trim()).filter(Boolean) : [];
 
   if (ids.length === 0) {
-    return NextResponse.json({ prices: {} });
+    return NextResponse.json({ prices: {}, metadata: {} });
   }
 
   const prices: Record<string, number> = {};
+  const metadata: Record<string, Omit<PriceResult, "price">> = {};
 
   for (const id of ids) {
     const product = PRODUCTS.find((p) => p.id === id);
@@ -51,8 +65,23 @@ export async function GET(request: Request) {
 
     const provider = detectProvider(product.productUrl);
     const remotePrice = await fetchProviderPrice(provider, product.productUrl);
-    prices[id] = remotePrice ?? product.price_per_unit;
+    if (remotePrice) {
+      prices[id] = remotePrice.price;
+      metadata[id] = {
+        source: remotePrice.source,
+        confidence: remotePrice.confidence,
+        fetchedAt: remotePrice.fetchedAt,
+      };
+      continue;
+    }
+
+    prices[id] = product.price_per_unit;
+    metadata[id] = {
+      source: provider === "other" ? "catalog-static" : `${provider}-fallback`,
+      confidence: "low",
+      fetchedAt: new Date().toISOString(),
+    };
   }
 
-  return NextResponse.json({ prices });
+  return NextResponse.json({ prices, metadata });
 }
