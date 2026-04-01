@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PRODUCTS } from "../../lib/products";
+import { PRODUCTS } from "../../../lib/products";
 
 type Provider = "decathlon" | "i-run" | "other";
 type PriceConfidence = "high" | "medium" | "low";
