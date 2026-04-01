@@ -157,4 +157,5 @@ export interface Product {
   // 🆕 SOURCES/CRÉDIBILITÉ
   productUrl?: string;        // Lien vers la page produit officielle
   nutritionSource?: string;   // Source des données nutritionnelles
+  imageUrl?: string;          // Photo produit (API/scraping/manual)
 }

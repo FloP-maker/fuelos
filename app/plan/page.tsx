@@ -63,6 +63,7 @@ const [newAidStation, setNewAidStation] = useState({
   const [newCustomProduct, setNewCustomProduct] = useState({
     name: "",
     brand: "",
+    imageUrl: "",
     category: "gel" as Product["category"],
     cho_per_unit: 25,
     water_per_unit: 0,
@@ -75,6 +76,16 @@ const [newAidStation, setNewAidStation] = useState({
   const allProducts = [...PRODUCTS, ...customProducts];
   const getProductsByCategoryWithCustom = (category: Product["category"]) =>
     allProducts.filter(p => p.category === category);
+  const getProductImageUrl = (product: Product): string | undefined => {
+    if (product.imageUrl?.trim()) return product.imageUrl.trim();
+    if (!product.productUrl) return undefined;
+    try {
+      const host = new URL(product.productUrl).hostname.replace(/^www\./, "");
+      return `https://logo.clearbit.com/${host}`;
+    } catch {
+      return undefined;
+    }
+  };
 
   useEffect(() => {
     try {
@@ -275,9 +286,25 @@ const [newAidStation, setNewAidStation] = useState({
                         onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
                         onMouseLeave={(e) => e.currentTarget.style.background = "none"}
                       >
-                        <div style={{ fontWeight: 600 }}>{gel.brand} - {gel.name}</div>
-                        <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
-                          {gel.cho_per_unit}g CHO · {gel.price_per_unit.toFixed(2)}€
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          {getProductImageUrl(gel) && (
+                            <img
+                              src={getProductImageUrl(gel)}
+                              alt={`${gel.brand} ${gel.name}`}
+                              width={28}
+                              height={28}
+                              style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", border: "1px solid var(--color-border)" }}
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          )}
+                          <div>
+                            <div style={{ fontWeight: 600 }}>{gel.brand} - {gel.name}</div>
+                            <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
+                              {gel.cho_per_unit}g CHO · {gel.price_per_unit.toFixed(2)}€
+                            </div>
+                          </div>
                         </div>
                       </button>
                     ))}
@@ -385,9 +412,25 @@ const [newAidStation, setNewAidStation] = useState({
                         onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
                         onMouseLeave={(e) => e.currentTarget.style.background = "none"}
                       >
-                        <div style={{ fontWeight: 600 }}>{drink.brand} - {drink.name}</div>
-                        <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
-                          {drink.cho_per_unit}g CHO · {drink.price_per_unit.toFixed(2)}€
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          {getProductImageUrl(drink) && (
+                            <img
+                              src={getProductImageUrl(drink)}
+                              alt={`${drink.brand} ${drink.name}`}
+                              width={28}
+                              height={28}
+                              style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", border: "1px solid var(--color-border)" }}
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          )}
+                          <div>
+                            <div style={{ fontWeight: 600 }}>{drink.brand} - {drink.name}</div>
+                            <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
+                              {drink.cho_per_unit}g CHO · {drink.price_per_unit.toFixed(2)}€
+                            </div>
+                          </div>
                         </div>
                       </button>
                     ))}
@@ -443,6 +486,10 @@ const [newAidStation, setNewAidStation] = useState({
                   <input style={S.input} value={newCustomProduct.brand} onChange={e => setNewCustomProduct({ ...newCustomProduct, brand: e.target.value })} placeholder="Ex: Perso" />
                 </div>
                 <div>
+                  <label style={S.label}>URL PHOTO (optionnel)</label>
+                  <input style={S.input} value={newCustomProduct.imageUrl} onChange={e => setNewCustomProduct({ ...newCustomProduct, imageUrl: e.target.value })} placeholder="https://..." />
+                </div>
+                <div>
                   <label style={S.label}>CATÉGORIE</label>
                   <select style={S.select} value={newCustomProduct.category} onChange={e => setNewCustomProduct({ ...newCustomProduct, category: e.target.value as Product["category"] })}>
                     {["gel", "drink", "bar", "chew", "real-food", "electrolyte"].map(c => <option key={c} value={c}>{c}</option>)}
@@ -467,6 +514,7 @@ const [newAidStation, setNewAidStation] = useState({
                       id,
                       name: newCustomProduct.name.trim(),
                       brand: newCustomProduct.brand.trim() || "Custom",
+                      imageUrl: newCustomProduct.imageUrl.trim() || undefined,
                       category: newCustomProduct.category,
                       cho_per_unit: newCustomProduct.cho_per_unit,
                       water_per_unit: newCustomProduct.water_per_unit || undefined,
@@ -482,6 +530,7 @@ const [newAidStation, setNewAidStation] = useState({
                     setNewCustomProduct({
                       name: "",
                       brand: "",
+                      imageUrl: "",
                       category: "gel",
                       cho_per_unit: 25,
                       water_per_unit: 0,
@@ -499,9 +548,23 @@ const [newAidStation, setNewAidStation] = useState({
                 <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
                   {customProducts.map(item => (
                     <div key={item.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)" }}>
-                      <div style={{ fontSize: 12 }}>
-                        <div style={{ fontWeight: 700 }}>{item.brand} - {item.name}</div>
-                        <div style={{ color: "var(--color-text-muted)" }}>{item.category} · {item.cho_per_unit}g CHO</div>
+                      <div style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                        {getProductImageUrl(item) && (
+                          <img
+                            src={getProductImageUrl(item)}
+                            alt={`${item.brand} ${item.name}`}
+                            width={28}
+                            height={28}
+                            style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", border: "1px solid var(--color-border)" }}
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        )}
+                        <div>
+                          <div style={{ fontWeight: 700 }}>{item.brand} - {item.name}</div>
+                          <div style={{ color: "var(--color-text-muted)" }}>{item.category} · {item.cho_per_unit}g CHO</div>
+                        </div>
                       </div>
                       <button style={{ ...S.btnOutline, padding: "6px 10px", fontSize: 12 }} onClick={() => setCustomProducts(prev => prev.filter(p => p.id !== item.id))}>Supprimer</button>
                     </div>
@@ -874,6 +937,17 @@ function escapeIcsText(value: string): string {
 function PlanResult({ plan, profile, event, onBack, customProducts }: { plan: FuelPlan; profile: AthleteProfile; event: EventDetails; onBack: () => void; customProducts: Product[] }) {
   const [activeTab, setActiveTab] = useState<"plan"|"shop"|"export">("plan");
   const productsCatalog = [...PRODUCTS, ...customProducts];
+  const getProductImageUrl = (product?: Product): string | undefined => {
+    if (!product) return undefined;
+    if (product.imageUrl?.trim()) return product.imageUrl.trim();
+    if (!product.productUrl) return undefined;
+    try {
+      const host = new URL(product.productUrl).hostname.replace(/^www\./, "");
+      return `https://logo.clearbit.com/${host}`;
+    } catch {
+      return undefined;
+    }
+  };
   const estimatedCost = plan.shoppingList.reduce((sum, item) => {
     const prod = productsCatalog.find(p => p.id === item.productId);
     return sum + (prod?.price_per_unit || 0) * item.quantity;
@@ -1196,6 +1270,10 @@ function PlanResult({ plan, profile, event, onBack, customProducts }: { plan: Fu
     </div>
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {plan.timeline.map((item, i) => (
+        (() => {
+          const productData = productsCatalog.find(p => p.id === item.productId);
+          const productImageUrl = getProductImageUrl(productData);
+          return (
         <div key={i} style={{ 
           display: "flex", 
           alignItems: "flex-start", 
@@ -1232,18 +1310,32 @@ function PlanResult({ plan, profile, event, onBack, customProducts }: { plan: Fu
                 📍 {item.aidStationName || "RAVITAILLEMENT"}
               </div>
             )}
-            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>
-              {item.product}
-              {item.source === "aid-station" && (
-                <span style={{ 
-                  fontSize: 11, 
-                  color: "#60a5fa", 
-                  marginLeft: 6,
-                  fontWeight: 500
-                }}>
-                  (fourni)
-                </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+              {productImageUrl && (
+                <img
+                  src={productImageUrl}
+                  alt={item.product}
+                  width={26}
+                  height={26}
+                  style={{ width: 26, height: 26, borderRadius: 6, objectFit: "cover", border: "1px solid var(--color-border)" }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
               )}
+              <div style={{ fontWeight: 600, fontSize: 14 }}>
+                {item.product}
+                {item.source === "aid-station" && (
+                  <span style={{ 
+                    fontSize: 11, 
+                    color: "#60a5fa", 
+                    marginLeft: 6,
+                    fontWeight: 500
+                  }}>
+                    (fourni)
+                  </span>
+                )}
+              </div>
             </div>
             <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
               {item.quantity} · {item.cho}g CHO
@@ -1281,6 +1373,8 @@ function PlanResult({ plan, profile, event, onBack, customProducts }: { plan: Fu
             {item.type}
           </div>
         </div>
+      );
+        })()
       ))}
     </div>
   </div>
@@ -1293,11 +1387,26 @@ function PlanResult({ plan, profile, event, onBack, customProducts }: { plan: Fu
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
               {plan.shoppingList.map((item, i) => {
                 const prod = productsCatalog.find(p => p.id === item.productId);
+                const productImageUrl = getProductImageUrl(prod);
                 return (
                   <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)" }}>
-                    <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {productImageUrl && (
+                        <img
+                          src={productImageUrl}
+                          alt={prod?.name || item.productId}
+                          width={28}
+                          height={28}
+                          style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", border: "1px solid var(--color-border)" }}
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                      )}
+                      <div>
                       <div style={{ fontWeight: 600, fontSize: 14 }}>{prod?.name || item.productId}</div>
                       <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{prod?.brand} · {prod?.cho_per_unit}g CHO/unité</div>
+                      </div>
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontWeight: 700, color: "var(--color-accent)" }}>x{item.quantity}</div>
