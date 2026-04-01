@@ -37,6 +37,20 @@ type PriceMeta = {
   fetchedAt: string;
 };
 
+function getMerchantLabel(productUrl?: string): string {
+  if (!productUrl || !/^https?:\/\//.test(productUrl)) return "Commercant";
+  try {
+    const host = new URL(productUrl).hostname.toLowerCase();
+    if (host.includes("decathlon")) return "Decathlon";
+    if (host.includes("i-run")) return "i-Run";
+    if (host.includes("maurten")) return "Maurten";
+    if (host.includes("scienceinsport")) return "Science in Sport";
+    return host.replace("www.", "");
+  } catch {
+    return "Commercant";
+  }
+}
+
 export default function ShopPage() {
   usePageTitle("Shop");
   const [category, setCategory] = useState("all");
@@ -146,12 +160,37 @@ export default function ShopPage() {
   const syncRealPrices = async () => {
     try {
       setIsSyncingPrices(true);
-      const response = await fetch("/api/prices", {
+      const ids = allProducts.map((p) => p.id);
+      let response = await fetch("/api/prices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: allProducts.map((p) => p.id) }),
+        body: JSON.stringify({ ids }),
       });
-      if (!response.ok) throw new Error("failed");
+
+      if (!response.ok) {
+        // Fallback: GET par lots pour éviter tout problème de body/proxy.
+        const mergedPrices: Record<string, number> = {};
+        const mergedMetadata: Record<string, PriceMeta> = {};
+        const chunkSize = 80;
+        for (let i = 0; i < ids.length; i += chunkSize) {
+          const chunk = ids.slice(i, i + chunkSize);
+          const r = await fetch(`/api/prices?ids=${encodeURIComponent(chunk.join(","))}`);
+          if (!r.ok) {
+            throw new Error(`sync-failed-${r.status}`);
+          }
+          const part = (await r.json()) as {
+            prices: Record<string, number>;
+            metadata?: Record<string, PriceMeta>;
+          };
+          Object.assign(mergedPrices, part.prices || {});
+          Object.assign(mergedMetadata, part.metadata || {});
+        }
+        setPriceOverrides(mergedPrices);
+        setPriceMetadata(mergedMetadata);
+        setLastPriceSyncAt(new Date().toISOString());
+        return;
+      }
+
       const data = (await response.json()) as {
         prices: Record<string, number>;
         metadata?: Record<string, PriceMeta>;
@@ -159,8 +198,9 @@ export default function ShopPage() {
       setPriceOverrides(data.prices || {});
       setPriceMetadata(data.metadata || {});
       setLastPriceSyncAt(new Date().toISOString());
-    } catch {
-      alert("Impossible de synchroniser les prix réels pour le moment.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown";
+      alert(`Impossible de synchroniser les prix réels pour le moment. (${message})`);
     } finally {
       setIsSyncingPrices(false);
     }
@@ -394,9 +434,20 @@ function ProductCard({
   return (
     <div style={{ background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 12, padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-accent)", letterSpacing: "0.8px", textTransform: "uppercase" }}>{p.brand}</div>
-          <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>{p.name}</div>
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+          {p.imageUrl && /^https?:\/\//.test(p.imageUrl) ? (
+            <img src={p.imageUrl} alt={p.name} style={{ width: 26, height: 26, objectFit: "contain", borderRadius: 6, border: "1px solid var(--color-border)", background: "var(--color-bg)" }} />
+          ) : fallbackImageUrl ? (
+            <img src={fallbackImageUrl} alt={p.name} style={{ width: 26, height: 26, objectFit: "contain", borderRadius: 6, border: "1px solid var(--color-border)", background: "var(--color-bg)", padding: 2 }} />
+          ) : (
+            <div style={{ width: 26, height: 26, borderRadius: 6, border: "1px dashed #f59e0b", color: "#f59e0b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>
+              ?
+            </div>
+          )}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-accent)", letterSpacing: "0.8px", textTransform: "uppercase" }}>{p.brand}</div>
+            <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>{p.name}</div>
+          </div>
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: 16, fontWeight: 700 }}>{effectivePrice.toFixed(2)} €</div>
@@ -422,14 +473,15 @@ function ProductCard({
           </div>
         </div>
       </div>
-      {p.imageUrl && /^https?:\/\//.test(p.imageUrl) ? (
-        <img src={p.imageUrl} alt={p.name} style={{ width: "100%", height: 140, objectFit: "contain", borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-bg)" }} />
-      ) : fallbackImageUrl ? (
-        <img src={fallbackImageUrl} alt={p.name} style={{ width: "100%", height: 80, objectFit: "contain", borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-bg)", padding: 12 }} />
-      ) : (
-        <div style={{ width: "100%", height: 80, borderRadius: 8, border: "1px dashed #f59e0b", color: "#f59e0b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>
-          Photo à revoir
-        </div>
+      {p.productUrl && (
+        <a
+          href={p.productUrl}
+          target="_blank"
+          rel="noreferrer"
+          style={{ fontSize: 12, color: "#60a5fa", textDecoration: "none", fontWeight: 600 }}
+        >
+          {getMerchantLabel(p.productUrl)} - Voir la page produit
+        </a>
       )}
       {p.description && (
         <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.5 }}>{p.description}</div>
