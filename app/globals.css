@@ -15,7 +15,77 @@
 }
 
 * {
-    box-sizing: border-box;
+    box-sizing: border-box;@import "tailwindcss";
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    /* ─── Dark mode (default) ─────────────────────────────── */
+    :root,
+    .dark {
+      --color-bg: #0a0a0a;
+        --color-bg-card: #141414;
+          --color-bg-card-hover: #1a1a1a;
+            --color-border: #262626;
+              --color-text: #fafafa;
+                --color-text-muted: #a3a3a3;
+                  --color-accent: #22c55e;
+                    --color-accent-hover: #16a34a;
+                      --color-danger: #ef4444;
+                        --color-warning: #f59e0b;
+                        }
+
+                        /* ─── Light mode ──────────────────────────────────────── */
+                        .light {
+                          --color-bg: #f8f8f8;
+                            --color-bg-card: #ffffff;
+                              --color-bg-card-hover: #f0f0f0;
+                                --color-border: #e5e5e5;
+                                  --color-text: #0a0a0a;
+                                    --color-text-muted: #737373;
+                                      --color-accent: #16a34a;
+                                        --color-accent-hover: #15803d;
+                                          --color-danger: #dc2626;
+                                            --color-warning: #d97706;
+                                            }
+
+                                            * {
+                                              box-sizing: border-box;
+                                                padding: 0;
+                                                  margin: 0;
+                                                  }
+
+                                                  /* ─── Smooth theme transition ─────────────────────────── */
+                                                  html {
+                                                    transition: background-color 0.3s ease, color 0.3s ease;
+                                                    }
+
+                                                    *,
+                                                    *::before,
+                                                    *::after {
+                                                      transition-property: background-color, border-color, color, box-shadow;
+                                                        transition-duration: 0.2s;
+                                                          transition-timing-function: ease;
+                                                          }
+
+                                                          /* Reset transitions for motion-sensitive elements */
+                                                          .no-transition,
+                                                          .no-transition * {
+                                                            transition: none !important;
+                                                            }
+
+                                                            html, body {
+                                                              max-width: 100vw;
+                                                                overflow-x: hidden;
+                                                                  background-color: var(--color-bg);
+                                                                    color: var(--color-text);
+                                                                      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                                                                        -webkit-font-smoothing: antialiased;
+                                                                          -moz-osx-font-smoothing: grayscale;
+                                                                          }
+
+                                                                          a {
+                                                                            color: inherit;
+                                                                              text-decoration: none;
+                                                                              }
     padding: 0;
     margin: 0;
 }
