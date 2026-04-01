@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { PRODUCTS } from "../lib/products";
 import type { Product } from "../lib/types";
@@ -15,13 +15,12 @@ const CATEGORIES = [
   { id: "real-food", label: "Vraie nourriture" },
 ];
 
-const BRANDS = ["Tous", "Maurten", "Science in Sport", "Tailwind", "Näak", "GU Energy", "Spring Energy", "Clif Bar", "Skratch Labs", "Precision Hydration", "Nature"];
-
 const DIET_FILTERS = [
   { id: "vegan", label: "Vegan" },
   { id: "gluten-free", label: "Sans gluten" },
   { id: "real-food", label: "Vraie nourriture" },
 ];
+const CUSTOM_PRODUCTS_STORAGE_KEY = "fuelos_custom_products";
 
 const CAT_COLORS: Record<string, { bg: string; color: string }> = {
   gel: { bg: "rgba(239,68,68,0.12)", color: "#f87171" },
@@ -39,6 +38,53 @@ export default function ShopPage() {
   const [search, setSearch] = useState("");
   const [dietFilters, setDietFilters] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"name" | "cho" | "price">("name");
+  const [customProducts, setCustomProducts] = useState<Product[]>([]);
+  const [showOnlyPhotosToReview, setShowOnlyPhotosToReview] = useState(false);
+  const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({});
+  const [isSyncingPrices, setIsSyncingPrices] = useState(false);
+  const [lastPriceSyncAt, setLastPriceSyncAt] = useState<string | null>(null);
+  const [newCustomProduct, setNewCustomProduct] = useState({
+    name: "",
+    brand: "",
+    imageUrl: "",
+    productUrl: "",
+    category: "gel" as Product["category"],
+    cho_per_unit: 25,
+    water_per_unit: 0,
+    sodium_per_unit: 0,
+    calories_per_unit: 100,
+    price_per_unit: 2,
+    weight_g: 40,
+  });
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(CUSTOM_PRODUCTS_STORAGE_KEY);
+      if (saved) {
+        setCustomProducts(JSON.parse(saved) as Product[]);
+      }
+    } catch {
+      // ignore invalid local data
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(CUSTOM_PRODUCTS_STORAGE_KEY, JSON.stringify(customProducts));
+  }, [customProducts]);
+
+  const allProducts = useMemo(() => [...customProducts, ...PRODUCTS], [customProducts]);
+  const availableBrands = useMemo(
+    () => ["Tous", ...new Set(allProducts.map((p) => p.brand))],
+    [allProducts]
+  );
+
+  const getProductPrice = (product: Product): number => {
+    return priceOverrides[product.id] ?? product.price_per_unit;
+  };
+
+  const hasValidImage = (product: Product): boolean => {
+    return Boolean(product.imageUrl && /^https?:\/\//.test(product.imageUrl));
+  };
 
   const toggleDiet = (id: string) => {
     setDietFilters(prev =>
@@ -47,7 +93,7 @@ export default function ShopPage() {
   };
 
   const filtered = useMemo(() => {
-    return PRODUCTS
+    return allProducts
       .filter(p => category === "all" || p.category === category)
       .filter(p => brand === "Tous" || p.brand === brand)
       .filter(p => {
@@ -58,12 +104,43 @@ export default function ShopPage() {
           || (p.description || "").toLowerCase().includes(q);
       })
       .filter(p => dietFilters.every(d => p.diet_tags.includes(d)))
+      .filter(p => !showOnlyPhotosToReview || !hasValidImage(p))
       .sort((a, b) => {
         if (sortBy === "cho") return b.cho_per_unit - a.cho_per_unit;
-        if (sortBy === "price") return a.price_per_unit - b.price_per_unit;
+        if (sortBy === "price") return getProductPrice(a) - getProductPrice(b);
         return a.name.localeCompare(b.name);
       });
-  }, [category, brand, search, dietFilters, sortBy]);
+  }, [allProducts, category, brand, search, dietFilters, showOnlyPhotosToReview, sortBy, priceOverrides]);
+
+  const comparedProducts = useMemo(() => {
+    return filtered
+      .map((product) => {
+        const effectivePrice = getProductPrice(product);
+        const choPerEuro = effectivePrice > 0 ? product.cho_per_unit / effectivePrice : 0;
+        const sodiumPerEuro = effectivePrice > 0 ? (product.sodium_per_unit || 0) / effectivePrice : 0;
+        const caloriesPerEuro = effectivePrice > 0 ? product.calories_per_unit / effectivePrice : 0;
+        const efficiencyScore = choPerEuro * 0.7 + sodiumPerEuro * 0.0002 + caloriesPerEuro * 0.001;
+        return { product, choPerEuro, efficiencyScore };
+      })
+      .sort((a, b) => b.choPerEuro - a.choPerEuro)
+      .slice(0, 8);
+  }, [filtered, priceOverrides]);
+
+  const syncRealPrices = async () => {
+    try {
+      setIsSyncingPrices(true);
+      const ids = allProducts.map((p) => p.id).join(",");
+      const response = await fetch(`/api/prices?ids=${encodeURIComponent(ids)}`);
+      if (!response.ok) throw new Error("failed");
+      const data = (await response.json()) as { prices: Record<string, number> };
+      setPriceOverrides(data.prices || {});
+      setLastPriceSyncAt(new Date().toISOString());
+    } catch {
+      alert("Impossible de synchroniser les prix réels pour le moment.");
+    } finally {
+      setIsSyncingPrices(false);
+    }
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--color-bg)", color: "var(--color-text)", fontFamily: "system-ui, sans-serif" }}>
@@ -87,8 +164,70 @@ export default function ShopPage() {
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px" }}>
         <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Catalogue produits</div>
         <div style={{ color: "var(--color-text-muted)", fontSize: 14, marginBottom: 24 }}>
-          {PRODUCTS.length} produits · Maurten, SiS, Tailwind, Näak, GU Energy, Clif Bar, Spring Energy…
+          {allProducts.length} produits ({customProducts.length} custom) · photos à revoir : {allProducts.filter((p) => !hasValidImage(p)).length}
         </div>
+
+        <section style={{ marginBottom: 18, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 10, padding: 14 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>Ajouter un produit custom</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(140px, 1fr))", gap: 8 }}>
+            <input style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Nom" value={newCustomProduct.name} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, name: e.target.value })} />
+            <input style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Marque" value={newCustomProduct.brand} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, brand: e.target.value })} />
+            <select style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} value={newCustomProduct.category} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, category: e.target.value as Product["category"] })}>
+              {["gel", "drink", "bar", "chew", "real-food", "electrolyte"].map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <input style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="URL photo https://..." value={newCustomProduct.imageUrl} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, imageUrl: e.target.value })} />
+            <input style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="URL produit (Decathlon/i-Run...)" value={newCustomProduct.productUrl} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, productUrl: e.target.value })} />
+            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="CHO" value={newCustomProduct.cho_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, cho_per_unit: +e.target.value })} />
+            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Prix EUR" value={newCustomProduct.price_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, price_per_unit: +e.target.value })} />
+            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="kcal" value={newCustomProduct.calories_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, calories_per_unit: +e.target.value })} />
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button onClick={() => {
+              if (!newCustomProduct.name.trim()) return alert("Nom requis");
+              const custom: Product = {
+                id: `custom-${Date.now()}`,
+                name: newCustomProduct.name.trim(),
+                brand: newCustomProduct.brand.trim() || "Custom",
+                category: newCustomProduct.category,
+                cho_per_unit: newCustomProduct.cho_per_unit,
+                water_per_unit: newCustomProduct.water_per_unit || undefined,
+                sodium_per_unit: newCustomProduct.sodium_per_unit || undefined,
+                calories_per_unit: newCustomProduct.calories_per_unit,
+                price_per_unit: newCustomProduct.price_per_unit,
+                weight_g: newCustomProduct.weight_g,
+                allergens: [],
+                diet_tags: [],
+                description: "Produit personnalisé",
+                imageUrl: newCustomProduct.imageUrl.trim() || undefined,
+                productUrl: newCustomProduct.productUrl.trim() || undefined,
+              };
+              setCustomProducts((prev) => [custom, ...prev]);
+              setNewCustomProduct({
+                name: "",
+                brand: "",
+                imageUrl: "",
+                productUrl: "",
+                category: "gel",
+                cho_per_unit: 25,
+                water_per_unit: 0,
+                sodium_per_unit: 0,
+                calories_per_unit: 100,
+                price_per_unit: 2,
+                weight_g: 40,
+              });
+            }} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-accent)", color: "#000", fontWeight: 700 }}>
+              + Ajouter
+            </button>
+            <button onClick={syncRealPrices} disabled={isSyncingPrices} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid var(--color-border)", background: "transparent", color: "var(--color-text)", fontWeight: 600 }}>
+              {isSyncingPrices ? "Sync prix..." : "Mettre à jour prix réels (Decathlon/i-Run)"}
+            </button>
+            {lastPriceSyncAt && (
+              <span style={{ fontSize: 12, color: "var(--color-text-muted)", alignSelf: "center" }}>
+                sync: {new Date(lastPriceSyncAt).toLocaleTimeString("fr-FR")}
+              </span>
+            )}
+          </div>
+        </section>
 
         {/* Search + Sort */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16, alignItems: "center" }}>
@@ -112,8 +251,22 @@ export default function ShopPage() {
             value={brand}
             onChange={e => setBrand(e.target.value)}
           >
-            {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+            {availableBrands.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
+          <button
+            onClick={() => setShowOnlyPhotosToReview((prev) => !prev)}
+            style={{
+              padding: "8px 12px",
+              borderRadius: 8,
+              border: showOnlyPhotosToReview ? "1px solid #f59e0b" : "1px solid var(--color-border)",
+              background: showOnlyPhotosToReview ? "rgba(245,158,11,0.1)" : "transparent",
+              color: showOnlyPhotosToReview ? "#f59e0b" : "var(--color-text-muted)",
+              fontSize: 12,
+              fontWeight: 700,
+            }}
+          >
+            Photos à revoir
+          </button>
         </div>
 
         {/* Category chips */}
@@ -163,15 +316,47 @@ export default function ShopPage() {
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
-            {filtered.map(p => <ProductCard key={p.id} product={p} />)}
+            {filtered.map(p => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                effectivePrice={getProductPrice(p)}
+                onDelete={p.id.startsWith("custom-") ? () => setCustomProducts((prev) => prev.filter((x) => x.id !== p.id)) : undefined}
+              />
+            ))}
           </div>
         )}
+
+        <section style={{ marginTop: 20, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 10, padding: 14 }}>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>Comparateur produits (CHO/€ + efficacité)</div>
+          <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 10 }}>
+            Classement sur la sélection courante (filtres appliqués).
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {comparedProducts.map(({ product, choPerEuro, efficiencyScore }) => (
+              <div key={`cmp-${product.id}`} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 8, padding: "8px 10px", borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-bg)" }}>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{product.brand} - {product.name}</div>
+                <div style={{ fontSize: 12 }}><span style={{ color: "var(--color-text-muted)" }}>CHO/€ </span><strong>{choPerEuro.toFixed(1)}</strong></div>
+                <div style={{ fontSize: 12 }}><span style={{ color: "var(--color-text-muted)" }}>Eff. </span><strong>{efficiencyScore.toFixed(1)}</strong></div>
+                <div style={{ fontSize: 12, textAlign: "right" }}><span style={{ color: "var(--color-text-muted)" }}>Prix </span><strong>{getProductPrice(product).toFixed(2)} €</strong></div>
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
     </div>
   );
 }
 
-function ProductCard({ product: p }: { product: Product }) {
+function ProductCard({
+  product: p,
+  effectivePrice,
+  onDelete,
+}: {
+  product: Product;
+  effectivePrice: number;
+  onDelete?: () => void;
+}) {
   const catColor = CAT_COLORS[p.category] || { bg: "#1a1a1a", color: "#888" };
   return (
     <div style={{ background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 12, padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
@@ -181,12 +366,19 @@ function ProductCard({ product: p }: { product: Product }) {
           <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>{p.name}</div>
         </div>
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>{p.price_per_unit.toFixed(2)} €</div>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>{effectivePrice.toFixed(2)} €</div>
           <div style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, fontWeight: 700, background: catColor.bg, color: catColor.color, marginTop: 4, display: "inline-block" }}>
             {p.category}
           </div>
         </div>
       </div>
+      {p.imageUrl && /^https?:\/\//.test(p.imageUrl) ? (
+        <img src={p.imageUrl} alt={p.name} style={{ width: "100%", height: 140, objectFit: "contain", borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-bg)" }} />
+      ) : (
+        <div style={{ width: "100%", height: 80, borderRadius: 8, border: "1px dashed #f59e0b", color: "#f59e0b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>
+          Photo à revoir
+        </div>
+      )}
       {p.description && (
         <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.5 }}>{p.description}</div>
       )}
@@ -219,6 +411,14 @@ function ProductCard({ product: p }: { product: Product }) {
             </span>
           ))}
         </div>
+      )}
+      {onDelete && (
+        <button
+          onClick={onDelete}
+          style={{ marginTop: 4, padding: "6px 10px", borderRadius: 8, border: "1px solid #ef4444", background: "transparent", color: "#ef4444", fontSize: 12, fontWeight: 700 }}
+        >
+          Supprimer custom
+        </button>
       )}
     </div>
   );
