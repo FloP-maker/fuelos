@@ -739,9 +739,147 @@ const [newAidStation, setNewAidStation] = useState({
   );
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function PlanResult({ plan, profile, event, onBack }: { plan: FuelPlan; profile: AthleteProfile; event: EventDetails; onBack: () => void }) {
   const [activeTab, setActiveTab] = useState<"plan"|"shop"|"export">("plan");
-  
+  const estimatedCost = plan.shoppingList.reduce((sum, item) => {
+    const prod = PRODUCTS.find(p => p.id === item.productId);
+    return sum + (prod?.price_per_unit || 0) * item.quantity;
+  }, 0);
+
+  const timelineByHour = plan.timeline.reduce<Array<{ hour: number; items: FuelPlan["timeline"] }>>((groups, item) => {
+    const hour = Math.floor(item.timeMin / 60);
+    const group = groups[groups.length - 1];
+    if (!group || group.hour !== hour) {
+      groups.push({ hour, items: [item] });
+    } else {
+      group.items.push(item);
+    }
+    return groups;
+  }, []);
+
+  const handlePrintPdf = () => {
+    const printWindow = window.open("", "_blank", "width=1000,height=800");
+    if (!printWindow) {
+      alert("Autorise les pop-ups pour exporter en PDF.");
+      return;
+    }
+
+    const warningBlocks = (plan.warnings || [])
+      .map(w => `<li>${escapeHtml(w.replace(/^(⚠️|💡|ℹ️)\s*/, ""))}</li>`)
+      .join("");
+
+    const timelineBlocks = timelineByHour
+      .map(group => {
+        const rows = group.items
+          .map(item => {
+            const source = item.source === "aid-station" ? ` · <span class="muted">📍 ${escapeHtml(item.aidStationName || "ravitaillement fourni")}</span>` : "";
+            const details = `${item.quantity} · ${item.cho}g CHO${item.water ? ` · ${item.water}ml eau` : ""}${item.sodium ? ` · ${item.sodium}mg Na+` : ""}`;
+            return `
+              <tr>
+                <td>${Math.floor(item.timeMin / 60)}h${String(item.timeMin % 60).padStart(2, "0")}</td>
+                <td>${escapeHtml(item.product)}${source}</td>
+                <td>${escapeHtml(details)}</td>
+                <td>${escapeHtml(item.type)}</td>
+              </tr>
+            `;
+          })
+          .join("");
+
+        return `
+          <h3>Heure ${group.hour}</h3>
+          <table>
+            <thead>
+              <tr><th>Heure</th><th>Produit</th><th>Dose</th><th>Type</th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+      })
+      .join("");
+
+    const shoppingRows = plan.shoppingList
+      .map(item => {
+        const prod = PRODUCTS.find(p => p.id === item.productId);
+        const unitPrice = prod?.price_per_unit || 0;
+        return `
+          <tr>
+            <td>${escapeHtml(prod?.brand || "")} ${escapeHtml(prod?.name || item.productId)}</td>
+            <td>x${item.quantity}</td>
+            <td>${(unitPrice * item.quantity).toFixed(2)}€</td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    const html = `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>FuelOS - Plan nutritionnel</title>
+    <style>
+      @page { size: A4; margin: 14mm; }
+      body { font-family: Inter, Arial, sans-serif; color: #111; margin: 0; }
+      .header { margin-bottom: 18px; border-bottom: 2px solid #111; padding-bottom: 12px; }
+      .title { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+      .sub { color: #444; font-size: 12px; }
+      .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0 20px; }
+      .kpi { border: 1px solid #ddd; border-radius: 8px; padding: 10px; }
+      .kpi .v { font-size: 22px; font-weight: 800; }
+      .kpi .l { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: .04em; }
+      h2 { font-size: 16px; margin: 18px 0 8px; }
+      h3 { font-size: 13px; margin: 12px 0 6px; color: #222; }
+      ul { margin: 0; padding-left: 18px; }
+      li { margin: 0 0 4px; font-size: 12px; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+      th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 11px; text-align: left; vertical-align: top; }
+      th { background: #f3f4f6; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+      .muted { color: #666; font-size: 10px; }
+      .footer { margin-top: 16px; color: #666; font-size: 10px; border-top: 1px solid #ddd; padding-top: 8px; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="title">FuelOS - Plan nutritionnel</div>
+      <div class="sub">${escapeHtml(event.sport)} · ${event.distance} km · ${event.targetTime} h · ${escapeHtml(event.weather)}</div>
+      <div class="sub">Profil: ${profile.weight} kg · ${profile.age} ans · GI ${escapeHtml(profile.giTolerance)}</div>
+    </div>
+
+    <div class="grid">
+      <div class="kpi"><div class="v">${plan.choPerHour}g</div><div class="l">CHO / heure</div></div>
+      <div class="kpi"><div class="v">${plan.waterPerHour}ml</div><div class="l">Eau / heure</div></div>
+      <div class="kpi"><div class="v">${plan.sodiumPerHour}mg</div><div class="l">Sodium / heure</div></div>
+      <div class="kpi"><div class="v">${plan.totalCalories}</div><div class="l">Calories totales</div></div>
+    </div>
+
+    ${warningBlocks ? `<h2>Avertissements & conseils</h2><ul>${warningBlocks}</ul>` : ""}
+    <h2>Timeline de course</h2>
+    ${timelineBlocks}
+    <h2>Liste de courses</h2>
+    <table>
+      <thead><tr><th>Produit</th><th>Quantité</th><th>Coût estimé</th></tr></thead>
+      <tbody>${shoppingRows}</tbody>
+    </table>
+    <div style="font-weight:700; font-size:12px;">Coût total estimé: ${estimatedCost.toFixed(2)}€</div>
+    <div class="footer">Généré le ${new Date().toLocaleString("fr-FR")} · FuelOS</div>
+  </body>
+</html>`;
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
@@ -992,6 +1130,7 @@ function PlanResult({ plan, profile, event, onBack }: { plan: FuelPlan; profile:
                 localStorage.setItem("fuelos_active_plan", JSON.stringify({ plan, profile, event, savedAt: new Date().toISOString() }));
                 alert("Plan sauvegardé ! Accédez à Race Mode pour l'utiliser.");
               }},
+              { icon: "🖨️", label: "Exporter PDF", desc: "Format A4 imprimable (mise en page propre)", action: handlePrintPdf },
               { icon: "📋", label: "Copier JSON", desc: "Pour développeurs / backup", action: () => {
                 navigator.clipboard.writeText(JSON.stringify({ plan, profile, event }, null, 2));
                 alert("Plan copié dans le presse-papier !");
