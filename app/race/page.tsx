@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useCallback,
+  useId,
   type CSSProperties,
   type ReactNode,
 } from 'react';
@@ -191,16 +192,12 @@ function DestructiveConfirmOverlay({
   onConfirm: () => void;
   children: ReactNode;
 }) {
+  const titleId = useId();
   if (!open) return null;
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="race-destructive-confirm-title"
-      style={S.confirmBackdrop}
-    >
+    <div role="dialog" aria-modal="true" aria-labelledby={titleId} style={S.confirmBackdrop}>
       <div style={S.confirmPanel}>
-        <h2 id="race-destructive-confirm-title" style={{ fontWeight: 900, fontSize: 18, margin: '0 0 14px' }}>
+        <h2 id={titleId} style={{ fontWeight: 900, fontSize: 18, margin: '0 0 14px' }}>
           {title}
         </h2>
         <div style={{ marginBottom: 20 }}>{children}</div>
@@ -228,6 +225,18 @@ interface RaceState {
   waterConsumed: number;
   sodiumConsumed: number;
 }
+
+const INITIAL_RACE_STATE: RaceState = {
+  status: 'idle',
+  startTime: null,
+  elapsedMs: 0,
+  currentItemIndex: 0,
+  consumedItems: [],
+  skippedItems: [],
+  choConsumed: 0,
+  waterConsumed: 0,
+  sodiumConsumed: 0,
+};
 
 function formatDuration(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
@@ -261,17 +270,7 @@ async function requestNotificationPermission(): Promise<boolean> {
 function RaceContent() {
   const searchParams = useSearchParams();
 
-  const [raceState, setRaceState] = useState<RaceState>({
-    status: 'idle',
-    startTime: null,
-    elapsedMs: 0,
-    currentItemIndex: 0,
-    consumedItems: [],
-    skippedItems: [],
-    choConsumed: 0,
-    waterConsumed: 0,
-    sodiumConsumed: 0,
-  });
+  const [raceState, setRaceState] = useState<RaceState>(INITIAL_RACE_STATE);
 
   const [plan, setPlan] = useState<FuelPlan | null>(null);
   const [profile, setProfile] = useState<AthleteProfile | null>(null);
@@ -283,8 +282,8 @@ function RaceContent() {
   });
   const [alertItem, setAlertItem] = useState<TimelineItem | null>(null);
   const [showAlert, setShowAlert] = useState(false);
-  /** Fermer avec Annuler / après confirmation. Réutiliser `DestructiveConfirmOverlay` pour un futur reset (`showResetConfirm`). */
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [choDeficit, setChoDeficit] = useState(0);
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [timingOffsetMin, setTimingOffsetMin] = useState(0);
@@ -515,6 +514,17 @@ function RaceContent() {
       console.error('Debrief save error:', e);
     }
   }, [plan, profile, event, raceState]);
+
+  const handleReset = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    alertShownRef.current = new Set();
+    setRaceState({ ...INITIAL_RACE_STATE });
+    setCompletedAtMinByItem({});
+    setChoDeficit(0);
+    setTimingOffsetMin(0);
+    setShowAlert(false);
+    setAlertItem(null);
+  }, []);
 
   const handleConsumed = useCallback(
     (itemIndex: number) => {
@@ -926,25 +936,33 @@ function RaceContent() {
           )}
 
           {(raceState.status === 'running' || raceState.status === 'paused') && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {raceState.status === 'running' ? (
-                <button onClick={handlePause} style={S.btnSecondary}>
-                  Pause
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {raceState.status === 'running' ? (
+                  <button type="button" onClick={handlePause} style={S.btnSecondary}>
+                    Pause
+                  </button>
+                ) : (
+                  <button type="button" onClick={handleResume} style={S.btnPrimary}>
+                    Reprendre
+                  </button>
+                )}
+                <button type="button" onClick={() => setShowFinishConfirm(true)} style={S.btnDanger}>
+                  Terminer
                 </button>
-              ) : (
-                <button onClick={handleResume} style={S.btnPrimary}>
-                  Reprendre
-                </button>
-              )}
-              <button type="button" onClick={() => setShowFinishConfirm(true)} style={S.btnDanger}>
-                Terminer
+              </div>
+              <button type="button" onClick={() => setShowResetConfirm(true)} style={S.btnSecondary}>
+                Réinitialiser
               </button>
             </div>
           )}
 
           {raceState.status === 'finished' && (
-            <div style={{ marginTop: 8, textAlign: 'center', fontWeight: 900, color: 'var(--color-accent)' }}>
-              Course terminée
+            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'stretch' }}>
+              <div style={{ textAlign: 'center', fontWeight: 900, color: 'var(--color-accent)' }}>Course terminée</div>
+              <button type="button" onClick={() => setShowResetConfirm(true)} style={S.btnSecondary}>
+                Réinitialiser
+              </button>
             </div>
           )}
         </section>
@@ -1250,6 +1268,50 @@ function RaceContent() {
         onConfirm={() => {
           setShowFinishConfirm(false);
           handleFinish();
+        }}
+      >
+        <div style={{ display: 'grid', gap: 14 }}>
+          <div>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Temps écoulé</div>
+            <div
+              style={{
+                fontFamily: S.monoTime.fontFamily,
+                fontWeight: 800,
+                fontSize: 28,
+                letterSpacing: '-0.03em',
+              }}
+            >
+              {formatDuration(raceState.elapsedMs)}
+            </div>
+          </div>
+          <div>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Compliance actuelle</div>
+            <div
+              style={{
+                fontWeight: 900,
+                fontSize: 22,
+                color:
+                  compliance >= 80
+                    ? 'var(--color-accent)'
+                    : compliance >= 50
+                      ? 'var(--color-warning)'
+                      : 'var(--color-danger)',
+              }}
+            >
+              {compliance}%
+            </div>
+          </div>
+        </div>
+      </DestructiveConfirmOverlay>
+
+      <DestructiveConfirmOverlay
+        open={showResetConfirm}
+        title="Réinitialiser la course ?"
+        confirmLabel="Confirmer la réinitialisation"
+        onCancel={() => setShowResetConfirm(false)}
+        onConfirm={() => {
+          setShowResetConfirm(false);
+          handleReset();
         }}
       >
         <div style={{ display: 'grid', gap: 14 }}>
