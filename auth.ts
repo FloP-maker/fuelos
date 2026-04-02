@@ -4,6 +4,23 @@ import Resend from "next-auth/providers/resend";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
+const DEV_AUTH_SECRET_FALLBACK =
+  "fuelos-dev-only-insecure-secret-do-not-use-in-production";
+
+function resolveAuthSecret(): string | undefined {
+  const fromEnv =
+    process.env.AUTH_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim();
+  if (fromEnv) return fromEnv;
+  // En `next dev`, Auth.js exige un secret : valeur locale uniquement (jamais en build prod).
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      "[auth] AUTH_SECRET absent : utilisation d’un secret de développement. Pour la prod, définissez AUTH_SECRET (openssl rand -base64 32)."
+    );
+    return DEV_AUTH_SECRET_FALLBACK;
+  }
+  return undefined;
+}
+
 /** Prend en charge les noms Courants (Auth.js, ancien NextAuth, Google, Resend). */
 const env = {
   googleId:
@@ -24,7 +41,7 @@ const googleConfigured = Boolean(env.googleId?.trim()) && Boolean(env.googleSecr
 const resendConfigured = Boolean(env.resendKey?.trim());
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+  secret: resolveAuthSecret(),
   adapter: PrismaAdapter(prisma),
   providers: [
     ...(googleConfigured
