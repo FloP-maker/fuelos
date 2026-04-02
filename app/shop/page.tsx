@@ -1,10 +1,12 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { PRODUCTS } from "../lib/products";
 import type { Product } from "../lib/types";
 import usePageTitle from "../lib/hooks/usePageTitle";
 import { ThemeToggle } from "../app/components/ThemeToggle";
+
+const CUSTOM_PRODUCTS_STORAGE_KEY = "fuelos_custom_products";
 
 const CATEGORIES = [
   { id: "all", label: "Tout" },
@@ -15,8 +17,6 @@ const CATEGORIES = [
   { id: "electrolyte", label: "Électrolytes" },
   { id: "real-food", label: "Vraie nourriture" },
 ];
-
-const BRANDS = ["Tous", "Maurten", "Science in Sport", "Tailwind", "Näak", "GU Energy", "Spring Energy", "Clif Bar", "Skratch Labs", "Precision Hydration", "Nature"];
 
 const DIET_FILTERS = [
   { id: "vegan", label: "Vegan" },
@@ -40,6 +40,39 @@ export default function ShopPage() {
   const [search, setSearch] = useState("");
   const [dietFilters, setDietFilters] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"name" | "cho" | "price">("name");
+  const [customProducts, setCustomProducts] = useState<Product[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = localStorage.getItem(CUSTOM_PRODUCTS_STORAGE_KEY);
+      if (saved) return JSON.parse(saved) as Product[];
+    } catch {
+      // ignore invalid local data
+    }
+    return [];
+  });
+  const [newCustomProduct, setNewCustomProduct] = useState({
+    name: "",
+    brand: "",
+    imageUrl: "",
+    productUrl: "",
+    category: "gel" as Product["category"],
+    cho_per_unit: 25,
+    water_per_unit: 0,
+    sodium_per_unit: 0,
+    calories_per_unit: 100,
+    price_per_unit: 2,
+    weight_g: 40,
+  });
+
+  useEffect(() => {
+    localStorage.setItem(CUSTOM_PRODUCTS_STORAGE_KEY, JSON.stringify(customProducts));
+  }, [customProducts]);
+
+  const allProducts = useMemo(() => [...customProducts, ...PRODUCTS], [customProducts]);
+  const availableBrands = useMemo(
+    () => ["Tous", ...Array.from(new Set(allProducts.map((p) => p.brand))).sort((a, b) => a.localeCompare(b))],
+    [allProducts]
+  );
 
   const toggleDiet = (id: string) => {
     setDietFilters(prev =>
@@ -48,7 +81,7 @@ export default function ShopPage() {
   };
 
   const filtered = useMemo(() => {
-    return PRODUCTS
+    return allProducts
       .filter(p => category === "all" || p.category === category)
       .filter(p => brand === "Tous" || p.brand === brand)
       .filter(p => {
@@ -64,7 +97,7 @@ export default function ShopPage() {
         if (sortBy === "price") return a.price_per_unit - b.price_per_unit;
         return a.name.localeCompare(b.name);
       });
-  }, [category, brand, search, dietFilters, sortBy]);
+  }, [allProducts, category, brand, search, dietFilters, sortBy]);
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--color-bg)", color: "var(--color-text)", fontFamily: "system-ui, sans-serif" }}>
@@ -95,8 +128,74 @@ export default function ShopPage() {
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px" }}>
         <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Catalogue produits</div>
         <div style={{ color: "var(--color-text-muted)", fontSize: 14, marginBottom: 24 }}>
-          {PRODUCTS.length} produits · Maurten, SiS, Tailwind, Näak, GU Energy, Clif Bar, Spring Energy…
+          {allProducts.length} produits ({customProducts.length} perso) · Maurten, SiS, Tailwind, Näak, GU Energy…
         </div>
+
+        <section style={{ marginBottom: 18, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 10, padding: 14 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>Ajouter un produit personnalisé</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(140px, 1fr))", gap: 8 }}>
+            <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Nom" value={newCustomProduct.name} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, name: e.target.value })} />
+            <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Marque" value={newCustomProduct.brand} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, brand: e.target.value })} />
+            <select style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} value={newCustomProduct.category} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, category: e.target.value as Product["category"] })}>
+              {(["gel", "drink", "bar", "chew", "real-food", "electrolyte"] as const).map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="URL photo https://…" value={newCustomProduct.imageUrl} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, imageUrl: e.target.value })} />
+            <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="URL produit (optionnel)" value={newCustomProduct.productUrl} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, productUrl: e.target.value })} />
+            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="CHO (g)" value={newCustomProduct.cho_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, cho_per_unit: +e.target.value })} />
+            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Prix EUR" value={newCustomProduct.price_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, price_per_unit: +e.target.value })} />
+            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="kcal" value={newCustomProduct.calories_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, calories_per_unit: +e.target.value })} />
+            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Eau ml (optionnel)" value={newCustomProduct.water_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, water_per_unit: +e.target.value })} />
+            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Na mg (optionnel)" value={newCustomProduct.sodium_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, sodium_per_unit: +e.target.value })} />
+            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Poids g" value={newCustomProduct.weight_g} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, weight_g: +e.target.value })} />
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <button
+              type="button"
+              onClick={() => {
+                if (!newCustomProduct.name.trim()) {
+                  alert("Nom requis");
+                  return;
+                }
+                const custom: Product = {
+                  id: `custom-${Date.now()}`,
+                  name: newCustomProduct.name.trim(),
+                  brand: newCustomProduct.brand.trim() || "Perso",
+                  category: newCustomProduct.category,
+                  cho_per_unit: newCustomProduct.cho_per_unit,
+                  water_per_unit: newCustomProduct.water_per_unit || undefined,
+                  sodium_per_unit: newCustomProduct.sodium_per_unit || undefined,
+                  calories_per_unit: newCustomProduct.calories_per_unit,
+                  price_per_unit: newCustomProduct.price_per_unit,
+                  weight_g: newCustomProduct.weight_g,
+                  allergens: [],
+                  diet_tags: [],
+                  description: "Produit personnalisé",
+                  imageUrl: newCustomProduct.imageUrl.trim() || undefined,
+                  productUrl: newCustomProduct.productUrl.trim() || undefined,
+                };
+                setCustomProducts((prev) => [custom, ...prev]);
+                setNewCustomProduct({
+                  name: "",
+                  brand: "",
+                  imageUrl: "",
+                  productUrl: "",
+                  category: "gel",
+                  cho_per_unit: 25,
+                  water_per_unit: 0,
+                  sodium_per_unit: 0,
+                  calories_per_unit: 100,
+                  price_per_unit: 2,
+                  weight_g: 40,
+                });
+              }}
+              style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-accent)", color: "#000", fontWeight: 700, cursor: "pointer" }}
+            >
+              + Ajouter au catalogue
+            </button>
+          </div>
+        </section>
 
         {/* Search + Sort */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16, alignItems: "center" }}>
@@ -120,7 +219,7 @@ export default function ShopPage() {
             value={brand}
             onChange={e => setBrand(e.target.value)}
           >
-            {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+            {availableBrands.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
         </div>
 
@@ -171,7 +270,13 @@ export default function ShopPage() {
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
-            {filtered.map(p => <ProductCard key={p.id} product={p} />)}
+            {filtered.map(p => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                onDelete={p.id.startsWith("custom-") ? () => setCustomProducts((prev) => prev.filter((x) => x.id !== p.id)) : undefined}
+              />
+            ))}
           </div>
         )}
       </main>
@@ -179,15 +284,21 @@ export default function ShopPage() {
   );
 }
 
-function ProductCard({ product: p }: { product: Product }) {
+function ProductCard({ product: p, onDelete }: { product: Product; onDelete?: () => void }) {
   const catColor =
     CAT_COLORS[p.category] || { bg: "color-mix(in srgb, var(--color-bg) 88%, transparent)", color: "var(--color-text-muted)" };
+  const showImg = p.imageUrl && /^https?:\/\//.test(p.imageUrl);
   return (
     <div style={{ background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 12, padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-accent)", letterSpacing: "0.8px", textTransform: "uppercase" }}>{p.brand}</div>
-          <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>{p.name}</div>
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-start", minWidth: 0 }}>
+          {showImg ? (
+            <img src={p.imageUrl} alt={p.name} style={{ width: 28, height: 28, objectFit: "contain", borderRadius: 6, border: "1px solid var(--color-border)", background: "var(--color-bg)", flexShrink: 0 }} />
+          ) : null}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-accent)", letterSpacing: "0.8px", textTransform: "uppercase" }}>{p.brand}</div>
+            <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>{p.name}</div>
+          </div>
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: 16, fontWeight: 700 }}>{p.price_per_unit.toFixed(2)} €</div>
@@ -228,6 +339,20 @@ function ProductCard({ product: p }: { product: Product }) {
             </span>
           ))}
         </div>
+      )}
+      {p.productUrl && /^https?:\/\//.test(p.productUrl) && (
+        <a href={p.productUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "#60a5fa", textDecoration: "none", fontWeight: 600 }}>
+          Voir le produit
+        </a>
+      )}
+      {onDelete && (
+        <button
+          type="button"
+          onClick={onDelete}
+          style={{ marginTop: 4, padding: "6px 10px", borderRadius: 8, border: "1px solid #ef4444", background: "transparent", color: "#ef4444", fontSize: 12, fontWeight: 700, cursor: "pointer", alignSelf: "flex-start" }}
+        >
+          Supprimer (perso)
+        </button>
       )}
     </div>
   );
