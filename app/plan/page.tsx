@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import useLocalStorage from "../lib/hooks/useLocalStorage";
 import usePageTitle from "../lib/hooks/usePageTitle";
 import { calculateFuelPlan } from "../lib/fuelCalculator";
@@ -13,6 +14,9 @@ const SPORTS = ["Course à pied", "Trail", "Cyclisme", "Triathlon", "Ultra-trail
 const WEATHER = ["Froid (<10°C)", "Tempéré (10-20°C)", "Chaud (20-30°C)", "Très chaud (>30°C)"];
 const ELEVATION = ["Plat (0-500m D+)", "Vallonné (500-1500m D+)", "Montagneux (1500-3000m D+)", "Alpin (>3000m D+)"];
 const CUSTOM_PRODUCTS_STORAGE_KEY = "fuelos_custom_products";
+const ONBOARDING_PROFILE_KEY = "fuelos_onboarding_profile_done";
+const ONBOARDING_EVENT_KEY = "fuelos_onboarding_event_done";
+const ONBOARDING_EVENT_STEP_KEY = "fuelos_onboarding_event_step_done";
 
 const S = {
   page: {
@@ -201,8 +205,9 @@ function ProductThumb({
   );
 }
 
-export default function PlanPage() {
+function PlanPageContent() {
   usePageTitle("Plan");
+  const searchParams = useSearchParams();
   const [athleteProfile, setAthleteProfile] = useLocalStorage<AthleteProfile | null>("athlete-profile", null);
 
   const [step, setStep] = useState<"profile" | "event" | "result">("profile");
@@ -288,6 +293,22 @@ export default function PlanPage() {
     return () => clearTimeout(timer);
   }, [profile, setAthleteProfile]);
 
+  useEffect(() => {
+    const s = searchParams.get("step");
+    if (s === "event") setStep("event");
+    else if (s === "profile") setStep("profile");
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (step === "event") {
+      try {
+        localStorage.setItem(ONBOARDING_EVENT_STEP_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [step]);
+
   function handleCalculate() {
     console.log("🔍 Profile GI Tolerance:", profile.giTolerance);
     console.log("🔍 Full Profile:", profile);
@@ -302,6 +323,13 @@ export default function PlanPage() {
       "fuelos_active_plan",
       JSON.stringify({ fuelPlan: result, profile, event })
     );
+    try {
+      localStorage.setItem(ONBOARDING_PROFILE_KEY, "1");
+      localStorage.setItem(ONBOARDING_EVENT_STEP_KEY, "1");
+      localStorage.setItem(ONBOARDING_EVENT_KEY, "1");
+    } catch {
+      /* ignore */
+    }
     setStep("result");
   }
 
@@ -998,7 +1026,17 @@ export default function PlanPage() {
               </div>
             </div>
 
-            <button style={S.btn} onClick={() => setStep("event")}>
+            <button
+              style={S.btn}
+              onClick={() => {
+                try {
+                  localStorage.setItem(ONBOARDING_PROFILE_KEY, "1");
+                } catch {
+                  /* ignore */
+                }
+                setStep("event");
+              }}
+            >
               Continuer → Paramètres course
             </button>
           </div>
@@ -2462,5 +2500,29 @@ function PlanResult({
         </div>
       )}
     </div>
+  );
+}
+
+export default function PlanPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          style={{
+            minHeight: "100vh",
+            background: "var(--color-bg)",
+            color: "var(--color-text)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "system-ui, sans-serif",
+          }}
+        >
+          Chargement…
+        </div>
+      }
+    >
+      <PlanPageContent />
+    </Suspense>
   );
 }

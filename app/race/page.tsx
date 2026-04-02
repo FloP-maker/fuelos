@@ -15,6 +15,10 @@ const NAV = [
   { href: '/learn', label: 'Learn' },
 ];
 
+const ONBOARDING_PROFILE_KEY = 'fuelos_onboarding_profile_done';
+const ONBOARDING_EVENT_KEY = 'fuelos_onboarding_event_done';
+const ONBOARDING_EVENT_STEP_KEY = 'fuelos_onboarding_event_step_done';
+
 const S = {
   page: {
     minHeight: '100vh',
@@ -135,6 +139,15 @@ const S = {
     border: '1px solid var(--color-border)',
     background: 'color-mix(in srgb, var(--color-bg-card) 65%, transparent)',
   } as CSSProperties,
+  stepperRail: {
+    position: 'absolute',
+    left: 15,
+    top: 36,
+    bottom: 36,
+    width: 2,
+    background: 'var(--color-border)',
+    borderRadius: 1,
+  } as CSSProperties,
 };
 
 interface RaceState {
@@ -196,6 +209,11 @@ function RaceContent() {
   const [plan, setPlan] = useState<FuelPlan | null>(null);
   const [profile, setProfile] = useState<AthleteProfile | null>(null);
   const [event, setEvent] = useState<EventDetails | null>(null);
+  const [onboarding, setOnboarding] = useState({
+    profileDone: false,
+    eventStepDone: false,
+    hasPlanInStorage: false,
+  });
   const [alertItem, setAlertItem] = useState<TimelineItem | null>(null);
   const [showAlert, setShowAlert] = useState(false);
   const [choDeficit, setChoDeficit] = useState(0);
@@ -245,6 +263,51 @@ function RaceContent() {
     },
     []
   );
+
+  const refreshOnboarding = useCallback(() => {
+    try {
+      const savedPlan = localStorage.getItem('fuelos_active_plan');
+      let hasPlanInStorage = false;
+      if (savedPlan) {
+        const data = JSON.parse(savedPlan) as { fuelPlan?: FuelPlan; plan?: FuelPlan };
+        const p = data.fuelPlan || data.plan;
+        hasPlanInStorage = !!(p && Array.isArray(p.timeline) && p.timeline.length > 0);
+      }
+      const eventStepDone =
+        localStorage.getItem(ONBOARDING_EVENT_STEP_KEY) === '1' ||
+        localStorage.getItem(ONBOARDING_EVENT_KEY) === '1';
+      setOnboarding({
+        profileDone: localStorage.getItem(ONBOARDING_PROFILE_KEY) === '1',
+        eventStepDone,
+        hasPlanInStorage,
+      });
+    } catch {
+      setOnboarding({ profileDone: false, eventStepDone: false, hasPlanInStorage: false });
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshOnboarding();
+    const onVis = () => refreshOnboarding();
+    const onStorage = (e: StorageEvent) => {
+      if (
+        e.key === ONBOARDING_PROFILE_KEY ||
+        e.key === ONBOARDING_EVENT_KEY ||
+        e.key === ONBOARDING_EVENT_STEP_KEY ||
+        e.key === 'fuelos_active_plan'
+      ) {
+        refreshOnboarding();
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('focus', onVis);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('focus', onVis);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, [refreshOnboarding]);
 
   useEffect(() => {
     try {
@@ -495,15 +558,163 @@ function RaceContent() {
         </header>
 
         <main style={{ ...S.main, paddingTop: 52 }}>
-          <div style={{ maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
-            <div style={{ fontSize: 46, marginBottom: 12 }}>⚡</div>
-            <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 10 }}>Race Mode</h1>
-            <p style={{ ...S.muted, fontSize: 14, marginBottom: 18 }}>
-              Aucun plan actif. Crée ton plan d&apos;abord.
-            </p>
-            <Link href="/plan" style={{ ...S.btnPrimary, display: 'inline-block', width: 'auto', textDecoration: 'none' }}>
-              Créer mon plan →
-            </Link>
+          <div style={{ maxWidth: 520, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 28 }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>⚡</div>
+              <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>Race Mode</h1>
+              <p style={{ ...S.muted, fontSize: 14, margin: 0 }}>
+                Aucun plan actif. Suis les étapes ci-dessous pour lancer le mode course.
+              </p>
+            </div>
+
+            <div style={{ ...S.card, position: 'relative', padding: '24px 20px 24px 28px' }}>
+              <div style={S.stepperRail} aria-hidden />
+              {(
+                [
+                  {
+                    n: 1,
+                    title: 'Crée ton profil athlète',
+                    desc: 'Poids, transpiration, tolérance GI…',
+                    done: onboarding.profileDone,
+                    href: '/plan?step=profile',
+                    cta: 'Ouvrir',
+                  },
+                  {
+                    n: 2,
+                    title: 'Configure ta course',
+                    desc: 'Sport, distance, dénivelé, météo…',
+                    done: onboarding.eventStepDone,
+                    href: '/plan?step=event',
+                    cta: 'Ouvrir',
+                  },
+                ] as const
+              ).map((step) => (
+                <div
+                  key={step.n}
+                  style={{
+                    display: 'flex',
+                    gap: 16,
+                    alignItems: 'flex-start',
+                    marginBottom: step.n === 2 ? 22 : 20,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 900,
+                      fontSize: 13,
+                      background: step.done ? 'var(--color-accent)' : 'var(--color-bg-card)',
+                      color: step.done ? '#000' : 'var(--color-text-muted)',
+                      border: step.done ? 'none' : '2px solid var(--color-border)',
+                      position: 'relative',
+                      zIndex: 1,
+                    }}
+                  >
+                    {step.done ? '✓' : step.n}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
+                    <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>{step.title}</div>
+                    <p style={{ ...S.muted, fontSize: 12, margin: '0 0 12px', lineHeight: 1.45 }}>
+                      {step.desc}
+                    </p>
+                    <Link
+                      href={step.href}
+                      style={{
+                        ...S.btnOutline,
+                        display: 'inline-block',
+                        width: 'auto',
+                        padding: '8px 16px',
+                        fontSize: 13,
+                        textDecoration: 'none',
+                      }}
+                    >
+                      {step.cta} →
+                    </Link>
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 900,
+                    fontSize: 13,
+                    background:
+                      onboarding.profileDone && onboarding.eventStepDone
+                        ? 'var(--color-accent)'
+                        : 'var(--color-bg-card)',
+                    color:
+                      onboarding.profileDone && onboarding.eventStepDone
+                        ? '#000'
+                        : 'var(--color-text-muted)',
+                    border:
+                      onboarding.profileDone && onboarding.eventStepDone
+                        ? 'none'
+                        : '2px solid var(--color-border)',
+                    position: 'relative',
+                    zIndex: 1,
+                  }}
+                >
+                  {onboarding.profileDone && onboarding.eventStepDone ? '✓' : '3'}
+                </div>
+                <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
+                  <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>Lance le Race Mode</div>
+                  <p style={{ ...S.muted, fontSize: 12, margin: '0 0 12px', lineHeight: 1.45 }}>
+                    Timer, alertes et suivi du plan le jour J.
+                  </p>
+                  {onboarding.profileDone && onboarding.eventStepDone ? (
+                    <Link
+                      href={onboarding.hasPlanInStorage ? '/race' : '/plan?step=event'}
+                      onClick={(e) => {
+                        if (onboarding.hasPlanInStorage) {
+                          e.preventDefault();
+                          window.location.assign('/race');
+                        }
+                      }}
+                      style={{
+                        ...S.btnPrimary,
+                        display: 'inline-block',
+                        width: 'auto',
+                        padding: '10px 18px',
+                        fontSize: 14,
+                        textDecoration: 'none',
+                      }}
+                    >
+                      Lance le Race Mode →
+                    </Link>
+                  ) : (
+                    <div
+                      role="status"
+                      style={{
+                        ...S.btnPrimary,
+                        display: 'inline-block',
+                        width: 'auto',
+                        padding: '10px 18px',
+                        fontSize: 14,
+                        opacity: 0.42,
+                        cursor: 'not-allowed',
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      Lance le Race Mode
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </main>
       </div>
