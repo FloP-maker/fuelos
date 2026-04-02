@@ -33,6 +33,35 @@ const CAT_COLORS: Record<string, { bg: string; color: string }> = {
   "real-food": { bg: "rgba(34,197,94,0.12)", color: "#4ade80" },
 };
 
+const MAX_COMPARE = 3;
+
+const TEXTURE_FR: Record<NonNullable<Product["texture"]>, string> = {
+  liquid: "Liquide",
+  gel: "Gel",
+  chewy: "Mâchable",
+  solid: "Solide",
+};
+
+function formatGiTolerance(p: Product): string {
+  const parts: string[] = [];
+  if (p.texture) {
+    parts.push(TEXTURE_FR[p.texture] ?? p.texture);
+  }
+  if (p.recommended_for?.includes("sensitive-stomach")) {
+    parts.push("estomac sensible");
+  }
+  return parts.length > 0 ? parts.join(" · ") : "—";
+}
+
+function formatSodiumMg(p: Product): string {
+  if (p.sodium_per_unit === undefined || p.sodium_per_unit <= 0) return "—";
+  return `${p.sodium_per_unit} mg`;
+}
+
+function formatDietTags(p: Product): string {
+  return p.diet_tags.length > 0 ? p.diet_tags.join(", ") : "—";
+}
+
 export default function ShopPage() {
   usePageTitle("Shop");
   const [category, setCategory] = useState("all");
@@ -50,6 +79,8 @@ export default function ShopPage() {
     }
     return [];
   });
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareIds, setCompareIds] = useState<string[]>([]);
   const [newCustomProduct, setNewCustomProduct] = useState({
     name: "",
     brand: "",
@@ -99,6 +130,31 @@ export default function ShopPage() {
       });
   }, [allProducts, category, brand, search, dietFilters, sortBy]);
 
+  const compareProducts = useMemo(() => {
+    const byId = new Map(allProducts.map((p) => [p.id, p]));
+    return compareIds.map((id) => byId.get(id)).filter((p): p is Product => p != null);
+  }, [allProducts, compareIds]);
+
+  const toggleCompareMode = () => {
+    setCompareMode((on) => {
+      if (on) setCompareIds([]);
+      return !on;
+    });
+  };
+
+  const toggleProductCompare = (id: string) => {
+    setCompareIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= MAX_COMPARE) return prev;
+      return [...prev, id];
+    });
+  };
+
+  const clearCompareSelection = () => setCompareIds([]);
+
+  const showCompareDrawer = compareMode && compareProducts.length >= 2;
+  const atCompareLimit = compareIds.length >= MAX_COMPARE;
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--color-bg)", color: "var(--color-text)", fontFamily: "system-ui, sans-serif" }}>
       <header style={{ borderBottom: "1px solid var(--color-border)", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -121,11 +177,28 @@ export default function ShopPage() {
           >
             Accueil
           </Link>
+          <button
+            type="button"
+            onClick={toggleCompareMode}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              border: compareMode ? "1px solid var(--color-accent)" : "1px solid var(--color-border)",
+              background: compareMode ? "rgba(34,197,94,0.12)" : "transparent",
+              color: compareMode ? "var(--color-accent)" : "var(--color-text-muted)",
+            }}
+            aria-pressed={compareMode}
+          >
+            Comparer
+          </button>
           <ThemeToggle />
         </div>
       </header>
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px" }}>
+      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px", paddingBottom: showCompareDrawer ? 280 : 32 }}>
         <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Catalogue produits</div>
         <div style={{ color: "var(--color-text-muted)", fontSize: 14, marginBottom: 24 }}>
           {allProducts.length} produits ({customProducts.length} perso) · Maurten, SiS, Tailwind, Näak, GU Energy…
@@ -258,8 +331,15 @@ export default function ShopPage() {
           ))}
         </div>
 
-        <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 16 }}>
-          {filtered.length} produit{filtered.length !== 1 ? "s" : ""} trouvé{filtered.length !== 1 ? "s" : ""}
+        <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 16, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+          <span>
+            {filtered.length} produit{filtered.length !== 1 ? "s" : ""} trouvé{filtered.length !== 1 ? "s" : ""}
+          </span>
+          {compareMode && (
+            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--color-accent)" }}>
+              Mode comparaison · {compareIds.length}/{MAX_COMPARE} sélectionné{compareIds.length !== 1 ? "s" : ""}
+            </span>
+          )}
         </div>
 
         {filtered.length === 0 ? (
@@ -274,22 +354,163 @@ export default function ShopPage() {
               <ProductCard
                 key={p.id}
                 product={p}
-                onDelete={p.id.startsWith("custom-") ? () => setCustomProducts((prev) => prev.filter((x) => x.id !== p.id)) : undefined}
+                onDelete={p.id.startsWith("custom-") ? () => {
+                  setCustomProducts((prev) => prev.filter((x) => x.id !== p.id));
+                  setCompareIds((ids) => ids.filter((x) => x !== p.id));
+                } : undefined}
+                compareMode={compareMode}
+                compareChecked={compareIds.includes(p.id)}
+                compareDisabled={atCompareLimit && !compareIds.includes(p.id)}
+                onCompareToggle={() => toggleProductCompare(p.id)}
               />
             ))}
           </div>
         )}
       </main>
+
+      {showCompareDrawer && (
+        <div
+          role="dialog"
+          aria-label="Comparaison de produits"
+          style={{
+            position: "fixed",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 50,
+            background: "var(--color-bg-card)",
+            borderTop: "1px solid var(--color-border)",
+            boxShadow: "0 -12px 40px rgba(0,0,0,0.18)",
+            padding: "16px 20px 20px",
+            maxHeight: "min(55vh, 480px)",
+            overflow: "auto",
+          }}
+        >
+          <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+              <div style={{ fontWeight: 700, fontSize: 16 }}>Comparatif ({compareProducts.length} produits)</div>
+              <button
+                type="button"
+                onClick={clearCompareSelection}
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: 8,
+                  border: "1px solid var(--color-border)",
+                  background: "var(--color-bg)",
+                  color: "var(--color-text)",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
+                Vider la sélection
+              </button>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: `minmax(108px, 32%) repeat(${compareProducts.length}, minmax(96px, 1fr))`,
+                gap: 0,
+                fontSize: 13,
+                border: "1px solid var(--color-border)",
+                borderRadius: 10,
+                overflow: "hidden",
+              }}
+            >
+              <div style={{ padding: "10px 12px", fontWeight: 700, background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)", borderRight: "1px solid var(--color-border)" }} />
+              {compareProducts.map((p, i) => (
+                <div
+                  key={p.id}
+                  style={{ padding: "10px 12px", fontWeight: 700, background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)", borderRight: i < compareProducts.length - 1 ? "1px solid var(--color-border)" : "none", minWidth: 0, lineHeight: 1.35 }}
+                >
+                  {p.name}
+                </div>
+              ))}
+              {[
+                { label: "Marque", cells: compareProducts.map((p) => p.brand) },
+                { label: "CHO", cells: compareProducts.map((p) => `${p.cho_per_unit} g`) },
+                { label: "Sodium", cells: compareProducts.map((p) => formatSodiumMg(p)) },
+                { label: "Prix", cells: compareProducts.map((p) => `${p.price_per_unit.toFixed(2)} €`) },
+                { label: "Poids", cells: compareProducts.map((p) => `${p.weight_g} g`) },
+                { label: "Tolérance GI", cells: compareProducts.map((p) => formatGiTolerance(p)) },
+                { label: "Tags régime", cells: compareProducts.map((p) => formatDietTags(p)) },
+              ].map((row, rowIndex) => (
+                <FragmentRow key={row.label} label={row.label} cells={row.cells} isLast={rowIndex === 6} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function ProductCard({ product: p, onDelete }: { product: Product; onDelete?: () => void }) {
+function FragmentRow({ label, cells, isLast }: { label: string; cells: string[]; isLast: boolean }) {
+  return (
+    <>
+      <div
+        style={{
+          padding: "8px 12px",
+          fontWeight: 600,
+          color: "var(--color-text-muted)",
+          background: "color-mix(in srgb, var(--color-bg-card) 92%, transparent)",
+          borderRight: "1px solid var(--color-border)",
+          borderBottom: isLast ? "none" : "1px solid var(--color-border)",
+          alignSelf: "stretch",
+        }}
+      >
+        {label}
+      </div>
+      {cells.map((cell, i) => (
+        <div
+          key={i}
+          style={{
+            padding: "8px 12px",
+            borderRight: i < cells.length - 1 ? "1px solid var(--color-border)" : "none",
+            borderBottom: isLast ? "none" : "1px solid var(--color-border)",
+            minWidth: 0,
+            wordBreak: "break-word",
+          }}
+        >
+          {cell}
+        </div>
+      ))}
+    </>
+  );
+}
+
+function ProductCard({
+  product: p,
+  onDelete,
+  compareMode = false,
+  compareChecked = false,
+  compareDisabled = false,
+  onCompareToggle,
+}: {
+  product: Product;
+  onDelete?: () => void;
+  compareMode?: boolean;
+  compareChecked?: boolean;
+  compareDisabled?: boolean;
+  onCompareToggle?: () => void;
+}) {
   const catColor =
     CAT_COLORS[p.category] || { bg: "color-mix(in srgb, var(--color-bg) 88%, transparent)", color: "var(--color-text-muted)" };
   const showImg = p.imageUrl && /^https?:\/\//.test(p.imageUrl);
   return (
     <div style={{ background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 12, padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
+      {compareMode && (
+        <label style={{ display: "flex", alignItems: "center", cursor: compareDisabled ? "not-allowed" : "pointer" }}>
+          <input
+            type="checkbox"
+            checked={compareChecked}
+            disabled={compareDisabled}
+            onChange={() => onCompareToggle?.()}
+            aria-label={`Inclure ${p.name} dans le comparatif (max. ${MAX_COMPARE})`}
+            style={{ width: 18, height: 18, accentColor: "var(--color-accent)" }}
+          />
+        </label>
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start", minWidth: 0 }}>
           {showImg ? (
