@@ -1,6 +1,7 @@
 'use client';
 
 import { signIn, signOut, useSession } from 'next-auth/react';
+import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -30,8 +31,15 @@ const btn: CSSProperties = {
 function hintFromAuthMessage(message: string | null): string | null {
   if (!message) return null;
   const lower = message.toLowerCase();
+  // Auth.js renvoie souvent un message générique ; la cause la plus fréquente est AUTH_SECRET absent
   if (lower.includes('configuration') || lower.includes('secret')) {
-    return 'Vérifiez AUTH_SECRET (ou NEXTAUTH_SECRET) côté serveur, puis redémarrez.';
+    return [
+      'Auth.js : configuration serveur invalide (souvent AUTH_SECRET / NEXTAUTH_SECRET).',
+      '• Vercel : Project → Settings → Environment Variables — renseignez AUTH_SECRET pour Production et Preview, puis Redeploy.',
+      '• Local : .env avec AUTH_SECRET=… (openssl rand -base64 32).',
+      '• Test next start sans .env : AUTH_INSECURE_LOCAL_FALLBACK=true (jamais en prod publique).',
+      '• Page diagnostic : /debug/auth',
+    ].join(' ');
   }
   return message;
 }
@@ -159,11 +167,12 @@ export function AuthMenu() {
   const ids = Object.keys(providerMap);
   if (ids.length === 0) {
     return (
-      <span
-        style={{ fontSize: 12, color: 'var(--color-text-muted)', maxWidth: 280 }}
-        title="Définissez au moins Google (AUTH_GOOGLE_ID + AUTH_GOOGLE_SECRET ou GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET) ou Resend (AUTH_RESEND_KEY ou RESEND_API_KEY), plus AUTH_SECRET."
-      >
-        Connexion indisponible (voir .env)
+      <span style={{ fontSize: 12, color: 'var(--color-text-muted)', maxWidth: 300, textAlign: 'right' }}>
+        Connexion indisponible —{' '}
+        <Link href="/debug/auth" style={{ color: 'var(--color-accent)' }} prefetch={false}>
+          diagnostic
+        </Link>{' '}
+        · configurez Google ou Resend côté serveur.
       </span>
     );
   }

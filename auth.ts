@@ -11,12 +11,31 @@ function resolveAuthSecret(): string | undefined {
   const fromEnv =
     process.env.AUTH_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim();
   if (fromEnv) return fromEnv;
-  // En `next dev`, Auth.js exige un secret : valeur locale uniquement (jamais en build prod).
+
+  // `npm run dev` — secret obligatoire pour Auth.js
   if (process.env.NODE_ENV !== "production") {
     console.warn(
-      "[auth] AUTH_SECRET absent : utilisation d’un secret de développement. Pour la prod, définissez AUTH_SECRET (openssl rand -base64 32)."
+      "[auth] AUTH_SECRET absent : secret de développement local. En prod : openssl rand -base64 32"
     );
     return DEV_AUTH_SECRET_FALLBACK;
+  }
+
+  // `next start` en local : NODE_ENV=production mais pas de variables Vercel — opt-in explicite
+  if (process.env.AUTH_INSECURE_LOCAL_FALLBACK === "true") {
+    console.warn(
+      "[auth] AUTH_INSECURE_LOCAL_FALLBACK=true — réservé aux tests locaux (next start), jamais sur Internet."
+    );
+    return DEV_AUTH_SECRET_FALLBACK;
+  }
+
+  if (process.env.VERCEL) {
+    console.error(
+      "[auth] Variable AUTH_SECRET (ou NEXTAUTH_SECRET) manquante côté Vercel. Tableau de bord → Settings → Environment Variables : ajoutez-la pour Production et pour Preview, puis redeployez."
+    );
+  } else {
+    console.error(
+      "[auth] AUTH_SECRET manquant en production. Ajoutez-le au .env (openssl rand -base64 32) ou pour un test local avec next start uniquement : AUTH_INSECURE_LOCAL_FALLBACK=true."
+    );
   }
   return undefined;
 }
@@ -42,6 +61,7 @@ const resendConfigured = Boolean(env.resendKey?.trim());
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: resolveAuthSecret(),
+  debug: process.env.AUTH_DEBUG === "1",
   adapter: PrismaAdapter(prisma),
   providers: [
     ...(googleConfigured
