@@ -177,7 +177,11 @@ export function AuthMenu() {
     );
   }
 
-  const oauthIds = ids.filter((id) => providerMap[id].type === 'oauth');
+  /** Google est enregistré comme `oidc`, pas `oauth` — les deux doivent afficher un bouton. */
+  const oauthIds = ids.filter((id) => {
+    const t = providerMap[id].type;
+    return t === 'oauth' || t === 'oidc';
+  });
   const emailProviderId = ids.find((id) => providerMap[id].type === 'email');
 
   return (
