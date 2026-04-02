@@ -1,8 +1,20 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import type { AthleteProfile, EventDetails, FuelPlan, RaceState } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
 import { ThemeToggle } from '../app/components/ThemeToggle';
+
+const DEBRIEFS_STORAGE_KEY = 'fuelos_debriefs';
+
+type StoredDebrief = {
+  plan: FuelPlan | null;
+  profile: AthleteProfile | null;
+  event: EventDetails | null;
+  raceState: RaceState;
+  finishedAt: string;
+};
 
 type LearnItem = {
   id: string;
@@ -208,6 +220,98 @@ function Card({ item }: { item: LearnItem }) {
   );
 }
 
+function formatFinishedAt(iso: string) {
+  try {
+    return new Date(iso).toLocaleString('fr-FR', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function formatElapsed(ms: number) {
+  const totalMin = Math.max(0, Math.floor(ms / 60000));
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h === 0) return `${m} min`;
+  return `${h} h ${m} min`;
+}
+
+function DebriefCard({ debrief, rank }: { debrief: StoredDebrief; rank: number }) {
+  const { event, plan, raceState, finishedAt } = debrief;
+  const title =
+    event != null
+      ? `${event.sport} · ${event.distance} km`
+      : plan != null
+        ? `Course · plan ${plan.choPerHour} g CHO/h`
+        : `Course ${rank}`;
+  const timelineLen = plan?.timeline?.length ?? 0;
+  const consumed = raceState.consumedItems?.length ?? 0;
+  const deviations = raceState.deviations ?? [];
+
+  return (
+    <details
+      style={{
+        border: '1px solid var(--color-border)',
+        borderRadius: 14,
+        padding: 0,
+        background: 'var(--color-bg-card)',
+        overflow: 'hidden',
+      }}
+    >
+      <summary style={{ listStyle: 'none', cursor: 'pointer', padding: 16 }}>
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 6 }}>
+          {formatFinishedAt(finishedAt)}
+        </div>
+        <h3 style={{ margin: '0 0 8px', fontSize: 17 }}>{title}</h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 13, color: 'var(--color-text-muted)' }}>
+          <span>Temps chronomètre : {formatElapsed(raceState.elapsedMs)}</span>
+          {timelineLen > 0 && (
+            <span>
+              Prises notées : {consumed} / {timelineLen}
+            </span>
+          )}
+          {deviations.length > 0 && <span>Écarts : {deviations.length}</span>}
+        </div>
+        <p style={{ margin: '10px 0 0', fontSize: 13, color: 'var(--color-text-muted)' }}>
+          Cliquer pour le détail
+        </p>
+      </summary>
+      <div style={{ padding: '0 16px 16px', borderTop: '1px solid var(--color-border)' }}>
+        {event != null && (
+          <ul style={{ margin: '12px 0', paddingLeft: 18, fontSize: 14, color: 'var(--color-text-muted)' }}>
+            <li>Dénivelé : {event.elevationGain} m D+</li>
+            <li>Objectif temps : {event.targetTime} h</li>
+            <li>Météo / relief : {event.weather} · {event.elevation}</li>
+          </ul>
+        )}
+        {deviations.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <p style={{ margin: '0 0 6px', fontWeight: 600, fontSize: 14 }}>Écarts notés</p>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14 }}>
+              {deviations.map((d) => (
+                <li key={d}>{d}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {plan != null && plan.warnings.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <p style={{ margin: '0 0 6px', fontWeight: 600, fontSize: 14 }}>Alertes du plan</p>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14, color: 'var(--color-text-muted)' }}>
+              {plan.warnings.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </details>
+  );
+}
+
 const heroCardStyle = {
   border: '1px solid var(--color-border)',
   borderRadius: 14,
@@ -217,7 +321,41 @@ const heroCardStyle = {
 
 export default function LearnPage() {
   usePageTitle('Learn');
+  const [activeTab, setActiveTab] = useState<'debriefs' | 'library'>('debriefs');
+  const [debriefs, setDebriefs] = useState<StoredDebrief[]>([]);
   const firstItem = keyNumbers[0];
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DEBRIEFS_STORAGE_KEY);
+      const parsed = raw ? (JSON.parse(raw) as StoredDebrief[]) : [];
+      setDebriefs(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setDebriefs([]);
+    }
+  }, []);
+
+  const tabButton = (tab: 'debriefs' | 'library', label: string) => {
+    const active = activeTab === tab;
+    return (
+      <button
+        type="button"
+        onClick={() => setActiveTab(tab)}
+        style={{
+          padding: '10px 18px',
+          borderRadius: 8,
+          border: '1px solid var(--color-border)',
+          background: active ? 'var(--color-accent)' : 'transparent',
+          color: active ? '#000' : 'var(--color-text)',
+          fontWeight: 600,
+          cursor: 'pointer',
+          fontSize: 14,
+        }}
+      >
+        {label}
+      </button>
+    );
+  };
 
   return (
     <div>
@@ -286,59 +424,94 @@ export default function LearnPage() {
         <div>
           <h1 style={{ margin: 0, fontSize: 32 }}>Learn</h1>
           <p style={{ marginTop: 8, color: 'var(--color-text-muted)' }}>
-            Bibliotheque educationnelle: articles cliquables, details pratiques et sources verifiables.
+            Debriefs des courses terminees dans Race Mode et bibliotheque de reperes nutrition verifiables.
           </p>
         </div>
-        <div />
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 8,
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+          }}
+        >
+          {tabButton('debriefs', 'Debriefs')}
+          {tabButton('library', 'Bibliothèque')}
+        </div>
       </div>
 
-      <section style={{ marginTop: 24, display: 'grid', gap: 16, gridTemplateColumns: '1.6fr 1fr' }}>
-        <article style={{ ...heroCardStyle, overflow: 'hidden', padding: 0 }}>
-          <img src={firstItem.imageUrl} alt={firstItem.imageAlt} style={{ width: '100%', height: 220, objectFit: 'cover' }} />
-          <div style={{ padding: 16 }}>
-            <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 99, fontSize: 12, border: '1px solid var(--color-border)', marginBottom: 10 }}>
-              Mise en avant
+      {activeTab === 'debriefs' && (
+        <section style={{ marginTop: 24 }}>
+          <h2 style={{ marginBottom: 10 }}>Courses passees</h2>
+          <p style={{ marginTop: 0, color: 'var(--color-text-muted)', marginBottom: 18 }}>
+            Chaque fin de course dans Race Mode enregistre un debrief ici (jusqu a 10 derniers).
+          </p>
+          {debriefs.length === 0 ? (
+            <div style={{ ...heroCardStyle, color: 'var(--color-text-muted)' }}>
+              Aucun debrief pour l instant. Lance le Race Mode, termine une course, puis reviens sur cet onglet.
             </div>
-            <h2 style={{ margin: '0 0 6px' }}>{firstItem.title}</h2>
-            <p style={{ margin: '0 0 12px', color: 'var(--color-text-muted)' }}>{firstItem.subtitle}</p>
-            <p style={{ margin: 0, fontWeight: 700 }}>{firstItem.value}</p>
-          </div>
-        </article>
+          ) : (
+            <div style={{ display: 'grid', gap: 12 }}>
+              {debriefs.map((debrief, i) => (
+                <DebriefCard key={`${debrief.finishedAt}-${i}`} debrief={debrief} rank={i + 1} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
-        <aside style={heroCardStyle}>
-          <h3 style={{ marginTop: 0 }}>Comment utiliser cette page</h3>
-          <p style={{ marginTop: 0, color: 'var(--color-text-muted)' }}>
-            Ouvre les cartes pour lire les details actionnables et garder une trace des recommandations utiles pour tes prochaines courses.
-          </p>
-          <p style={{ marginBottom: 0, color: 'var(--color-text-muted)', fontSize: 14 }}>
-            Chaque article inclut une source cliquable afin de verifier facilement la reference.
-          </p>
-        </aside>
-      </section>
+      {activeTab === 'library' && (
+        <>
+          <section style={{ marginTop: 24, display: 'grid', gap: 16, gridTemplateColumns: '1.6fr 1fr' }}>
+            <article style={{ ...heroCardStyle, overflow: 'hidden', padding: 0 }}>
+              <img src={firstItem.imageUrl} alt={firstItem.imageAlt} style={{ width: '100%', height: 220, objectFit: 'cover' }} />
+              <div style={{ padding: 16 }}>
+                <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 99, fontSize: 12, border: '1px solid var(--color-border)', marginBottom: 10 }}>
+                  Mise en avant
+                </div>
+                <h2 style={{ margin: '0 0 6px' }}>{firstItem.title}</h2>
+                <p style={{ margin: '0 0 12px', color: 'var(--color-text-muted)' }}>{firstItem.subtitle}</p>
+                <p style={{ margin: 0, fontWeight: 700 }}>{firstItem.value}</p>
+              </div>
+            </article>
 
-      <section style={{ marginTop: 26 }}>
-        <h2 style={{ marginBottom: 10 }}>Reperes utiles</h2>
-        <p style={{ marginTop: 0, color: 'var(--color-text-muted)' }}>
-          Ces chiffres servent de base, puis se personnalisent selon votre reponse individuelle.
-        </p>
-        <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
-          {keyNumbers.map((item) => (
-            <Card key={item.id} item={item} />
-          ))}
-        </div>
-      </section>
+            <aside style={heroCardStyle}>
+              <h3 style={{ marginTop: 0 }}>Comment utiliser cette page</h3>
+              <p style={{ marginTop: 0, color: 'var(--color-text-muted)' }}>
+                Ouvre les cartes pour lire les details actionnables et garder une trace des recommandations utiles pour tes prochaines courses.
+              </p>
+              <p style={{ marginBottom: 0, color: 'var(--color-text-muted)', fontSize: 14 }}>
+                Chaque article inclut une source cliquable afin de verifier facilement la reference.
+              </p>
+            </aside>
+          </section>
 
-      <section style={{ marginTop: 28 }}>
-        <h2 style={{ marginBottom: 10 }}>Conseils pratiques</h2>
-        <p style={{ marginTop: 0, color: 'var(--color-text-muted)' }}>
-          Objectif: rendre la strategie executable en entrainement puis en competition.
-        </p>
-        <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
-          {practicalTips.map((item) => (
-            <Card key={item.id} item={item} />
-          ))}
-        </div>
-      </section>
+          <section style={{ marginTop: 26 }}>
+            <h2 style={{ marginBottom: 10 }}>Reperes utiles</h2>
+            <p style={{ marginTop: 0, color: 'var(--color-text-muted)' }}>
+              Ces chiffres servent de base, puis se personnalisent selon votre reponse individuelle.
+            </p>
+            <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
+              {keyNumbers.map((item) => (
+                <Card key={item.id} item={item} />
+              ))}
+            </div>
+          </section>
+
+          <section style={{ marginTop: 28 }}>
+            <h2 style={{ marginBottom: 10 }}>Conseils pratiques</h2>
+            <p style={{ marginTop: 0, color: 'var(--color-text-muted)' }}>
+              Objectif: rendre la strategie executable en entrainement puis en competition.
+            </p>
+            <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
+              {practicalTips.map((item) => (
+                <Card key={item.id} item={item} />
+              ))}
+            </div>
+          </section>
+        </>
+      )}
       </main>
     </div>
   );
