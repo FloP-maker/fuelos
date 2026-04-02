@@ -125,7 +125,31 @@ const S = {
     padding: 22,
     boxShadow: '0 18px 50px color-mix(in srgb, #000 35%, transparent)',
   } as CSSProperties,
+  simSpeedBtn: {
+    width: '100%',
+    padding: '10px 6px',
+    borderRadius: 8,
+    background: 'transparent',
+    color: 'var(--color-text)',
+    fontWeight: 600,
+    fontSize: 12,
+    border: '1px solid var(--color-border)',
+    cursor: 'pointer',
+  } as CSSProperties,
+  simSpeedBtnActive: {
+    width: '100%',
+    padding: '10px 6px',
+    borderRadius: 8,
+    background: 'color-mix(in srgb, #7c3aed 16%, var(--color-bg-card))',
+    color: 'var(--color-text)',
+    fontWeight: 800,
+    fontSize: 12,
+    border: '1px solid color-mix(in srgb, #7c3aed 45%, var(--color-border))',
+    cursor: 'pointer',
+  } as CSSProperties,
 };
+
+const SIMULATION_SPEEDS = [1, 10, 20, 30] as const;
 
 function DestructiveConfirmOverlay({
   open,
@@ -164,7 +188,7 @@ function DestructiveConfirmOverlay({
   );
 }
 
-type SimulationSpeed = 1 | 10 | 60;
+type SimulationSpeed = (typeof SIMULATION_SPEEDS)[number];
 
 interface RaceState {
   status: 'idle' | 'running' | 'paused' | 'finished';
@@ -176,7 +200,7 @@ interface RaceState {
   choConsumed: number;
   waterConsumed: number;
   sodiumConsumed: number;
-  /** 1 = temps réel ; 10 ou 60 = simulation accélérée (×10 / ×60). */
+  /** 1 = temps réel ; 10–30 = simulation accélérée (×10 / ×20 / ×30). */
   simulationSpeed: SimulationSpeed;
 }
 
@@ -397,7 +421,7 @@ function RaceContent() {
         if (prev.simulationSpeed === 1) {
           nextElapsed = prev.startTime != null ? Date.now() - prev.startTime : prev.elapsedMs;
         } else {
-          nextElapsed = prev.elapsedMs + 1000 * prev.simulationSpeed;
+          nextElapsed = prev.elapsedMs + 1000;
         }
         if (nextElapsed >= targetMs) {
           const finishedState: RaceState = {
@@ -609,14 +633,35 @@ function RaceContent() {
     };
   }, [handleConsumed, handleSkipped]);
 
-  const cycleSimulationSpeed = useCallback(() => {
+  const handleSimulationSpeedChange = useCallback((speed: SimulationSpeed) => {
     setRaceState((prev) => {
-      if (prev.status !== 'idle') return prev;
-      const next: SimulationSpeed =
-        prev.simulationSpeed === 1 ? 10 : prev.simulationSpeed === 10 ? 60 : 1;
-      return { ...prev, simulationSpeed: next };
+      if (speed === prev.simulationSpeed) return prev;
+      if (prev.status === 'running') {
+        if (speed === 1 && prev.simulationSpeed > 1) {
+          return {
+            ...prev,
+            simulationSpeed: speed,
+            startTime: Date.now() - prev.elapsedMs,
+          };
+        }
+        if (speed > 1 && prev.simulationSpeed === 1) {
+          return { ...prev, simulationSpeed: speed, startTime: null };
+        }
+      }
+      return { ...prev, simulationSpeed: speed };
     });
   }, []);
+
+  const pageShellStyle: CSSProperties = {
+    ...S.page,
+    ...(raceState.simulationSpeed > 1
+      ? {
+          background:
+            'color-mix(in srgb, var(--color-bg) 82%, rgba(124, 58, 237, 0.2))',
+          transition: 'background 0.35s ease',
+        }
+      : { transition: 'background 0.35s ease' }),
+  };
 
   const simulationHeaderBadge =
     raceState.simulationSpeed > 1 ? (
@@ -634,7 +679,7 @@ function RaceContent() {
 
   if (!plan) {
     return (
-      <div style={S.page}>
+      <div style={pageShellStyle}>
         <Header sticky extra={simulationHeaderBadge} />
 
         <main style={{ ...S.main, paddingTop: 52 }}>
@@ -837,7 +882,7 @@ function RaceContent() {
   const progressPercent = Math.min(100, (elapsedMin / ((event?.targetTime || 1) * 60)) * 100);
 
   return (
-    <div style={S.page}>
+    <div style={pageShellStyle}>
       <Header sticky extra={simulationHeaderBadge} />
 
       <main style={S.main}>
@@ -910,16 +955,34 @@ function RaceContent() {
             />
           </div>
 
-          {raceState.status === 'idle' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button type="button" onClick={handleStart} style={S.btnPrimary}>
-                Démarrer
-              </button>
-              <button type="button" onClick={cycleSimulationSpeed} style={S.btnSecondary}>
-                🧪 Simuler
-                {raceState.simulationSpeed > 1 ? ` (×${raceState.simulationSpeed})` : ''}
-              </button>
+          {raceState.status !== 'finished' && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ ...S.muted, fontSize: 11, fontWeight: 700, marginBottom: 8, letterSpacing: '0.06em' }}>
+                Vitesse (🧪 simulation)
+              </div>
+              <div
+                role="group"
+                aria-label="Vitesse du timer"
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}
+              >
+                {SIMULATION_SPEEDS.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => handleSimulationSpeedChange(s)}
+                    style={s === raceState.simulationSpeed ? S.simSpeedBtnActive : S.simSpeedBtn}
+                  >
+                    {s === 1 ? 'Réel' : `×${s}`}
+                  </button>
+                ))}
+              </div>
             </div>
+          )}
+
+          {raceState.status === 'idle' && (
+            <button type="button" onClick={handleStart} style={S.btnPrimary}>
+              Démarrer
+            </button>
           )}
 
           {(raceState.status === 'running' || raceState.status === 'paused') && (
