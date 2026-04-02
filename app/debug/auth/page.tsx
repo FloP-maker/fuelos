@@ -49,6 +49,53 @@ export default function AuthDebugPage() {
           Variables puis redeployez.
         </p>
 
+        {!d.hasDatabaseUrl && (
+          <div
+            style={{
+              marginBottom: 20,
+              padding: 14,
+              borderRadius: 10,
+              border: "1px solid #f87171",
+              background: "rgba(248,113,113,0.08)",
+              fontSize: 14,
+              lineHeight: 1.55,
+            }}
+          >
+            <strong style={{ color: "#f87171" }}>DATABASE_URL manquant</strong>
+            <p style={{ margin: "10px 0 0", color: "var(--color-text)" }}>
+              L’app utilise <strong>Prisma</strong> et des <strong>sessions en base</strong> (Auth.js + adapter). Sans
+              chaîne Postgres (<code>DATABASE_URL</code>), la base et la connexion ne peuvent pas fonctionner correctement.
+            </p>
+            <p style={{ margin: "8px 0 0", color: "var(--color-text-muted)", fontSize: 13 }}>
+              Crée une base (ex. Supabase, Neon), copie l’URI « Transaction » ou « Direct », ajoute-la sur Vercel sous le nom{' '}
+              <code>DATABASE_URL</code>, lance <code>prisma migrate deploy</code> (CI ou localement pointant vers cette URL),
+              puis redeploy.
+            </p>
+          </div>
+        )}
+
+        {d.providerCount === 0 && (
+          <div
+            style={{
+              marginBottom: 20,
+              padding: 14,
+              borderRadius: 10,
+              border: "1px solid var(--color-accent)",
+              background: "color-mix(in srgb, var(--color-accent) 10%, transparent)",
+              fontSize: 14,
+              lineHeight: 1.55,
+            }}
+          >
+            <strong>Aucun fournisseur OAuth / e-mail</strong>
+            <p style={{ margin: "10px 0 0", color: "var(--color-text)" }}>
+              Les boutons Google et « Lien magique » n’apparaissent que si le serveur voit une <strong>paire Google</strong>{' '}
+              (ID + secret) ou une clé <strong>Resend</strong> (<code>AUTH_RESEND_KEY</code> / <code>RESEND_API_KEY</code>
+              ). Ajoute ces variables sur Vercel (Production + Preview), redeploy, puis reviens sur cette page :{' '}
+              <code>providerCount</code> doit être ≥ 1.
+            </p>
+          </div>
+        )}
+
         <div
           style={{
             border: "1px solid var(--color-border)",
@@ -66,13 +113,9 @@ export default function AuthDebugPage() {
 
         <p style={{ marginTop: 20, fontSize: 14 }}>
           <strong>Fournisseurs de connexion actifs :</strong> {d.providerCount}
-          {d.providerCount === 0 && (
-            <span style={{ color: "#f87171" }}>
-              {' — '}
-              c’est pour cela que l’interface affiche « Connexion indisponible ». Ajoutez au moins la paire Google (ID +
-              secret) ou une clé Resend.
-            </span>
-          )}
+          {d.providerCount === 0 ? (
+            <span style={{ color: "var(--color-text-muted)" }}> — voir l’encadré ci-dessus.</span>
+          ) : null}
         </p>
 
         <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 16, lineHeight: 1.5 }}>
