@@ -4,6 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { CSSProperties, ReactNode } from 'react';
 import { ThemeToggle } from '../app/components/ThemeToggle';
+<<<<<<< HEAD
+=======
+import { AuthMenu } from './AuthMenu';
+>>>>>>> group-by-hour-98d0b
 
 export type HeaderActivePage = 'plan' | 'shop' | 'race' | 'learn';
 
@@ -127,6 +131,10 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
           })}
         </nav>
         {extra}
+<<<<<<< HEAD
+=======
+        <AuthMenu />
+>>>>>>> group-by-hour-98d0b
         <Link href="/" style={S.btnOutline}>
           Accueil
         </Link>

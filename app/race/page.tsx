@@ -319,6 +319,7 @@ function RaceContent() {
   );
 
   const refreshOnboarding = useCallback(() => {
+<<<<<<< HEAD
     try {
       const savedPlan = localStorage.getItem('fuelos_active_plan');
       let hasPlanInStorage = false;
@@ -401,6 +402,102 @@ function RaceContent() {
     } catch (e) {
       console.error('Plan load error:', e);
     }
+=======
+    try {
+      const savedPlan = localStorage.getItem('fuelos_active_plan');
+      let hasPlanInStorage = false;
+      if (savedPlan) {
+        const data = JSON.parse(savedPlan) as { fuelPlan?: FuelPlan; plan?: FuelPlan };
+        const p = data.fuelPlan || data.plan;
+        hasPlanInStorage = !!(p && Array.isArray(p.timeline) && p.timeline.length > 0);
+      }
+      const eventStepDone =
+        localStorage.getItem(ONBOARDING_EVENT_STEP_KEY) === '1' ||
+        localStorage.getItem(ONBOARDING_EVENT_KEY) === '1';
+      setOnboarding({
+        profileDone: localStorage.getItem(ONBOARDING_PROFILE_KEY) === '1',
+        eventStepDone,
+        hasPlanInStorage,
+      });
+    } catch {
+      setOnboarding({ profileDone: false, eventStepDone: false, hasPlanInStorage: false });
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshOnboarding();
+    const onVis = () => refreshOnboarding();
+    const onStorage = (e: StorageEvent) => {
+      if (
+        e.key === ONBOARDING_PROFILE_KEY ||
+        e.key === ONBOARDING_EVENT_KEY ||
+        e.key === ONBOARDING_EVENT_STEP_KEY ||
+        e.key === 'fuelos_active_plan'
+      ) {
+        refreshOnboarding();
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('focus', onVis);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('focus', onVis);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, [refreshOnboarding]);
+
+  useEffect(() => {
+    const applyBundle = (data: {
+      plan?: FuelPlan;
+      fuelPlan?: FuelPlan;
+      altFuelPlan?: FuelPlan;
+      altPlanLabel?: string;
+      racePlanVariant?: 'main' | 'alt';
+      profile: AthleteProfile;
+      event: EventDetails;
+    }) => {
+      const loadedMain = data.fuelPlan || data.plan;
+      const loadedAlt = data.altFuelPlan ?? null;
+      const variant: 'main' | 'alt' =
+        data.racePlanVariant === 'alt' && loadedAlt ? 'alt' : 'main';
+      setMainPlan(loadedMain ?? null);
+      setAltPlan(loadedAlt);
+      setAltPlanLabel(data.altPlanLabel ?? null);
+      setRacePlanVariant(variant);
+      setProfile(data.profile);
+      setEvent(data.event);
+    };
+
+    void (async () => {
+      try {
+        const planParam = searchParams.get('plan');
+
+        if (planParam) {
+          const data = JSON.parse(decodeURIComponent(planParam));
+          applyBundle(data);
+          return;
+        }
+
+        const cloud = await fetch('/api/user/plans/active', { credentials: 'include' });
+        if (cloud.ok) {
+          const j = (await cloud.json()) as { snapshot?: { payload?: unknown } | null };
+          const payload = j.snapshot?.payload;
+          if (payload && typeof payload === 'object' && payload !== null) {
+            applyBundle(payload as Parameters<typeof applyBundle>[0]);
+            return;
+          }
+        }
+
+        const saved = localStorage.getItem('fuelos_active_plan');
+        if (saved) {
+          applyBundle(JSON.parse(saved) as Parameters<typeof applyBundle>[0]);
+        }
+      } catch (e) {
+        console.error('Plan load error:', e);
+      }
+    })();
+>>>>>>> group-by-hour-98d0b
   }, [searchParams]);
 
   const persistRacePlanVariant = useCallback((variant: 'main' | 'alt') => {
@@ -409,7 +506,20 @@ function RaceContent() {
       if (!raw) return;
       const data = JSON.parse(raw) as Record<string, unknown>;
       data.racePlanVariant = variant;
+<<<<<<< HEAD
       localStorage.setItem('fuelos_active_plan', JSON.stringify(data));
+=======
+      const next = JSON.stringify(data);
+      localStorage.setItem('fuelos_active_plan', next);
+      void fetch('/api/user/plans/active', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload: JSON.parse(next) as object }),
+      }).catch(() => {
+        /* non connecté ou pas de plan actif en base */
+      });
+>>>>>>> group-by-hour-98d0b
     } catch {
       /* ignore */
     }
@@ -438,6 +548,20 @@ function RaceContent() {
         const existing = JSON.parse(localStorage.getItem('fuelos_debriefs') || '[]');
         existing.unshift(debrief);
         localStorage.setItem('fuelos_debriefs', JSON.stringify(existing.slice(0, 10)));
+<<<<<<< HEAD
+=======
+        void fetch('/api/user/debriefs', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            payload: debrief,
+            finishedAt: debrief.finishedAt,
+          }),
+        }).catch(() => {
+          /* sync cloud optionnelle */
+        });
+>>>>>>> group-by-hour-98d0b
       } catch (e) {
         console.error('Debrief save error:', e);
       }

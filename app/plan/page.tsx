@@ -338,6 +338,7 @@ function PlanPageContent() {
     console.log("🔍 CHO per hour:", result.mainPlan.choPerHour);
 
     setPlanResult(result);
+<<<<<<< HEAD
     localStorage.setItem(
       "fuelos_active_plan",
       JSON.stringify({
@@ -350,6 +351,30 @@ function PlanPageContent() {
         event,
       })
     );
+=======
+    const bundle = {
+      fuelPlan: result.mainPlan,
+      altFuelPlan: result.altPlan,
+      altPlanLabel: result.altPlanLabel,
+      altPlanExplanation: result.altPlanExplanation,
+      racePlanVariant: "main" as const,
+      profile,
+      event,
+    };
+    localStorage.setItem("fuelos_active_plan", JSON.stringify(bundle));
+    void fetch("/api/user/plans", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        payload: bundle,
+        title: event.sport ? `${event.sport} — ${event.distance} km` : null,
+        setActive: true,
+      }),
+    }).catch(() => {
+      /* hors ligne ou non connecté */
+    });
+>>>>>>> group-by-hour-98d0b
     try {
       localStorage.setItem(ONBOARDING_PROFILE_KEY, "1");
       localStorage.setItem(ONBOARDING_EVENT_STEP_KEY, "1");

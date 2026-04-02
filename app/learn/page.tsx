@@ -1,6 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+<<<<<<< HEAD
+=======
+import { useSession } from 'next-auth/react';
+>>>>>>> group-by-hour-98d0b
 import type { AthleteProfile, EventDetails, FuelPlan, RaceState } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
 import { Header } from '../components/Header';
@@ -320,11 +324,16 @@ const heroCardStyle = {
 
 export default function LearnPage() {
   usePageTitle('Learn');
+<<<<<<< HEAD
+=======
+  const { status } = useSession();
+>>>>>>> group-by-hour-98d0b
   const [activeTab, setActiveTab] = useState<'debriefs' | 'library'>('debriefs');
   const [debriefs, setDebriefs] = useState<StoredDebrief[]>([]);
   const firstItem = keyNumbers[0];
 
   useEffect(() => {
+<<<<<<< HEAD
     try {
       const raw = localStorage.getItem(DEBRIEFS_STORAGE_KEY);
       const parsed = raw ? (JSON.parse(raw) as StoredDebrief[]) : [];
@@ -451,6 +460,173 @@ export default function LearnPage() {
             </div>
           </section>
 
+=======
+    const loadLocal = (): StoredDebrief[] => {
+      try {
+        const raw = localStorage.getItem(DEBRIEFS_STORAGE_KEY);
+        const parsed = raw ? (JSON.parse(raw) as StoredDebrief[]) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    };
+
+    void (async () => {
+      const local = loadLocal();
+      if (status !== 'authenticated') {
+        setDebriefs(local);
+        return;
+      }
+
+      try {
+        const r = await fetch('/api/user/debriefs?limit=200', { credentials: 'include' });
+        if (!r.ok) {
+          setDebriefs(local);
+          return;
+        }
+        const j = (await r.json()) as {
+          debriefs?: { payload: unknown; finishedAt: string }[];
+        };
+        const fromCloud: StoredDebrief[] = (j.debriefs ?? []).map((row) => {
+          const p = row.payload as StoredDebrief;
+          return { ...p, finishedAt: row.finishedAt };
+        });
+        const byFinished = new Map<string, StoredDebrief>();
+        for (const d of local) {
+          if (d?.finishedAt) byFinished.set(d.finishedAt, d);
+        }
+        for (const d of fromCloud) {
+          if (d?.finishedAt && !byFinished.has(d.finishedAt)) byFinished.set(d.finishedAt, d);
+        }
+        const merged = [...byFinished.values()].sort(
+          (a, b) => new Date(b.finishedAt).getTime() - new Date(a.finishedAt).getTime()
+        );
+        setDebriefs(merged);
+      } catch {
+        setDebriefs(local);
+      }
+    })();
+  }, [status]);
+
+  const tabButton = (tab: 'debriefs' | 'library', label: string) => {
+    const active = activeTab === tab;
+    return (
+      <button
+        type="button"
+        onClick={() => setActiveTab(tab)}
+        style={{
+          padding: '10px 18px',
+          borderRadius: 8,
+          border: '1px solid var(--color-border)',
+          background: active ? 'var(--color-accent)' : 'transparent',
+          color: active ? '#000' : 'var(--color-text)',
+          fontWeight: 600,
+          cursor: 'pointer',
+          fontSize: 14,
+        }}
+      >
+        {label}
+      </button>
+    );
+  };
+
+  return (
+    <div>
+      <Header />
+      <main style={{ maxWidth: 1120, margin: '0 auto', padding: '28px 20px 48px' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: 16,
+          alignItems: 'center',
+          padding: 18,
+          border: '1px solid var(--color-border)',
+          borderRadius: 16,
+          background:
+            'linear-gradient(120deg, color-mix(in srgb, var(--color-accent) 18%, transparent) 0%, transparent 45%)',
+        }}
+      >
+        <div>
+          <h1 style={{ margin: 0, fontSize: 32 }}>Learn</h1>
+          <p style={{ marginTop: 8, color: 'var(--color-text-muted)' }}>
+            Debriefs des courses terminees dans Race Mode et bibliotheque de reperes nutrition verifiables.
+          </p>
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 8,
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+          }}
+        >
+          {tabButton('debriefs', 'Debriefs')}
+          {tabButton('library', 'Bibliothèque')}
+        </div>
+      </div>
+
+      {activeTab === 'debriefs' && (
+        <section style={{ marginTop: 24 }}>
+          <h2 style={{ marginBottom: 10 }}>Courses passees</h2>
+          <p style={{ marginTop: 0, color: 'var(--color-text-muted)', marginBottom: 18 }}>
+            Chaque fin de course enregistre un debrief (10 derniers sur cet appareil ; compte Google pour
+            l historique cloud plus long).
+          </p>
+          {debriefs.length === 0 ? (
+            <div style={{ ...heroCardStyle, color: 'var(--color-text-muted)' }}>
+              Aucun debrief pour l instant. Lance le Race Mode, termine une course, puis reviens sur cet onglet.
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: 12 }}>
+              {debriefs.map((debrief, i) => (
+                <DebriefCard key={`${debrief.finishedAt}-${i}`} debrief={debrief} rank={i + 1} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {activeTab === 'library' && (
+        <>
+          <section style={{ marginTop: 24, display: 'grid', gap: 16, gridTemplateColumns: '1.6fr 1fr' }}>
+            <article style={{ ...heroCardStyle, overflow: 'hidden', padding: 0 }}>
+              <img src={firstItem.imageUrl} alt={firstItem.imageAlt} style={{ width: '100%', height: 220, objectFit: 'cover' }} />
+              <div style={{ padding: 16 }}>
+                <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 99, fontSize: 12, border: '1px solid var(--color-border)', marginBottom: 10 }}>
+                  Mise en avant
+                </div>
+                <h2 style={{ margin: '0 0 6px' }}>{firstItem.title}</h2>
+                <p style={{ margin: '0 0 12px', color: 'var(--color-text-muted)' }}>{firstItem.subtitle}</p>
+                <p style={{ margin: 0, fontWeight: 700 }}>{firstItem.value}</p>
+              </div>
+            </article>
+
+            <aside style={heroCardStyle}>
+              <h3 style={{ marginTop: 0 }}>Comment utiliser cette page</h3>
+              <p style={{ marginTop: 0, color: 'var(--color-text-muted)' }}>
+                Ouvre les cartes pour lire les details actionnables et garder une trace des recommandations utiles pour tes prochaines courses.
+              </p>
+              <p style={{ marginBottom: 0, color: 'var(--color-text-muted)', fontSize: 14 }}>
+                Chaque article inclut une source cliquable afin de verifier facilement la reference.
+              </p>
+            </aside>
+          </section>
+
+          <section style={{ marginTop: 26 }}>
+            <h2 style={{ marginBottom: 10 }}>Reperes utiles</h2>
+            <p style={{ marginTop: 0, color: 'var(--color-text-muted)' }}>
+              Ces chiffres servent de base, puis se personnalisent selon votre reponse individuelle.
+            </p>
+            <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
+              {keyNumbers.map((item) => (
+                <Card key={item.id} item={item} />
+              ))}
+            </div>
+          </section>
+
+>>>>>>> group-by-hour-98d0b
           <section style={{ marginTop: 28 }}>
             <h2 style={{ marginBottom: 10 }}>Conseils pratiques</h2>
             <p style={{ marginTop: 0, color: 'var(--color-text-muted)' }}>
