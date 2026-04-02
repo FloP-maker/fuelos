@@ -1,12 +1,141 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import type { FuelPlan, AthleteProfile, EventDetails, TimelineItem } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
 import { ThemeToggle } from '../app/components/ThemeToggle';
+
+const NAV = [
+  { href: '/plan', label: 'Plan' },
+  { href: '/shop', label: 'Shop' },
+  { href: '/race', label: 'Race Mode' },
+  { href: '/learn', label: 'Learn' },
+];
+
+const S = {
+  page: {
+    minHeight: '100vh',
+    background: 'var(--color-bg)',
+    color: 'var(--color-text)',
+    fontFamily: 'system-ui, sans-serif',
+  } as CSSProperties,
+  header: {
+    borderBottom: '1px solid var(--color-border)',
+    padding: '16px 24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'sticky',
+    top: 0,
+    zIndex: 30,
+    background: 'color-mix(in srgb, var(--color-bg) 88%, transparent)',
+    backdropFilter: 'blur(10px)',
+  } as CSSProperties,
+  logo: { display: 'flex', alignItems: 'center', gap: 10 } as CSSProperties,
+  logoIcon: {
+    width: 32,
+    height: 32,
+    background: 'var(--color-accent)',
+    borderRadius: 8,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 800,
+    fontSize: 18,
+    color: '#000',
+  } as CSSProperties,
+  navLink: {
+    padding: '8px 14px',
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: 600,
+    border: '1px solid transparent',
+    textDecoration: 'none',
+  } as CSSProperties,
+  navLinkActive: {
+    padding: '8px 14px',
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: 700,
+    color: 'var(--color-accent)',
+    border: '1px solid var(--color-accent)',
+    background: 'rgba(34,197,94,0.08)',
+    textDecoration: 'none',
+  } as CSSProperties,
+  btnOutline: {
+    padding: '10px 20px',
+    borderRadius: 8,
+    background: 'transparent',
+    color: 'var(--color-text)',
+    fontWeight: 600,
+    fontSize: 14,
+    border: '1px solid var(--color-border)',
+    cursor: 'pointer',
+    textDecoration: 'none',
+  } as CSSProperties,
+  main: { maxWidth: 960, margin: '0 auto', padding: '28px 24px 48px' } as CSSProperties,
+  card: {
+    background: 'var(--color-bg-card)',
+    border: '1px solid var(--color-border)',
+    borderRadius: 12,
+    padding: 18,
+  } as CSSProperties,
+  cardTitle: { fontWeight: 800, fontSize: 14 } as CSSProperties,
+  muted: { color: 'var(--color-text-muted)' } as CSSProperties,
+  monoTime: {
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    fontWeight: 900,
+    fontSize: 52,
+    letterSpacing: '-0.04em',
+  } as CSSProperties,
+  btnPrimary: {
+    width: '100%',
+    padding: '14px 18px',
+    borderRadius: 10,
+    background: 'var(--color-accent)',
+    color: '#000',
+    fontWeight: 800,
+    fontSize: 16,
+    border: 'none',
+    cursor: 'pointer',
+  } as CSSProperties,
+  btnDanger: {
+    width: '100%',
+    padding: '14px 18px',
+    borderRadius: 10,
+    background: 'var(--color-danger)',
+    color: '#fff',
+    fontWeight: 800,
+    fontSize: 16,
+    border: 'none',
+    cursor: 'pointer',
+  } as CSSProperties,
+  btnSecondary: {
+    width: '100%',
+    padding: '14px 18px',
+    borderRadius: 10,
+    background: 'transparent',
+    color: 'var(--color-text)',
+    fontWeight: 700,
+    fontSize: 15,
+    border: '1px solid var(--color-border)',
+    cursor: 'pointer',
+  } as CSSProperties,
+  badge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '4px 10px',
+    borderRadius: 99,
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: '0.5px',
+    border: '1px solid var(--color-border)',
+    background: 'color-mix(in srgb, var(--color-bg-card) 65%, transparent)',
+  } as CSSProperties,
+};
 
 interface RaceState {
   status: 'idle' | 'running' | 'paused' | 'finished';
@@ -120,6 +249,45 @@ function RaceContent() {
     };
   }, [raceState.status]);
 
+  const ensureAudioContext = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    if (!audioContextRef.current) {
+      audioContextRef.current = new window.AudioContext();
+    }
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume().catch(() => undefined);
+    }
+  }, []);
+
+  const playSoundCue = useCallback(
+    (type: 'soon' | 'due' | 'confirm') => {
+      const ctx = audioContextRef.current;
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const pattern =
+        type === 'soon'
+          ? [740]
+          : type === 'due'
+          ? [880, 1100]
+          : [660];
+
+      pattern.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, now + idx * 0.16);
+        gain.gain.exponentialRampToValueAtTime(0.09, now + idx * 0.16 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.16 + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.16);
+        osc.stop(now + idx * 0.16 + 0.13);
+      });
+    },
+    []
+  );
+
   useEffect(() => {
     if (!plan || raceState.status !== 'running') return;
 
@@ -160,46 +328,16 @@ function RaceContent() {
         setTimeout(() => setShowAlert(false), 30000);
       }
     }
-  }, [raceState.elapsedMs, raceState.status, plan, notifEnabled, timingOffsetMin]);
-
-  const ensureAudioContext = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    if (!audioContextRef.current) {
-      audioContextRef.current = new window.AudioContext();
-    }
-    if (audioContextRef.current.state === 'suspended') {
-      audioContextRef.current.resume().catch(() => undefined);
-    }
-  }, []);
-
-  const playSoundCue = useCallback(
-    (type: 'soon' | 'due' | 'confirm') => {
-      const ctx = audioContextRef.current;
-      if (!ctx) return;
-      const now = ctx.currentTime;
-      const pattern =
-        type === 'soon'
-          ? [740]
-          : type === 'due'
-          ? [880, 1100]
-          : [660];
-
-      pattern.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.0001, now + idx * 0.16);
-        gain.gain.exponentialRampToValueAtTime(0.09, now + idx * 0.16 + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.16 + 0.12);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now + idx * 0.16);
-        osc.stop(now + idx * 0.16 + 0.13);
-      });
-    },
-    []
-  );
+  }, [
+    raceState.elapsedMs,
+    raceState.status,
+    raceState.consumedItems,
+    raceState.skippedItems,
+    plan,
+    notifEnabled,
+    timingOffsetMin,
+    playSoundCue,
+  ]);
 
   const handleStart = useCallback(async () => {
     ensureAudioContext();
@@ -327,43 +465,41 @@ function RaceContent() {
 
   if (!plan) {
     return (
-      <div
-        className="min-h-screen flex flex-col items-center justify-center p-6"
-        style={{
-          background:
-            "radial-gradient(circle at top, rgba(34,197,94,0.14), transparent 40%), linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 92%, transparent) 0%, var(--color-bg) 75%)",
-          color: "var(--color-text)",
-        }}
-      >
-        <div className="fixed top-4 right-4 flex items-center gap-2">
-          <Link
-            href="/"
-            style={{
-              padding: '10px 20px',
-              borderRadius: 8,
-              background: 'transparent',
-              color: 'var(--color-text)',
-              fontWeight: 600,
-              fontSize: 14,
-              border: '1px solid var(--color-border)',
-              cursor: 'pointer',
-              textDecoration: 'none',
-            }}
-          >
-            Accueil
-          </Link>
-          <ThemeToggle />
-        </div>
-        <div className="text-6xl mb-6">⚡</div>
-        <h1 className="text-2xl font-bold mb-3" style={{ color: "var(--color-text)" }}>
-          Race Mode
-        </h1>
-        <p className="text-center mb-8" style={{ color: "var(--color-text-muted)" }}>
-          Aucun plan actif. Crée ton plan d&apos;abord.
-        </p>
-        <Link href="/plan" className="bg-green-500 text-black font-bold py-3 px-6 rounded-xl text-base">
-          Créer mon plan →
-        </Link>
+      <div style={S.page}>
+        <header style={S.header}>
+          <div style={S.logo}>
+            <div style={S.logoIcon}>F</div>
+            <span style={{ fontWeight: 800, fontSize: 20 }}>FuelOS</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                style={item.href === '/race' ? S.navLinkActive : { ...S.navLink, color: 'var(--color-text-muted)' }}
+              >
+                {item.label}
+              </Link>
+            ))}
+            <Link href="/" style={S.btnOutline}>
+              Accueil
+            </Link>
+            <ThemeToggle />
+          </div>
+        </header>
+
+        <main style={{ ...S.main, paddingTop: 52 }}>
+          <div style={{ maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
+            <div style={{ fontSize: 46, marginBottom: 12 }}>⚡</div>
+            <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 10 }}>Race Mode</h1>
+            <p style={{ ...S.muted, fontSize: 14, marginBottom: 18 }}>
+              Aucun plan actif. Crée ton plan d&apos;abord.
+            </p>
+            <Link href="/plan" style={{ ...S.btnPrimary, display: 'inline-block', width: 'auto', textDecoration: 'none' }}>
+              Créer mon plan →
+            </Link>
+          </div>
+        </main>
       </div>
     );
   }
@@ -404,302 +540,149 @@ function RaceContent() {
   const progressPercent = Math.min(100, (elapsedMin / ((event?.targetTime || 1) * 60)) * 100);
 
   return (
-    <div
-      className="relative min-h-screen"
-      style={{
-        backgroundColor: "var(--color-bg)",
-        color: "var(--color-text)",
-      }}
-    >
-      {/* Background layers, fixed and visible */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'fixed',
-          inset: 0,
-          pointerEvents: 'none',
-          zIndex: 0,
-          background:
-            "radial-gradient(circle at top, rgba(34,197,94,0.18), transparent 38%), radial-gradient(circle at 82% 18%, rgba(96,165,250,0.12), transparent 30%), linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 88%, transparent) 0%, var(--color-bg) 80%)",
-        }}
-      />
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'fixed',
-          inset: 0,
-          pointerEvents: 'none',
-          zIndex: 0,
-          opacity: 0.07,
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.18) 1px, transparent 1px)',
-          backgroundSize: '30px 30px',
-        }}
-      />
+    <div style={S.page}>
+      <header style={S.header}>
+        <div style={S.logo}>
+          <div style={S.logoIcon}>F</div>
+          <span style={{ fontWeight: 800, fontSize: 20 }}>FuelOS</span>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {NAV.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              style={item.href === '/race' ? S.navLinkActive : { ...S.navLink, color: 'var(--color-text-muted)' }}
+            >
+              {item.label}
+            </Link>
+          ))}
+          <Link href="/" style={S.btnOutline}>
+            Accueil
+          </Link>
+          <ThemeToggle />
+        </div>
+      </header>
 
-      <div className="relative z-10 w-full">
-        {/* Header */}
-        <div
-          className="sticky top-0 border-b backdrop-blur"
-          style={{
-            zIndex: 30,
-            borderColor: "var(--color-border)",
-            background: "color-mix(in srgb, var(--color-bg) 70%, transparent)",
-          }}
-        >
-          <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-4">
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    background: "var(--color-accent)",
-                    borderRadius: 8,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 800,
-                    fontSize: 18,
-                    color: "#000",
-                  }}
-                >
-                  F
-                </div>
-                <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: "0.04em" }}>
-                  Race Mode
-                </span>
-              </div>
-
-              {notifEnabled && (
-                <span
-                  className="rounded-full px-2.5 py-1 text-xs font-semibold"
-                  style={{
-                    border: '1px solid rgba(52,211,153,0.35)',
-                    background: 'rgba(52,211,153,0.14)',
-                    color: '#86efac',
-                  }}
-                >
-                  🔔 ON
-                </span>
-              )}
-
-              {raceState.status === 'running' && (
-                <span
-                  className="rounded-full px-2.5 py-1 text-xs font-bold"
-                  style={{
-                    border: '1px solid rgba(248,113,113,0.4)',
-                    background: 'rgba(239,68,68,0.16)',
-                    color: '#fca5a5',
-                    boxShadow: '0 0 14px rgba(239,68,68,0.18)',
-                  }}
-                >
-                  LIVE
-                </span>
-              )}
+      <main style={S.main}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 2 }}>Race Mode</div>
+            <div style={{ ...S.muted, fontSize: 13 }}>
+              {event ? `${event.sport} · ${event.distance} km · objectif ${event.targetTime} h` : 'Exécution du plan'}
             </div>
-
-            <div className="flex items-center gap-2">
-              <Link
-                href="/"
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: 8,
-                  background: 'transparent',
-                  color: 'var(--color-text)',
-                  fontWeight: 600,
-                  fontSize: 14,
-                  border: '1px solid var(--color-border)',
-                  cursor: 'pointer',
-                  textDecoration: 'none',
-                }}
-              >
-                Accueil
-              </Link>
-              <ThemeToggle />
-            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
+            {notifEnabled && <span style={{ ...S.badge, borderColor: 'rgba(34,197,94,0.5)', color: 'var(--color-accent)' }}>🔔 notifications</span>}
+            {raceState.status === 'running' && (
+              <span style={{ ...S.badge, borderColor: 'rgba(239,68,68,0.5)', color: 'color-mix(in srgb, var(--color-danger) 85%, var(--color-text))' }}>
+                LIVE
+              </span>
+            )}
           </div>
         </div>
 
-        <div className="mx-auto w-full max-w-3xl space-y-5 p-4 md:p-6">
-          {/* Top cockpit KPIs */}
-          <div className="grid grid-cols-3 gap-2">
-            <div
-              className="rounded-lg px-3 py-2 text-center"
-              style={{
-                border: '1px solid rgba(248,113,113,0.30)',
-                background: 'rgba(239,68,68,0.10)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-              }}
-            >
-              <div className="text-[10px] font-semibold uppercase text-red-200/80" style={{ letterSpacing: '0.14em' }}>
-                Status
-              </div>
-              <div className="text-sm font-bold text-red-200">{raceState.status.toUpperCase()}</div>
-            </div>
+        {/* KPIs */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12, marginBottom: 16 }}>
+          <div style={S.card}>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Statut</div>
+            <div style={{ fontWeight: 900 }}>{raceState.status.toUpperCase()}</div>
+          </div>
+          <div style={S.card}>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Cible</div>
+            <div style={{ fontWeight: 900 }}>{event ? `${event.targetTime}h` : '--'}</div>
+          </div>
+          <div style={S.card}>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Restant</div>
+            <div style={{ fontWeight: 900 }}>{Math.max(0, totalItems - consumedCount - skippedCount)}</div>
+          </div>
+        </div>
 
-            <div
-              className="rounded-lg px-3 py-2 text-center"
-              style={{
-                border: '1px solid rgba(34,211,238,0.30)',
-                background: 'rgba(6,182,212,0.10)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-              }}
-            >
-              <div className="text-[10px] font-semibold uppercase text-cyan-200/80" style={{ letterSpacing: '0.14em' }}>
-                Cible
-              </div>
-              <div className="text-sm font-bold text-cyan-200">{event ? `${event.targetTime}h` : '--'}</div>
+        {/* Timer */}
+        <section style={{ ...S.card, padding: 22, marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'baseline', marginBottom: 12 }}>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Timer
             </div>
-
-            <div
-              className="rounded-lg px-3 py-2 text-center"
-              style={{
-                border: '1px solid rgba(251,191,36,0.30)',
-                background: 'rgba(245,158,11,0.10)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-              }}
-            >
-              <div className="text-[10px] font-semibold uppercase text-amber-200/80" style={{ letterSpacing: '0.14em' }}>
-                Reste
-              </div>
-              <div className="text-sm font-bold text-amber-200">
-                {Math.max(0, totalItems - consumedCount - skippedCount)}
-              </div>
+            <div style={{ ...S.muted, fontSize: 12 }}>
+              {event ? `${event.sport} · ${event.distance} km` : null}
             </div>
           </div>
 
-          {/* Timer Card */}
+          <div style={{ textAlign: 'center', marginBottom: 14 }}>
+            <div style={S.monoTime}>{formatDuration(raceState.elapsedMs)}</div>
+          </div>
+
           <div
-            className="rounded-3xl p-6 text-center backdrop-blur-xl"
+            aria-label="Progression"
             style={{
-              border: '1px solid rgba(255,255,255,0.10)',
-              background: 'rgba(255,255,255,0.03)',
-              boxShadow: '0 20px 50px rgba(127,29,29,0.20)',
+              height: 10,
+              borderRadius: 99,
+              overflow: 'hidden',
+              background: 'color-mix(in srgb, var(--color-bg) 72%, transparent)',
+              border: '1px solid var(--color-border)',
+              marginBottom: 14,
             }}
           >
-            <div className="mb-2 text-xs uppercase text-slate-400" style={{ letterSpacing: '0.2em' }}>
-              {event ? `${event.sport.toUpperCase()} · ${event.distance}KM · ${event.targetTime}H` : 'RACE'}
-            </div>
-
             <div
-              className="mb-4 text-6xl font-mono font-black tracking-tight"
               style={{
-                textShadow: '0 0 18px rgba(239,68,68,0.45)',
-                color: "var(--color-text)",
+                height: '100%',
+                width: `${progressPercent}%`,
+                background: 'linear-gradient(90deg, var(--color-accent) 0%, color-mix(in srgb, var(--color-accent) 70%, #60a5fa) 100%)',
+                transition: 'width 1s ease',
               }}
-            >
-              {formatDuration(raceState.elapsedMs)}
-            </div>
-
-            <div
-              className="mb-5 h-2.5 w-full overflow-hidden rounded-full"
-              style={{
-                background: 'rgba(30,41,59,0.85)',
-                border: '1px solid rgba(255,255,255,0.05)',
-              }}
-            >
-              <div
-                className="h-2.5 rounded-full transition-all duration-1000"
-                style={{
-                  width: `${progressPercent}%`,
-                  background: 'linear-gradient(90deg, #ef4444 0%, #f97316 55%, #fbbf24 100%)',
-                  boxShadow: '0 0 14px rgba(249,115,22,0.30)',
-                }}
-              />
-            </div>
-
-            {raceState.status === 'idle' && (
-              <button
-                onClick={handleStart}
-                className="w-full rounded-2xl px-6 py-4 text-xl font-black text-slate-950 transition-all active:scale-95"
-                style={{
-                  background: 'linear-gradient(90deg, #ef4444 0%, #f97316 55%, #fbbf24 100%)',
-                  boxShadow: '0 12px 28px rgba(239,68,68,0.28)',
-                }}
-              >
-                🏁 DÉMARRER
-              </button>
-            )}
-
-            {raceState.status === 'running' && (
-              <div className="flex gap-3">
-                <button
-                  onClick={handlePause}
-                  className="flex-1 rounded-xl py-4 text-lg font-bold text-slate-950 transition-transform active:scale-95"
-                  style={{
-                    background: '#fbbf24',
-                    border: '1px solid rgba(253,224,71,0.35)',
-                    boxShadow: '0 8px 22px rgba(245,158,11,0.18)',
-                  }}
-                >
-                  ⏸ Pause
-                </button>
-                <button
-                  onClick={handleFinish}
-                  className="flex-1 rounded-xl py-4 text-lg font-bold text-white transition-transform active:scale-95"
-                  style={{
-                    background: '#e11d48',
-                    border: '1px solid rgba(251,113,133,0.24)',
-                    boxShadow: '0 8px 22px rgba(225,29,72,0.22)',
-                  }}
-                >
-                  🏆 Finir
-                </button>
-              </div>
-            )}
-
-            {raceState.status === 'paused' && (
-              <div className="flex gap-3">
-                <button
-                  onClick={handleResume}
-                  className="flex-1 rounded-xl py-4 text-lg font-bold text-slate-950 transition-transform active:scale-95"
-                  style={{
-                    background: '#34d399',
-                    border: '1px solid rgba(110,231,183,0.35)',
-                    boxShadow: '0 8px 22px rgba(16,185,129,0.22)',
-                  }}
-                >
-                  ▶ Reprendre
-                </button>
-                <button
-                  onClick={handleFinish}
-                  className="flex-1 rounded-xl py-4 text-lg font-bold text-white transition-transform active:scale-95"
-                  style={{
-                    background: '#e11d48',
-                    border: '1px solid rgba(251,113,133,0.24)',
-                    boxShadow: '0 8px 22px rgba(225,29,72,0.22)',
-                  }}
-                >
-                  🏆 Finir
-                </button>
-              </div>
-            )}
-
-            {raceState.status === 'finished' && (
-              <div className="text-xl font-bold text-emerald-300">🏆 Course terminée !</div>
-            )}
+            />
           </div>
+
+          {raceState.status === 'idle' && (
+            <button onClick={handleStart} style={S.btnPrimary}>
+              Démarrer
+            </button>
+          )}
+
+          {(raceState.status === 'running' || raceState.status === 'paused') && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {raceState.status === 'running' ? (
+                <button onClick={handlePause} style={S.btnSecondary}>
+                  Pause
+                </button>
+              ) : (
+                <button onClick={handleResume} style={S.btnPrimary}>
+                  Reprendre
+                </button>
+              )}
+              <button onClick={handleFinish} style={S.btnDanger}>
+                Terminer
+              </button>
+            </div>
+          )}
+
+          {raceState.status === 'finished' && (
+            <div style={{ marginTop: 8, textAlign: 'center', fontWeight: 900, color: 'var(--color-accent)' }}>
+              Course terminée
+            </div>
+          )}
+        </section>
 
           {/* Alert Card */}
           {showAlert && alertItem && raceState.status === 'running' && (
             <div
               className="rounded-2xl p-5"
               style={{
-                border: '1px solid rgba(253,224,71,0.45)',
-                background: 'rgba(251,191,36,0.12)',
-                boxShadow: '0 12px 28px rgba(245,158,11,0.12)',
-                animation: 'pulse 2s infinite',
+                border: '1px solid color-mix(in srgb, var(--color-warning) 55%, var(--color-border))',
+                background: 'color-mix(in srgb, var(--color-warning) 12%, var(--color-bg-card))',
               }}
             >
-              <div className="mb-1 text-sm font-bold uppercase text-amber-300">⚡ Ravitaillement maintenant</div>
-              <div className="mb-1 text-xl font-bold" style={{ color: "var(--color-text)" }}>
-                {alertItem.product}
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+                <div style={{ fontWeight: 900 }}>Ravitaillement</div>
+                <span style={{ ...S.badge, borderColor: 'color-mix(in srgb, var(--color-warning) 65%, var(--color-border))' }}>
+                  maintenant
+                </span>
               </div>
-              <div className="mb-4 text-sm text-amber-50/85">
-                {alertItem.cho}g CHO
-                {alertItem.water ? ` · ${alertItem.water}ml` : ''}
-                {alertItem.sodium ? ` · ${alertItem.sodium}mg Na+` : ''}
+              <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 6 }}>{alertItem.product}</div>
+              <div style={{ ...S.muted, fontSize: 13, marginBottom: 14 }}>
+                ⚡ {alertItem.cho}g CHO
+                {alertItem.water ? ` · 💧 ${alertItem.water}ml` : ''}
+                {alertItem.sodium ? ` · 🧂 ${alertItem.sodium}mg` : ''}
               </div>
 
               <div className="flex gap-3">
@@ -707,8 +690,8 @@ function RaceContent() {
                   onClick={() => handleConsumed(raceState.currentItemIndex)}
                   className="flex-1 rounded-xl py-4 text-lg font-bold text-slate-950 transition-transform active:scale-95"
                   style={{
-                    background: '#34d399',
-                    boxShadow: '0 8px 22px rgba(16,185,129,0.18)',
+                    background: 'var(--color-accent)',
+                    border: '1px solid color-mix(in srgb, var(--color-accent) 60%, var(--color-border))',
                   }}
                 >
                   ✓ Pris
@@ -717,8 +700,9 @@ function RaceContent() {
                   onClick={() => handleSkipped(raceState.currentItemIndex)}
                   className="flex-1 rounded-xl py-4 text-lg font-bold text-white transition-transform active:scale-95"
                   style={{
-                    background: 'rgba(15,23,42,0.92)',
-                    border: '1px solid rgba(255,255,255,0.14)',
+                    background: 'transparent',
+                    color: 'var(--color-text)',
+                    border: '1px solid var(--color-border)',
                   }}
                 >
                   Passé
@@ -732,12 +716,12 @@ function RaceContent() {
             <div
               className="rounded-2xl p-4 backdrop-blur-xl"
               style={{
-                border: '1px solid rgba(255,255,255,0.10)',
-                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-card)',
               }}
             >
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-400" style={{ letterSpacing: '0.18em' }}>
+                <span className="text-xs font-semibold" style={{ ...S.muted, letterSpacing: '0.18em' }}>
                   PROCHAIN
                 </span>
                 <span
@@ -745,16 +729,18 @@ function RaceContent() {
                   style={{
                     color:
                       nextItemMinFromNow !== null && nextItemMinFromNow < 5
-                        ? '#fcd34d'
-                        : '#94a3b8',
+                        ? 'var(--color-warning)'
+                        : 'var(--color-text-muted)',
                   }}
                 >
                   {nextItemMinFromNow !== null ? `dans ${Math.round(nextItemMinFromNow)}min` : ''}
                 </span>
               </div>
 
-              <div className="text-lg font-bold text-slate-100">{nextItem.product}</div>
-              <div className="mt-1 flex flex-wrap gap-3 text-sm text-slate-300">
+              <div className="text-lg font-bold" style={{ color: 'var(--color-text)' }}>
+                {nextItem.product}
+              </div>
+              <div className="mt-1 flex flex-wrap gap-3 text-sm" style={{ color: 'var(--color-text-muted)' }}>
                 <span>⚡ {nextItem.cho}g CHO</span>
                 {nextItem.water && <span>💧 {nextItem.water}ml</span>}
                 {nextItem.sodium && <span>🧂 {nextItem.sodium}mg Na+</span>}
@@ -767,41 +753,49 @@ function RaceContent() {
             <div
               className="rounded-xl p-3 text-center"
               style={{
-                border: '1px solid rgba(255,255,255,0.10)',
-                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-card)',
               }}
             >
-              <div className="text-xl font-bold text-emerald-300">{raceState.choConsumed}g</div>
-              <div className="mt-1 text-xs text-slate-400">CHO pris</div>
+              <div className="text-xl font-bold" style={{ color: 'var(--color-accent)' }}>
+                {raceState.choConsumed}g
+              </div>
+              <div className="mt-1 text-xs" style={S.muted}>
+                CHO pris
+              </div>
             </div>
 
             <div
               className="rounded-xl p-3 text-center"
               style={{
-                border: '1px solid rgba(255,255,255,0.10)',
-                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-card)',
               }}
             >
-              <div className="text-xl font-bold text-sky-300">{raceState.waterConsumed}ml</div>
-              <div className="mt-1 text-xs text-slate-400">Eau</div>
+              <div className="text-xl font-bold">{raceState.waterConsumed}ml</div>
+              <div className="mt-1 text-xs" style={S.muted}>
+                Eau
+              </div>
             </div>
 
             <div
               className="rounded-xl p-3 text-center"
               style={{
-                border: '1px solid rgba(255,255,255,0.10)',
-                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-card)',
               }}
             >
               <div
                 className="text-xl font-bold"
                 style={{
-                  color: compliance >= 80 ? '#86efac' : compliance >= 50 ? '#fcd34d' : '#fda4af',
+                  color: compliance >= 80 ? 'var(--color-accent)' : compliance >= 50 ? 'var(--color-warning)' : 'var(--color-danger)',
                 }}
               >
                 {compliance}%
               </div>
-              <div className="mt-1 text-xs text-slate-400">Compliance</div>
+              <div className="mt-1 text-xs" style={S.muted}>
+                Compliance
+              </div>
             </div>
           </div>
 
@@ -810,14 +804,14 @@ function RaceContent() {
             <div
               className="rounded-xl p-4"
               style={{
-                border: '1px solid rgba(251,146,60,0.45)',
-                background: 'rgba(249,115,22,0.10)',
+                border: '1px solid color-mix(in srgb, var(--color-warning) 55%, var(--color-border))',
+                background: 'color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-card))',
               }}
             >
-              <div className="mb-1 text-sm font-bold text-orange-300">🔄 Recalcul dynamique</div>
-              <div className="text-sm text-orange-100/90">
+              <div className="mb-1 text-sm font-bold">🔄 Recalcul dynamique</div>
+              <div className="text-sm" style={S.muted}>
                 {choDeficit}g CHO manquants redistribués · Objectif ajusté :
-                <span className="font-bold text-orange-300"> {adjustedChoPerH}g/h</span>
+                <span style={{ fontWeight: 900, color: 'var(--color-warning)' }}> {adjustedChoPerH}g/h</span>
               </div>
             </div>
           )}
@@ -825,12 +819,12 @@ function RaceContent() {
           <div
             className="rounded-xl p-4"
             style={{
-              border: '1px solid rgba(56,189,248,0.35)',
-              background: 'rgba(14,116,144,0.12)',
+              border: '1px solid var(--color-border)',
+              background: 'var(--color-bg-card)',
             }}
           >
-            <div className="mb-1 text-sm font-bold text-cyan-300">⏱ Adaptation temps reel</div>
-            <div className="text-sm text-cyan-100/90">
+            <div className="mb-1 text-sm font-bold">⏱ Adaptation temps réel</div>
+            <div className="text-sm" style={S.muted}>
               {paceStatus} · Les rappels futurs sont automatiquement decalés de {Math.abs(timingOffsetMin).toFixed(1)} min.
             </div>
           </div>
@@ -839,18 +833,20 @@ function RaceContent() {
           <div
             className="overflow-hidden rounded-2xl backdrop-blur-xl"
             style={{
-              border: '1px solid rgba(255,255,255,0.10)',
-              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid var(--color-border)',
+              background: 'var(--color-bg-card)',
             }}
           >
             <div
               className="flex items-center justify-between px-4 py-3"
               style={{
-                borderBottom: '1px solid rgba(255,255,255,0.10)',
+                borderBottom: '1px solid var(--color-border)',
               }}
             >
-              <span className="font-bold text-slate-100">📋 Timeline</span>
-              <span className="text-sm text-slate-400">
+              <span className="font-bold" style={{ color: 'var(--color-text)' }}>
+                📋 Timeline
+              </span>
+              <span className="text-sm" style={S.muted}>
                 {consumedCount} pris · {skippedCount} passés · {totalItems - consumedCount - skippedCount} restants
               </span>
             </div>
@@ -861,12 +857,12 @@ function RaceContent() {
                   <div
                     className="sticky top-0 z-10 px-4 py-2 backdrop-blur"
                     style={{
-                      borderTop: '1px solid rgba(255,255,255,0.10)',
-                      borderBottom: '1px solid rgba(255,255,255,0.10)',
-                      background: 'rgba(15,23,42,0.88)',
+                      borderTop: '1px solid var(--color-border)',
+                      borderBottom: '1px solid var(--color-border)',
+                      background: 'color-mix(in srgb, var(--color-bg-card) 86%, var(--color-bg))',
                     }}
                   >
-                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-300">
+                    <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
                       Heure {group.hour} ({group.hour * 60}-{group.hour * 60 + 59} min)
                     </span>
                   </div>
@@ -882,16 +878,16 @@ function RaceContent() {
                         key={index}
                         className="flex items-center gap-3 px-4 py-3 last:border-0"
                         style={{
-                          borderBottom: '1px solid rgba(255,255,255,0.10)',
+                          borderBottom: '1px solid var(--color-border)',
                           opacity: isConsumed ? 0.45 : isSkipped ? 0.35 : 1,
                           textDecoration: isSkipped ? 'line-through' : 'none',
-                          background: isCurrent ? 'rgba(251,191,36,0.10)' : 'transparent',
+                          background: isCurrent ? 'color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-card))' : 'transparent',
                         }}
                       >
                         <div
                           className="w-10 flex-shrink-0 text-sm font-mono"
                           style={{
-                            color: isPast && !isConsumed ? '#fda4af' : '#94a3b8',
+                            color: isPast && !isConsumed ? 'var(--color-danger)' : 'var(--color-text-muted)',
                           }}
                         >
                           {Math.floor(item.timeMin)}min
@@ -901,21 +897,24 @@ function RaceContent() {
                           className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-xs"
                           style={{
                             background: isConsumed
-                              ? '#34d399'
+                              ? 'var(--color-accent)'
                               : isSkipped
-                              ? 'rgba(244,63,94,0.35)'
+                              ? 'color-mix(in srgb, var(--color-danger) 22%, transparent)'
                               : isCurrent
-                              ? '#fbbf24'
-                              : '#334155',
-                            color: isConsumed || isCurrent ? "#000" : "var(--color-text)",
+                              ? 'var(--color-warning)'
+                              : 'color-mix(in srgb, var(--color-bg) 65%, transparent)',
+                            color: isConsumed || isCurrent ? '#000' : 'var(--color-text)',
+                            border: '1px solid var(--color-border)',
                           }}
                         >
                           {isConsumed ? '✓' : isSkipped ? '×' : isCurrent ? '!' : ''}
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <div className="truncate text-sm font-medium text-slate-100">{item.product}</div>
-                          <div className="flex gap-2 text-xs text-slate-400">
+                          <div className="truncate text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+                            {item.product}
+                          </div>
+                          <div className="flex gap-2 text-xs" style={S.muted}>
                             <span>⚡{item.cho}g</span>
                             {item.water && <span>💧{item.water}ml</span>}
                             {item.sodium && <span>🧂{item.sodium}mg</span>}
@@ -928,9 +927,9 @@ function RaceContent() {
                               onClick={() => handleConsumed(index)}
                               className="rounded-lg px-2 py-1 text-xs active:scale-95"
                               style={{
-                                background: 'rgba(52,211,153,0.15)',
-                                color: '#86efac',
-                                border: '1px solid rgba(52,211,153,0.18)',
+                                background: 'rgba(34,197,94,0.10)',
+                                color: 'var(--color-accent)',
+                                border: '1px solid color-mix(in srgb, var(--color-accent) 55%, var(--color-border))',
                               }}
                             >
                               Pris
@@ -939,9 +938,9 @@ function RaceContent() {
                               onClick={() => handleSkipped(index)}
                               className="rounded-lg px-2 py-1 text-xs active:scale-95"
                               style={{
-                                background: '#334155',
-                                color: '#cbd5e1',
-                                border: '1px solid rgba(255,255,255,0.08)',
+                                background: 'transparent',
+                                color: 'var(--color-text-muted)',
+                                border: '1px solid var(--color-border)',
                               }}
                             >
                               Pass
@@ -955,8 +954,7 @@ function RaceContent() {
               ))}
             </div>
           </div>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }
@@ -969,9 +967,8 @@ export default function RacePage() {
         <div
           className="min-h-screen flex items-center justify-center"
           style={{
-            background:
-              "radial-gradient(circle at top, rgba(34,197,94,0.14), transparent 40%), linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 92%, transparent) 0%, var(--color-bg) 75%)",
-            color: "var(--color-text)",
+            background: 'var(--color-bg)',
+            color: 'var(--color-text)',
           }}
         >
           <div className="text-2xl" style={{ color: "var(--color-text)" }}>
