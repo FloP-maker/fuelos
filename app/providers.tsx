@@ -1,16 +1,27 @@
 'use client';
 
-import { ThemeProvider } from 'next-themes';
+import { ThemeProvider as NextThemesProvider } from "next-themes";
+import type { ThemeProviderProps } from "next-themes";
+import type { ComponentType, PropsWithChildren, ReactNode } from "react";
+import { SessionProvider } from "next-auth/react";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+// Certains setups TypeScript (IDE / versions @types) ne fusionnent pas `children`
+// avec `ThemeProviderProps` pour le JSX. On force un composant typé explicitement.
+const ThemeProvider = NextThemesProvider as ComponentType<
+  PropsWithChildren<ThemeProviderProps>
+>;
+
+export function Providers({ children }: { children: ReactNode }) {
   return (
+    <SessionProvider>
       <ThemeProvider
-            attribute="class"
-                  defaultTheme="dark"
-                        enableSystem={true}
-                              disableTransitionOnChange={false}
-                                  >
-                                        {children}
-                                            </ThemeProvider>
-                                              );
-                                              }
+        attribute="class"
+        defaultTheme="dark"
+        enableSystem
+        disableTransitionOnChange={false}
+      >
+        {children}
+      </ThemeProvider>
+    </SessionProvider>
+  );
+}

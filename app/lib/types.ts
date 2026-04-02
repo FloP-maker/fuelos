@@ -82,6 +82,15 @@ export interface FuelPlan {
   estimatedCost?: number;     // Coût total des produits à acheter (EUR)
 }
 
+/** Résultat de generateFuelPlan : plan principal + variante météo optionnelle */
+export interface FuelPlanGenerationResult {
+  mainPlan: FuelPlan;
+  altPlan?: FuelPlan;
+  altPlanLabel?: string;
+  /** Texte pédagogique (chiffres sweat rate, eau/h, sodium/h) pour infobulle */
+  altPlanExplanation?: string;
+}
+
 // 🆕 NOUVEAU TYPE - Stratégie de charge glucidique
 export interface ChoStrategy {
   type: "constant" | "progressive" | "custom";
@@ -109,13 +118,18 @@ export interface Product {
   allergens: string[];
   diet_tags: string[];     // ["vegan", "gluten-free", etc.]
   description?: string;
-  
+
   // 🆕 NOUVELLES PROPRIÉTÉS
   sweetness?: "low" | "medium" | "high";
   flavors?: string[];           // ["citrus", "neutral", "cola", etc.]
   texture?: "liquid" | "gel" | "chewy" | "solid"; // Pour la tolérance GI
   caffeineContent?: number;     // mg de caféine (si applicable)
   recommended_for?: string[];   // ["long-distance", "high-intensity", "sensitive-stomach"]
+
+  // 🆕 SOURCES/CRÉDIBILITÉ
+  productUrl?: string;        // Lien vers la page produit officielle
+  nutritionSource?: string;   // Source des données nutritionnelles
+  imageUrl?: string;          // Photo produit (API/scraping/manual)
 }
 
 export interface SavedPlan {
@@ -132,29 +146,4 @@ export interface RaceState {
   currentItemIndex: number;
   consumedItems: number[];        // indices of consumed timeline items
   deviations: string[];
-}
-
-export interface Product {
-  id: string;
-  name: string;
-  brand: string;
-  category: "gel" | "drink" | "bar" | "chew" | "real-food" | "electrolyte";
-  cho_per_unit: number;
-  water_per_unit?: number;
-  sodium_per_unit?: number;
-  calories_per_unit: number;
-  price_per_unit: number;
-  weight_g: number;
-  allergens: string[];
-  diet_tags: string[];
-  description?: string;
-  sweetness?: "low" | "medium" | "high";
-  flavors?: string[];
-  texture?: "liquid" | "gel" | "chewy" | "solid";
-  caffeineContent?: number;
-  recommended_for?: string[];
-  
-  // 🆕 SOURCES/CRÉDIBILITÉ
-  productUrl?: string;        // Lien vers la page produit officielle
-  nutritionSource?: string;   // Source des données nutritionnelles
 }

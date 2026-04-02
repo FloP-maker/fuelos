@@ -1,14 +1,15 @@
-import type { AthleteProfile, EventDetails, FuelPlan, TimelineItem } from "./types";
+import type { AthleteProfile, EventDetails, FuelPlan, FuelPlanGenerationResult, TimelineItem } from "./types";
 import { generateFuelPlan } from "./fuelEngine";
 
 // ============ CALCULATION ENGINE ============
 
 /**
- * Main calculation entry point
- * 🆕 Utilise maintenant le moteur intelligent fuelEngine
+ * Main calculation entry point — plan principal + variante météo (chaud/froid) si applicable.
  */
-export function calculateFuelPlan(profile: AthleteProfile, event: EventDetails): FuelPlan {
-  // ✅ Déléguer au nouveau moteur intelligent
+export function calculateFuelPlan(
+  profile: AthleteProfile,
+  event: EventDetails
+): FuelPlanGenerationResult {
   return generateFuelPlan(profile, event);
 }
 

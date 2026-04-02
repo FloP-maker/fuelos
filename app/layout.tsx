@@ -1,19 +1,28 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import "./globals.css";
+import ServiceWorkerRegistration from "./ServiceWorkerRegistration";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "FuelOS",
   description: "Votre nutrition endurance pilotée par la data",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
-    <html lang="fr">
-      <body>{children}</body>
+    <html lang="fr" suppressHydrationWarning>
+      <body>
+        <ServiceWorkerRegistration />
+        <Providers>
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }

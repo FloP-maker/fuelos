@@ -1,11 +1,194 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useId,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import type { FuelPlan, AthleteProfile, EventDetails, TimelineItem } from '../lib/types';
+import usePageTitle from '../lib/hooks/usePageTitle';
+import { Header } from '../components/Header';
 
-// ============ RACE MODE — DIFFERENCIATEUR #1 ============
+const ONBOARDING_PROFILE_KEY = 'fuelos_onboarding_profile_done';
+const ONBOARDING_EVENT_KEY = 'fuelos_onboarding_event_done';
+const ONBOARDING_EVENT_STEP_KEY = 'fuelos_onboarding_event_step_done';
+
+const S = {
+  page: {
+    minHeight: '100vh',
+    background: 'var(--color-bg)',
+    color: 'var(--color-text)',
+    fontFamily: 'system-ui, sans-serif',
+  } as CSSProperties,
+  btnOutline: {
+    padding: '10px 20px',
+    borderRadius: 8,
+    background: 'transparent',
+    color: 'var(--color-text)',
+    fontWeight: 600,
+    fontSize: 14,
+    border: '1px solid var(--color-border)',
+    cursor: 'pointer',
+    textDecoration: 'none',
+  } as CSSProperties,
+  main: { maxWidth: 960, margin: '0 auto', padding: '28px 24px 48px' } as CSSProperties,
+  card: {
+    background: 'var(--color-bg-card)',
+    border: '1px solid var(--color-border)',
+    borderRadius: 12,
+    padding: 18,
+  } as CSSProperties,
+  cardTitle: { fontWeight: 800, fontSize: 14 } as CSSProperties,
+  muted: { color: 'var(--color-text-muted)' } as CSSProperties,
+  monoTime: {
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    fontWeight: 900,
+    fontSize: 52,
+    letterSpacing: '-0.04em',
+  } as CSSProperties,
+  btnPrimary: {
+    width: '100%',
+    padding: '14px 18px',
+    borderRadius: 10,
+    background: 'var(--color-accent)',
+    color: '#000',
+    fontWeight: 800,
+    fontSize: 16,
+    border: 'none',
+    cursor: 'pointer',
+  } as CSSProperties,
+  btnDanger: {
+    width: '100%',
+    padding: '14px 18px',
+    borderRadius: 10,
+    background: 'var(--color-danger)',
+    color: '#fff',
+    fontWeight: 800,
+    fontSize: 16,
+    border: 'none',
+    cursor: 'pointer',
+  } as CSSProperties,
+  btnSecondary: {
+    width: '100%',
+    padding: '14px 18px',
+    borderRadius: 10,
+    background: 'transparent',
+    color: 'var(--color-text)',
+    fontWeight: 700,
+    fontSize: 15,
+    border: '1px solid var(--color-border)',
+    cursor: 'pointer',
+  } as CSSProperties,
+  badge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '4px 10px',
+    borderRadius: 99,
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: '0.5px',
+    border: '1px solid var(--color-border)',
+    background: 'color-mix(in srgb, var(--color-bg-card) 65%, transparent)',
+  } as CSSProperties,
+  stepperRail: {
+    position: 'absolute',
+    left: 15,
+    top: 36,
+    bottom: 36,
+    width: 2,
+    background: 'var(--color-border)',
+    borderRadius: 1,
+  } as CSSProperties,
+  confirmBackdrop: {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 100,
+    background: 'color-mix(in srgb, #000 52%, transparent)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  } as CSSProperties,
+  confirmPanel: {
+    width: '100%',
+    maxWidth: 400,
+    background: 'var(--color-bg-card)',
+    border: '1px solid var(--color-border)',
+    borderRadius: 14,
+    padding: 22,
+    boxShadow: '0 18px 50px color-mix(in srgb, #000 35%, transparent)',
+  } as CSSProperties,
+  simSpeedBtn: {
+    width: '100%',
+    padding: '10px 6px',
+    borderRadius: 8,
+    background: 'transparent',
+    color: 'var(--color-text)',
+    fontWeight: 600,
+    fontSize: 12,
+    border: '1px solid var(--color-border)',
+    cursor: 'pointer',
+  } as CSSProperties,
+  simSpeedBtnActive: {
+    width: '100%',
+    padding: '10px 6px',
+    borderRadius: 8,
+    background: 'color-mix(in srgb, #7c3aed 16%, var(--color-bg-card))',
+    color: 'var(--color-text)',
+    fontWeight: 800,
+    fontSize: 12,
+    border: '1px solid color-mix(in srgb, #7c3aed 45%, var(--color-border))',
+    cursor: 'pointer',
+  } as CSSProperties,
+};
+
+const SIMULATION_SPEEDS = [1, 10, 20, 30] as const;
+
+function DestructiveConfirmOverlay({
+  open,
+  title,
+  confirmLabel,
+  onCancel,
+  onConfirm,
+  children,
+}: {
+  open: boolean;
+  title: string;
+  confirmLabel: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  children: ReactNode;
+}) {
+  const titleId = useId();
+  if (!open) return null;
+  return (
+    <div role="dialog" aria-modal="true" aria-labelledby={titleId} style={S.confirmBackdrop}>
+      <div style={S.confirmPanel}>
+        <h2 id={titleId} style={{ fontWeight: 900, fontSize: 18, margin: '0 0 14px' }}>
+          {title}
+        </h2>
+        <div style={{ marginBottom: 20 }}>{children}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <button type="button" onClick={onCancel} style={S.btnSecondary}>
+            Annuler
+          </button>
+          <button type="button" onClick={onConfirm} style={S.btnDanger}>
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type SimulationSpeed = (typeof SIMULATION_SPEEDS)[number];
 
 interface RaceState {
   status: 'idle' | 'running' | 'paused' | 'finished';
@@ -17,7 +200,22 @@ interface RaceState {
   choConsumed: number;
   waterConsumed: number;
   sodiumConsumed: number;
+  /** 1 = temps réel ; 10–30 = simulation accélérée (×10 / ×20 / ×30). */
+  simulationSpeed: SimulationSpeed;
 }
+
+const INITIAL_RACE_STATE: RaceState = {
+  status: 'idle',
+  startTime: null,
+  elapsedMs: 0,
+  currentItemIndex: 0,
+  consumedItems: [],
+  skippedItems: [],
+  choConsumed: 0,
+  waterConsumed: 0,
+  sodiumConsumed: 0,
+  simulationSpeed: 1,
+};
 
 function formatDuration(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
@@ -28,7 +226,10 @@ function formatDuration(ms: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-// Send notification via Service Worker
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
 function sendNotification(title: string, body: string, tag: string) {
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({ type: 'SHOW_NOTIFICATION', title, body, tag });
@@ -37,7 +238,6 @@ function sendNotification(title: string, body: string, tag: string) {
   }
 }
 
-// Request notification permission
 async function requestNotificationPermission(): Promise<boolean> {
   if (!('Notification' in window)) return false;
   if (Notification.permission === 'granted') return true;
@@ -48,433 +248,1290 @@ async function requestNotificationPermission(): Promise<boolean> {
 
 function RaceContent() {
   const searchParams = useSearchParams();
-  
-  const [raceState, setRaceState] = useState<RaceState>({
-    status: 'idle',
-    startTime: null,
-    elapsedMs: 0,
-    currentItemIndex: 0,
-    consumedItems: [],
-    skippedItems: [],
-    choConsumed: 0,
-    waterConsumed: 0,
-    sodiumConsumed: 0,
-  });
-  
-  const [plan, setPlan] = useState<FuelPlan | null>(null);
+
+  const [raceState, setRaceState] = useState<RaceState>(INITIAL_RACE_STATE);
+
+  const [mainPlan, setMainPlan] = useState<FuelPlan | null>(null);
+  const [altPlan, setAltPlan] = useState<FuelPlan | null>(null);
+  const [altPlanLabel, setAltPlanLabel] = useState<string | null>(null);
+  const [racePlanVariant, setRacePlanVariant] = useState<'main' | 'alt'>('main');
+
+  const plan =
+    mainPlan != null && racePlanVariant === 'alt' && altPlan != null ? altPlan : mainPlan;
+
   const [profile, setProfile] = useState<AthleteProfile | null>(null);
   const [event, setEvent] = useState<EventDetails | null>(null);
+  const [onboarding, setOnboarding] = useState({
+    profileDone: false,
+    eventStepDone: false,
+    hasPlanInStorage: false,
+  });
   const [alertItem, setAlertItem] = useState<TimelineItem | null>(null);
   const [showAlert, setShowAlert] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const alertShownRef = useRef<Set<number>>(new Set());
-  // Recalcul dynamique : CHO deficit a redistribuer
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [choDeficit, setChoDeficit] = useState(0);
   const [notifEnabled, setNotifEnabled] = useState(false);
-  
-  // Load plan from URL params or localStorage
-  useEffect(() => {
+  const [timingOffsetMin, setTimingOffsetMin] = useState(0);
+  const [completedAtMinByItem, setCompletedAtMinByItem] = useState<Record<number, number>>({});
+
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const alertShownRef = useRef<Set<number>>(new Set());
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  const ensureAudioContext = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    if (!audioContextRef.current) {
+      audioContextRef.current = new window.AudioContext();
+    }
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume().catch(() => undefined);
+    }
+  }, []);
+
+  const playSoundCue = useCallback(
+    (type: 'soon' | 'due' | 'confirm') => {
+      const ctx = audioContextRef.current;
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const pattern =
+        type === 'soon'
+          ? [740]
+          : type === 'due'
+          ? [880, 1100]
+          : [660];
+
+      pattern.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, now + idx * 0.16);
+        gain.gain.exponentialRampToValueAtTime(0.09, now + idx * 0.16 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.16 + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.16);
+        osc.stop(now + idx * 0.16 + 0.13);
+      });
+    },
+    []
+  );
+
+  const refreshOnboarding = useCallback(() => {
     try {
-      const planParam = searchParams.get('plan');
-      if (planParam) {
-        const data = JSON.parse(decodeURIComponent(planParam));
-        setPlan(data.plan);
-        setProfile(data.profile);
-        setEvent(data.event);
-        return;
+      const savedPlan = localStorage.getItem('fuelos_active_plan');
+      let hasPlanInStorage = false;
+      if (savedPlan) {
+        const data = JSON.parse(savedPlan) as { fuelPlan?: FuelPlan; plan?: FuelPlan };
+        const p = data.fuelPlan || data.plan;
+        hasPlanInStorage = !!(p && Array.isArray(p.timeline) && p.timeline.length > 0);
       }
-      const saved = localStorage.getItem('fuelos_active_plan');
-      if (saved) {
-        const data = JSON.parse(saved);
-        setPlan(data.fuelPlan);
-        setProfile(data.profile);
-        setEvent(data.event);
-      }
-    } catch (e) {
-      console.error('Plan load error:', e);
+      const eventStepDone =
+        localStorage.getItem(ONBOARDING_EVENT_STEP_KEY) === '1' ||
+        localStorage.getItem(ONBOARDING_EVENT_KEY) === '1';
+      setOnboarding({
+        profileDone: localStorage.getItem(ONBOARDING_PROFILE_KEY) === '1',
+        eventStepDone,
+        hasPlanInStorage,
+      });
+    } catch {
+      setOnboarding({ profileDone: false, eventStepDone: false, hasPlanInStorage: false });
     }
-  }, [searchParams]);
-  
-  // Timer tick
+  }, []);
+
   useEffect(() => {
-    if (raceState.status === 'running') {
-      intervalRef.current = setInterval(() => {
-        setRaceState(prev => {
-          const now = Date.now();
-          const elapsed = prev.elapsedMs + (now - (prev.startTime ?? now));
-          return { ...prev, elapsedMs: elapsed, startTime: now };
-        });
-      }, 1000);
-    } else {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+    refreshOnboarding();
+    const onVis = () => refreshOnboarding();
+    const onStorage = (e: StorageEvent) => {
+      if (
+        e.key === ONBOARDING_PROFILE_KEY ||
+        e.key === ONBOARDING_EVENT_KEY ||
+        e.key === ONBOARDING_EVENT_STEP_KEY ||
+        e.key === 'fuelos_active_plan'
+      ) {
+        refreshOnboarding();
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('focus', onVis);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('focus', onVis);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, [refreshOnboarding]);
+
+  useEffect(() => {
+    const applyBundle = (data: {
+      plan?: FuelPlan;
+      fuelPlan?: FuelPlan;
+      altFuelPlan?: FuelPlan;
+      altPlanLabel?: string;
+      racePlanVariant?: 'main' | 'alt';
+      profile: AthleteProfile;
+      event: EventDetails;
+    }) => {
+      const loadedMain = data.fuelPlan || data.plan;
+      const loadedAlt = data.altFuelPlan ?? null;
+      const variant: 'main' | 'alt' =
+        data.racePlanVariant === 'alt' && loadedAlt ? 'alt' : 'main';
+      setMainPlan(loadedMain ?? null);
+      setAltPlan(loadedAlt);
+      setAltPlanLabel(data.altPlanLabel ?? null);
+      setRacePlanVariant(variant);
+      setProfile(data.profile);
+      setEvent(data.event);
+    };
+
+    void (async () => {
+      try {
+        const planParam = searchParams.get('plan');
+
+        if (planParam) {
+          const data = JSON.parse(decodeURIComponent(planParam));
+          applyBundle(data);
+          return;
+        }
+
+        const cloud = await fetch('/api/user/plans/active', { credentials: 'include' });
+        if (cloud.ok) {
+          const j = (await cloud.json()) as { snapshot?: { payload?: unknown } | null };
+          const payload = j.snapshot?.payload;
+          if (payload && typeof payload === 'object' && payload !== null) {
+            applyBundle(payload as Parameters<typeof applyBundle>[0]);
+            return;
+          }
+        }
+
+        const saved = localStorage.getItem('fuelos_active_plan');
+        if (saved) {
+          applyBundle(JSON.parse(saved) as Parameters<typeof applyBundle>[0]);
+        }
+      } catch (e) {
+        console.error('Plan load error:', e);
+      }
+    })();
+  }, [searchParams]);
+
+  const persistRacePlanVariant = useCallback((variant: 'main' | 'alt') => {
+    try {
+      const raw = localStorage.getItem('fuelos_active_plan');
+      if (!raw) return;
+      const data = JSON.parse(raw) as Record<string, unknown>;
+      data.racePlanVariant = variant;
+      const next = JSON.stringify(data);
+      localStorage.setItem('fuelos_active_plan', next);
+      void fetch('/api/user/plans/active', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload: JSON.parse(next) as object }),
+      }).catch(() => {
+        /* non connecté ou pas de plan actif en base */
+      });
+    } catch {
+      /* ignore */
     }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [raceState.status]);
-  
-  // Check for upcoming items and send notifications
+  }, []);
+
+  const handleRacePlanVariantChange = useCallback(
+    (variant: 'main' | 'alt') => {
+      if (raceState.status !== 'idle') return;
+      if (variant === 'alt' && !altPlan) return;
+      setRacePlanVariant(variant);
+      persistRacePlanVariant(variant);
+    },
+    [raceState.status, altPlan, persistRacePlanVariant]
+  );
+
+  const appendDebrief = useCallback(
+    (finishedState: RaceState) => {
+      try {
+        const debrief = {
+          plan,
+          profile,
+          event,
+          raceState: finishedState,
+          finishedAt: new Date().toISOString(),
+        };
+        const existing = JSON.parse(localStorage.getItem('fuelos_debriefs') || '[]');
+        existing.unshift(debrief);
+        localStorage.setItem('fuelos_debriefs', JSON.stringify(existing.slice(0, 10)));
+        void fetch('/api/user/debriefs', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            payload: debrief,
+            finishedAt: debrief.finishedAt,
+          }),
+        }).catch(() => {
+          /* sync cloud optionnelle */
+        });
+      } catch (e) {
+        console.error('Debrief save error:', e);
+      }
+    },
+    [plan, profile, event]
+  );
+
+  useEffect(() => {
+    if (raceState.status !== 'running') {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
+
+    const targetMs =
+      event != null ? event.targetTime * 60 * 60 * 1000 : Number.POSITIVE_INFINITY;
+    const speed = raceState.simulationSpeed;
+    const intervalMs = speed === 1 ? 1000 : Math.max(1, 1000 / speed);
+
+    const tick = () => {
+      setRaceState((prev) => {
+        if (prev.status !== 'running') return prev;
+        let nextElapsed: number;
+        if (prev.simulationSpeed === 1) {
+          nextElapsed = prev.startTime != null ? Date.now() - prev.startTime : prev.elapsedMs;
+        } else {
+          nextElapsed = prev.elapsedMs + 1000;
+        }
+        if (nextElapsed >= targetMs) {
+          const finishedState: RaceState = {
+            ...prev,
+            status: 'finished',
+            startTime: null,
+            elapsedMs: targetMs,
+          };
+          appendDebrief(finishedState);
+          return finishedState;
+        }
+        return { ...prev, elapsedMs: nextElapsed };
+      });
+    };
+
+    intervalRef.current = setInterval(tick, intervalMs);
+    tick();
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [raceState.status, raceState.simulationSpeed, event, appendDebrief]);
+
   useEffect(() => {
     if (!plan || raceState.status !== 'running') return;
+
     const elapsedMin = raceState.elapsedMs / 60000;
-    
+
     for (let i = 0; i < plan.timeline.length; i++) {
       const item = plan.timeline[i];
-      const dueMin = item.timeMin;
+      const dueMin = item.timeMin + timingOffsetMin;
       const isConsumed = raceState.consumedItems.includes(i);
       const isSkipped = raceState.skippedItems.includes(i);
+
       if (isConsumed || isSkipped) continue;
-      
-      // Alert 1 minute before due time
+
       const alertKey = i * 1000 + 1;
       if (elapsedMin >= dueMin - 1 && elapsedMin < dueMin && !alertShownRef.current.has(alertKey)) {
         alertShownRef.current.add(alertKey);
+        playSoundCue('soon');
         if (notifEnabled) {
-          sendNotification('⏰ FuelOS', `Dans 1 min : ${item.product} — ${item.cho}g CHO`, `alert-soon-${i}`);
+          sendNotification('⏰ FuelOS', `Dans 1 min : ${item.product} · ${item.cho}g CHO`, `alert-soon-${i}`);
         }
       }
-      
-      // Alert at exact due time
+
       if (elapsedMin >= dueMin && !alertShownRef.current.has(i)) {
         alertShownRef.current.add(i);
         setAlertItem(item);
         setShowAlert(true);
-        setRaceState(prev => ({ ...prev, currentItemIndex: i }));
+        setRaceState((prev) => ({ ...prev, currentItemIndex: i }));
+        playSoundCue('due');
+
         if (notifEnabled) {
-          sendNotification('⚡ FuelOS — Ravitaillement !', `${item.product} — ${item.cho}g CHO${item.water ? ` · ${item.water}ml` : ''}`, `alert-due-${i}`);
+          sendNotification(
+            '⚡ FuelOS · Ravitaillement',
+            `${item.product} · ${item.cho}g CHO${item.water ? ` · ${item.water}ml` : ''}`,
+            `alert-due-${i}`
+          );
         }
-        // Auto-hide alert after 30s
+
         setTimeout(() => setShowAlert(false), 30000);
       }
     }
-  }, [raceState.elapsedMs, raceState.status, plan, notifEnabled]);
+  }, [
+    raceState.elapsedMs,
+    raceState.status,
+    raceState.consumedItems,
+    raceState.skippedItems,
+    plan,
+    notifEnabled,
+    timingOffsetMin,
+    playSoundCue,
+  ]);
 
   const handleStart = useCallback(async () => {
-    // Request notification permission on start
+    ensureAudioContext();
     const granted = await requestNotificationPermission();
     setNotifEnabled(granted);
-    setRaceState(prev => ({ ...prev, status: 'running', startTime: Date.now() }));
-  }, []);
-  
-  const handlePause = useCallback(() => {
-    setRaceState(prev => ({ ...prev, status: 'paused', startTime: null }));
-  }, []);
-  
-  const handleResume = useCallback(() => {
-    setRaceState(prev => ({ ...prev, status: 'running', startTime: Date.now() }));
-  }, []);
-  
-  const handleFinish = useCallback(() => {
-    setRaceState(prev => ({ ...prev, status: 'finished', startTime: null }));
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    // Save debrief to localStorage
-    try {
-      const debrief = {
-        plan, profile, event,
-        raceState,
-        finishedAt: new Date().toISOString(),
-      };
-      const existing = JSON.parse(localStorage.getItem('fuelos_debriefs') || '[]');
-      existing.unshift(debrief);
-      localStorage.setItem('fuelos_debriefs', JSON.stringify(existing.slice(0, 10)));
-    } catch (e) {}
-  }, [plan, profile, event, raceState]);
-  
-  // Mark item as consumed
-  const handleConsumed = useCallback((itemIndex: number) => {
-    if (!plan) return;
-    const item = plan.timeline[itemIndex];
-    setRaceState(prev => ({
+    setRaceState((prev) => ({
       ...prev,
-      consumedItems: [...prev.consumedItems, itemIndex],
-      choConsumed: prev.choConsumed + (item.cho || 0),
-      waterConsumed: prev.waterConsumed + (item.water || 0),
-      sodiumConsumed: prev.sodiumConsumed + (item.sodium || 0),
+      status: 'running',
+      startTime: prev.simulationSpeed === 1 ? Date.now() - prev.elapsedMs : null,
     }));
-    setShowAlert(false);
-    // Clear any existing deficit for this item
-    setChoDeficit(prev => Math.max(0, prev - (item.cho || 0)));
-  }, [plan]);
-  
-  // Skip item — add to deficit for recalcul dynamique
-  const handleSkipped = useCallback((itemIndex: number) => {
-    if (!plan) return;
-    const item = plan.timeline[itemIndex];
-    setRaceState(prev => ({
-      ...prev,
-      skippedItems: [...prev.skippedItems, itemIndex],
-    }));
-    // Add skipped CHO to deficit
-    setChoDeficit(prev => prev + (item.cho || 0));
-    setShowAlert(false);
-  }, [plan]);
+  }, [ensureAudioContext]);
 
-  // Écouter les actions depuis les notifications (boutons Pris/Passer)
+  const handlePause = useCallback(() => {
+    setRaceState((prev) => {
+      if (prev.simulationSpeed > 1) {
+        return { ...prev, status: 'paused', startTime: null };
+      }
+      const elapsedMs = prev.startTime != null ? Date.now() - prev.startTime : prev.elapsedMs;
+      return { ...prev, status: 'paused', startTime: null, elapsedMs };
+    });
+  }, []);
+
+  const handleResume = useCallback(() => {
+    setRaceState((prev) => ({
+      ...prev,
+      status: 'running',
+      startTime: prev.simulationSpeed === 1 ? Date.now() - prev.elapsedMs : null,
+    }));
+  }, []);
+
+  const handleFinish = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setRaceState((prev) => {
+      const next = { ...prev, status: 'finished' as const, startTime: null };
+      appendDebrief(next);
+      return next;
+    });
+  }, [appendDebrief]);
+
+  const handleReset = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    alertShownRef.current = new Set();
+    setRaceState({ ...INITIAL_RACE_STATE });
+    setCompletedAtMinByItem({});
+    setChoDeficit(0);
+    setTimingOffsetMin(0);
+    setShowAlert(false);
+    setAlertItem(null);
+  }, []);
+
+  const handleConsumed = useCallback(
+    (itemIndex: number) => {
+      if (!plan) return;
+      const item = plan.timeline[itemIndex];
+
+      setRaceState((prev) => ({
+        ...prev,
+        consumedItems: [...prev.consumedItems, itemIndex],
+        choConsumed: prev.choConsumed + (item.cho || 0),
+        waterConsumed: prev.waterConsumed + (item.water || 0),
+        sodiumConsumed: prev.sodiumConsumed + (item.sodium || 0),
+      }));
+      setCompletedAtMinByItem((prev) => ({ ...prev, [itemIndex]: raceState.elapsedMs / 60000 }));
+
+      setShowAlert(false);
+      setChoDeficit((prev) => Math.max(0, prev - (item.cho || 0)));
+      playSoundCue('confirm');
+    },
+    [plan, raceState.elapsedMs, playSoundCue]
+  );
+
+  const handleSkipped = useCallback(
+    (itemIndex: number) => {
+      if (!plan) return;
+      const item = plan.timeline[itemIndex];
+
+      setRaceState((prev) => ({
+        ...prev,
+        skippedItems: [...prev.skippedItems, itemIndex],
+      }));
+      setCompletedAtMinByItem((prev) => ({ ...prev, [itemIndex]: raceState.elapsedMs / 60000 }));
+
+      setChoDeficit((prev) => prev + (item.cho || 0));
+      setShowAlert(false);
+    },
+    [plan, raceState.elapsedMs]
+  );
+
   useEffect(() => {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      const handleMessage = (event: MessageEvent) => {
-        if (event.data.type === 'NOTIFICATION_ACTION') {
-          const { action, tag } = event.data;
-          
-          console.log('📨 Action notification reçue:', action, tag);
-          
-          // Extraire l'index de l'item depuis le tag
-          // Ex: "alert-due-5" → 5 ou "alert-soon-3" → 3
-          const match = tag.match(/(\d+)$/);
-          if (match) {
-            const itemIndex = parseInt(match[1]);
-            
-            if (action === 'consumed') {
-              handleConsumed(itemIndex);
-              console.log('✅ Item marqué comme consommé:', itemIndex);
-            } else if (action === 'skip') {
-              handleSkipped(itemIndex);
-              console.log('⏭️ Item passé:', itemIndex);
-            }
+    if (!plan) return;
+    const completedDeltas = Object.keys(completedAtMinByItem)
+      .map((indexText) => {
+        const index = Number(indexText);
+        const actualMin = completedAtMinByItem[index] ?? 0;
+        const scheduledMin = plan.timeline[index]?.timeMin ?? actualMin;
+        return { actualMin, deltaMin: actualMin - scheduledMin };
+      })
+      .sort((a, b) => a.actualMin - b.actualMin);
+
+    if (completedDeltas.length === 0) {
+      setTimingOffsetMin(0);
+      return;
+    }
+
+    const recent = completedDeltas.slice(-3);
+    const average = recent.reduce((sum, value) => sum + value.deltaMin, 0) / recent.length;
+    setTimingOffsetMin(clamp(average, -12, 12));
+  }, [completedAtMinByItem, plan]);
+
+  useEffect(() => {
+    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'NOTIFICATION_ACTION') {
+        const { action, tag } = event.data;
+        const match = tag.match(/(\d+)$/);
+
+        if (match) {
+          const itemIndex = parseInt(match[1], 10);
+
+          if (action === 'consumed') {
+            handleConsumed(itemIndex);
+          } else if (action === 'skip') {
+            handleSkipped(itemIndex);
           }
         }
-      };
+      }
+    };
 
-      navigator.serviceWorker.addEventListener('message', handleMessage);
-
-      return () => {
-        navigator.serviceWorker.removeEventListener('message', handleMessage);
-      };
-    }
+    navigator.serviceWorker.addEventListener('message', handleMessage);
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handleMessage);
+    };
   }, [handleConsumed, handleSkipped]);
-  
+
+  const handleSimulationSpeedChange = useCallback((speed: SimulationSpeed) => {
+    setRaceState((prev) => {
+      if (speed === prev.simulationSpeed) return prev;
+      if (prev.status === 'running') {
+        if (speed === 1 && prev.simulationSpeed > 1) {
+          return {
+            ...prev,
+            simulationSpeed: speed,
+            startTime: Date.now() - prev.elapsedMs,
+          };
+        }
+        if (speed > 1 && prev.simulationSpeed === 1) {
+          return { ...prev, simulationSpeed: speed, startTime: null };
+        }
+      }
+      return { ...prev, simulationSpeed: speed };
+    });
+  }, []);
+
+  const pageShellStyle: CSSProperties = {
+    ...S.page,
+    ...(raceState.simulationSpeed > 1
+      ? {
+          background:
+            'color-mix(in srgb, var(--color-bg) 82%, rgba(124, 58, 237, 0.2))',
+          transition: 'background 0.35s ease',
+        }
+      : { transition: 'background 0.35s ease' }),
+  };
+
+  const simulationHeaderBadge =
+    raceState.simulationSpeed > 1 ? (
+      <span
+        style={{
+          ...S.badge,
+          borderColor: 'color-mix(in srgb, #a855f7 40%, var(--color-border))',
+          color: 'color-mix(in srgb, #a855f7 85%, var(--color-text))',
+          fontSize: 10,
+        }}
+      >
+        SIMULATION ×{raceState.simulationSpeed}
+      </span>
+    ) : null;
+
   if (!plan) {
     return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6">
-        <div className="text-6xl mb-6">⚡</div>
-        <h1 className="text-2xl font-bold mb-3">Race Mode</h1>
-        <p className="text-gray-400 text-center mb-8">Aucun plan actif. Crée ton plan d&apos;abord.</p>
-        <Link href="/plan" className="bg-green-500 text-black font-bold py-4 px-8 rounded-xl text-lg">
-          Créer mon plan →
-        </Link>
+      <div style={pageShellStyle}>
+        <Header sticky extra={simulationHeaderBadge} />
+
+        <main style={{ ...S.main, paddingTop: 52 }}>
+          <div style={{ maxWidth: 520, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 28 }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>⚡</div>
+              <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>Race Mode</h1>
+              <p style={{ ...S.muted, fontSize: 14, margin: 0 }}>
+                Aucun plan actif. Suis les étapes ci-dessous pour lancer le mode course.
+              </p>
+            </div>
+
+            <div style={{ ...S.card, position: 'relative', padding: '24px 20px 24px 28px' }}>
+              <div style={S.stepperRail} aria-hidden />
+              {(
+                [
+                  {
+                    n: 1,
+                    title: 'Crée ton profil athlète',
+                    desc: 'Poids, transpiration, tolérance GI…',
+                    done: onboarding.profileDone,
+                    href: '/plan?step=profile',
+                    cta: 'Ouvrir',
+                  },
+                  {
+                    n: 2,
+                    title: 'Configure ta course',
+                    desc: 'Sport, distance, dénivelé, météo…',
+                    done: onboarding.eventStepDone,
+                    href: '/plan?step=event',
+                    cta: 'Ouvrir',
+                  },
+                ] as const
+              ).map((step) => (
+                <div
+                  key={step.n}
+                  style={{
+                    display: 'flex',
+                    gap: 16,
+                    alignItems: 'flex-start',
+                    marginBottom: step.n === 2 ? 22 : 20,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 900,
+                      fontSize: 13,
+                      background: step.done ? 'var(--color-accent)' : 'var(--color-bg-card)',
+                      color: step.done ? '#000' : 'var(--color-text-muted)',
+                      border: step.done ? 'none' : '2px solid var(--color-border)',
+                      position: 'relative',
+                      zIndex: 1,
+                    }}
+                  >
+                    {step.done ? '✓' : step.n}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
+                    <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>{step.title}</div>
+                    <p style={{ ...S.muted, fontSize: 12, margin: '0 0 12px', lineHeight: 1.45 }}>
+                      {step.desc}
+                    </p>
+                    <Link
+                      href={step.href}
+                      style={{
+                        ...S.btnOutline,
+                        display: 'inline-block',
+                        width: 'auto',
+                        padding: '8px 16px',
+                        fontSize: 13,
+                        textDecoration: 'none',
+                      }}
+                    >
+                      {step.cta} →
+                    </Link>
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 900,
+                    fontSize: 13,
+                    background:
+                      onboarding.profileDone && onboarding.eventStepDone
+                        ? 'var(--color-accent)'
+                        : 'var(--color-bg-card)',
+                    color:
+                      onboarding.profileDone && onboarding.eventStepDone
+                        ? '#000'
+                        : 'var(--color-text-muted)',
+                    border:
+                      onboarding.profileDone && onboarding.eventStepDone
+                        ? 'none'
+                        : '2px solid var(--color-border)',
+                    position: 'relative',
+                    zIndex: 1,
+                  }}
+                >
+                  {onboarding.profileDone && onboarding.eventStepDone ? '✓' : '3'}
+                </div>
+                <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
+                  <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>Lance le Race Mode</div>
+                  <p style={{ ...S.muted, fontSize: 12, margin: '0 0 12px', lineHeight: 1.45 }}>
+                    Timer, alertes et suivi du plan le jour J.
+                  </p>
+                  {onboarding.profileDone && onboarding.eventStepDone ? (
+                    <Link
+                      href={onboarding.hasPlanInStorage ? '/race' : '/plan?step=event'}
+                      onClick={(e) => {
+                        if (onboarding.hasPlanInStorage) {
+                          e.preventDefault();
+                          window.location.assign('/race');
+                        }
+                      }}
+                      style={{
+                        ...S.btnPrimary,
+                        display: 'inline-block',
+                        width: 'auto',
+                        padding: '10px 18px',
+                        fontSize: 14,
+                        textDecoration: 'none',
+                      }}
+                    >
+                      Lance le Race Mode →
+                    </Link>
+                  ) : (
+                    <div
+                      role="status"
+                      style={{
+                        ...S.btnPrimary,
+                        display: 'inline-block',
+                        width: 'auto',
+                        padding: '10px 18px',
+                        fontSize: 14,
+                        opacity: 0.42,
+                        cursor: 'not-allowed',
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      Lance le Race Mode
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
-  
+
   const elapsedMin = raceState.elapsedMs / 60000;
   const totalItems = plan.timeline.length;
   const consumedCount = raceState.consumedItems.length;
   const skippedCount = raceState.skippedItems.length;
   const compliance = totalItems > 0 ? Math.round((consumedCount / totalItems) * 100) : 0;
-  
-  // Find next pending item
+
   const nextItemIndex = plan.timeline.findIndex(
     (_, i) => !raceState.consumedItems.includes(i) && !raceState.skippedItems.includes(i)
   );
   const nextItem = nextItemIndex >= 0 ? plan.timeline[nextItemIndex] : null;
-  const nextItemMinFromNow = nextItem ? Math.max(0, nextItem.timeMin - elapsedMin) : null;
-  
-  // Recalcul dynamique : calculate adjusted CHO/h needed for rest of race
+  const nextItemMinFromNow = nextItem ? Math.max(0, nextItem.timeMin + timingOffsetMin - elapsedMin) : null;
+
   const remainingTimeH = plan && event ? Math.max(0.1, event.targetTime - elapsedMin / 60) : 1;
-  const adjustedChoPerH = choDeficit > 0
-    ? Math.round((plan.choPerHour * remainingTimeH + choDeficit) / remainingTimeH)
-    : plan.choPerHour;
-  const timelineByHour = plan.timeline.reduce<Array<{ hour: number; items: Array<{ item: TimelineItem; index: number }> }>>(
-    (groups, item, index) => {
-      const hour = Math.floor(item.timeMin / 60);
-      const existingGroup = groups[groups.length - 1];
-      if (!existingGroup || existingGroup.hour !== hour) {
-        groups.push({ hour, items: [{ item, index }] });
-      } else {
-        existingGroup.items.push({ item, index });
-      }
-      return groups;
-    },
-    []
-  );
-  
+  const adjustedChoPerH =
+    choDeficit > 0
+      ? Math.round((plan.choPerHour * remainingTimeH + choDeficit) / remainingTimeH)
+      : plan.choPerHour;
+  const paceStatus =
+    timingOffsetMin > 0.5 ? `Retard ${timingOffsetMin.toFixed(1)} min` : timingOffsetMin < -0.5 ? `Avance ${Math.abs(timingOffsetMin).toFixed(1)} min` : 'Dans le timing';
+
+  const timelineByHour = plan.timeline.reduce<
+    Array<{ hour: number; items: Array<{ item: TimelineItem; index: number }> }>
+  >((groups, item, index) => {
+    const hour = Math.floor(item.timeMin / 60);
+    const existingGroup = groups[groups.length - 1];
+    if (!existingGroup || existingGroup.hour !== hour) {
+      groups.push({ hour, items: [{ item, index }] });
+    } else {
+      existingGroup.items.push({ item, index });
+    }
+    return groups;
+  }, []);
+
+  const progressPercent = Math.min(100, (elapsedMin / ((event?.targetTime || 1) * 60)) * 100);
+
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-800">
-        <div className="flex items-center gap-2">
-          <span className="text-yellow-400 font-bold text-lg">⚡ FuelOS Race Mode</span>
-          {notifEnabled && <span className="text-xs text-green-400 bg-green-400/10 px-2 py-1 rounded">🔔 ON</span>}
+    <div style={pageShellStyle}>
+      <Header sticky extra={simulationHeaderBadge} />
+
+      <main style={S.main}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 2 }}>Race Mode</div>
+            <div style={{ ...S.muted, fontSize: 13 }}>
+              {event ? `${event.sport} · ${event.distance} km · objectif ${event.targetTime} h` : 'Exécution du plan'}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
+            {notifEnabled && <span style={{ ...S.badge, borderColor: 'rgba(34,197,94,0.5)', color: 'var(--color-accent)' }}>🔔 notifications</span>}
+            {raceState.status === 'running' && (
+              <span style={{ ...S.badge, borderColor: 'rgba(239,68,68,0.5)', color: 'color-mix(in srgb, var(--color-danger) 85%, var(--color-text))' }}>
+                LIVE
+              </span>
+            )}
+          </div>
         </div>
-        <Link href="/" className="text-gray-400 text-sm">← Accueil</Link>
-      </div>
-      
-      <div className="max-w-lg mx-auto p-4 space-y-4">
-        {/* Timer Card */}
-        <div className="bg-gray-900 rounded-2xl p-6 text-center">
-          <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-            {event ? `${event.sport.toUpperCase()} · ${event.distance}KM · ${event.targetTime}H` : 'RACE'}
+
+        {/* KPIs */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12, marginBottom: 16 }}>
+          <div style={S.card}>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Statut</div>
+            <div style={{ fontWeight: 900 }}>{raceState.status.toUpperCase()}</div>
           </div>
-          <div className="text-6xl font-mono font-bold tracking-tight mb-4">
-            {formatDuration(raceState.elapsedMs)}
+          <div style={S.card}>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Cible</div>
+            <div style={{ fontWeight: 900 }}>{event ? `${event.targetTime}h` : '--'}</div>
           </div>
-          
-          {/* Progress bar */}
-          <div className="w-full bg-gray-800 rounded-full h-2 mb-4">
+          <div style={S.card}>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Restant</div>
+            <div style={{ fontWeight: 900 }}>{Math.max(0, totalItems - consumedCount - skippedCount)}</div>
+          </div>
+        </div>
+
+        {/* Timer */}
+        <section style={{ ...S.card, padding: 22, marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'baseline', marginBottom: 12 }}>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Timer
+            </div>
+            <div style={{ ...S.muted, fontSize: 12 }}>
+              {event ? `${event.sport} · ${event.distance} km` : null}
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'center', marginBottom: 14 }}>
+            <div style={S.monoTime}>{formatDuration(raceState.elapsedMs)}</div>
+          </div>
+
+          <div
+            aria-label="Progression"
+            style={{
+              height: 10,
+              borderRadius: 99,
+              overflow: 'hidden',
+              background: 'color-mix(in srgb, var(--color-bg) 72%, transparent)',
+              border: '1px solid var(--color-border)',
+              marginBottom: 14,
+            }}
+          >
             <div
-              className="bg-green-500 h-2 rounded-full transition-all duration-1000"
-              style={{ width: `${Math.min(100, (elapsedMin / ((event?.targetTime || 1) * 60)) * 100)}%` }}
+              style={{
+                height: '100%',
+                width: `${progressPercent}%`,
+                background: 'linear-gradient(90deg, var(--color-accent) 0%, color-mix(in srgb, var(--color-accent) 70%, #60a5fa) 100%)',
+                transition: 'width 1s ease',
+              }}
             />
           </div>
-          
-          {/* Controls */}
+
+          {raceState.status !== 'finished' && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ ...S.muted, fontSize: 11, fontWeight: 700, marginBottom: 8, letterSpacing: '0.06em' }}>
+                Vitesse (🧪 simulation)
+              </div>
+              <div
+                role="group"
+                aria-label="Vitesse du timer"
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}
+              >
+                {SIMULATION_SPEEDS.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => handleSimulationSpeedChange(s)}
+                    style={s === raceState.simulationSpeed ? S.simSpeedBtnActive : S.simSpeedBtn}
+                  >
+                    {s === 1 ? 'Réel' : `×${s}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {raceState.status === 'idle' && altPlan && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ ...S.muted, fontSize: 11, fontWeight: 700, marginBottom: 8, letterSpacing: '0.06em' }}>
+                Plan à exécuter
+              </div>
+              <div
+                role="group"
+                aria-label="Choisir le plan au démarrage"
+                style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}
+              >
+                <button
+                  type="button"
+                  onClick={() => handleRacePlanVariantChange('main')}
+                  style={
+                    racePlanVariant === 'main'
+                      ? { ...S.btnPrimary, padding: '10px 12px', fontSize: 13 }
+                      : { ...S.btnSecondary, padding: '10px 12px', fontSize: 13 }
+                  }
+                >
+                  Plan principal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRacePlanVariantChange('alt')}
+                  style={
+                    racePlanVariant === 'alt'
+                      ? { ...S.btnPrimary, padding: '10px 12px', fontSize: 13 }
+                      : { ...S.btnSecondary, padding: '10px 12px', fontSize: 13 }
+                  }
+                >
+                  {altPlanLabel ?? 'Variante météo'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {raceState.status === 'idle' && (
-            <button
-              onClick={handleStart}
-              className="w-full bg-green-500 text-black font-bold py-4 px-6 rounded-xl text-xl active:scale-95 transition-transform"
-            >
-              🏁 DÉMARRER
+            <button type="button" onClick={handleStart} style={S.btnPrimary}>
+              Démarrer
             </button>
           )}
-          {raceState.status === 'running' && (
-            <div className="flex gap-3">
-              <button onClick={handlePause} className="flex-1 bg-yellow-500 text-black font-bold py-4 rounded-xl text-lg active:scale-95 transition-transform">⏸ Pause</button>
-              <button onClick={handleFinish} className="flex-1 bg-red-600 text-white font-bold py-4 rounded-xl text-lg active:scale-95 transition-transform">🏆 Finir</button>
+
+          {(raceState.status === 'running' || raceState.status === 'paused') && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {raceState.status === 'running' ? (
+                  <button type="button" onClick={handlePause} style={S.btnSecondary}>
+                    Pause
+                  </button>
+                ) : (
+                  <button type="button" onClick={handleResume} style={S.btnPrimary}>
+                    Reprendre
+                  </button>
+                )}
+                <button type="button" onClick={() => setShowFinishConfirm(true)} style={S.btnDanger}>
+                  Terminer
+                </button>
+              </div>
+              <button type="button" onClick={() => setShowResetConfirm(true)} style={S.btnSecondary}>
+                Réinitialiser
+              </button>
             </div>
           )}
-          {raceState.status === 'paused' && (
-            <div className="flex gap-3">
-              <button onClick={handleResume} className="flex-1 bg-green-500 text-black font-bold py-4 rounded-xl text-lg active:scale-95 transition-transform">▶ Reprendre</button>
-              <button onClick={handleFinish} className="flex-1 bg-red-600 text-white font-bold py-4 rounded-xl text-lg active:scale-95 transition-transform">🏆 Finir</button>
-            </div>
-          )}
+
           {raceState.status === 'finished' && (
-            <div className="text-green-400 font-bold text-xl">🏆 Course terminée !</div>
-          )}
-        </div>
-        
-        {/* Alert Card — shown when item is due */}
-        {showAlert && alertItem && raceState.status === 'running' && (
-          <div className="bg-yellow-500/20 border-2 border-yellow-500 rounded-2xl p-5 animate-pulse">
-            <div className="text-yellow-400 font-bold text-sm uppercase mb-1">⚡ Ravitaillement maintenant</div>
-            <div className="text-white font-bold text-xl mb-1">{alertItem.product}</div>
-            <div className="text-gray-300 text-sm mb-4">
-              {alertItem.cho}g CHO{alertItem.water ? ` · ${alertItem.water}ml` : ''}{alertItem.sodium ? ` · ${alertItem.sodium}mg Na+` : ''}
+            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'stretch' }}>
+              <div style={{ textAlign: 'center', fontWeight: 900, color: 'var(--color-accent)' }}>Course terminée</div>
+              <button type="button" onClick={() => setShowResetConfirm(true)} style={S.btnSecondary}>
+                Réinitialiser
+              </button>
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => handleConsumed(raceState.currentItemIndex)}
-                className="flex-1 bg-green-500 text-black font-bold py-4 rounded-xl text-lg active:scale-95 transition-transform"
+          )}
+        </section>
+
+          {/* Alert Card */}
+          {showAlert && alertItem && raceState.status === 'running' && (
+            <div
+              className="rounded-2xl p-5"
+              style={{
+                border: '1px solid color-mix(in srgb, var(--color-warning) 55%, var(--color-border))',
+                background: 'color-mix(in srgb, var(--color-warning) 12%, var(--color-bg-card))',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+                <div style={{ fontWeight: 900 }}>Ravitaillement</div>
+                <span style={{ ...S.badge, borderColor: 'color-mix(in srgb, var(--color-warning) 65%, var(--color-border))' }}>
+                  maintenant
+                </span>
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 6 }}>{alertItem.product}</div>
+              <div style={{ ...S.muted, fontSize: 13, marginBottom: 14 }}>
+                ⚡ {alertItem.cho}g CHO
+                {alertItem.water ? ` · 💧 ${alertItem.water}ml` : ''}
+                {alertItem.sodium ? ` · 🧂 ${alertItem.sodium}mg` : ''}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleConsumed(raceState.currentItemIndex)}
+                  className="flex-1 rounded-xl py-4 text-lg font-bold text-slate-950 transition-transform active:scale-95"
+                  style={{
+                    background: 'var(--color-accent)',
+                    border: '1px solid color-mix(in srgb, var(--color-accent) 60%, var(--color-border))',
+                  }}
+                >
+                  ✓ Pris
+                </button>
+                <button
+                  onClick={() => handleSkipped(raceState.currentItemIndex)}
+                  className="flex-1 rounded-xl py-4 text-lg font-bold text-white transition-transform active:scale-95"
+                  style={{
+                    background: 'transparent',
+                    color: 'var(--color-text)',
+                    border: '1px solid var(--color-border)',
+                  }}
+                >
+                  Passé
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Next Item */}
+          {nextItem && !showAlert && raceState.status !== 'finished' && (
+            <div
+              className="rounded-2xl p-4 backdrop-blur-xl"
+              style={{
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-card)',
+              }}
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-semibold" style={{ ...S.muted, letterSpacing: '0.18em' }}>
+                  PROCHAIN
+                </span>
+                <span
+                  className="text-sm font-bold"
+                  style={{
+                    color:
+                      nextItemMinFromNow !== null && nextItemMinFromNow < 5
+                        ? 'var(--color-warning)'
+                        : 'var(--color-text-muted)',
+                  }}
+                >
+                  {nextItemMinFromNow !== null ? `dans ${Math.round(nextItemMinFromNow)}min` : ''}
+                </span>
+              </div>
+
+              <div className="text-lg font-bold" style={{ color: 'var(--color-text)' }}>
+                {nextItem.product}
+              </div>
+              <div className="mt-1 flex flex-wrap gap-3 text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                <span>⚡ {nextItem.cho}g CHO</span>
+                {nextItem.water && <span>💧 {nextItem.water}ml</span>}
+                {nextItem.sodium && <span>🧂 {nextItem.sodium}mg Na+</span>}
+              </div>
+            </div>
+          )}
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-3 gap-3">
+            <div
+              className="rounded-xl p-3 text-center"
+              style={{
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-card)',
+              }}
+            >
+              <div className="text-xl font-bold" style={{ color: 'var(--color-accent)' }}>
+                {raceState.choConsumed}g
+              </div>
+              <div className="mt-1 text-xs" style={S.muted}>
+                CHO pris
+              </div>
+            </div>
+
+            <div
+              className="rounded-xl p-3 text-center"
+              style={{
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-card)',
+              }}
+            >
+              <div className="text-xl font-bold">{raceState.waterConsumed}ml</div>
+              <div className="mt-1 text-xs" style={S.muted}>
+                Eau
+              </div>
+            </div>
+
+            <div
+              className="rounded-xl p-3 text-center"
+              style={{
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-card)',
+              }}
+            >
+              <div
+                className="text-xl font-bold"
+                style={{
+                  color: compliance >= 80 ? 'var(--color-accent)' : compliance >= 50 ? 'var(--color-warning)' : 'var(--color-danger)',
+                }}
               >
-                ✓ Pris
-              </button>
-              <button
-                onClick={() => handleSkipped(raceState.currentItemIndex)}
-                className="flex-1 bg-gray-700 text-white font-bold py-4 rounded-xl text-lg active:scale-95 transition-transform"
-              >
-                Passé
-              </button>
+                {compliance}%
+              </div>
+              <div className="mt-1 text-xs" style={S.muted}>
+                Compliance
+              </div>
             </div>
           </div>
-        )}
-        
-        {/* Next Item */}
-        {nextItem && !showAlert && raceState.status !== 'finished' && (
-          <div className="bg-gray-900 rounded-2xl p-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-gray-400 text-sm">PROCHAIN</span>
-              <span className={`text-sm font-bold ${nextItemMinFromNow !== null && nextItemMinFromNow < 5 ? 'text-yellow-400' : 'text-gray-400'}`}>
-                {nextItemMinFromNow !== null ? `dans ${Math.round(nextItemMinFromNow)}min` : ''}
+
+          {/* Dynamic recalculation */}
+          {choDeficit > 0 && (
+            <div
+              className="rounded-xl p-4"
+              style={{
+                border: '1px solid color-mix(in srgb, var(--color-warning) 55%, var(--color-border))',
+                background: 'color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-card))',
+              }}
+            >
+              <div className="mb-1 text-sm font-bold">🔄 Recalcul dynamique</div>
+              <div className="text-sm" style={S.muted}>
+                {choDeficit}g CHO manquants redistribués · Objectif ajusté :
+                <span style={{ fontWeight: 900, color: 'var(--color-warning)' }}> {adjustedChoPerH}g/h</span>
+              </div>
+            </div>
+          )}
+
+          <div
+            className="rounded-xl p-4"
+            style={{
+              border: '1px solid var(--color-border)',
+              background: 'var(--color-bg-card)',
+            }}
+          >
+            <div className="mb-1 text-sm font-bold">⏱ Adaptation temps réel</div>
+            <div className="text-sm" style={S.muted}>
+              {paceStatus} · Les rappels futurs sont automatiquement decalés de {Math.abs(timingOffsetMin).toFixed(1)} min.
+            </div>
+          </div>
+
+          {/* Timeline */}
+          <div
+            className="overflow-hidden rounded-2xl backdrop-blur-xl"
+            style={{
+              border: '1px solid var(--color-border)',
+              background: 'var(--color-bg-card)',
+            }}
+          >
+            <div
+              className="flex items-center justify-between px-4 py-3"
+              style={{
+                borderBottom: '1px solid var(--color-border)',
+              }}
+            >
+              <span className="font-bold" style={{ color: 'var(--color-text)' }}>
+                📋 Timeline
+              </span>
+              <span className="text-sm" style={S.muted}>
+                {consumedCount} pris · {skippedCount} passés · {totalItems - consumedCount - skippedCount} restants
               </span>
             </div>
-            <div className="font-bold text-lg">{nextItem.product}</div>
-            <div className="text-gray-400 text-sm mt-1 flex gap-3 flex-wrap">
-              <span>⚡ {nextItem.cho}g CHO</span>
-              {nextItem.water && <span>💧 {nextItem.water}ml</span>}
-              {nextItem.sodium && <span>🧂 {nextItem.sodium}mg Na+</span>}
+
+            <div className="max-h-64 overflow-y-auto">
+              {timelineByHour.map((group) => (
+                <div key={group.hour}>
+                  <div
+                    className="sticky top-0 z-10 px-4 py-2 backdrop-blur"
+                    style={{
+                      borderTop: '1px solid var(--color-border)',
+                      borderBottom: '1px solid var(--color-border)',
+                      background: 'color-mix(in srgb, var(--color-bg-card) 86%, var(--color-bg))',
+                    }}
+                  >
+                    <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                      Heure {group.hour} ({group.hour * 60}-{group.hour * 60 + 59} min)
+                    </span>
+                  </div>
+
+                  {group.items.map(({ item, index }) => {
+                    const isConsumed = raceState.consumedItems.includes(index);
+                    const isSkipped = raceState.skippedItems.includes(index);
+                    const isCurrent = index === raceState.currentItemIndex && showAlert;
+                    const isPast = item.timeMin <= elapsedMin && !isConsumed && !isSkipped;
+
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center gap-3 px-4 py-3 last:border-0"
+                        style={{
+                          borderBottom: '1px solid var(--color-border)',
+                          opacity: isConsumed ? 0.45 : isSkipped ? 0.35 : 1,
+                          textDecoration: isSkipped ? 'line-through' : 'none',
+                          background: isCurrent ? 'color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-card))' : 'transparent',
+                        }}
+                      >
+                        <div
+                          className="w-10 flex-shrink-0 text-sm font-mono"
+                          style={{
+                            color: isPast && !isConsumed ? 'var(--color-danger)' : 'var(--color-text-muted)',
+                          }}
+                        >
+                          {Math.floor(item.timeMin)}min
+                        </div>
+
+                        <div
+                          className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-xs"
+                          style={{
+                            background: isConsumed
+                              ? 'var(--color-accent)'
+                              : isSkipped
+                              ? 'color-mix(in srgb, var(--color-danger) 22%, transparent)'
+                              : isCurrent
+                              ? 'var(--color-warning)'
+                              : 'color-mix(in srgb, var(--color-bg) 65%, transparent)',
+                            color: isConsumed || isCurrent ? '#000' : 'var(--color-text)',
+                            border: '1px solid var(--color-border)',
+                          }}
+                        >
+                          {isConsumed ? '✓' : isSkipped ? '×' : isCurrent ? '!' : ''}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="truncate text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+                            {item.product}
+                          </div>
+                          <div className="flex gap-2 text-xs" style={S.muted}>
+                            <span>⚡{item.cho}g</span>
+                            {item.water && <span>💧{item.water}ml</span>}
+                            {item.sodium && <span>🧂{item.sodium}mg</span>}
+                          </div>
+                        </div>
+
+                        {isPast && raceState.status === 'running' && (
+                          <div className="flex gap-1 flex-shrink-0">
+                            <button
+                              onClick={() => handleConsumed(index)}
+                              className="rounded-lg px-2 py-1 text-xs active:scale-95"
+                              style={{
+                                background: 'rgba(34,197,94,0.10)',
+                                color: 'var(--color-accent)',
+                                border: '1px solid color-mix(in srgb, var(--color-accent) 55%, var(--color-border))',
+                              }}
+                            >
+                              Pris
+                            </button>
+                            <button
+                              onClick={() => handleSkipped(index)}
+                              className="rounded-lg px-2 py-1 text-xs active:scale-95"
+                              style={{
+                                background: 'transparent',
+                                color: 'var(--color-text-muted)',
+                                border: '1px solid var(--color-border)',
+                              }}
+                            >
+                              Pass
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           </div>
-        )}
-        
-        {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-gray-900 rounded-xl p-3 text-center">
-            <div className="text-green-400 font-bold text-xl">{raceState.choConsumed}g</div>
-            <div className="text-gray-500 text-xs mt-1">CHO pris</div>
+      </main>
+
+      <DestructiveConfirmOverlay
+        open={showFinishConfirm}
+        title="Terminer la course ?"
+        confirmLabel="Confirmer la fin"
+        onCancel={() => setShowFinishConfirm(false)}
+        onConfirm={() => {
+          setShowFinishConfirm(false);
+          handleFinish();
+        }}
+      >
+        <div style={{ display: 'grid', gap: 14 }}>
+          <div>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Temps écoulé</div>
+            <div
+              style={{
+                fontFamily: S.monoTime.fontFamily,
+                fontWeight: 800,
+                fontSize: 28,
+                letterSpacing: '-0.03em',
+              }}
+            >
+              {formatDuration(raceState.elapsedMs)}
+            </div>
           </div>
-          <div className="bg-gray-900 rounded-xl p-3 text-center">
-            <div className="text-blue-400 font-bold text-xl">{raceState.waterConsumed}ml</div>
-            <div className="text-gray-500 text-xs mt-1">Eau</div>
-          </div>
-          <div className="bg-gray-900 rounded-xl p-3 text-center">
-            <div className={`font-bold text-xl ${compliance >= 80 ? 'text-green-400' : compliance >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
+          <div>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Compliance actuelle</div>
+            <div
+              style={{
+                fontWeight: 900,
+                fontSize: 22,
+                color:
+                  compliance >= 80
+                    ? 'var(--color-accent)'
+                    : compliance >= 50
+                      ? 'var(--color-warning)'
+                      : 'var(--color-danger)',
+              }}
+            >
               {compliance}%
             </div>
-            <div className="text-gray-500 text-xs mt-1">Compliance</div>
           </div>
         </div>
-        
-        {/* Recalcul dynamique — show if there's a deficit */}
-        {choDeficit > 0 && (
-          <div className="bg-orange-500/10 border border-orange-500/40 rounded-xl p-4">
-            <div className="text-orange-400 font-bold text-sm mb-1">🔄 Recalcul dynamique</div>
-            <div className="text-gray-300 text-sm">
-              {choDeficit}g CHO manquants redistribués · Objectif ajusté : <span className="text-orange-400 font-bold">{adjustedChoPerH}g/h</span>
+      </DestructiveConfirmOverlay>
+
+      <DestructiveConfirmOverlay
+        open={showResetConfirm}
+        title="Réinitialiser la course ?"
+        confirmLabel="Confirmer la réinitialisation"
+        onCancel={() => setShowResetConfirm(false)}
+        onConfirm={() => {
+          setShowResetConfirm(false);
+          handleReset();
+        }}
+      >
+        <div style={{ display: 'grid', gap: 14 }}>
+          <div>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Temps écoulé</div>
+            <div
+              style={{
+                fontFamily: S.monoTime.fontFamily,
+                fontWeight: 800,
+                fontSize: 28,
+                letterSpacing: '-0.03em',
+              }}
+            >
+              {formatDuration(raceState.elapsedMs)}
             </div>
           </div>
-        )}
-        
-        {/* Timeline */}
-        <div className="bg-gray-900 rounded-2xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-800 flex justify-between items-center">
-            <span className="font-bold">📋 Timeline</span>
-            <span className="text-gray-500 text-sm">{consumedCount} pris · {skippedCount} passés · {totalItems - consumedCount - skippedCount} restants</span>
-          </div>
-          <div className="max-h-64 overflow-y-auto">
-            {timelineByHour.map(group => (
-              <div key={group.hour}>
-                <div className="px-4 py-2 bg-gray-800/60 border-y border-gray-800 sticky top-0 z-10">
-                  <span className="text-xs font-semibold text-gray-300 uppercase tracking-wide">
-                    Heure {group.hour} ({group.hour * 60}-{group.hour * 60 + 59} min)
-                  </span>
-                </div>
-                {group.items.map(({ item, index }) => {
-                  const isConsumed = raceState.consumedItems.includes(index);
-                  const isSkipped = raceState.skippedItems.includes(index);
-                  const isCurrent = index === raceState.currentItemIndex && showAlert;
-                  const isPast = item.timeMin <= elapsedMin && !isConsumed && !isSkipped;
-                  return (
-                    <div
-                      key={index}
-                      className={`flex items-center gap-3 px-4 py-3 border-b border-gray-800 last:border-0 ${
-                        isCurrent ? 'bg-yellow-500/10' : isConsumed ? 'opacity-40' : isSkipped ? 'opacity-30 line-through' : ''
-                      }`}
-                    >
-                      <div className={`text-sm font-mono w-10 flex-shrink-0 ${isPast && !isConsumed ? 'text-red-400' : 'text-gray-400'}`}>
-                        {Math.floor(item.timeMin)}min
-                      </div>
-                      <div className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs ${
-                        isConsumed ? 'bg-green-500 text-black' : isSkipped ? 'bg-red-500/40 text-red-300' : isCurrent ? 'bg-yellow-500 text-black' : 'bg-gray-700'
-                      }`}>
-                        {isConsumed ? '✓' : isSkipped ? '×' : isCurrent ? '!' : ''}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">{item.product}</div>
-                        <div className="text-gray-500 text-xs flex gap-2">
-                          <span>⚡{item.cho}g</span>
-                          {item.water && <span>💧{item.water}ml</span>}
-                        </div>
-                      </div>
-                      {/* Quick action buttons when item is past due */}
-                      {isPast && raceState.status === 'running' && (
-                        <div className="flex gap-1 flex-shrink-0">
-                          <button onClick={() => handleConsumed(index)} className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-lg active:scale-95">Pris</button>
-                          <button onClick={() => handleSkipped(index)} className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded-lg active:scale-95">Pass</button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+          <div>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Compliance actuelle</div>
+            <div
+              style={{
+                fontWeight: 900,
+                fontSize: 22,
+                color:
+                  compliance >= 80
+                    ? 'var(--color-accent)'
+                    : compliance >= 50
+                      ? 'var(--color-warning)'
+                      : 'var(--color-danger)',
+              }}
+            >
+              {compliance}%
+            </div>
           </div>
         </div>
-      </div>
+      </DestructiveConfirmOverlay>
     </div>
   );
 }
 
 export default function RacePage() {
+  usePageTitle('Race Mode');
   return (
-    <Suspense fallback={<div className="min-h-screen bg-black text-white flex items-center justify-center"><div className="text-2xl">⚡ Chargement...</div></div>}>
+    <Suspense
+      fallback={
+        <div
+          className="min-h-screen flex items-center justify-center"
+          style={{
+            background: 'var(--color-bg)',
+            color: 'var(--color-text)',
+          }}
+        >
+          <div className="text-2xl" style={{ color: "var(--color-text)" }}>
+            ⚡ Chargement...
+          </div>
+        </div>
+      }
+    >
       <RaceContent />
     </Suspense>
   );
