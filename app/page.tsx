@@ -2,13 +2,10 @@
 
 import type { CSSProperties, JSX } from 'react';
 import Link from 'next/link';
-import { ThemeToggle } from './app/components/ThemeToggle';
+import { Header } from './components/Header';
 
 const S = {
   page: { minHeight: '100vh', background: 'var(--color-bg)', color: 'var(--color-text)', fontFamily: 'system-ui, sans-serif' } as CSSProperties,
-  header: { borderBottom: '1px solid var(--color-border)', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } as CSSProperties,
-  logo: { display: 'flex', alignItems: 'center', gap: 10 } as CSSProperties,
-  logoIcon: { width: 32, height: 32, background: 'var(--color-accent)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, color: '#000' } as CSSProperties,
   main: { maxWidth: 960, margin: '0 auto', padding: '60px 24px' } as CSSProperties,
   card: { background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 24, marginBottom: 20 } as CSSProperties,
   btn: { padding: '14px 28px', borderRadius: 10, background: 'var(--color-accent)', color: '#000', fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer', textDecoration: 'none', display: 'inline-block' } as CSSProperties,
@@ -80,13 +77,6 @@ const HOW_IT_WORKS_STEPS: {
   },
 ];
 
-const NAV = [
-  { href: '/plan', label: 'Plan' },
-  { href: '/shop', label: 'Shop' },
-  { href: '/race', label: 'Race Mode' },
-  { href: '/learn', label: 'Learn' },
-];
-
 const FEATURE_CARDS = [
   { icon: '🎯', title: 'PLAN', desc: 'CHO/h, hydratation, sodium calculés selon votre profil, la météo et le dénivelé', href: '/plan', accent: '#60a5fa' },
   { icon: '🛒', title: 'SHOP', desc: '500+ produits (Maurten, SiS, Tailwind, Näak…). Liste de courses auto-générée', href: '/shop', accent: '#4ade80' },
@@ -97,25 +87,7 @@ const FEATURE_CARDS = [
 export default function Home() {
   return (
     <div style={S.page}>
-      <header style={S.header}>
-        <div style={S.logo}>
-          <div style={S.logoIcon}>F</div>
-          <span style={{ fontWeight: 700, fontSize: 20 }}>FuelOS</span>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {NAV.map(item => (
-            <Link
-              key={item.href}
-              href={item.href}
-              style={{ padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, color: 'var(--color-text-muted)', border: '1px solid transparent', textDecoration: 'none' }}
-            >
-              {item.label}
-            </Link>
-          ))}
-          <ThemeToggle />
-        </div>
-      </header>
-
+      <Header />
       <main style={S.main}>
         <div style={{ textAlign: 'center', marginBottom: 60 }}>
           <div style={{ marginBottom: 20 }}>

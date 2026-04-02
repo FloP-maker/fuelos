@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { CSSProperties, ReactNode } from 'react';
-import { ThemeToggle } from '../app/components/ThemeToggle';
+import { ThemeToggle } from './ThemeToggle';
 import { AuthMenu } from './AuthMenu';
 
 export type HeaderActivePage = 'plan' | 'shop' | 'race' | 'learn';
@@ -129,9 +129,11 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
         </nav>
         {extra}
         <AuthMenu />
-        <Link href="/" style={S.btnOutline}>
-          Accueil
-        </Link>
+        {pathname !== '/' && (
+          <Link href="/" style={S.btnOutline}>
+            Accueil
+          </Link>
+        )}
         <ThemeToggle />
       </div>
     </header>
