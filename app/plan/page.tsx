@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import useLocalStorage from "../lib/hooks/useLocalStorage";
@@ -17,6 +17,14 @@ const CUSTOM_PRODUCTS_STORAGE_KEY = "fuelos_custom_products";
 const ONBOARDING_PROFILE_KEY = "fuelos_onboarding_profile_done";
 const ONBOARDING_EVENT_KEY = "fuelos_onboarding_event_done";
 const ONBOARDING_EVENT_STEP_KEY = "fuelos_onboarding_event_step_done";
+
+type PlanWizardStep = 1 | 2 | 3;
+
+const PLAN_WIZARD_STEPS: { num: PlanWizardStep; label: string }[] = [
+  { num: 1, label: "Profil" },
+  { num: 2, label: "Course" },
+  { num: 3, label: "Plan" },
+];
 
 const S = {
   page: {
@@ -210,7 +218,9 @@ function PlanPageContent() {
   const searchParams = useSearchParams();
   const [athleteProfile, setAthleteProfile] = useLocalStorage<AthleteProfile | null>("athlete-profile", null);
 
-  const [step, setStep] = useState<"profile" | "event" | "result">("profile");
+  const [currentStep, setCurrentStep] = useState<PlanWizardStep>(1);
+  const [maxReachedStep, setMaxReachedStep] = useState<PlanWizardStep>(1);
+  const skipInitialScrollRef = useRef(true);
   const [showProductSelector, setShowProductSelector] = useState<"gels" | "drinks" | "bars" | null>(null);
 
   const [profile, setProfile] = useState<AthleteProfile>({
@@ -295,19 +305,43 @@ function PlanPageContent() {
 
   useEffect(() => {
     const s = searchParams.get("step");
-    if (s === "event") setStep("event");
-    else if (s === "profile") setStep("profile");
+    if (s === "event") {
+      setCurrentStep(2);
+      setMaxReachedStep((m) => Math.max(m, 2) as PlanWizardStep);
+    } else if (s === "profile") {
+      setCurrentStep(1);
+    }
   }, [searchParams]);
 
   useEffect(() => {
-    if (step === "event") {
+    if (skipInitialScrollRef.current) {
+      skipInitialScrollRef.current = false;
+      return;
+    }
+    let frame = 0;
+    frame = window.requestAnimationFrame(() => {
+      document.getElementById(`plan-step-${currentStep}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (currentStep === 2) {
       try {
         localStorage.setItem(ONBOARDING_EVENT_STEP_KEY, "1");
       } catch {
         /* ignore */
       }
     }
-  }, [step]);
+  }, [currentStep]);
+
+  function goToPlanStep(n: PlanWizardStep) {
+    if (n > maxReachedStep) return;
+    setCurrentStep(n);
+  }
 
   function handleCalculate() {
     console.log("🔍 Profile GI Tolerance:", profile.giTolerance);
@@ -330,7 +364,8 @@ function PlanPageContent() {
     } catch {
       /* ignore */
     }
-    setStep("result");
+    setMaxReachedStep(3);
+    setCurrentStep(3);
   }
 
   return (
@@ -341,23 +376,115 @@ function PlanPageContent() {
           <span style={{ fontWeight: 700, fontSize: 20 }}>FuelOS</span>
         </div>
 
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {["profile", "event", "result"].map((s, i) => (
-            <div key={s} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div
-                style={{
-                  ...S.badge,
-                  background: step === s ? "var(--color-accent)" : "var(--color-bg-card)",
-                  color: step === s ? "#000" : "var(--color-text-muted)",
-                  border: step === s ? "none" : "1px solid var(--color-border)",
-                }}
-              >
-                {i + 1}. {s === "profile" ? "Profil" : s === "event" ? "Course" : "Plan"}
+        <nav
+          aria-label="Étapes du plan"
+          style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}
+        >
+          {PLAN_WIZARD_STEPS.map(({ num, label }, i) => {
+            const isLocked = num > maxReachedStep;
+            const isActive = num === currentStep;
+            const isCompleted = num < currentStep;
+
+            const base: React.CSSProperties = {
+              ...S.badge,
+              margin: 0,
+              font: "inherit",
+              fontFamily: "inherit",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              transition: "background 0.15s, color 0.15s, border-color 0.15s, opacity 0.15s",
+            };
+
+            let visual: React.CSSProperties;
+            let text: React.ReactNode;
+
+            if (isLocked) {
+              visual = {
+                ...base,
+                cursor: "not-allowed",
+                opacity: 0.45,
+                background: "var(--color-bg-card)",
+                color: "var(--color-text-muted)",
+                border: "1px solid var(--color-border)",
+              };
+              text = (
+                <>
+                  <span aria-hidden>{num}</span>
+                  <span>{label}</span>
+                </>
+              );
+            } else if (isActive) {
+              visual = {
+                ...base,
+                cursor: "pointer",
+                opacity: 1,
+                background: "var(--color-accent)",
+                color: "#000",
+                border: "1px solid var(--color-accent)",
+                boxShadow: "0 0 0 1px var(--color-accent)",
+              };
+              text = (
+                <>
+                  <span aria-hidden>{num}</span>
+                  <span>{label}</span>
+                </>
+              );
+            } else if (isCompleted) {
+              visual = {
+                ...base,
+                cursor: "pointer",
+                opacity: 1,
+                background: "rgba(34, 197, 94, 0.12)",
+                color: "var(--color-accent)",
+                border: "1px solid var(--color-accent)",
+              };
+              text = (
+                <>
+                  <span aria-hidden style={{ fontWeight: 800 }}>
+                    ✓
+                  </span>
+                  <span>{label}</span>
+                </>
+              );
+            } else {
+              visual = {
+                ...base,
+                cursor: "pointer",
+                opacity: 1,
+                background: "var(--color-bg-card)",
+                color: "var(--color-text-muted)",
+                border: "1px solid var(--color-border)",
+              };
+              text = (
+                <>
+                  <span aria-hidden>{num}</span>
+                  <span>{label}</span>
+                </>
+              );
+            }
+
+            return (
+              <div key={num} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  type="button"
+                  disabled={isLocked}
+                  aria-current={isActive ? "step" : undefined}
+                  aria-disabled={isLocked || undefined}
+                  onClick={() => goToPlanStep(num)}
+                  style={visual}
+                >
+                  {text}
+                </button>
+                {i < 2 && (
+                  <span style={{ color: "var(--color-border)", userSelect: "none" }} aria-hidden>
+                    →
+                  </span>
+                )}
               </div>
-              {i < 2 && <span style={{ color: "var(--color-border)" }}>→</span>}
-            </div>
-          ))}
-        </div>
+            );
+          })}
+        </nav>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Link href="/" style={{ ...S.btnOutline, textDecoration: "none" }}>
@@ -368,8 +495,8 @@ function PlanPageContent() {
       </header>
 
       <div style={S.main}>
-        {step === "profile" && (
-          <div>
+        {currentStep === 1 && (
+          <div id="plan-step-1" style={{ scrollMarginTop: 24 }}>
             <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.5px" }}>
               Ton profil athlète
             </h1>
@@ -1034,7 +1161,8 @@ function PlanPageContent() {
                 } catch {
                   /* ignore */
                 }
-                setStep("event");
+                setMaxReachedStep((m) => (Math.max(m, 2) as PlanWizardStep));
+                setCurrentStep(2);
               }}
             >
               Continuer → Paramètres course
@@ -1042,8 +1170,8 @@ function PlanPageContent() {
           </div>
         )}
 
-        {step === "event" && (
-          <div>
+        {currentStep === 2 && (
+          <div id="plan-step-2" style={{ scrollMarginTop: 24 }}>
             <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.5px" }}>
               Ta course
             </h1>
@@ -1463,7 +1591,7 @@ function PlanPageContent() {
             </div>
 
             <div style={{ display: "flex", gap: 12 }}>
-              <button style={{ ...S.btnOutline, flex: 1 }} onClick={() => setStep("profile")}>
+              <button style={{ ...S.btnOutline, flex: 1 }} onClick={() => setCurrentStep(1)}>
                 ← Profil
               </button>
               <button style={{ ...S.btn, flex: 2 }} onClick={handleCalculate}>
@@ -1473,14 +1601,16 @@ function PlanPageContent() {
           </div>
         )}
 
-        {step === "result" && plan && (
-          <PlanResult
-            plan={plan}
-            profile={profile}
-            event={event}
-            onBack={() => setStep("event")}
-            customProducts={customProducts}
-          />
+        {currentStep === 3 && plan && (
+          <div id="plan-step-3" style={{ scrollMarginTop: 24 }}>
+            <PlanResult
+              plan={plan}
+              profile={profile}
+              event={event}
+              onBack={() => setCurrentStep(2)}
+              customProducts={customProducts}
+            />
+          </div>
         )}
       </div>
     </div>
