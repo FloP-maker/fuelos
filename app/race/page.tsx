@@ -1,6 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
@@ -148,7 +155,67 @@ const S = {
     background: 'var(--color-border)',
     borderRadius: 1,
   } as CSSProperties,
+  confirmBackdrop: {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 100,
+    background: 'color-mix(in srgb, #000 52%, transparent)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  } as CSSProperties,
+  confirmPanel: {
+    width: '100%',
+    maxWidth: 400,
+    background: 'var(--color-bg-card)',
+    border: '1px solid var(--color-border)',
+    borderRadius: 14,
+    padding: 22,
+    boxShadow: '0 18px 50px color-mix(in srgb, #000 35%, transparent)',
+  } as CSSProperties,
 };
+
+function DestructiveConfirmOverlay({
+  open,
+  title,
+  confirmLabel,
+  onCancel,
+  onConfirm,
+  children,
+}: {
+  open: boolean;
+  title: string;
+  confirmLabel: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  children: ReactNode;
+}) {
+  if (!open) return null;
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="race-destructive-confirm-title"
+      style={S.confirmBackdrop}
+    >
+      <div style={S.confirmPanel}>
+        <h2 id="race-destructive-confirm-title" style={{ fontWeight: 900, fontSize: 18, margin: '0 0 14px' }}>
+          {title}
+        </h2>
+        <div style={{ marginBottom: 20 }}>{children}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <button type="button" onClick={onCancel} style={S.btnSecondary}>
+            Annuler
+          </button>
+          <button type="button" onClick={onConfirm} style={S.btnDanger}>
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface RaceState {
   status: 'idle' | 'running' | 'paused' | 'finished';
@@ -216,6 +283,8 @@ function RaceContent() {
   });
   const [alertItem, setAlertItem] = useState<TimelineItem | null>(null);
   const [showAlert, setShowAlert] = useState(false);
+  /** Fermer avec Annuler / après confirmation. Réutiliser `DestructiveConfirmOverlay` pour un futur reset (`showResetConfirm`). */
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [choDeficit, setChoDeficit] = useState(0);
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [timingOffsetMin, setTimingOffsetMin] = useState(0);
@@ -867,7 +936,7 @@ function RaceContent() {
                   Reprendre
                 </button>
               )}
-              <button onClick={handleFinish} style={S.btnDanger}>
+              <button type="button" onClick={() => setShowFinishConfirm(true)} style={S.btnDanger}>
                 Terminer
               </button>
             </div>
@@ -1172,6 +1241,50 @@ function RaceContent() {
             </div>
           </div>
       </main>
+
+      <DestructiveConfirmOverlay
+        open={showFinishConfirm}
+        title="Terminer la course ?"
+        confirmLabel="Confirmer la fin"
+        onCancel={() => setShowFinishConfirm(false)}
+        onConfirm={() => {
+          setShowFinishConfirm(false);
+          handleFinish();
+        }}
+      >
+        <div style={{ display: 'grid', gap: 14 }}>
+          <div>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Temps écoulé</div>
+            <div
+              style={{
+                fontFamily: S.monoTime.fontFamily,
+                fontWeight: 800,
+                fontSize: 28,
+                letterSpacing: '-0.03em',
+              }}
+            >
+              {formatDuration(raceState.elapsedMs)}
+            </div>
+          </div>
+          <div>
+            <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Compliance actuelle</div>
+            <div
+              style={{
+                fontWeight: 900,
+                fontSize: 22,
+                color:
+                  compliance >= 80
+                    ? 'var(--color-accent)'
+                    : compliance >= 50
+                      ? 'var(--color-warning)'
+                      : 'var(--color-danger)',
+              }}
+            >
+              {compliance}%
+            </div>
+          </div>
+        </div>
+      </DestructiveConfirmOverlay>
     </div>
   );
 }
