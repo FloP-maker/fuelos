@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import useLocalStorage from "../lib/hooks/useLocalStorage";
@@ -1626,6 +1626,8 @@ function PlanResult({
   customProducts: Product[];
 }) {
   const [activeTab, setActiveTab] = useState<"plan" | "shop" | "export">("plan");
+  const [linkCopiedToast, setLinkCopiedToast] = useState(false);
+
   const [compareCategory, setCompareCategory] = useState<
     "all" | "gel" | "drink" | "bar" | "chew" | "real-food" | "electrolyte"
   >("all");
@@ -1861,19 +1863,67 @@ function PlanResult({
     URL.revokeObjectURL(url);
   };
 
-  const handleCopyShareLink = async () => {
+  const handleCopyShareLink = useCallback(async () => {
     try {
       const payload = encodeURIComponent(JSON.stringify({ plan, profile, event }));
       const shareUrl = `${window.location.origin}/race?plan=${payload}`;
       await navigator.clipboard.writeText(shareUrl);
-      alert("Lien de partage copié !");
+      setLinkCopiedToast(true);
+      window.setTimeout(() => setLinkCopiedToast(false), 2000);
     } catch {
       alert("Impossible de copier le lien automatiquement.");
     }
-  };
+  }, [plan, profile, event]);
 
   return (
     <div>
+      {linkCopiedToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "fixed",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            padding: "12px 20px",
+            borderRadius: 10,
+            background: "var(--color-text)",
+            color: "var(--color-bg)",
+            fontWeight: 600,
+            fontSize: 14,
+            boxShadow: "0 4px 24px rgba(0, 0, 0, 0.18)",
+            zIndex: 9999,
+            pointerEvents: "none",
+          }}
+        >
+          Lien copié !
+        </div>
+      )}
+
+      <div
+        role="status"
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          marginBottom: 20,
+          padding: "14px 18px",
+          borderRadius: 12,
+          border: "1px solid rgba(34, 197, 94, 0.35)",
+          background: "rgba(34, 197, 94, 0.08)",
+        }}
+      >
+        <span style={{ fontWeight: 600, fontSize: 15, color: "var(--color-text)" }}>
+          ✅ Plan sauvegardé — accessible depuis Race Mode
+        </span>
+        <button type="button" style={{ ...S.btnOutline, flexShrink: 0 }} onClick={handleCopyShareLink}>
+          Copier le lien du plan
+        </button>
+      </div>
+
       <div
         style={{
           display: "flex",
