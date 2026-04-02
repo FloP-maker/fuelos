@@ -273,11 +273,10 @@ function RaceContent() {
   useEffect(() => {
     if (raceState.status === 'running') {
       intervalRef.current = setInterval(() => {
-        setRaceState((prev) => {
-          const now = Date.now();
-          const elapsed = prev.elapsedMs + (now - (prev.startTime ?? now));
-          return { ...prev, elapsedMs: elapsed, startTime: now };
-        });
+        setRaceState((prev) => ({
+          ...prev,
+          elapsedMs: prev.startTime != null ? Date.now() - prev.startTime : prev.elapsedMs,
+        }));
       }, 1000);
     } else if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -346,16 +345,23 @@ function RaceContent() {
     setRaceState((prev) => ({
       ...prev,
       status: 'running',
-      startTime: Date.now(),
+      startTime: Date.now() - prev.elapsedMs,
     }));
   }, [ensureAudioContext]);
 
   const handlePause = useCallback(() => {
-    setRaceState((prev) => ({ ...prev, status: 'paused', startTime: null }));
+    setRaceState((prev) => {
+      const elapsedMs = prev.startTime != null ? Date.now() - prev.startTime : prev.elapsedMs;
+      return { ...prev, status: 'paused', startTime: null, elapsedMs };
+    });
   }, []);
 
   const handleResume = useCallback(() => {
-    setRaceState((prev) => ({ ...prev, status: 'running', startTime: Date.now() }));
+    setRaceState((prev) => ({
+      ...prev,
+      status: 'running',
+      startTime: Date.now() - prev.elapsedMs,
+    }));
   }, []);
 
   const handleFinish = useCallback(() => {
