@@ -164,6 +164,8 @@ function DestructiveConfirmOverlay({
   );
 }
 
+type SimulationSpeed = 1 | 10 | 60;
+
 interface RaceState {
   status: 'idle' | 'running' | 'paused' | 'finished';
   startTime: number | null;
@@ -174,6 +176,8 @@ interface RaceState {
   choConsumed: number;
   waterConsumed: number;
   sodiumConsumed: number;
+  /** 1 = temps réel ; 10 ou 60 = simulation accélérée (×10 / ×60). */
+  simulationSpeed: SimulationSpeed;
 }
 
 const INITIAL_RACE_STATE: RaceState = {
@@ -186,6 +190,7 @@ const INITIAL_RACE_STATE: RaceState = {
   choConsumed: 0,
   waterConsumed: 0,
   sodiumConsumed: 0,
+  simulationSpeed: 1,
 };
 
 function formatDuration(ms: number): string {
@@ -351,22 +356,73 @@ function RaceContent() {
     }
   }, [searchParams]);
 
+  const appendDebrief = useCallback(
+    (finishedState: RaceState) => {
+      try {
+        const debrief = {
+          plan,
+          profile,
+          event,
+          raceState: finishedState,
+          finishedAt: new Date().toISOString(),
+        };
+        const existing = JSON.parse(localStorage.getItem('fuelos_debriefs') || '[]');
+        existing.unshift(debrief);
+        localStorage.setItem('fuelos_debriefs', JSON.stringify(existing.slice(0, 10)));
+      } catch (e) {
+        console.error('Debrief save error:', e);
+      }
+    },
+    [plan, profile, event]
+  );
+
   useEffect(() => {
-    if (raceState.status === 'running') {
-      intervalRef.current = setInterval(() => {
-        setRaceState((prev) => ({
-          ...prev,
-          elapsedMs: prev.startTime != null ? Date.now() - prev.startTime : prev.elapsedMs,
-        }));
-      }, 1000);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+    if (raceState.status !== 'running') {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
     }
 
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+    const targetMs =
+      event != null ? event.targetTime * 60 * 60 * 1000 : Number.POSITIVE_INFINITY;
+    const speed = raceState.simulationSpeed;
+    const intervalMs = speed === 1 ? 1000 : Math.max(1, 1000 / speed);
+
+    const tick = () => {
+      setRaceState((prev) => {
+        if (prev.status !== 'running') return prev;
+        let nextElapsed: number;
+        if (prev.simulationSpeed === 1) {
+          nextElapsed = prev.startTime != null ? Date.now() - prev.startTime : prev.elapsedMs;
+        } else {
+          nextElapsed = prev.elapsedMs + 1000 * prev.simulationSpeed;
+        }
+        if (nextElapsed >= targetMs) {
+          const finishedState: RaceState = {
+            ...prev,
+            status: 'finished',
+            startTime: null,
+            elapsedMs: targetMs,
+          };
+          appendDebrief(finishedState);
+          return finishedState;
+        }
+        return { ...prev, elapsedMs: nextElapsed };
+      });
     };
-  }, [raceState.status]);
+
+    intervalRef.current = setInterval(tick, intervalMs);
+    tick();
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [raceState.status, raceState.simulationSpeed, event, appendDebrief]);
 
   useEffect(() => {
     if (!plan || raceState.status !== 'running') return;
@@ -426,12 +482,15 @@ function RaceContent() {
     setRaceState((prev) => ({
       ...prev,
       status: 'running',
-      startTime: Date.now() - prev.elapsedMs,
+      startTime: prev.simulationSpeed === 1 ? Date.now() - prev.elapsedMs : null,
     }));
   }, [ensureAudioContext]);
 
   const handlePause = useCallback(() => {
     setRaceState((prev) => {
+      if (prev.simulationSpeed > 1) {
+        return { ...prev, status: 'paused', startTime: null };
+      }
       const elapsedMs = prev.startTime != null ? Date.now() - prev.startTime : prev.elapsedMs;
       return { ...prev, status: 'paused', startTime: null, elapsedMs };
     });
@@ -441,29 +500,18 @@ function RaceContent() {
     setRaceState((prev) => ({
       ...prev,
       status: 'running',
-      startTime: Date.now() - prev.elapsedMs,
+      startTime: prev.simulationSpeed === 1 ? Date.now() - prev.elapsedMs : null,
     }));
   }, []);
 
   const handleFinish = useCallback(() => {
-    setRaceState((prev) => ({ ...prev, status: 'finished', startTime: null }));
     if (intervalRef.current) clearInterval(intervalRef.current);
-
-    try {
-      const debrief = {
-        plan,
-        profile,
-        event,
-        raceState,
-        finishedAt: new Date().toISOString(),
-      };
-      const existing = JSON.parse(localStorage.getItem('fuelos_debriefs') || '[]');
-      existing.unshift(debrief);
-      localStorage.setItem('fuelos_debriefs', JSON.stringify(existing.slice(0, 10)));
-    } catch (e) {
-      console.error('Debrief save error:', e);
-    }
-  }, [plan, profile, event, raceState]);
+    setRaceState((prev) => {
+      const next = { ...prev, status: 'finished' as const, startTime: null };
+      appendDebrief(next);
+      return next;
+    });
+  }, [appendDebrief]);
 
   const handleReset = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -561,10 +609,33 @@ function RaceContent() {
     };
   }, [handleConsumed, handleSkipped]);
 
+  const cycleSimulationSpeed = useCallback(() => {
+    setRaceState((prev) => {
+      if (prev.status !== 'idle') return prev;
+      const next: SimulationSpeed =
+        prev.simulationSpeed === 1 ? 10 : prev.simulationSpeed === 10 ? 60 : 1;
+      return { ...prev, simulationSpeed: next };
+    });
+  }, []);
+
+  const simulationHeaderBadge =
+    raceState.simulationSpeed > 1 ? (
+      <span
+        style={{
+          ...S.badge,
+          borderColor: 'color-mix(in srgb, #a855f7 40%, var(--color-border))',
+          color: 'color-mix(in srgb, #a855f7 85%, var(--color-text))',
+          fontSize: 10,
+        }}
+      >
+        SIMULATION ×{raceState.simulationSpeed}
+      </span>
+    ) : null;
+
   if (!plan) {
     return (
       <div style={S.page}>
-        <Header sticky />
+        <Header sticky extra={simulationHeaderBadge} />
 
         <main style={{ ...S.main, paddingTop: 52 }}>
           <div style={{ maxWidth: 520, margin: '0 auto' }}>
@@ -767,7 +838,7 @@ function RaceContent() {
 
   return (
     <div style={S.page}>
-      <Header sticky />
+      <Header sticky extra={simulationHeaderBadge} />
 
       <main style={S.main}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
@@ -840,9 +911,15 @@ function RaceContent() {
           </div>
 
           {raceState.status === 'idle' && (
-            <button onClick={handleStart} style={S.btnPrimary}>
-              Démarrer
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button type="button" onClick={handleStart} style={S.btnPrimary}>
+                Démarrer
+              </button>
+              <button type="button" onClick={cycleSimulationSpeed} style={S.btnSecondary}>
+                🧪 Simuler
+                {raceState.simulationSpeed > 1 ? ` (×${raceState.simulationSpeed})` : ''}
+              </button>
+            </div>
           )}
 
           {(raceState.status === 'running' || raceState.status === 'paused') && (

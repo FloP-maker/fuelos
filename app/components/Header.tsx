@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { ThemeToggle } from '../app/components/ThemeToggle';
 
 export type HeaderActivePage = 'plan' | 'shop' | 'race' | 'learn';
@@ -88,9 +88,11 @@ export type HeaderProps = {
   /** Overrides automatic detection from `usePathname()`. */
   activePage?: HeaderActivePage;
   sticky?: boolean;
+  /** Optional slot for contextual badges (e.g. race simulation). */
+  extra?: ReactNode;
 };
 
-export function Header({ activePage: activePageProp, sticky }: HeaderProps) {
+export function Header({ activePage: activePageProp, sticky, extra }: HeaderProps) {
   const pathname = usePathname();
   const resolvedActive = activePageProp ?? pathnameToActivePage(pathname);
 
@@ -124,6 +126,7 @@ export function Header({ activePage: activePageProp, sticky }: HeaderProps) {
             );
           })}
         </nav>
+        {extra}
         <Link href="/" style={S.btnOutline}>
           Accueil
         </Link>
