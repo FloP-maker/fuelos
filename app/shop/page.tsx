@@ -81,6 +81,7 @@ export default function ShopPage() {
   });
   const [compareMode, setCompareMode] = useState(false);
   const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [addProductOpen, setAddProductOpen] = useState(false);
   const [newCustomProduct, setNewCustomProduct] = useState({
     name: "",
     brand: "",
@@ -98,6 +99,15 @@ export default function ShopPage() {
   useEffect(() => {
     localStorage.setItem(CUSTOM_PRODUCTS_STORAGE_KEY, JSON.stringify(customProducts));
   }, [customProducts]);
+
+  useEffect(() => {
+    if (!addProductOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setAddProductOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [addProductOpen]);
 
   const allProducts = useMemo(() => [...customProducts, ...PRODUCTS], [customProducts]);
   const availableBrands = useMemo(
@@ -155,6 +165,60 @@ export default function ShopPage() {
   const showCompareDrawer = compareMode && compareProducts.length >= 2;
   const atCompareLimit = compareIds.length >= MAX_COMPARE;
 
+  const resetNewCustomProductForm = () => {
+    setNewCustomProduct({
+      name: "",
+      brand: "",
+      imageUrl: "",
+      productUrl: "",
+      category: "gel",
+      cho_per_unit: 25,
+      water_per_unit: 0,
+      sodium_per_unit: 0,
+      calories_per_unit: 100,
+      price_per_unit: 2,
+      weight_g: 40,
+    });
+  };
+
+  const submitCustomProduct = () => {
+    if (!newCustomProduct.name.trim()) {
+      alert("Nom requis");
+      return;
+    }
+    const custom: Product = {
+      id: `custom-${Date.now()}`,
+      name: newCustomProduct.name.trim(),
+      brand: newCustomProduct.brand.trim() || "Perso",
+      category: newCustomProduct.category,
+      cho_per_unit: newCustomProduct.cho_per_unit,
+      water_per_unit: newCustomProduct.water_per_unit || undefined,
+      sodium_per_unit: newCustomProduct.sodium_per_unit || undefined,
+      calories_per_unit: newCustomProduct.calories_per_unit,
+      price_per_unit: newCustomProduct.price_per_unit,
+      weight_g: newCustomProduct.weight_g,
+      allergens: [],
+      diet_tags: [],
+      description: "Produit personnalisé",
+      imageUrl: newCustomProduct.imageUrl.trim() || undefined,
+      productUrl: newCustomProduct.productUrl.trim() || undefined,
+    };
+    setCustomProducts((prev) => [custom, ...prev]);
+    resetNewCustomProductForm();
+    setAddProductOpen(false);
+  };
+
+  const btnOutlineStyle = {
+    padding: "8px 14px" as const,
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: "pointer" as const,
+    border: "1px solid var(--color-border)",
+    background: "transparent",
+    color: "var(--color-text-muted)",
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--color-bg)", color: "var(--color-text)", fontFamily: "system-ui, sans-serif" }}>
       <header style={{ borderBottom: "1px solid var(--color-border)", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -177,23 +241,6 @@ export default function ShopPage() {
           >
             Accueil
           </Link>
-          <button
-            type="button"
-            onClick={toggleCompareMode}
-            style={{
-              padding: "8px 14px",
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-              border: compareMode ? "1px solid var(--color-accent)" : "1px solid var(--color-border)",
-              background: compareMode ? "rgba(34,197,94,0.12)" : "transparent",
-              color: compareMode ? "var(--color-accent)" : "var(--color-text-muted)",
-            }}
-            aria-pressed={compareMode}
-          >
-            Comparer
-          </button>
           <ThemeToggle />
         </div>
       </header>
@@ -203,72 +250,6 @@ export default function ShopPage() {
         <div style={{ color: "var(--color-text-muted)", fontSize: 14, marginBottom: 24 }}>
           {allProducts.length} produits ({customProducts.length} perso) · Maurten, SiS, Tailwind, Näak, GU Energy…
         </div>
-
-        <section style={{ marginBottom: 18, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 10, padding: 14 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>Ajouter un produit personnalisé</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(140px, 1fr))", gap: 8 }}>
-            <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Nom" value={newCustomProduct.name} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, name: e.target.value })} />
-            <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Marque" value={newCustomProduct.brand} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, brand: e.target.value })} />
-            <select style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} value={newCustomProduct.category} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, category: e.target.value as Product["category"] })}>
-              {(["gel", "drink", "bar", "chew", "real-food", "electrolyte"] as const).map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-            <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="URL photo https://…" value={newCustomProduct.imageUrl} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, imageUrl: e.target.value })} />
-            <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="URL produit (optionnel)" value={newCustomProduct.productUrl} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, productUrl: e.target.value })} />
-            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="CHO (g)" value={newCustomProduct.cho_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, cho_per_unit: +e.target.value })} />
-            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Prix EUR" value={newCustomProduct.price_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, price_per_unit: +e.target.value })} />
-            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="kcal" value={newCustomProduct.calories_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, calories_per_unit: +e.target.value })} />
-            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Eau ml (optionnel)" value={newCustomProduct.water_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, water_per_unit: +e.target.value })} />
-            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Na mg (optionnel)" value={newCustomProduct.sodium_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, sodium_per_unit: +e.target.value })} />
-            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Poids g" value={newCustomProduct.weight_g} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, weight_g: +e.target.value })} />
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <button
-              type="button"
-              onClick={() => {
-                if (!newCustomProduct.name.trim()) {
-                  alert("Nom requis");
-                  return;
-                }
-                const custom: Product = {
-                  id: `custom-${Date.now()}`,
-                  name: newCustomProduct.name.trim(),
-                  brand: newCustomProduct.brand.trim() || "Perso",
-                  category: newCustomProduct.category,
-                  cho_per_unit: newCustomProduct.cho_per_unit,
-                  water_per_unit: newCustomProduct.water_per_unit || undefined,
-                  sodium_per_unit: newCustomProduct.sodium_per_unit || undefined,
-                  calories_per_unit: newCustomProduct.calories_per_unit,
-                  price_per_unit: newCustomProduct.price_per_unit,
-                  weight_g: newCustomProduct.weight_g,
-                  allergens: [],
-                  diet_tags: [],
-                  description: "Produit personnalisé",
-                  imageUrl: newCustomProduct.imageUrl.trim() || undefined,
-                  productUrl: newCustomProduct.productUrl.trim() || undefined,
-                };
-                setCustomProducts((prev) => [custom, ...prev]);
-                setNewCustomProduct({
-                  name: "",
-                  brand: "",
-                  imageUrl: "",
-                  productUrl: "",
-                  category: "gel",
-                  cho_per_unit: 25,
-                  water_per_unit: 0,
-                  sodium_per_unit: 0,
-                  calories_per_unit: 100,
-                  price_per_unit: 2,
-                  weight_g: 40,
-                });
-              }}
-              style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-accent)", color: "#000", fontWeight: 700, cursor: "pointer" }}
-            >
-              + Ajouter au catalogue
-            </button>
-          </div>
-        </section>
 
         {/* Search + Sort */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16, alignItems: "center" }}>
@@ -331,15 +312,39 @@ export default function ShopPage() {
           ))}
         </div>
 
-        <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 16, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
-          <span>
-            {filtered.length} produit{filtered.length !== 1 ? "s" : ""} trouvé{filtered.length !== 1 ? "s" : ""}
-          </span>
-          {compareMode && (
-            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--color-accent)" }}>
-              Mode comparaison · {compareIds.length}/{MAX_COMPARE} sélectionné{compareIds.length !== 1 ? "s" : ""}
+        <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 16, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, justifyContent: "space-between" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+            <span>
+              {filtered.length} produit{filtered.length !== 1 ? "s" : ""} trouvé{filtered.length !== 1 ? "s" : ""}
             </span>
-          )}
+            {compareMode && (
+              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--color-accent)" }}>
+                Mode comparaison · {compareIds.length}/{MAX_COMPARE} sélectionné{compareIds.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginLeft: "auto" }}>
+            <button
+              type="button"
+              onClick={() => setAddProductOpen(true)}
+              style={btnOutlineStyle}
+            >
+              + Ajouter un produit
+            </button>
+            <button
+              type="button"
+              onClick={toggleCompareMode}
+              style={{
+                ...btnOutlineStyle,
+                border: compareMode ? "1px solid var(--color-accent)" : "1px solid var(--color-border)",
+                background: compareMode ? "rgba(34,197,94,0.12)" : "transparent",
+                color: compareMode ? "var(--color-accent)" : "var(--color-text-muted)",
+              }}
+              aria-pressed={compareMode}
+            >
+              Comparer
+            </button>
+          </div>
         </div>
 
         {filtered.length === 0 ? (
@@ -367,6 +372,85 @@ export default function ShopPage() {
           </div>
         )}
       </main>
+
+      {addProductOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 60,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+          }}
+          role="presentation"
+          onClick={() => setAddProductOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-product-dialog-title"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: 720,
+              maxHeight: "min(90vh, 640px)",
+              overflow: "auto",
+              background: "var(--color-bg-card)",
+              border: "1px solid var(--color-border)",
+              borderRadius: 14,
+              boxShadow: "0 24px 80px rgba(0,0,0,0.35)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "16px 18px", borderBottom: "1px solid var(--color-border)", position: "sticky", top: 0, background: "var(--color-bg-card)", zIndex: 1 }}>
+              <div id="add-product-dialog-title" style={{ fontWeight: 700, fontSize: 17 }}>
+                Produit personnalisé
+              </div>
+              <button
+                type="button"
+                onClick={() => setAddProductOpen(false)}
+                aria-label="Fermer"
+                style={{ ...btnOutlineStyle, padding: "6px 12px", fontSize: 18, lineHeight: 1 }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ padding: 18 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10 }}>
+                <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Nom" value={newCustomProduct.name} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, name: e.target.value })} />
+                <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Marque" value={newCustomProduct.brand} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, brand: e.target.value })} />
+                <select style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} value={newCustomProduct.category} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, category: e.target.value as Product["category"] })}>
+                  {(["gel", "drink", "bar", "chew", "real-food", "electrolyte"] as const).map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="URL photo https://…" value={newCustomProduct.imageUrl} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, imageUrl: e.target.value })} />
+                <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)", gridColumn: "1 / -1" }} placeholder="URL produit (optionnel)" value={newCustomProduct.productUrl} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, productUrl: e.target.value })} />
+                <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="CHO (g)" value={newCustomProduct.cho_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, cho_per_unit: +e.target.value })} />
+                <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Prix EUR" value={newCustomProduct.price_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, price_per_unit: +e.target.value })} />
+                <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="kcal" value={newCustomProduct.calories_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, calories_per_unit: +e.target.value })} />
+                <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Eau ml (optionnel)" value={newCustomProduct.water_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, water_per_unit: +e.target.value })} />
+                <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Na mg (optionnel)" value={newCustomProduct.sodium_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, sodium_per_unit: +e.target.value })} />
+                <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Poids g" value={newCustomProduct.weight_g} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, weight_g: +e.target.value })} />
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 16, justifyContent: "flex-end" }}>
+                <button type="button" onClick={() => setAddProductOpen(false)} style={btnOutlineStyle}>
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={submitCustomProduct}
+                  style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-accent)", color: "#000", fontWeight: 700, cursor: "pointer", fontSize: 13 }}
+                >
+                  Ajouter au catalogue
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showCompareDrawer && (
         <div
