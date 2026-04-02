@@ -429,7 +429,7 @@ function RaceContent() {
         }}
       />
 
-      <div className="relative z-10">
+      <div className="relative z-10 w-full">
         {/* Header */}
         <div
           className="sticky top-0 border-b backdrop-blur"
@@ -492,7 +492,7 @@ function RaceContent() {
           </div>
         </div>
 
-        <div className="mx-auto max-w-3xl space-y-5 p-4 md:p-6">
+        <div className="mx-auto w-full max-w-3xl space-y-5 p-4 md:p-6">
           {/* Top cockpit KPIs */}
           <div className="grid grid-cols-3 gap-2">
             <div
