@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import "./globals.css";
 import ServiceWorkerRegistration from "./ServiceWorkerRegistration";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "FuelOS",
@@ -11,13 +13,13 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
-    <html lang="fr">
+    <html lang="fr" suppressHydrationWarning>
       <body>
         <ServiceWorkerRegistration />
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
