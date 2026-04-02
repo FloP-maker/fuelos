@@ -4,6 +4,7 @@ import Link from "next/link";
 import { PRODUCTS } from "../lib/products";
 import type { Product } from "../lib/types";
 import usePageTitle from "../lib/hooks/usePageTitle";
+import { ThemeToggle } from "../app/components/ThemeToggle";
 
 const CATEGORIES = [
   { id: "all", label: "Tout" },
@@ -279,7 +280,7 @@ export default function ShopPage() {
           <div style={{ width: 32, height: 32, background: "var(--color-accent)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 18, color: "#000" }}>F</div>
           <span style={{ fontWeight: 700, fontSize: 20 }}>FuelOS</span>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {[{ href: "/plan", label: "Plan" }, { href: "/shop", label: "Shop" }, { href: "/race", label: "Race" }, { href: "/learn", label: "Learn" }].map(item => (
             <Link key={item.href} href={item.href}
               style={item.href === "/shop"
@@ -294,6 +295,7 @@ export default function ShopPage() {
           >
             Accueil
           </Link>
+          <ThemeToggle />
         </div>
       </header>
 
@@ -306,16 +308,16 @@ export default function ShopPage() {
         <section style={{ marginBottom: 18, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 10, padding: 14 }}>
           <div style={{ fontWeight: 700, marginBottom: 8 }}>Ajouter un produit custom</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(140px, 1fr))", gap: 8 }}>
-            <input style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Nom" value={newCustomProduct.name} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, name: e.target.value })} />
-            <input style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Marque" value={newCustomProduct.brand} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, brand: e.target.value })} />
-            <select style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} value={newCustomProduct.category} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, category: e.target.value as Product["category"] })}>
+            <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Nom" value={newCustomProduct.name} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, name: e.target.value })} />
+            <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Marque" value={newCustomProduct.brand} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, brand: e.target.value })} />
+            <select style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} value={newCustomProduct.category} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, category: e.target.value as Product["category"] })}>
               {["gel", "drink", "bar", "chew", "real-food", "electrolyte"].map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
-            <input style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="URL photo https://..." value={newCustomProduct.imageUrl} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, imageUrl: e.target.value })} />
-            <input style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="URL produit (Decathlon/i-Run...)" value={newCustomProduct.productUrl} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, productUrl: e.target.value })} />
-            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="CHO" value={newCustomProduct.cho_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, cho_per_unit: +e.target.value })} />
-            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Prix EUR" value={newCustomProduct.price_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, price_per_unit: +e.target.value })} />
-            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="kcal" value={newCustomProduct.calories_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, calories_per_unit: +e.target.value })} />
+            <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="URL photo https://..." value={newCustomProduct.imageUrl} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, imageUrl: e.target.value })} />
+            <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="URL produit (Decathlon/i-Run...)" value={newCustomProduct.productUrl} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, productUrl: e.target.value })} />
+            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="CHO" value={newCustomProduct.cho_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, cho_per_unit: +e.target.value })} />
+            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Prix EUR" value={newCustomProduct.price_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, price_per_unit: +e.target.value })} />
+            <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="kcal" value={newCustomProduct.calories_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, calories_per_unit: +e.target.value })} />
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
             <button onClick={() => {

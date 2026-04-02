@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { ThemeToggle } from './app/components/ThemeToggle';
 
 const S = {
   page: { minHeight: '100vh', background: 'var(--color-bg)', color: 'var(--color-text)', fontFamily: 'system-ui, sans-serif' } as React.CSSProperties,
@@ -36,7 +37,7 @@ export default function Home() {
           <div style={S.logoIcon}>F</div>
           <span style={{ fontWeight: 700, fontSize: 20 }}>FuelOS</span>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {NAV.map(item => (
             <Link
               key={item.href}
@@ -46,6 +47,7 @@ export default function Home() {
               {item.label}
             </Link>
           ))}
+          <ThemeToggle />
         </div>
       </header>
 

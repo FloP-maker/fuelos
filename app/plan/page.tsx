@@ -7,6 +7,7 @@ import usePageTitle from "../lib/hooks/usePageTitle";
 import { calculateFuelPlan } from "../lib/fuelCalculator";
 import { PRODUCTS } from "../lib/products";
 import type { AthleteProfile, EventDetails, FuelPlan, Product } from "../lib/types";
+import { ThemeToggle } from "../app/components/ThemeToggle";
 
 const SPORTS = ["Course à pied", "Trail", "Cyclisme", "Triathlon", "Ultra-trail"];
 const WEATHER = ["Froid (<10°C)", "Tempéré (10-20°C)", "Chaud (20-30°C)", "Très chaud (>30°C)"];
@@ -60,7 +61,7 @@ const S = {
     width: "100%",
     padding: "10px 14px",
     borderRadius: 8,
-    background: "#1e1e1e",
+    background: "var(--color-bg-card)",
     border: "1px solid var(--color-border)",
     color: "var(--color-text)",
     fontSize: 14,
@@ -71,7 +72,7 @@ const S = {
     width: "100%",
     padding: "10px 14px",
     borderRadius: 8,
-    background: "#1e1e1e",
+    background: "var(--color-bg-card)",
     border: "1px solid var(--color-border)",
     color: "var(--color-text)",
     fontSize: 14,
@@ -330,9 +331,12 @@ export default function PlanPage() {
           ))}
         </div>
 
-        <Link href="/" style={{ ...S.btnOutline, textDecoration: "none" }}>
-          Accueil
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Link href="/" style={{ ...S.btnOutline, textDecoration: "none" }}>
+            Accueil
+          </Link>
+          <ThemeToggle />
+        </div>
       </header>
 
       <div style={S.main}>

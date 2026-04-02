@@ -11,24 +11,44 @@ export function ThemeToggle() {
 
   if (!mounted) return null;
 
+  const isDark = theme === 'dark';
+
   return (
     <button
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       className={[
-        "p-2 rounded-lg border transition-colors",
-        theme === "dark"
-          ? "border-gray-700 hover:bg-gray-800 text-gray-100"
-          : "border-gray-300 hover:bg-gray-100 text-gray-900",
+        "h-10 w-10 grid place-items-center rounded-full border transition-colors",
+        "shadow-sm hover:shadow-md active:scale-[0.98]",
+        "bg-[var(--color-bg-card)] border-[var(--color-border)]",
+        "text-[var(--color-text)]",
       ].join(" ")}
-      aria-label="Toggle theme"
+      aria-label={isDark ? "Passer en thème clair" : "Passer en thème sombre"}
+      title={isDark ? "Light mode" : "Dark mode"}
     >
-      {theme === 'dark' ? (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+      {isDark ? (
+        // Moon (current theme)
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M21 14.7A8.6 8.6 0 0 1 9.3 3a7.6 7.6 0 1 0 11.7 11.7Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
         </svg>
       ) : (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        // Sun (current theme)
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M12 17.2a5.2 5.2 0 1 0 0-10.4 5.2 5.2 0 0 0 0 10.4Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          />
+          <path
+            d="M12 2.5v2.2M12 19.3v2.2M21.5 12h-2.2M4.7 12H2.5M18.9 5.1l-1.6 1.6M6.7 17.3l-1.6 1.6M18.9 18.9l-1.6-1.6M6.7 6.7 5.1 5.1"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
         </svg>
       )}
     </button>

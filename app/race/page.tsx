@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import type { FuelPlan, AthleteProfile, EventDetails, TimelineItem } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
+import { ThemeToggle } from '../app/components/ThemeToggle';
 
 interface RaceState {
   status: 'idle' | 'running' | 'paused' | 'finished';
@@ -333,7 +334,7 @@ function RaceContent() {
             'radial-gradient(circle at top, rgba(239,68,68,0.18), transparent 35%), linear-gradient(180deg, #020617 0%, #000000 100%)',
         }}
       >
-        <div className="fixed top-4 right-4">
+        <div className="fixed top-4 right-4 flex items-center gap-2">
           <Link
             href="/"
             style={{
@@ -350,6 +351,7 @@ function RaceContent() {
           >
             Accueil
           </Link>
+          <ThemeToggle />
         </div>
         <div className="text-6xl mb-6">⚡</div>
         <h1 className="text-2xl font-bold mb-3">Race Mode</h1>
@@ -473,22 +475,25 @@ function RaceContent() {
               )}
             </div>
 
-            <Link
-              href="/"
-              style={{
-                padding: '10px 20px',
-                borderRadius: 8,
-                background: 'transparent',
-                color: 'var(--color-text)',
-                fontWeight: 600,
-                fontSize: 14,
-                border: '1px solid var(--color-border)',
-                cursor: 'pointer',
-                textDecoration: 'none',
-              }}
-            >
-              Accueil
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/"
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: 8,
+                  background: 'transparent',
+                  color: 'var(--color-text)',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  border: '1px solid var(--color-border)',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                }}
+              >
+                Accueil
+              </Link>
+              <ThemeToggle />
+            </div>
           </div>
         </div>
 

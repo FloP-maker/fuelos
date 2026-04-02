@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import ServiceWorkerRegistration from "./ServiceWorkerRegistration";
 import { Providers } from "./providers";
-import { ThemeToggle } from "./app/components/ThemeToggle";
 
 export const metadata: Metadata = {
   title: "FuelOS",
@@ -21,9 +20,6 @@ export default function RootLayout({
       <body>
         <ServiceWorkerRegistration />
         <Providers>
-          <div className="fixed top-4 left-4 z-50">
-            <ThemeToggle />
-          </div>
           {children}
         </Providers>
       </body>

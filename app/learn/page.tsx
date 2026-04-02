@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import usePageTitle from '../lib/hooks/usePageTitle';
+import { ThemeToggle } from '../app/components/ThemeToggle';
 
 type LearnItem = {
   id: string;
@@ -248,22 +249,25 @@ export default function LearnPage() {
           </div>
           <span style={{ fontWeight: 700, fontSize: 20 }}>FuelOS</span>
         </div>
-        <Link
-          href="/"
-          style={{
-            padding: '10px 20px',
-            borderRadius: 8,
-            background: 'transparent',
-            textDecoration: 'none',
-            color: 'var(--color-text)',
-            fontWeight: 600,
-            fontSize: 14,
-            border: '1px solid var(--color-border)',
-            cursor: 'pointer',
-          }}
-        >
-          Accueil
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link
+            href="/"
+            style={{
+              padding: '10px 20px',
+              borderRadius: 8,
+              background: 'transparent',
+              textDecoration: 'none',
+              color: 'var(--color-text)',
+              fontWeight: 600,
+              fontSize: 14,
+              border: '1px solid var(--color-border)',
+              cursor: 'pointer',
+            }}
+          >
+            Accueil
+          </Link>
+          <ThemeToggle />
+        </div>
       </header>
       <main style={{ maxWidth: 1120, margin: '0 auto', padding: '28px 20px 48px' }}>
       <div
