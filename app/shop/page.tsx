@@ -207,6 +207,45 @@ function RaceContent() {
   const alertShownRef = useRef<Set<number>>(new Set());
   const audioContextRef = useRef<AudioContext | null>(null);
 
+  const ensureAudioContext = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    if (!audioContextRef.current) {
+      audioContextRef.current = new window.AudioContext();
+    }
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume().catch(() => undefined);
+    }
+  }, []);
+
+  const playSoundCue = useCallback(
+    (type: 'soon' | 'due' | 'confirm') => {
+      const ctx = audioContextRef.current;
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const pattern =
+        type === 'soon'
+          ? [740]
+          : type === 'due'
+          ? [880, 1100]
+          : [660];
+
+      pattern.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, now + idx * 0.16);
+        gain.gain.exponentialRampToValueAtTime(0.09, now + idx * 0.16 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.16 + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.16);
+        osc.stop(now + idx * 0.16 + 0.13);
+      });
+    },
+    []
+  );
+
   useEffect(() => {
     try {
       const planParam = searchParams.get('plan');
@@ -299,45 +338,6 @@ function RaceContent() {
     timingOffsetMin,
     playSoundCue,
   ]);
-
-  const ensureAudioContext = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    if (!audioContextRef.current) {
-      audioContextRef.current = new window.AudioContext();
-    }
-    if (audioContextRef.current.state === 'suspended') {
-      audioContextRef.current.resume().catch(() => undefined);
-    }
-  }, []);
-
-  const playSoundCue = useCallback(
-    (type: 'soon' | 'due' | 'confirm') => {
-      const ctx = audioContextRef.current;
-      if (!ctx) return;
-      const now = ctx.currentTime;
-      const pattern =
-        type === 'soon'
-          ? [740]
-          : type === 'due'
-          ? [880, 1100]
-          : [660];
-
-      pattern.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.0001, now + idx * 0.16);
-        gain.gain.exponentialRampToValueAtTime(0.09, now + idx * 0.16 + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.16 + 0.12);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now + idx * 0.16);
-        osc.stop(now + idx * 0.16 + 0.13);
-      });
-    },
-    []
-  );
 
   const handleStart = useCallback(async () => {
     ensureAudioContext();
