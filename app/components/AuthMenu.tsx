@@ -2,9 +2,9 @@
 
 import { getProviders, signIn, signOut, useSession } from 'next-auth/react';
 import type { CSSProperties } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 type ProviderEntry = NonNullable<Awaited<ReturnType<typeof getProviders>>>[string];
-import { useEffect, useState } from 'react';
 
 const btn: CSSProperties = {
   padding: '8px 14px',
@@ -26,12 +26,26 @@ export function AuthMenu() {
   const [providerMap, setProviderMap] = useState<Record<string, ProviderEntry> | undefined>(
     undefined
   );
+  const [providersFetchFailed, setProvidersFetchFailed] = useState(false);
   const [email, setEmail] = useState('');
   const [emailHint, setEmailHint] = useState<'idle' | 'sending' | 'sent' | 'err'>('idle');
 
-  useEffect(() => {
-    void getProviders().then((p) => setProviderMap(p === null ? {} : p));
+  const loadProviders = useCallback(() => {
+    setProviderMap(undefined);
+    setProvidersFetchFailed(false);
+    void getProviders().then((p) => {
+      if (p === null) {
+        setProviderMap({});
+        setProvidersFetchFailed(true);
+        return;
+      }
+      setProviderMap(p);
+    });
   }, []);
+
+  useEffect(() => {
+    loadProviders();
+  }, [loadProviders]);
 
   if (status === 'loading' || providerMap === undefined) {
     return (
@@ -65,14 +79,25 @@ export function AuthMenu() {
     );
   }
 
+  if (providersFetchFailed) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Connexion — chargement impossible</span>
+        <button type="button" style={{ ...btn, borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }} onClick={() => loadProviders()}>
+          Réessayer
+        </button>
+      </div>
+    );
+  }
+
   const ids = Object.keys(providerMap);
   if (ids.length === 0) {
     return (
       <span
-        style={{ fontSize: 12, color: 'var(--color-text-muted)', maxWidth: 240 }}
-        title="Configurez AUTH_GOOGLE_ID / AUTH_GOOGLE_SECRET ou AUTH_RESEND_KEY dans l’environnement."
+        style={{ fontSize: 12, color: 'var(--color-text-muted)', maxWidth: 280 }}
+        title="Définissez au moins Google (AUTH_GOOGLE_ID + AUTH_GOOGLE_SECRET ou GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET) ou Resend (AUTH_RESEND_KEY ou RESEND_API_KEY), plus AUTH_SECRET."
       >
-        Connexion indisponible
+        Connexion indisponible (voir .env)
       </span>
     );
   }
@@ -116,7 +141,7 @@ export function AuthMenu() {
         >
           <input
             type="email"
-            name="email"
+            name="emailInput"
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
