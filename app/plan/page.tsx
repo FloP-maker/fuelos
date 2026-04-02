@@ -8,7 +8,7 @@ import usePageTitle from "../lib/hooks/usePageTitle";
 import { calculateFuelPlan } from "../lib/fuelCalculator";
 import { PRODUCTS } from "../lib/products";
 import type { AthleteProfile, EventDetails, FuelPlan, Product } from "../lib/types";
-import { ThemeToggle } from "../app/components/ThemeToggle";
+import { Header } from "../components/Header";
 
 const SPORTS = ["Course à pied", "Trail", "Cyclisme", "Triathlon", "Ultra-trail"];
 const WEATHER = ["Froid (<10°C)", "Tempéré (10-20°C)", "Chaud (20-30°C)", "Très chaud (>30°C)"];
@@ -33,25 +33,10 @@ const S = {
     color: "var(--color-text)",
     fontFamily: "system-ui, sans-serif",
   } as React.CSSProperties,
-  header: {
+  planWizardBar: {
     borderBottom: "1px solid var(--color-border)",
-    padding: "16px 24px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  } as React.CSSProperties,
-  logo: { display: "flex", alignItems: "center", gap: 10 } as React.CSSProperties,
-  logoIcon: {
-    width: 32,
-    height: 32,
-    background: "var(--color-accent)",
-    borderRadius: 8,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: 700,
-    fontSize: 18,
-    color: "#000",
+    padding: "12px 24px",
+    background: "var(--color-bg)",
   } as React.CSSProperties,
   main: { maxWidth: 960, margin: "0 auto", padding: "40px 24px" } as React.CSSProperties,
   card: {
@@ -370,12 +355,8 @@ function PlanPageContent() {
 
   return (
     <div style={S.page}>
-      <header style={S.header}>
-        <div style={S.logo}>
-          <div style={S.logoIcon}>F</div>
-          <span style={{ fontWeight: 700, fontSize: 20 }}>FuelOS</span>
-        </div>
-
+      <Header />
+      <div style={S.planWizardBar}>
         <nav
           aria-label="Étapes du plan"
           style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}
@@ -485,14 +466,7 @@ function PlanPageContent() {
             );
           })}
         </nav>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Link href="/" style={{ ...S.btnOutline, textDecoration: "none" }}>
-            Accueil
-          </Link>
-          <ThemeToggle />
-        </div>
-      </header>
+      </div>
 
       <div style={S.main}>
         {currentStep === 1 && (

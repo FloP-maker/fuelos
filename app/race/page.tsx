@@ -14,14 +14,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import type { FuelPlan, AthleteProfile, EventDetails, TimelineItem } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
-import { ThemeToggle } from '../app/components/ThemeToggle';
-
-const NAV = [
-  { href: '/plan', label: 'Plan' },
-  { href: '/shop', label: 'Shop' },
-  { href: '/race', label: 'Race Mode' },
-  { href: '/learn', label: 'Learn' },
-];
+import { Header } from '../components/Header';
 
 const ONBOARDING_PROFILE_KEY = 'fuelos_onboarding_profile_done';
 const ONBOARDING_EVENT_KEY = 'fuelos_onboarding_event_done';
@@ -33,49 +26,6 @@ const S = {
     background: 'var(--color-bg)',
     color: 'var(--color-text)',
     fontFamily: 'system-ui, sans-serif',
-  } as CSSProperties,
-  header: {
-    borderBottom: '1px solid var(--color-border)',
-    padding: '16px 24px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    position: 'sticky',
-    top: 0,
-    zIndex: 30,
-    background: 'color-mix(in srgb, var(--color-bg) 88%, transparent)',
-    backdropFilter: 'blur(10px)',
-  } as CSSProperties,
-  logo: { display: 'flex', alignItems: 'center', gap: 10 } as CSSProperties,
-  logoIcon: {
-    width: 32,
-    height: 32,
-    background: 'var(--color-accent)',
-    borderRadius: 8,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 800,
-    fontSize: 18,
-    color: '#000',
-  } as CSSProperties,
-  navLink: {
-    padding: '8px 14px',
-    borderRadius: 8,
-    fontSize: 13,
-    fontWeight: 600,
-    border: '1px solid transparent',
-    textDecoration: 'none',
-  } as CSSProperties,
-  navLinkActive: {
-    padding: '8px 14px',
-    borderRadius: 8,
-    fontSize: 13,
-    fontWeight: 700,
-    color: 'var(--color-accent)',
-    border: '1px solid var(--color-accent)',
-    background: 'rgba(34,197,94,0.08)',
-    textDecoration: 'none',
   } as CSSProperties,
   btnOutline: {
     padding: '10px 20px',
@@ -614,27 +564,7 @@ function RaceContent() {
   if (!plan) {
     return (
       <div style={S.page}>
-        <header style={S.header}>
-          <div style={S.logo}>
-            <div style={S.logoIcon}>F</div>
-            <span style={{ fontWeight: 800, fontSize: 20 }}>FuelOS</span>
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                style={item.href === '/race' ? S.navLinkActive : { ...S.navLink, color: 'var(--color-text-muted)' }}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <Link href="/" style={S.btnOutline}>
-              Accueil
-            </Link>
-            <ThemeToggle />
-          </div>
-        </header>
+        <Header sticky />
 
         <main style={{ ...S.main, paddingTop: 52 }}>
           <div style={{ maxWidth: 520, margin: '0 auto' }}>
@@ -837,27 +767,7 @@ function RaceContent() {
 
   return (
     <div style={S.page}>
-      <header style={S.header}>
-        <div style={S.logo}>
-          <div style={S.logoIcon}>F</div>
-          <span style={{ fontWeight: 800, fontSize: 20 }}>FuelOS</span>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              style={item.href === '/race' ? S.navLinkActive : { ...S.navLink, color: 'var(--color-text-muted)' }}
-            >
-              {item.label}
-            </Link>
-          ))}
-          <Link href="/" style={S.btnOutline}>
-            Accueil
-          </Link>
-          <ThemeToggle />
-        </div>
-      </header>
+      <Header sticky />
 
       <main style={S.main}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>

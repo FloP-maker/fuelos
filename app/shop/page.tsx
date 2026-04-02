@@ -1,10 +1,9 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
-import Link from "next/link";
 import { PRODUCTS } from "../lib/products";
 import type { Product } from "../lib/types";
 import usePageTitle from "../lib/hooks/usePageTitle";
-import { ThemeToggle } from "../app/components/ThemeToggle";
+import { Header } from "../components/Header";
 
 const CUSTOM_PRODUCTS_STORAGE_KEY = "fuelos_custom_products";
 
@@ -221,29 +220,7 @@ export default function ShopPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--color-bg)", color: "var(--color-text)", fontFamily: "system-ui, sans-serif" }}>
-      <header style={{ borderBottom: "1px solid var(--color-border)", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <div style={{ width: 32, height: 32, background: "var(--color-accent)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 18, color: "#000" }}>F</div>
-          <span style={{ fontWeight: 700, fontSize: 20 }}>FuelOS</span>
-        </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {[{ href: "/plan", label: "Plan" }, { href: "/shop", label: "Shop" }, { href: "/race", label: "Race" }, { href: "/learn", label: "Learn" }].map(item => (
-            <Link key={item.href} href={item.href}
-              style={item.href === "/shop"
-                ? { padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "var(--color-accent)", border: "1px solid var(--color-accent)", background: "rgba(34,197,94,0.08)" }
-                : { padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "var(--color-text-muted)", border: "1px solid transparent" }}>
-              {item.label}
-            </Link>
-          ))}
-          <Link
-            href="/"
-            style={{ padding: "10px 20px", borderRadius: 8, background: "transparent", color: "var(--color-text)", fontWeight: 600, fontSize: 14, border: "1px solid var(--color-border)", cursor: "pointer", textDecoration: "none" }}
-          >
-            Accueil
-          </Link>
-          <ThemeToggle />
-        </div>
-      </header>
+      <Header />
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px", paddingBottom: showCompareDrawer ? 280 : 32 }}>
         <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Catalogue produits</div>
