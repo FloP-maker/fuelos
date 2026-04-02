@@ -338,20 +338,6 @@ function PlanPageContent() {
     console.log("🔍 CHO per hour:", result.mainPlan.choPerHour);
 
     setPlanResult(result);
-<<<<<<< HEAD
-    localStorage.setItem(
-      "fuelos_active_plan",
-      JSON.stringify({
-        fuelPlan: result.mainPlan,
-        altFuelPlan: result.altPlan,
-        altPlanLabel: result.altPlanLabel,
-        altPlanExplanation: result.altPlanExplanation,
-        racePlanVariant: "main",
-        profile,
-        event,
-      })
-    );
-=======
     const bundle = {
       fuelPlan: result.mainPlan,
       altFuelPlan: result.altPlan,
@@ -374,7 +360,6 @@ function PlanPageContent() {
     }).catch(() => {
       /* hors ligne ou non connecté */
     });
->>>>>>> group-by-hour-98d0b
     try {
       localStorage.setItem(ONBOARDING_PROFILE_KEY, "1");
       localStorage.setItem(ONBOARDING_EVENT_STEP_KEY, "1");
