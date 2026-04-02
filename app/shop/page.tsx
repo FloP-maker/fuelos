@@ -501,7 +501,8 @@ function ProductCard({
   fallbackImageUrl?: string | null;
   onDelete?: () => void;
 }) {
-  const catColor = CAT_COLORS[p.category] || { bg: "#1a1a1a", color: "#888" };
+  const catColor =
+    CAT_COLORS[p.category] || { bg: "color-mix(in srgb, var(--color-bg) 88%, transparent)", color: "var(--color-text-muted)" };
   const externalLink = getProductExternalLink(p);
   const fetchedAtLabel = priceMeta
     ? new Date(priceMeta.fetchedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })

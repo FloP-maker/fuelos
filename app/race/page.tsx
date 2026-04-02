@@ -328,10 +328,11 @@ function RaceContent() {
   if (!plan) {
     return (
       <div
-        className="min-h-screen text-white flex flex-col items-center justify-center p-6"
+        className="min-h-screen flex flex-col items-center justify-center p-6"
         style={{
           background:
-            'radial-gradient(circle at top, rgba(239,68,68,0.18), transparent 35%), linear-gradient(180deg, #020617 0%, #000000 100%)',
+            "radial-gradient(circle at top, rgba(34,197,94,0.14), transparent 40%), linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 92%, transparent) 0%, var(--color-bg) 75%)",
+          color: "var(--color-text)",
         }}
       >
         <div className="fixed top-4 right-4 flex items-center gap-2">
@@ -354,8 +355,12 @@ function RaceContent() {
           <ThemeToggle />
         </div>
         <div className="text-6xl mb-6">⚡</div>
-        <h1 className="text-2xl font-bold mb-3">Race Mode</h1>
-        <p className="text-gray-400 text-center mb-8">Aucun plan actif. Crée ton plan d&apos;abord.</p>
+        <h1 className="text-2xl font-bold mb-3" style={{ color: "var(--color-text)" }}>
+          Race Mode
+        </h1>
+        <p className="text-center mb-8" style={{ color: "var(--color-text-muted)" }}>
+          Aucun plan actif. Crée ton plan d&apos;abord.
+        </p>
         <Link href="/plan" className="bg-green-500 text-black font-bold py-3 px-6 rounded-xl text-base">
           Créer mon plan →
         </Link>
@@ -578,9 +583,10 @@ function RaceContent() {
             </div>
 
             <div
-              className="mb-4 text-6xl font-mono font-black tracking-tight text-white"
+              className="mb-4 text-6xl font-mono font-black tracking-tight"
               style={{
                 textShadow: '0 0 18px rgba(239,68,68,0.45)',
+                color: "var(--color-text)",
               }}
             >
               {formatDuration(raceState.elapsedMs)}
@@ -687,7 +693,9 @@ function RaceContent() {
               }}
             >
               <div className="mb-1 text-sm font-bold uppercase text-amber-300">⚡ Ravitaillement maintenant</div>
-              <div className="mb-1 text-xl font-bold text-white">{alertItem.product}</div>
+              <div className="mb-1 text-xl font-bold" style={{ color: "var(--color-text)" }}>
+                {alertItem.product}
+              </div>
               <div className="mb-4 text-sm text-amber-50/85">
                 {alertItem.cho}g CHO
                 {alertItem.water ? ` · ${alertItem.water}ml` : ''}
@@ -899,7 +907,7 @@ function RaceContent() {
                               : isCurrent
                               ? '#fbbf24'
                               : '#334155',
-                            color: isConsumed || isCurrent ? '#020617' : '#e2e8f0',
+                            color: isConsumed || isCurrent ? "#000" : "var(--color-text)",
                           }}
                         >
                           {isConsumed ? '✓' : isSkipped ? '×' : isCurrent ? '!' : ''}
@@ -959,13 +967,16 @@ export default function RacePage() {
     <Suspense
       fallback={
         <div
-          className="min-h-screen text-white flex items-center justify-center"
+          className="min-h-screen flex items-center justify-center"
           style={{
             background:
-              'radial-gradient(circle at top, rgba(239,68,68,0.18), transparent 35%), linear-gradient(180deg, #020617 0%, #000000 100%)',
+              "radial-gradient(circle at top, rgba(34,197,94,0.14), transparent 40%), linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 92%, transparent) 0%, var(--color-bg) 75%)",
+            color: "var(--color-text)",
           }}
         >
-          <div className="text-2xl">⚡ Chargement...</div>
+          <div className="text-2xl" style={{ color: "var(--color-text)" }}>
+            ⚡ Chargement...
+          </div>
         </div>
       }
     >
