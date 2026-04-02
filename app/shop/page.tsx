@@ -370,13 +370,13 @@ export default function ShopPage() {
         {/* Search + Sort */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16, alignItems: "center" }}>
           <input
-            style={{ flex: 1, minWidth: 200, padding: "10px 14px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)", fontSize: 14, outline: "none" }}
+            style={{ flex: 1, minWidth: 200, padding: "10px 14px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)", fontSize: 14, outline: "none" }}
             placeholder="Rechercher un produit, une marque…"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
           <select
-            style={{ padding: "8px 12px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)", fontSize: 13, outline: "none" }}
+            style={{ padding: "8px 12px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)", fontSize: 13, outline: "none" }}
             value={sortBy}
             onChange={e => setSortBy(e.target.value as "name" | "cho" | "price")}
           >
@@ -385,7 +385,7 @@ export default function ShopPage() {
             <option value="price">Trier : Prix</option>
           </select>
           <select
-            style={{ padding: "8px 12px", borderRadius: 8, background: "#1a1a1a", border: "1px solid var(--color-border)", color: "var(--color-text)", fontSize: 13, outline: "none" }}
+            style={{ padding: "8px 12px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)", fontSize: 13, outline: "none" }}
             value={brand}
             onChange={e => setBrand(e.target.value)}
           >
@@ -566,26 +566,26 @@ function ProductCard({
           ⚡ {p.cho_per_unit}g CHO
         </div>
         {p.sodium_per_unit !== undefined && p.sodium_per_unit > 0 && (
-          <div style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, background: "#1e1e1e", border: "1px solid var(--color-border)", color: "var(--color-text-muted)", fontWeight: 600 }}>
+          <div style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text-muted)", fontWeight: 600 }}>
             🧂 {p.sodium_per_unit}mg Na
           </div>
         )}
         {p.water_per_unit !== undefined && p.water_per_unit > 0 && (
-          <div style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, background: "#1e1e1e", border: "1px solid var(--color-border)", color: "var(--color-text-muted)", fontWeight: 600 }}>
+          <div style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text-muted)", fontWeight: 600 }}>
             💧 {p.water_per_unit}ml
           </div>
         )}
-        <div style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, background: "#1e1e1e", border: "1px solid var(--color-border)", color: "var(--color-text-muted)", fontWeight: 600 }}>
+        <div style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text-muted)", fontWeight: 600 }}>
           {p.calories_per_unit} kcal
         </div>
-        <div style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, background: "#1e1e1e", border: "1px solid var(--color-border)", color: "var(--color-text-muted)", fontWeight: 600 }}>
+        <div style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text-muted)", fontWeight: 600 }}>
           {p.weight_g}g
         </div>
       </div>
       {p.diet_tags.length > 0 && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {p.diet_tags.map(tag => (
-            <span key={tag} style={{ fontSize: 10, padding: "2px 7px", borderRadius: 4, background: "#232323", color: "#888", fontWeight: 600 }}>
+            <span key={tag} style={{ fontSize: 10, padding: "2px 7px", borderRadius: 4, background: "var(--color-bg)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)", fontWeight: 700 }}>
               {tag}
             </span>
           ))}

@@ -400,9 +400,10 @@ function RaceContent() {
 
   return (
     <div
-      className="relative min-h-screen text-white"
+      className="relative min-h-screen"
       style={{
-        backgroundColor: '#020617',
+        backgroundColor: "var(--color-bg)",
+        color: "var(--color-text)",
       }}
     >
       {/* Background layers, fixed and visible */}
@@ -414,7 +415,7 @@ function RaceContent() {
           pointerEvents: 'none',
           zIndex: 0,
           background:
-            'radial-gradient(circle at top, rgba(239,68,68,0.20), transparent 38%), radial-gradient(circle at 82% 18%, rgba(249,115,22,0.14), transparent 30%), linear-gradient(180deg, rgba(15,23,42,0.35) 0%, rgba(2,6,23,0.96) 100%)',
+            "radial-gradient(circle at top, rgba(34,197,94,0.18), transparent 38%), radial-gradient(circle at 82% 18%, rgba(96,165,250,0.12), transparent 30%), linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 88%, transparent) 0%, var(--color-bg) 80%)",
         }}
       />
       <div
@@ -437,15 +438,33 @@ function RaceContent() {
           className="sticky top-0 border-b backdrop-blur"
           style={{
             zIndex: 30,
-            borderColor: 'rgba(255,255,255,0.10)',
-            background: 'rgba(2,6,23,0.72)',
+            borderColor: "var(--color-border)",
+            background: "color-mix(in srgb, var(--color-bg) 70%, transparent)",
           }}
         >
           <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-lg font-black uppercase text-white" style={{ letterSpacing: '0.08em' }}>
-                ⚡ FuelOS Race Mode
-              </span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    background: "var(--color-accent)",
+                    borderRadius: 8,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 800,
+                    fontSize: 18,
+                    color: "#000",
+                  }}
+                >
+                  F
+                </div>
+                <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: "0.04em" }}>
+                  Race Mode
+                </span>
+              </div>
 
               {notifEnabled && (
                 <span
