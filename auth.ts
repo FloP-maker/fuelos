@@ -24,6 +24,7 @@ const googleConfigured = Boolean(env.googleId?.trim()) && Boolean(env.googleSecr
 const resendConfigured = Boolean(env.resendKey?.trim());
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   adapter: PrismaAdapter(prisma),
   providers: [
     ...(googleConfigured

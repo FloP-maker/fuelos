@@ -14,7 +14,7 @@ const ThemeProvider = NextThemesProvider as ComponentType<
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <SessionProvider>
+    <SessionProvider basePath="/api/auth">
       <DebriefCloudMigration />
       <ThemeProvider
         attribute="class"

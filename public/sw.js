@@ -1,5 +1,5 @@
 // FuelOS Service Worker — Race Day: Offline + Push Notifications
-const CACHE_NAME = 'fuelos-v2';
+const CACHE_NAME = 'fuelos-v3';
 const STATIC_ASSETS = ['/', '/plan', '/race', '/shop', '/learn', '/manifest.json'];
 
 // ============ INSTALL ============
@@ -27,7 +27,9 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
-  
+  // Ne pas mettre en cache les API (auth, debriefs, etc.) — risque de réponses invalides pour le client.
+  if (url.pathname.startsWith('/api/')) return;
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const networkFetch = fetch(event.request).then((response) => {

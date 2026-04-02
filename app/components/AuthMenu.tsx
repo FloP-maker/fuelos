@@ -1,10 +1,16 @@
 'use client';
 
-import { getProviders, signIn, signOut, useSession } from 'next-auth/react';
+import { signIn, signOut, useSession } from 'next-auth/react';
 import type { CSSProperties } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 
-type ProviderEntry = NonNullable<Awaited<ReturnType<typeof getProviders>>>[string];
+type ProviderEntry = {
+  id: string;
+  name: string;
+  type: string;
+  signinUrl: string;
+  callbackUrl: string;
+};
 
 const btn: CSSProperties = {
   padding: '8px 14px',
@@ -21,26 +27,63 @@ const btn: CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
+function hintFromAuthMessage(message: string | null): string | null {
+  if (!message) return null;
+  const lower = message.toLowerCase();
+  if (lower.includes('configuration') || lower.includes('secret')) {
+    return 'Vérifiez AUTH_SECRET (ou NEXTAUTH_SECRET) côté serveur, puis redémarrez.';
+  }
+  return message;
+}
+
 export function AuthMenu() {
   const { data: session, status } = useSession();
   const [providerMap, setProviderMap] = useState<Record<string, ProviderEntry> | undefined>(
     undefined
   );
   const [providersFetchFailed, setProvidersFetchFailed] = useState(false);
+  const [fetchDetail, setFetchDetail] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [emailHint, setEmailHint] = useState<'idle' | 'sending' | 'sent' | 'err'>('idle');
 
   const loadProviders = useCallback(() => {
     setProviderMap(undefined);
     setProvidersFetchFailed(false);
-    void getProviders().then((p) => {
-      if (p === null) {
+    setFetchDetail(null);
+    void (async () => {
+      try {
+        const res = await fetch('/api/auth/providers', {
+          credentials: 'include',
+          headers: { Accept: 'application/json' },
+        });
+        const data: unknown = await res.json().catch(() => null);
+        if (!res.ok) {
+          const rawMsg =
+            data &&
+            typeof data === 'object' &&
+            data !== null &&
+            'message' in data &&
+            typeof (data as { message: unknown }).message === 'string'
+              ? (data as { message: string }).message
+              : null;
+          setProviderMap({});
+          setProvidersFetchFailed(true);
+          setFetchDetail(hintFromAuthMessage(rawMsg) ?? `Erreur HTTP ${res.status}`);
+          return;
+        }
+        if (data && typeof data === 'object' && !Array.isArray(data)) {
+          setProviderMap(data as Record<string, ProviderEntry>);
+          return;
+        }
         setProviderMap({});
         setProvidersFetchFailed(true);
-        return;
+        setFetchDetail('Réponse inattendue du serveur d’authentification.');
+      } catch {
+        setProviderMap({});
+        setProvidersFetchFailed(true);
+        setFetchDetail('Réseau indisponible ou réponse non JSON.');
       }
-      setProviderMap(p);
-    });
+    })();
   }, []);
 
   useEffect(() => {
@@ -81,11 +124,34 @@ export function AuthMenu() {
 
   if (providersFetchFailed) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-        <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Connexion — chargement impossible</span>
-        <button type="button" style={{ ...btn, borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }} onClick={() => loadProviders()}>
-          Réessayer
-        </button>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: 6,
+          maxWidth: 320,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <span style={{ fontSize: 12, color: 'var(--color-text-muted)', textAlign: 'right' }}>
+            Connexion — chargement impossible
+          </span>
+          <button
+            type="button"
+            style={{ ...btn, borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }}
+            onClick={() => loadProviders()}
+          >
+            Réessayer
+          </button>
+        </div>
+        {fetchDetail && (
+          <span style={{ fontSize: 11, color: '#f87171', textAlign: 'right', lineHeight: 1.4 }}>{fetchDetail}</span>
+        )}
+        <span style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'right', lineHeight: 1.4 }}>
+          Si vous aviez une ancienne version du site : désinscrivez le service worker (DevTools → Application), puis
+          rechargez la page.
+        </span>
       </div>
     );
   }
