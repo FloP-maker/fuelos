@@ -251,7 +251,14 @@ function RaceContent() {
 
   const [raceState, setRaceState] = useState<RaceState>(INITIAL_RACE_STATE);
 
-  const [plan, setPlan] = useState<FuelPlan | null>(null);
+  const [mainPlan, setMainPlan] = useState<FuelPlan | null>(null);
+  const [altPlan, setAltPlan] = useState<FuelPlan | null>(null);
+  const [altPlanLabel, setAltPlanLabel] = useState<string | null>(null);
+  const [racePlanVariant, setRacePlanVariant] = useState<'main' | 'alt'>('main');
+
+  const plan =
+    mainPlan != null && racePlanVariant === 'alt' && altPlan != null ? altPlan : mainPlan;
+
   const [profile, setProfile] = useState<AthleteProfile | null>(null);
   const [event, setEvent] = useState<EventDetails | null>(null);
   const [onboarding, setOnboarding] = useState({
@@ -360,25 +367,63 @@ function RaceContent() {
     try {
       const planParam = searchParams.get('plan');
 
-      if (planParam) {
-        const data = JSON.parse(decodeURIComponent(planParam));
-        setPlan(data.plan);
+      const applyBundle = (data: {
+        plan?: FuelPlan;
+        fuelPlan?: FuelPlan;
+        altFuelPlan?: FuelPlan;
+        altPlanLabel?: string;
+        racePlanVariant?: 'main' | 'alt';
+        profile: AthleteProfile;
+        event: EventDetails;
+      }) => {
+        const loadedMain = data.fuelPlan || data.plan;
+        const loadedAlt = data.altFuelPlan ?? null;
+        const variant: 'main' | 'alt' =
+          data.racePlanVariant === 'alt' && loadedAlt ? 'alt' : 'main';
+        setMainPlan(loadedMain ?? null);
+        setAltPlan(loadedAlt);
+        setAltPlanLabel(data.altPlanLabel ?? null);
+        setRacePlanVariant(variant);
         setProfile(data.profile);
         setEvent(data.event);
+      };
+
+      if (planParam) {
+        const data = JSON.parse(decodeURIComponent(planParam));
+        applyBundle(data);
         return;
       }
 
       const saved = localStorage.getItem('fuelos_active_plan');
       if (saved) {
-        const data = JSON.parse(saved);
-        setPlan(data.fuelPlan || data.plan);
-        setProfile(data.profile);
-        setEvent(data.event);
+        applyBundle(JSON.parse(saved));
       }
     } catch (e) {
       console.error('Plan load error:', e);
     }
   }, [searchParams]);
+
+  const persistRacePlanVariant = useCallback((variant: 'main' | 'alt') => {
+    try {
+      const raw = localStorage.getItem('fuelos_active_plan');
+      if (!raw) return;
+      const data = JSON.parse(raw) as Record<string, unknown>;
+      data.racePlanVariant = variant;
+      localStorage.setItem('fuelos_active_plan', JSON.stringify(data));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const handleRacePlanVariantChange = useCallback(
+    (variant: 'main' | 'alt') => {
+      if (raceState.status !== 'idle') return;
+      if (variant === 'alt' && !altPlan) return;
+      setRacePlanVariant(variant);
+      persistRacePlanVariant(variant);
+    },
+    [raceState.status, altPlan, persistRacePlanVariant]
+  );
 
   const appendDebrief = useCallback(
     (finishedState: RaceState) => {
@@ -975,6 +1020,42 @@ function RaceContent() {
                     {s === 1 ? 'Réel' : `×${s}`}
                   </button>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {raceState.status === 'idle' && altPlan && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ ...S.muted, fontSize: 11, fontWeight: 700, marginBottom: 8, letterSpacing: '0.06em' }}>
+                Plan à exécuter
+              </div>
+              <div
+                role="group"
+                aria-label="Choisir le plan au démarrage"
+                style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}
+              >
+                <button
+                  type="button"
+                  onClick={() => handleRacePlanVariantChange('main')}
+                  style={
+                    racePlanVariant === 'main'
+                      ? { ...S.btnPrimary, padding: '10px 12px', fontSize: 13 }
+                      : { ...S.btnSecondary, padding: '10px 12px', fontSize: 13 }
+                  }
+                >
+                  Plan principal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRacePlanVariantChange('alt')}
+                  style={
+                    racePlanVariant === 'alt'
+                      ? { ...S.btnPrimary, padding: '10px 12px', fontSize: 13 }
+                      : { ...S.btnSecondary, padding: '10px 12px', fontSize: 13 }
+                  }
+                >
+                  {altPlanLabel ?? 'Variante météo'}
+                </button>
               </div>
             </div>
           )}

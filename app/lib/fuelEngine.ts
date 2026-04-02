@@ -2,6 +2,7 @@ import type {
   AthleteProfile,
   EventDetails,
   FuelPlan,
+  FuelPlanGenerationResult,
   TimelineItem,
   ShoppingItem,
   ChoStrategy,
@@ -38,12 +39,90 @@ const CHO_PROGRESSION_PROFILES = {
   },
 };
 
+// ============ MÉTÉO : variantes hydratation / sodium ============
+
+const WEATHER_HOT = new Set(["Chaud (20-30°C)", "Très chaud (>30°C)"]);
+const WEATHER_COLD = new Set(["Froid (<10°C)"]);
+
+function scaleDrinkQuantity(quantity: string, waterMl: number): string {
+  if (waterMl > 0) return `${waterMl}ml`;
+  return quantity;
+}
+
+/** Clone un plan en appliquant des facteurs sur les volumes d’eau et le sodium (missions boissons / produits). */
+export function clonePlanHydrationAdjusted(
+  plan: FuelPlan,
+  waterScale: number,
+  sodiumScale: number,
+  targetTimeHours: number
+): FuelPlan {
+  const timeline: TimelineItem[] = plan.timeline.map((item) => {
+    const rawW = item.water ?? 0;
+    const rawS = item.sodium ?? 0;
+    const nextWater = rawW > 0 ? Math.round(rawW * waterScale) : rawW;
+    const nextSodium = rawS > 0 ? Math.round(rawS * sodiumScale) : rawS;
+    let quantity = item.quantity;
+    if (item.type === "drink" && rawW > 0 && nextWater > 0) {
+      quantity = scaleDrinkQuantity(quantity, nextWater);
+    }
+    return {
+      ...item,
+      water: rawW > 0 ? nextWater : item.water,
+      sodium: rawS > 0 ? nextSodium : item.sodium,
+      quantity,
+    };
+  });
+
+  const totals = calculateTotals(timeline, targetTimeHours);
+
+  return {
+    ...plan,
+    timeline,
+    waterPerHour: totals.avgWaterPerHour,
+    sodiumPerHour: totals.avgSodiumPerHour,
+    warnings: [...(plan.warnings || [])],
+  };
+}
+
+function buildWeatherAltExplanation(
+  kind: "heat" | "cold",
+  profile: AthleteProfile,
+  mainPlan: FuelPlan,
+  altPlan: FuelPlan,
+  waterPct: number,
+  sodiumPct: number
+): string {
+  const sr = profile.sweatRate;
+  const srMain = Math.round(sr * 100) / 100;
+  const srAlt =
+    kind === "heat"
+      ? Math.round(sr * (1 + waterPct / 100) * 100) / 100
+      : Math.round(sr * (1 - waterPct / 100) * 100) / 100;
+  const wMain = mainPlan.waterPerHour;
+  const wAlt = altPlan.waterPerHour;
+  const naMain = mainPlan.sodiumPerHour;
+  const naAlt = altPlan.sodiumPerHour;
+
+  if (kind === "heat") {
+    return [
+      `Taux de sudation saisi : ${srMain} L/h.`,
+      `Plan chaleur : sudation majorée de ${waterPct} % → ${srAlt} L/h (hypothèse de référence).`,
+      `Les volumes d’eau des prises boisson sont multipliés par ${1 + waterPct / 100} (${wMain} ml/h → ${wAlt} ml/h en moyenne sur la timeline).`,
+      `Le sodium de chaque prise est multiplié par ${1 + sodiumPct / 100} (+${sodiumPct} %) → ${naMain} mg/h → ${naAlt} mg/h en moyenne.`,
+    ].join("\n");
+  }
+
+  return [
+    `Taux de sudation saisi : ${srMain} L/h.`,
+    `Plan froid : sudation réduite de ${waterPct} % → ${srAlt} L/h (hypothèse de référence).`,
+    `Les volumes d’eau des prises boisson sont multipliés par ${1 - waterPct / 100} (${wMain} ml/h → ${wAlt} ml/h en moyenne).`,
+    `Le sodium de chaque prise est multiplié par ${1 - sodiumPct / 100} (−${sodiumPct} %) → ${naMain} mg/h → ${naAlt} mg/h en moyenne.`,
+  ].join("\n");
+}
+
 // ============ FONCTION PRINCIPALE ============
 
-export function generateFuelPlan(
-  profile: AthleteProfile,
-  event: EventDetails
-): FuelPlan {
+export function buildFuelPlan(profile: AthleteProfile, event: EventDetails): FuelPlan {
   const warnings: string[] = [];
 
   const choStrategy = determineChoStrategy(profile, event, warnings);
@@ -53,11 +132,10 @@ export function generateFuelPlan(
   const totals = calculateTotals(timeline, event.targetTime);
   const estimatedCost = calculatePlanCost(shoppingList);
 
-  // 🆕 Warning pédagogique pour apport conservateur
   if (profile.giTolerance === "sensitive" && totals.avgChoPerHour < 40) {
     warnings.push(
       "💡 Apport glucidique conservateur adapté à votre sensibilité digestive. " +
-      "Testez ce plan à l'entraînement avant de l'augmenter progressivement sur 8-12 semaines."
+        "Testez ce plan à l'entraînement avant de l'augmenter progressivement sur 8-12 semaines."
     );
   }
 
@@ -72,6 +150,43 @@ export function generateFuelPlan(
     choStrategy,
     estimatedCost,
   };
+}
+
+export function generateFuelPlan(
+  profile: AthleteProfile,
+  event: EventDetails
+): FuelPlanGenerationResult {
+  const mainPlan = buildFuelPlan(profile, event);
+
+  if (WEATHER_HOT.has(event.weather)) {
+    const altPlan = clonePlanHydrationAdjusted(mainPlan, 1.3, 1.2, event.targetTime);
+    altPlan.warnings = [
+      ...(altPlan.warnings || []),
+      "🌡 Variante chaleur : +30 % sur les volumes d’eau des boissons, +20 % sur le sodium des prises (vs plan principal).",
+    ];
+    return {
+      mainPlan,
+      altPlan,
+      altPlanLabel: "Plan Chaleur",
+      altPlanExplanation: buildWeatherAltExplanation("heat", profile, mainPlan, altPlan, 30, 20),
+    };
+  }
+
+  if (WEATHER_COLD.has(event.weather)) {
+    const altPlan = clonePlanHydrationAdjusted(mainPlan, 0.7, 0.8, event.targetTime);
+    altPlan.warnings = [
+      ...(altPlan.warnings || []),
+      "❄️ Variante froid : −30 % sur les volumes d’eau des boissons, −20 % sur le sodium des prises (vs plan principal).",
+    ];
+    return {
+      mainPlan,
+      altPlan,
+      altPlanLabel: "Plan Froid",
+      altPlanExplanation: buildWeatherAltExplanation("cold", profile, mainPlan, altPlan, 30, 20),
+    };
+  }
+
+  return { mainPlan };
 }
 
 // ============ STRATÉGIE CHO PROGRESSIVE ============

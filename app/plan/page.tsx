@@ -7,7 +7,7 @@ import useLocalStorage from "../lib/hooks/useLocalStorage";
 import usePageTitle from "../lib/hooks/usePageTitle";
 import { calculateFuelPlan } from "../lib/fuelCalculator";
 import { PRODUCTS } from "../lib/products";
-import type { AthleteProfile, EventDetails, FuelPlan, Product } from "../lib/types";
+import type { AthleteProfile, EventDetails, FuelPlan, FuelPlanGenerationResult, Product } from "../lib/types";
 import { Header } from "../components/Header";
 
 const SPORTS = ["Course à pied", "Trail", "Cyclisme", "Triathlon", "Ultra-trail"];
@@ -257,7 +257,7 @@ function PlanPageContent() {
     weight_g: 40,
   });
 
-  const [plan, setPlan] = useState<FuelPlan | null>(null);
+  const [planResult, setPlanResult] = useState<FuelPlanGenerationResult | null>(null);
 
   const allProducts = [...PRODUCTS, ...customProducts];
 
@@ -334,13 +334,21 @@ function PlanPageContent() {
 
     const result = calculateFuelPlan(profile, event);
 
-    console.log("🔍 CHO Strategy:", result.choStrategy);
-    console.log("🔍 CHO per hour:", result.choPerHour);
+    console.log("🔍 CHO Strategy:", result.mainPlan.choStrategy);
+    console.log("🔍 CHO per hour:", result.mainPlan.choPerHour);
 
-    setPlan(result);
+    setPlanResult(result);
     localStorage.setItem(
       "fuelos_active_plan",
-      JSON.stringify({ fuelPlan: result, profile, event })
+      JSON.stringify({
+        fuelPlan: result.mainPlan,
+        altFuelPlan: result.altPlan,
+        altPlanLabel: result.altPlanLabel,
+        altPlanExplanation: result.altPlanExplanation,
+        racePlanVariant: "main",
+        profile,
+        event,
+      })
     );
     try {
       localStorage.setItem(ONBOARDING_PROFILE_KEY, "1");
@@ -1575,10 +1583,10 @@ function PlanPageContent() {
           </div>
         )}
 
-        {currentStep === 3 && plan && (
+        {currentStep === 3 && planResult && (
           <div id="plan-step-3" style={{ scrollMarginTop: 24 }}>
             <PlanResult
-              plan={plan}
+              planResult={planResult}
               profile={profile}
               event={event}
               onBack={() => setCurrentStep(2)}
@@ -1613,25 +1621,35 @@ function escapeIcsText(value: string): string {
 }
 
 function PlanResult({
-  plan,
+  planResult,
   profile,
   event,
   onBack,
   customProducts,
 }: {
-  plan: FuelPlan;
+  planResult: FuelPlanGenerationResult;
   profile: AthleteProfile;
   event: EventDetails;
   onBack: () => void;
   customProducts: Product[];
 }) {
+  const [planVariant, setPlanVariant] = useState<"main" | "alt">("main");
+  const [showAltInfo, setShowAltInfo] = useState(false);
   const [activeTab, setActiveTab] = useState<"plan" | "shop" | "export">("plan");
   const [linkCopiedToast, setLinkCopiedToast] = useState(false);
-
   const [compareCategory, setCompareCategory] = useState<
     "all" | "gel" | "drink" | "bar" | "chew" | "real-food" | "electrolyte"
   >("all");
   const [compareSort, setCompareSort] = useState<"cho-euro" | "efficiency" | "price">("cho-euro");
+
+  useEffect(() => {
+    setPlanVariant("main");
+    setShowAltInfo(false);
+  }, [planResult]);
+
+  const plan =
+    planVariant === "alt" && planResult.altPlan ? planResult.altPlan : planResult.mainPlan;
+
   const productsCatalog = [...PRODUCTS, ...customProducts];
 
   const estimatedCost = plan.shoppingList.reduce((sum, item) => {
@@ -1863,9 +1881,23 @@ function PlanResult({
     URL.revokeObjectURL(url);
   };
 
+  const raceSharePayload = useCallback(
+    () => ({
+      plan: planResult.mainPlan,
+      fuelPlan: planResult.mainPlan,
+      altFuelPlan: planResult.altPlan,
+      altPlanLabel: planResult.altPlanLabel,
+      altPlanExplanation: planResult.altPlanExplanation,
+      racePlanVariant: planVariant,
+      profile,
+      event,
+    }),
+    [planResult, planVariant, profile, event]
+  );
+
   const handleCopyShareLink = useCallback(async () => {
     try {
-      const payload = encodeURIComponent(JSON.stringify({ plan, profile, event }));
+      const payload = encodeURIComponent(JSON.stringify(raceSharePayload()));
       const shareUrl = `${window.location.origin}/race?plan=${payload}`;
       await navigator.clipboard.writeText(shareUrl);
       setLinkCopiedToast(true);
@@ -1873,7 +1905,7 @@ function PlanResult({
     } catch {
       alert("Impossible de copier le lien automatiquement.");
     }
-  }, [plan, profile, event]);
+  }, [raceSharePayload]);
 
   return (
     <div>
@@ -1943,7 +1975,7 @@ function PlanResult({
 
         <div style={{ display: "flex", gap: 8 }}>
           <Link
-            href={`/race?plan=${encodeURIComponent(JSON.stringify({ plan, profile, event }))}`}
+            href={`/race?plan=${encodeURIComponent(JSON.stringify(raceSharePayload()))}`}
             style={{
               padding: "12px 20px",
               borderRadius: 10,
@@ -1961,6 +1993,120 @@ function PlanResult({
           </button>
         </div>
       </div>
+
+      {planResult.altPlan && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
+            marginBottom: 18,
+          }}
+        >
+          <span
+            style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-muted)", letterSpacing: "0.04em" }}
+          >
+            Affichage
+          </span>
+          <div
+            role="group"
+            aria-label="Plan principal ou variante météo"
+            style={{
+              display: "inline-flex",
+              borderRadius: 10,
+              border: "1px solid var(--color-border)",
+              overflow: "hidden",
+              background: "var(--color-bg)",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setPlanVariant("main")}
+              style={{
+                padding: "8px 14px",
+                border: "none",
+                cursor: "pointer",
+                fontWeight: 700,
+                fontSize: 13,
+                background:
+                  planVariant === "main" ? "var(--color-accent)" : "transparent",
+                color: planVariant === "main" ? "#000" : "var(--color-text-muted)",
+              }}
+            >
+              Plan principal
+            </button>
+            <button
+              type="button"
+              onClick={() => setPlanVariant("alt")}
+              style={{
+                padding: "8px 14px",
+                border: "none",
+                cursor: "pointer",
+                fontWeight: 700,
+                fontSize: 13,
+                borderLeft: "1px solid var(--color-border)",
+                background:
+                  planVariant === "alt" ? "var(--color-accent)" : "transparent",
+                color: planVariant === "alt" ? "#000" : "var(--color-text-muted)",
+              }}
+            >
+              {planResult.altPlanLabel ?? "Variante météo"}
+            </button>
+          </div>
+          {planResult.altPlanExplanation ? (
+            <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+              <button
+                type="button"
+                aria-expanded={showAltInfo}
+                aria-label="Détail du calcul de la variante météo"
+                onClick={() => setShowAltInfo((v) => !v)}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  border: "1px solid var(--color-border)",
+                  background: "var(--color-bg-card)",
+                  color: "var(--color-text-muted)",
+                  cursor: "pointer",
+                  fontWeight: 800,
+                  fontSize: 13,
+                  lineHeight: 1,
+                }}
+              >
+                i
+              </button>
+              {showAltInfo ? (
+                <div
+                  role="tooltip"
+                  style={{
+                    position: "absolute",
+                    zIndex: 50,
+                    top: "100%",
+                    left: 0,
+                    marginTop: 8,
+                    padding: "12px 14px",
+                    borderRadius: 10,
+                    maxWidth: "min(400px, calc(100vw - 48px))",
+                    width: "max-content",
+                    maxHeight: 280,
+                    overflowY: "auto",
+                    whiteSpace: "pre-line",
+                    fontSize: 12,
+                    lineHeight: 1.45,
+                    background: "var(--color-bg-card)",
+                    border: "1px solid var(--color-border)",
+                    boxShadow: "0 8px 28px rgba(0,0,0,0.14)",
+                    color: "var(--color-text)",
+                  }}
+                >
+                  {planResult.altPlanExplanation}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
         {[
@@ -2594,16 +2740,58 @@ function PlanResult({
             {[
               {
                 icon: "📱",
-                label: "Sauvegarder (local)",
-                desc: "Sauvegarde dans le navigateur pour Race Mode",
+                label: "Sauvegarder plan principal",
+                desc: "Enregistre uniquement le plan principal (localement). La variante météo n’est pas écrasée.",
                 action: () => {
-                  localStorage.setItem(
-                    "fuelos_active_plan",
-                    JSON.stringify({ plan, profile, event, savedAt: new Date().toISOString() })
-                  );
-                  alert("Plan sauvegardé ! Accédez à Race Mode pour l'utiliser.");
+                  try {
+                    const raw = localStorage.getItem("fuelos_active_plan");
+                    const prev = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+                    localStorage.setItem(
+                      "fuelos_active_plan",
+                      JSON.stringify({
+                        ...prev,
+                        fuelPlan: planResult.mainPlan,
+                        profile,
+                        event,
+                        savedAt: new Date().toISOString(),
+                      })
+                    );
+                    alert("Plan principal sauvegardé pour le Race Mode.");
+                  } catch {
+                    alert("Échec de la sauvegarde.");
+                  }
                 },
               },
+              ...(planResult.altPlan
+                ? [
+                    {
+                      icon: "🌡",
+                      label: `Sauvegarder ${planResult.altPlanLabel ?? "la variante"}`,
+                      desc: "Enregistre uniquement la variante météo. Le plan principal n’est pas écrasé.",
+                      action: () => {
+                        try {
+                          const raw = localStorage.getItem("fuelos_active_plan");
+                          const prev = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+                          localStorage.setItem(
+                            "fuelos_active_plan",
+                            JSON.stringify({
+                              ...prev,
+                              altFuelPlan: planResult.altPlan,
+                              altPlanLabel: planResult.altPlanLabel,
+                              altPlanExplanation: planResult.altPlanExplanation,
+                              profile,
+                              event,
+                              savedAt: new Date().toISOString(),
+                            })
+                          );
+                          alert(`${planResult.altPlanLabel ?? "Variante"} sauvegardée pour le Race Mode.`);
+                        } catch {
+                          alert("Échec de la sauvegarde.");
+                        }
+                      },
+                    },
+                  ]
+                : []),
               {
                 icon: "🖨️",
                 label: "Exporter PDF",
@@ -2627,7 +2815,7 @@ function PlanResult({
                 label: "Copier JSON",
                 desc: "Pour développeurs / backup",
                 action: () => {
-                  navigator.clipboard.writeText(JSON.stringify({ plan, profile, event }, null, 2));
+                  navigator.clipboard.writeText(JSON.stringify(raceSharePayload(), null, 2));
                   alert("Plan copié dans le presse-papier !");
                 },
               },

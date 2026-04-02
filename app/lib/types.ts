@@ -82,6 +82,15 @@ export interface FuelPlan {
   estimatedCost?: number;     // Coût total des produits à acheter (EUR)
 }
 
+/** Résultat de generateFuelPlan : plan principal + variante météo optionnelle */
+export interface FuelPlanGenerationResult {
+  mainPlan: FuelPlan;
+  altPlan?: FuelPlan;
+  altPlanLabel?: string;
+  /** Texte pédagogique (chiffres sweat rate, eau/h, sodium/h) pour infobulle */
+  altPlanExplanation?: string;
+}
+
 // 🆕 NOUVEAU TYPE - Stratégie de charge glucidique
 export interface ChoStrategy {
   type: "constant" | "progressive" | "custom";
