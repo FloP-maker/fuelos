@@ -230,7 +230,8 @@ textarea:focus {
     display: flex;
     flex-wrap: wrap;
     align-items: stretch;
-    gap: clamp(12px, 2vw, 28px);
+    /* Même rythme qu’à droite (ex. Profil ↔ Connexion) */
+    gap: 10px 16px;
     min-width: 0;
   }
 
@@ -269,8 +270,6 @@ textarea:focus {
     align-self: center;
     justify-content: center;
     padding: 8px;
-    margin-left: 2px;
-    margin-right: -2px;
     border: none;
     border-radius: var(--radius-md);
     background: transparent;
@@ -475,7 +474,6 @@ textarea:focus {
     align-items: stretch;
     gap: 0;
     min-width: 0;
-    margin-left: 2px;
   }
 
   .fuel-header-text-nav a {
