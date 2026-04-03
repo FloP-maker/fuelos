@@ -46,22 +46,13 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
           <Link href="/" className="min-w-0 shrink text-inherit no-underline" aria-label="FuelOS — Accueil">
             <FuelLogo size={36} withWordmark />
           </Link>
-          <nav
-            className="fuel-header-nav flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2"
-            aria-label="Sections principales"
-          >
+          <nav className="fuel-header-segment-nav" aria-label="Sections principales">
             {NAV.map((item) => {
               const isActive = resolvedActive === item.page;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={[
-                    'fuel-btn-pill whitespace-nowrap',
-                    isActive ? 'fuel-btn-pill-accent' : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
                   aria-current={isActive ? 'page' : undefined}
                 >
                   {item.label}

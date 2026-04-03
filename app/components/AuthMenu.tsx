@@ -99,7 +99,7 @@ export function AuthMenu() {
   if (session?.user) {
     const label = session.user.name || session.user.email || 'Compte';
     return (
-      <div className="flex flex-wrap items-center justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-2.5">
         <span
           style={{
             ...muted,
@@ -178,15 +178,17 @@ export function AuthMenu() {
   const emailProviderId = ids.find((id) => providerMap[id].type === 'email');
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2">
+    <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-2.5">
       {oauthIds.map((id) => (
         <button
           key={id}
           type="button"
           className="fuel-btn-pill fuel-btn-pill-accent max-w-[200px] truncate"
+          title={id === 'google' ? 'Connexion avec Google' : undefined}
+          aria-label={id === 'google' ? 'Connexion avec Google' : undefined}
           onClick={() => void signIn(id)}
         >
-          {id === 'google' ? 'Connexion Google' : providerMap[id].name}
+          {id === 'google' ? 'Google' : providerMap[id].name}
         </button>
       ))}
       {emailProviderId && (
