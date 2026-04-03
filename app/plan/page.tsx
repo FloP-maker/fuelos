@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -9,6 +9,14 @@ import { athleteProfileFromJson } from "../lib/athleteProfileData";
 import useLocalStorage from "../lib/hooks/useLocalStorage";
 import usePageTitle from "../lib/hooks/usePageTitle";
 import { calculateFuelPlan } from "../lib/fuelCalculator";
+import {
+  recalculateFuelPlanFromTimeline,
+  timelineItemWithProduct,
+  swapTimelineItemTimesAtSortedIndices,
+  deleteTimelineItemAtSortedIndex,
+  nudgeTimelineItemTime,
+} from "../lib/fuelEngine";
+import { computeScienceMetrics } from "../lib/scienceMetrics";
 import { toShareableEvent } from "../lib/eventShare";
 import { parseGpxDocument } from "../lib/gpx";
 import {
@@ -19,7 +27,15 @@ import {
   weatherCategoryFromTempC,
 } from "../lib/meteo";
 import { PRODUCTS } from "../lib/products";
-import type { AthleteProfile, EventDetails, FuelPlan, FuelPlanGenerationResult, Product } from "../lib/types";
+import type {
+  AthleteProfile,
+  EventDetails,
+  FuelPlan,
+  FuelPlanGenerationResult,
+  Product,
+  TimelineItem,
+} from "../lib/types";
+import { GripVertical, RotateCcw, Trash2 } from "lucide-react";
 import { Header } from "../components/Header";
 import { ScienceDashboard } from "../components/ScienceDashboard";
 
@@ -290,6 +306,8 @@ function PlanPageContent() {
   });
 
   const [planResult, setPlanResult] = useState<FuelPlanGenerationResult | null>(null);
+  /** Incrémenté uniquement à chaque calcul — snapshot « Réinitialiser timeline » côté PlanResult. */
+  const [planGenerationId, setPlanGenerationId] = useState(0);
 
   const allProducts = [...PRODUCTS, ...customProducts];
 
@@ -667,6 +685,34 @@ function PlanPageContent() {
     }
   }, [selectedCloudProfileId, status, refreshCloudProfiles, applyCloudRow]);
 
+  const persistPlanBundle = useCallback(
+    (next: FuelPlanGenerationResult, racePlanVariant: "main" | "alt") => {
+      const bundle = {
+        fuelPlan: next.mainPlan,
+        altFuelPlan: next.altPlan,
+        altPlanLabel: next.altPlanLabel,
+        altPlanExplanation: next.altPlanExplanation,
+        racePlanVariant,
+        profile,
+        event,
+      };
+      try {
+        localStorage.setItem("fuelos_active_plan", JSON.stringify(bundle));
+      } catch {
+        /* ignore */
+      }
+    },
+    [profile, event]
+  );
+
+  const handleEditorPlanUpdate = useCallback(
+    (next: FuelPlanGenerationResult, racePlanVariant: "main" | "alt") => {
+      setPlanResult(next);
+      persistPlanBundle(next, racePlanVariant);
+    },
+    [persistPlanBundle]
+  );
+
   function handleCalculate() {
     console.log("🔍 Profile GI Tolerance:", profile.giTolerance);
     console.log("🔍 Full Profile:", profile);
@@ -677,6 +723,7 @@ function PlanPageContent() {
     console.log("🔍 CHO per hour:", result.mainPlan.choPerHour);
 
     setPlanResult(result);
+    setPlanGenerationId((n) => n + 1);
     const bundle = {
       fuelPlan: result.mainPlan,
       altFuelPlan: result.altPlan,
@@ -2230,6 +2277,8 @@ function PlanPageContent() {
               event={event}
               onBack={() => setCurrentStep(2)}
               customProducts={customProducts}
+              planGenerationId={planGenerationId}
+              onPlanTimelineCommit={handleEditorPlanUpdate}
             />
           </div>
         )}
@@ -2265,12 +2314,16 @@ function PlanResult({
   event,
   onBack,
   customProducts,
+  planGenerationId,
+  onPlanTimelineCommit,
 }: {
   planResult: FuelPlanGenerationResult;
   profile: AthleteProfile;
   event: EventDetails;
   onBack: () => void;
   customProducts: Product[];
+  planGenerationId: number;
+  onPlanTimelineCommit: (next: FuelPlanGenerationResult, racePlanVariant: "main" | "alt") => void;
 }) {
   const [planVariant, setPlanVariant] = useState<"main" | "alt">("main");
   const [showAltInfo, setShowAltInfo] = useState(false);
@@ -2284,12 +2337,58 @@ function PlanResult({
   useEffect(() => {
     setPlanVariant("main");
     setShowAltInfo(false);
-  }, [planResult]);
+  }, [planGenerationId]);
+
+  const revertSnapshotRef = useRef<FuelPlanGenerationResult>(structuredClone(planResult));
+  const prevPlanGenRef = useRef(planGenerationId);
+  if (prevPlanGenRef.current !== planGenerationId) {
+    prevPlanGenRef.current = planGenerationId;
+    revertSnapshotRef.current = structuredClone(planResult);
+  }
 
   const plan =
     planVariant === "alt" && planResult.altPlan ? planResult.altPlan : planResult.mainPlan;
 
   const productsCatalog = [...PRODUCTS, ...customProducts];
+
+  const dragSortedIdx = useRef<number | null>(null);
+
+  const snap = revertSnapshotRef.current;
+  const baselinePlan = planVariant === "alt" && snap.altPlan ? snap.altPlan : snap.mainPlan;
+  const isTimelineDirty = JSON.stringify(plan.timeline) !== JSON.stringify(baselinePlan.timeline);
+
+  const commitSortedTimeline = useCallback(
+    (nextSorted: TimelineItem[]) => {
+      const updated = recalculateFuelPlanFromTimeline(plan, nextSorted, event.targetTime, event);
+      const nextGen: FuelPlanGenerationResult =
+        planVariant === "main"
+          ? { ...planResult, mainPlan: updated }
+          : { ...planResult, altPlan: updated };
+      onPlanTimelineCommit(nextGen, planVariant);
+    },
+    [plan, planResult, planVariant, event, onPlanTimelineCommit]
+  );
+
+  const raceDurationMin = Math.max(1, Math.round(event.targetTime * 60));
+
+  const liveScience = useMemo(() => computeScienceMetrics(profile, event, plan), [profile, event, plan]);
+
+  const sortedTimelineEntries = useMemo(
+    () =>
+      [...plan.timeline]
+        .map((item, origIdx) => ({ item, origIdx }))
+        .sort((a, b) => a.item.timeMin - b.item.timeMin),
+    [plan.timeline]
+  );
+
+  const drinkCatalog = useMemo(
+    () => productsCatalog.filter((p) => p.category === "drink" || p.category === "electrolyte"),
+    [productsCatalog]
+  );
+
+  const handleResetTimeline = useCallback(() => {
+    onPlanTimelineCommit(structuredClone(revertSnapshotRef.current), planVariant);
+  }, [onPlanTimelineCommit, planVariant]);
 
   const estimatedCost = plan.shoppingList.reduce((sum, item) => {
     const prod = productsCatalog.find((p) => p.id === item.productId);
@@ -3099,9 +3198,80 @@ function PlanResult({
 
       {activeTab === "plan" && (
         <div style={S.card}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <h3 style={{ fontWeight: 700 }}>Timeline in-race</h3>
-            <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Durée totale: {event.targetTime}h</span>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: 12,
+              marginBottom: 16,
+            }}
+          >
+            <div>
+              <h3 style={{ fontWeight: 700, marginBottom: 4 }}>Timeline in-race</h3>
+              <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: 0, maxWidth: 520 }}>
+                Glisse une prise sur une autre pour <strong>échanger les horaires</strong>, ajuste au ±5 min, remplace
+                une boisson ou supprime une ligne — le Fuel Score se met à jour en direct.
+              </p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+              {isTimelineDirty ? (
+                <button
+                  type="button"
+                  onClick={handleResetTimeline}
+                  style={{
+                    ...S.btnOutline,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 13,
+                  }}
+                >
+                  <RotateCcw size={16} aria-hidden />
+                  Réinitialiser
+                </button>
+              ) : null}
+              <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+                Durée totale: {event.targetTime}h
+              </span>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+              gap: 10,
+              marginBottom: 18,
+              padding: "12px 14px",
+              borderRadius: 10,
+              border: "1px solid var(--color-border)",
+              background: "var(--color-bg)",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", letterSpacing: "0.06em" }}>
+                FUEL SCORE (100 % exécution)
+              </div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: "var(--color-accent)", lineHeight: 1.15 }}>
+                {liveScience.fuelScore}
+                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--color-text-muted)" }}>/100</span>
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.45 }}>
+              <div>
+                80 % : <strong style={{ color: "var(--color-text)" }}>{liveScience.fuelScenarios[0]?.fuelScore ?? "—"}</strong>
+              </div>
+              <div>
+                90 % : <strong style={{ color: "var(--color-text)" }}>{liveScience.fuelScenarios[1]?.fuelScore ?? "—"}</strong>
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: "var(--color-text-muted)", lineHeight: 1.4 }}>
+              Glycogène modélisé en fin de course :{" "}
+              <strong style={{ color: "var(--color-text)" }}>{Math.round(liveScience.glycogenEndPct)} %</strong> des
+              réserves de départ · détail dans l’onglet Science.
+            </div>
           </div>
 
           {event.courseGeometry && (
@@ -3114,38 +3284,132 @@ function PlanResult({
           )}
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {plan.timeline.map((item, i) => {
+            {sortedTimelineEntries.map(({ item, origIdx }, sortedIdx) => {
               const productData = productsCatalog.find((p) => p.id === item.productId);
+              const rowHighlight =
+                item.source === "aid-station"
+                  ? "rgba(96,165,250,0.08)"
+                  : sortedIdx === 0
+                    ? "rgba(34,197,94,0.05)"
+                    : "var(--color-bg)";
+              const borderColor =
+                item.source === "aid-station"
+                  ? "#60a5fa"
+                  : sortedIdx === 0
+                    ? "var(--color-accent)"
+                    : "var(--color-border)";
 
               return (
                 <div
-                  key={i}
+                  key={`${item.timeMin}-${origIdx}`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const from = dragSortedIdx.current;
+                    dragSortedIdx.current = null;
+                    if (from == null || from === sortedIdx) return;
+                    commitSortedTimeline(
+                      swapTimelineItemTimesAtSortedIndices(plan.timeline, from, sortedIdx)
+                    );
+                  }}
                   style={{
                     display: "flex",
                     alignItems: "flex-start",
-                    gap: 12,
+                    gap: 8,
                     padding: "12px 14px",
                     borderRadius: 8,
-                    background:
-                      item.source === "aid-station"
-                        ? "rgba(96,165,250,0.08)"
-                        : i === 0
-                        ? "rgba(34,197,94,0.05)"
-                        : "var(--color-bg)",
-                    border: `1px solid ${
-                      item.source === "aid-station"
-                        ? "#60a5fa"
-                        : i === 0
-                        ? "var(--color-accent)"
-                        : "var(--color-border)"
-                    }`,
+                    background: rowHighlight,
+                    border: `1px solid ${borderColor}`,
                   }}
                 >
-                  <div style={{ minWidth: 60, fontWeight: 700, color: "var(--color-accent)", fontSize: 14 }}>
+                  <button
+                    type="button"
+                    title="Glisser vers une autre ligne pour échanger l’horaire"
+                    aria-label={`Glisser la prise à ${Math.floor(item.timeMin / 60)}h${String(item.timeMin % 60).padStart(2, "0")} pour échanger l’horaire avec une autre`}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = "move";
+                      e.dataTransfer.setData("text/plain", String(sortedIdx));
+                      dragSortedIdx.current = sortedIdx;
+                    }}
+                    onDragEnd={() => {
+                      dragSortedIdx.current = null;
+                    }}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      color: "var(--color-text-muted)",
+                      cursor: "grab",
+                      padding: "4px 2px",
+                      marginTop: 2,
+                      flexShrink: 0,
+                      lineHeight: 0,
+                    }}
+                  >
+                    <GripVertical size={18} strokeWidth={2} aria-hidden />
+                  </button>
+
+                  <div
+                    style={{
+                      minWidth: 52,
+                      fontWeight: 700,
+                      color: "var(--color-accent)",
+                      fontSize: 14,
+                      flexShrink: 0,
+                    }}
+                  >
                     {Math.floor(item.timeMin / 60)}h{String(item.timeMin % 60).padStart(2, "0")}
                   </div>
 
-                  <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      aria-label="Reculer de 5 minutes"
+                      onClick={() =>
+                        commitSortedTimeline(
+                          nudgeTimelineItemTime(plan.timeline, sortedIdx, -5, raceDurationMin)
+                        )
+                      }
+                      style={{
+                        border: "1px solid var(--color-border)",
+                        borderRadius: 6,
+                        background: "var(--color-bg-card)",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: "2px 6px",
+                        cursor: "pointer",
+                        color: "var(--color-text)",
+                      }}
+                    >
+                      −5
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Avancer de 5 minutes"
+                      onClick={() =>
+                        commitSortedTimeline(
+                          nudgeTimelineItemTime(plan.timeline, sortedIdx, 5, raceDurationMin)
+                        )
+                      }
+                      style={{
+                        border: "1px solid var(--color-border)",
+                        borderRadius: 6,
+                        background: "var(--color-bg-card)",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: "2px 6px",
+                        cursor: "pointer",
+                        color: "var(--color-text)",
+                      }}
+                    >
+                      +5
+                    </button>
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     {item.source === "aid-station" && (
                       <div
                         style={{
@@ -3165,7 +3429,7 @@ function PlanResult({
                       </div>
                     )}
 
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2, flexWrap: "wrap" }}>
                       <ProductThumb product={productData} alt={item.product} size={26} />
                       <div style={{ fontWeight: 600, fontSize: 14 }}>
                         {item.product}
@@ -3183,6 +3447,42 @@ function PlanResult({
                         )}
                       </div>
                     </div>
+
+                    {item.type === "drink" && (
+                      <div style={{ marginBottom: 8, maxWidth: 360 }}>
+                        <label
+                          htmlFor={`drink-swap-${origIdx}`}
+                          style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", display: "block" }}
+                        >
+                          Remplacer la boisson
+                        </label>
+                        <select
+                          id={`drink-swap-${origIdx}`}
+                          value={item.productId}
+                          onChange={(e) => {
+                            const p = productsCatalog.find((x) => x.id === e.target.value);
+                            if (!p) return;
+                            const sorted = [...plan.timeline].sort((a, b) => a.timeMin - b.timeMin);
+                            const next = sorted.map((row, i) =>
+                              i === sortedIdx ? timelineItemWithProduct(row, p) : row
+                            );
+                            commitSortedTimeline(next);
+                          }}
+                          style={{ ...S.select, width: "100%", marginTop: 4, fontSize: 12 }}
+                        >
+                          {!drinkCatalog.some((p) => p.id === item.productId) ? (
+                            <option value={item.productId}>
+                              {item.product} (actuel · personnalisé)
+                            </option>
+                          ) : null}
+                          {drinkCatalog.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.brand} — {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
 
                     <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
                       {item.quantity} · {item.cho}g CHO
@@ -3204,27 +3504,49 @@ function PlanResult({
                     )}
                   </div>
 
-                  <div
-                    style={{
-                      fontSize: 11,
-                      padding: "3px 8px",
-                      borderRadius: 99,
-                      background:
-                        item.type === "gel"
-                          ? "rgba(34,197,94,0.15)"
-                          : item.type === "drink"
-                          ? "rgba(96,165,250,0.15)"
-                          : "rgba(245,158,11,0.15)",
-                      color:
-                        item.type === "gel"
-                          ? "var(--color-accent)"
-                          : item.type === "drink"
-                          ? "#60a5fa"
-                          : "#f59e0b",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {item.type}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        padding: "3px 8px",
+                        borderRadius: 99,
+                        background:
+                          item.type === "gel"
+                            ? "rgba(34,197,94,0.15)"
+                            : item.type === "drink"
+                              ? "rgba(96,165,250,0.15)"
+                              : "rgba(245,158,11,0.15)",
+                        color:
+                          item.type === "gel"
+                            ? "var(--color-accent)"
+                            : item.type === "drink"
+                              ? "#60a5fa"
+                              : "#f59e0b",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {item.type}
+                    </div>
+                    <button
+                      type="button"
+                      title="Supprimer cette prise"
+                      aria-label={`Supprimer ${item.product}`}
+                      onClick={() => {
+                        if (!window.confirm("Supprimer cette prise de la timeline ?")) return;
+                        commitSortedTimeline(deleteTimelineItemAtSortedIndex(plan.timeline, sortedIdx));
+                      }}
+                      style={{
+                        border: "1px solid rgba(239,68,68,0.45)",
+                        borderRadius: 8,
+                        background: "rgba(239,68,68,0.08)",
+                        color: "#ef4444",
+                        padding: "6px 8px",
+                        cursor: "pointer",
+                        lineHeight: 0,
+                      }}
+                    >
+                      <Trash2 size={16} aria-hidden />
+                    </button>
                   </div>
                 </div>
               );

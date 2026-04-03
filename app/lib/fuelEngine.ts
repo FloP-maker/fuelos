@@ -801,3 +801,122 @@ function calculateTotals(
     totalCalories: Math.round(totalCalories),
   };
 }
+
+/** Recalcule CHO/h, eau/h, Na⁺/h, kcal et liste de courses à partir d’une timeline modifiée (éditeur manuel). */
+export function recalculateFuelPlanFromTimeline(
+  basePlan: FuelPlan,
+  timeline: TimelineItem[],
+  targetTimeHours: number,
+  event: EventDetails
+): FuelPlan {
+  const hours = Math.max(0.25, targetTimeHours);
+  const totals = calculateTotals(timeline, hours, undefined);
+  return {
+    ...basePlan,
+    timeline,
+    choPerHour: totals.avgChoPerHour,
+    waterPerHour: totals.avgWaterPerHour,
+    sodiumPerHour: totals.avgSodiumPerHour,
+    totalCalories: totals.totalCalories,
+    shoppingList: generateShoppingList(timeline, event),
+  };
+}
+
+/** Met à jour les champs nutritionnels d’une prise à partir d’un produit catalogue. */
+export function timelineItemWithProduct(item: TimelineItem, product: Product): TimelineItem {
+  let type: TimelineItem["type"];
+  switch (product.category) {
+    case "gel":
+      type = "gel";
+      break;
+    case "drink":
+    case "electrolyte":
+      type = "drink";
+      break;
+    case "bar":
+      type = "bar";
+      break;
+    case "chew":
+      type = "chew";
+      break;
+    case "real-food":
+      type = "real-food";
+      break;
+    default:
+      type = item.type;
+  }
+
+  const w = product.water_per_unit;
+  const quantity =
+    type === "drink" && w && w > 0
+      ? `${w}ml`
+      : type === "gel"
+        ? "1 gel"
+        : type === "bar"
+          ? "1 barre"
+          : type === "chew"
+            ? "1 sachet"
+            : type === "real-food"
+              ? "1 portion"
+              : item.quantity;
+
+  return {
+    ...item,
+    productId: product.id,
+    product: product.name,
+    type,
+    quantity,
+    cho: product.cho_per_unit,
+    water: w && w > 0 ? w : undefined,
+    sodium: product.sodium_per_unit && product.sodium_per_unit > 0 ? product.sodium_per_unit : undefined,
+    caloriesPerUnit: product.calories_per_unit,
+  };
+}
+
+export function swapTimelineItemTimesAtSortedIndices(
+  timeline: TimelineItem[],
+  sortedFrom: number,
+  sortedTo: number
+): TimelineItem[] {
+  const sorted = [...timeline].sort((a, b) => a.timeMin - b.timeMin);
+  if (
+    sortedFrom < 0 ||
+    sortedTo < 0 ||
+    sortedFrom >= sorted.length ||
+    sortedTo >= sorted.length ||
+    sortedFrom === sortedTo
+  ) {
+    return sorted;
+  }
+  const a = sorted[sortedFrom]!;
+  const b = sorted[sortedTo]!;
+  const t = a.timeMin;
+  return sorted.map((item, i) => {
+    if (i === sortedFrom) return { ...item, timeMin: b.timeMin };
+    if (i === sortedTo) return { ...item, timeMin: t };
+    return item;
+  });
+}
+
+export function deleteTimelineItemAtSortedIndex(timeline: TimelineItem[], sortedIdx: number): TimelineItem[] {
+  const sorted = [...timeline].sort((a, b) => a.timeMin - b.timeMin);
+  if (sortedIdx < 0 || sortedIdx >= sorted.length) return sorted;
+  sorted.splice(sortedIdx, 1);
+  return sorted;
+}
+
+export function nudgeTimelineItemTime(
+  timeline: TimelineItem[],
+  sortedIdx: number,
+  deltaMin: number,
+  raceDurationMin: number
+): TimelineItem[] {
+  const sorted = [...timeline].sort((a, b) => a.timeMin - b.timeMin);
+  if (sortedIdx < 0 || sortedIdx >= sorted.length) return sorted;
+  const item = sorted[sortedIdx]!;
+  const step = 5;
+  const next = Math.round((item.timeMin + deltaMin) / step) * step;
+  const clamped = Math.min(raceDurationMin, Math.max(0, next));
+  sorted[sortedIdx] = { ...item, timeMin: clamped };
+  return sorted;
+}
