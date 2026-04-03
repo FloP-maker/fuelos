@@ -19,7 +19,12 @@ import {
   getCaffeinatedProducts,
 } from "./products";
 import { computeRelativeIntensity } from "./scienceMetrics";
-import { distanceKmAtRaceTime, gradientPercentAtKm } from "./courseGeometry";
+import {
+  buildTimeDistancePacing,
+  distanceKmAtRaceTime,
+  distanceKmAtRaceTimePaced,
+  gradientPercentAtKm,
+} from "./courseGeometry";
 
 function clamp(n: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, n));
@@ -611,7 +616,10 @@ function generateTimeline(
   return timeline;
 }
 
-/** Recale les prises « perso » sur le meilleur passage (pente minimale) dans la même heure, si GPX + option actifs. */
+const INTAKE_SHIFT_WINDOW_MIN = 25;
+const INTAKE_SHIFT_STEP_MIN = 5;
+
+/** Recale les prises « perso » sur le meilleur passage (pente minimale), fenêtre ±25 min autour de l’horaire d’origine. */
 function refineIntakeTimesForCourse(
   timeline: TimelineItem[],
   event: EventDetails,
@@ -624,20 +632,30 @@ function refineIntakeTimesForCourse(
   const distKm = event.distance;
   if (distKm <= 0 || durationMin < 30) return;
 
+  const pacing = buildTimeDistancePacing(geo, durationMin);
+  const kmAtTime = (t: number) =>
+    pacing ? distanceKmAtRaceTimePaced(t, pacing, durationMin) : distanceKmAtRaceTime(t, durationMin, distKm);
+
   let anyMoved = false;
   for (const item of timeline) {
     if (item.source === "aid-station") continue;
 
-    const h = Math.floor(item.timeMin / 60);
-    const hourStart = h * 60;
     const originalT = item.timeMin;
     let bestT = originalT;
-    const origKm = distanceKmAtRaceTime(originalT, durationMin, distKm);
+    const origKm = kmAtTime(originalT);
     let bestGrad = gradientPercentAtKm(geo, origKm);
 
-    for (let t = hourStart; t < hourStart + 60 && t < durationMin; t += 5) {
-      if (t < 0) continue;
-      const km = distanceKmAtRaceTime(t, durationMin, distKm);
+    const tEnd = Math.min(
+      durationMin - 1,
+      Math.floor((originalT + INTAKE_SHIFT_WINDOW_MIN) / INTAKE_SHIFT_STEP_MIN) * INTAKE_SHIFT_STEP_MIN
+    );
+    const tStart = Math.max(
+      0,
+      Math.ceil((originalT - INTAKE_SHIFT_WINDOW_MIN) / INTAKE_SHIFT_STEP_MIN) * INTAKE_SHIFT_STEP_MIN
+    );
+
+    for (let t = tStart; t <= tEnd; t += INTAKE_SHIFT_STEP_MIN) {
+      const km = kmAtTime(t);
       const g = gradientPercentAtKm(geo, km);
       if (g < bestGrad - 1e-6) {
         bestGrad = g;
@@ -656,13 +674,18 @@ function refineIntakeTimesForCourse(
   timeline.sort((a, b) => a.timeMin - b.timeMin);
   for (let i = 1; i < timeline.length; i++) {
     if (timeline[i]!.timeMin <= timeline[i - 1]!.timeMin) {
-      timeline[i]!.timeMin = Math.min(durationMin - 1, timeline[i - 1]!.timeMin + 5);
+      timeline[i]!.timeMin = Math.min(durationMin - 1, timeline[i - 1]!.timeMin + INTAKE_SHIFT_STEP_MIN);
     }
   }
 
   if (anyMoved) {
+    const pacingHint = pacing
+      ? " La relation temps ↔ distance tient compte d’une allure plus lente en montée et plus rapide en descente."
+      : "";
     warnings.push(
-      "🗺 Créneaux ajustés au profil GPX : chaque prise personnelle est recalée vers le passage le plus favorable (pente la plus faible) dans la même heure. Vérifiez la cohérence avec vos ravito fixes."
+      "🗺 Créneaux ajustés au profil GPX : chaque prise personnelle est recalée vers le passage le plus favorable (pente minimale) dans une fenêtre de ±25 min autour de l’horaire initial — les créneaux peuvent donc chevaucher deux heures civiles." +
+        pacingHint +
+        " Vérifiez la cohérence avec vos ravitaillements fixes."
     );
   }
 }

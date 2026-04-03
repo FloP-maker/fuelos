@@ -1,16 +1,35 @@
-import type { AthleteProfile, EventDetails, FuelPlan, FuelPlanGenerationResult, TimelineItem } from "./types";
+import type {
+  AthleteProfile,
+  EventDetails,
+  FuelPlan,
+  FuelPlanGenerationResult,
+  Product,
+  TimelineItem,
+} from "./types";
 import { generateFuelPlan } from "./fuelEngine";
+import { setEngineProductOverlay } from "./products";
 
 // ============ CALCULATION ENGINE ============
 
 /**
  * Main calculation entry point — plan principal + variante météo (chaud/froid) si applicable.
+ * `customProducts` : fusionnés dans la résolution `getProductById` le temps du calcul (SSR : ne pas passer).
  */
 export function calculateFuelPlan(
   profile: AthleteProfile,
-  event: EventDetails
+  event: EventDetails,
+  customProducts?: Product[]
 ): FuelPlanGenerationResult {
-  return generateFuelPlan(profile, event);
+  let appliedOverlay = false;
+  try {
+    if (customProducts && customProducts.length > 0) {
+      setEngineProductOverlay(customProducts);
+      appliedOverlay = true;
+    }
+    return generateFuelPlan(profile, event);
+  } finally {
+    if (appliedOverlay) setEngineProductOverlay(null);
+  }
 }
 
 // ============ UTILITY FUNCTIONS (conservées) ============

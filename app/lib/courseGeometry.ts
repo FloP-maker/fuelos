@@ -128,3 +128,78 @@ export function distanceKmAtRaceTime(
   const t = Math.max(0, Math.min(1, timeMin / durationMin));
   return t * totalDistanceKm;
 }
+
+/** Courbe temps cumulé ↔ km : les montées « coûtent » plus de minutes que le plat / la descente. */
+export type TimeDistancePacing = {
+  km: number[];
+  cumTimeMin: number[];
+};
+
+function paceMultiplierFromGradient(gradientPercent: number): number {
+  if (gradientPercent >= 0) {
+    return 1 + Math.min(3, gradientPercent / 7);
+  }
+  return Math.max(0.72, 1 + gradientPercent / 20);
+}
+
+/**
+ * Répartition du temps de course le long du tracé (somme des durées segment = `totalDurationMin`).
+ * Hypothèse : allure liée à la pente locale (trail / route); modèle simple, pas une prédiction météo.
+ */
+export function buildTimeDistancePacing(
+  geo: CourseGeometry,
+  totalDurationMin: number
+): TimeDistancePacing | null {
+  const n = geo.cumulativeKm.length;
+  if (n < 2 || totalDurationMin <= 0) return null;
+
+  const km: number[] = [geo.cumulativeKm[0]!];
+  const rawEffort: number[] = [0];
+  let acc = 0;
+
+  for (let i = 0; i < n - 1; i++) {
+    const dK = geo.cumulativeKm[i + 1]! - geo.cumulativeKm[i]!;
+    if (dK < 1e-9) continue;
+    const kmMid = geo.cumulativeKm[i]! + dK * 0.5;
+    const win = Math.min(0.12, Math.max(0.03, dK * 0.35));
+    const g = gradientPercentAtKm(geo, kmMid, win);
+    acc += dK * paceMultiplierFromGradient(g);
+    km.push(geo.cumulativeKm[i + 1]!);
+    rawEffort.push(acc);
+  }
+
+  if (acc < 1e-9 || km.length < 2) return null;
+
+  const scale = totalDurationMin / acc;
+  const cumTimeMin = rawEffort.map((e) => e * scale);
+  return { km, cumTimeMin };
+}
+
+/** Position km à l’instant `timeMin` en suivant la courbe d’effort `pacing`. */
+export function distanceKmAtRaceTimePaced(
+  timeMin: number,
+  pacing: TimeDistancePacing,
+  durationMin: number
+): number {
+  const t = Math.max(0, Math.min(durationMin, timeMin));
+  const { km, cumTimeMin } = pacing;
+  const last = cumTimeMin.length - 1;
+  if (t <= cumTimeMin[0]!) return km[0]!;
+  if (t >= cumTimeMin[last]!) return km[last]!;
+
+  let lo = 0;
+  let hi = last;
+  while (lo + 1 < hi) {
+    const mid = (lo + hi) >> 1;
+    if (cumTimeMin[mid]! <= t) lo = mid;
+    else hi = mid;
+  }
+  const i = hi;
+  const t0 = cumTimeMin[i - 1]!;
+  const t1 = cumTimeMin[i]!;
+  const k0 = km[i - 1]!;
+  const k1 = km[i]!;
+  if (t1 <= t0) return k1;
+  const u = (t - t0) / (t1 - t0);
+  return k0 + u * (k1 - k0);
+}

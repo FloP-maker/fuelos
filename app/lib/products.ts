@@ -2009,8 +2009,47 @@ export function getProductsByCategory(category: Product["category"]): Product[] 
   return PRODUCTS.filter(p => p.category === category);
 }
 
+/** Produits hors catalogue (ex. localStorage) consultés en priorité pendant un calcul de plan — usage client. */
+let engineProductOverlay: Product[] = [];
+
+export function setEngineProductOverlay(products: Product[] | null): void {
+  engineProductOverlay = products && products.length > 0 ? products.slice() : [];
+}
+
+function overlayProductsForCategory(
+  category: Product["category"],
+  preferences?: { avoidProducts?: string[]; allergens?: string[] }
+): Product[] {
+  return engineProductOverlay.filter((p) => {
+    if (p.category !== category) return false;
+    if (preferences?.avoidProducts?.includes(p.id)) return false;
+    if (preferences?.allergens?.some((a) => p.allergens.includes(a))) return false;
+    return true;
+  });
+}
+
+/** Préfixe le catalogue par les produits custom (même IDs exclus). */
+function mergeCatalogWithOverlay(
+  catalog: Product[],
+  category: Product["category"],
+  preferences?: { avoidProducts?: string[]; allergens?: string[] }
+): Product[] {
+  const extra = overlayProductsForCategory(category, preferences);
+  if (extra.length === 0) return catalog;
+  const seen = new Set<string>();
+  const out: Product[] = [];
+  for (const p of [...extra, ...catalog]) {
+    if (seen.has(p.id)) continue;
+    seen.add(p.id);
+    out.push(p);
+  }
+  return out;
+}
+
 export function getProductById(id: string): Product | undefined {
-  return PRODUCTS.find(p => p.id === id);
+  const custom = engineProductOverlay.find((p) => p.id === id);
+  if (custom) return custom;
+  return PRODUCTS.find((p) => p.id === id);
 }
 
 export function getProductsByBrand(brand: string): Product[] {
@@ -2291,6 +2330,14 @@ export function getRecommendedProductMix(
       !p.allergens.some(a => preferences.allergens?.includes(a))
     );
   }
+
+  const prefPick = preferences
+    ? { avoidProducts: preferences.avoidProducts, allergens: preferences.allergens }
+    : undefined;
+  gels = mergeCatalogWithOverlay(gels, "gel", prefPick);
+  drinks = mergeCatalogWithOverlay(drinks, "drink", prefPick);
+  bars = mergeCatalogWithOverlay(bars, "bar", prefPick);
+  realFood = mergeCatalogWithOverlay(realFood, "real-food", prefPick);
 
   // Niveau de variété (nombre de produits différents)
   const varietyCount = preferences?.varietyLevel === "high" ? 5 :

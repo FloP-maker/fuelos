@@ -452,7 +452,7 @@ function PlanPageContent() {
     console.log("🔍 Profile GI Tolerance:", profile.giTolerance);
     console.log("🔍 Full Profile:", profile);
 
-    const result = calculateFuelPlan(profile, event);
+    const result = calculateFuelPlan(profile, event, customProducts);
 
     console.log("🔍 CHO Strategy:", result.mainPlan.choStrategy);
     console.log("🔍 CHO per hour:", result.mainPlan.choPerHour);
@@ -1422,9 +1422,9 @@ function PlanPageContent() {
                       style={{ marginTop: 3 }}
                     />
                     <span>
-                      <strong>Ajuster les prises au parcours (GPX)</strong> — recaler chaque prise « perso » vers
-                      le créneau de la même heure avec la pente la plus faible (replat ou descente), sans déplacer
-                      les ravitaillements fixes.
+                      <strong>Ajuster les prises au parcours (GPX)</strong> — chaque prise « perso » peut être
+                      décalée de ±25&nbsp;min pour viser replat ou descente ; le lien temps ↔ km s’appuie sur une
+                      allure plus lente en montée et plus rapide en descente. Les ravitaillements fixes ne bougent pas.
                     </span>
                   </label>
                 </div>
