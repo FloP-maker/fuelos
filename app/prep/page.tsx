@@ -30,17 +30,12 @@ const PREP_STORAGE_KEY = 'fuelos_prep_state';
 const ACTIVE_PLAN_KEY = 'fuelos_active_plan';
 
 const S = {
-  page: {
-    minHeight: '100vh',
-    background: 'var(--color-bg)',
-    color: 'var(--color-text)',
-    fontFamily: 'system-ui, sans-serif',
-  } as CSSProperties,
-  main: { maxWidth: 920, margin: '0 auto', padding: '28px 24px 56px' } as CSSProperties,
+  main: { paddingTop: 28 } as CSSProperties,
   card: {
     background: 'var(--color-bg-card)',
     border: '1px solid var(--color-border)',
-    borderRadius: 12,
+    borderRadius: 'var(--radius-lg)',
+    boxShadow: 'var(--shadow-xs)',
     padding: 20,
     marginBottom: 20,
   } as CSSProperties,
@@ -460,13 +455,15 @@ export default function PrepPage() {
     'Ex. : flocons d’avoine 70–80 g + banane + miel ; ou pain / confiture + jus ; café si habitude. Adapter au profil digestif.';
 
   return (
-    <div style={S.page}>
-      <Header activePage="prep" />
-      <main style={S.main}>
+    <div className="fuel-page">
+      <Header sticky activePage="prep" />
+      <main className="fuel-main" style={S.main}>
         <p style={{ ...S.muted, margin: '0 0 6px', fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', color: '#fb923c' }}>
           PRÉPARATION & RÉCUPÉRATION
         </p>
-        <h1 style={S.h1}>Pré/post course — charge, jour J & drop bags</h1>
+        <h1 className="font-display" style={S.h1}>
+          Pré/post course — charge, jour J & drop bags
+        </h1>
         <p style={{ ...S.muted, margin: '0 0 20px' }}>
           Assistant carb-loading (3 ou 7 jours avant la course), liste d’achats par journée (menus affichés + lieu + saison),
           checklists, petit-déjeuner & protocole pré-départ, récup post-épreuve. Les données du{' '}

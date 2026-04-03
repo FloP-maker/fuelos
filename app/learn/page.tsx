@@ -398,24 +398,27 @@ export default function LearnPage() {
   };
 
   return (
-    <div>
-      <Header />
-      <main style={{ maxWidth: 1120, margin: '0 auto', padding: '28px 20px 48px' }}>
+    <div className="fuel-page">
+      <Header sticky />
+      <main className="fuel-main" style={{ paddingTop: 28 }}>
       <div
+        className="fuel-card"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           gap: 16,
           alignItems: 'center',
-          padding: 18,
-          border: '1px solid var(--color-border)',
-          borderRadius: 16,
+          padding: 20,
+          marginBottom: 24,
+          borderColor: 'color-mix(in srgb, var(--color-accent) 22%, var(--color-border))',
           background:
-            'linear-gradient(120deg, color-mix(in srgb, var(--color-accent) 18%, transparent) 0%, transparent 45%)',
+            'linear-gradient(120deg, color-mix(in srgb, var(--color-accent) 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 48%)',
         }}
       >
         <div>
-          <h1 style={{ margin: 0, fontSize: 32 }}>Learn</h1>
+          <h1 className="font-display" style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>
+            Learn
+          </h1>
           <p style={{ marginTop: 8, color: 'var(--color-text-muted)' }}>
             Debriefs des courses terminees dans Race Mode et bibliotheque de reperes nutrition verifiables.
           </p>

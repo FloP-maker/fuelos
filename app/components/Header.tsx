@@ -2,18 +2,26 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ChevronDown, ChefHat, BookOpen, Crosshair, ShoppingBag, Zap, LayoutGrid } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ThemeToggle } from './ThemeToggle';
 import { AuthMenu } from './AuthMenu';
+import { FuelLogo } from './FuelLogo';
 
 export type HeaderActivePage = 'plan' | 'shop' | 'race' | 'learn' | 'prep';
 
-const NAV: { href: string; label: string; page: HeaderActivePage }[] = [
-  { href: '/plan', label: 'Plan', page: 'plan' },
-  { href: '/shop', label: 'Shop', page: 'shop' },
-  { href: '/prep', label: 'Pré/post course', page: 'prep' },
-  { href: '/race', label: 'Race Mode', page: 'race' },
-  { href: '/learn', label: 'Learn', page: 'learn' },
+const NAV: {
+  href: string;
+  label: string;
+  page: HeaderActivePage;
+  icon: typeof Crosshair;
+}[] = [
+  { href: '/plan', label: 'Plan', page: 'plan', icon: Crosshair },
+  { href: '/shop', label: 'Shop', page: 'shop', icon: ShoppingBag },
+  { href: '/prep', label: 'Pré/post course', page: 'prep', icon: ChefHat },
+  { href: '/race', label: 'Race Mode', page: 'race', icon: Zap },
+  { href: '/learn', label: 'Learn', page: 'learn', icon: BookOpen },
 ];
 
 function pathnameToActivePage(pathname: string | null): HeaderActivePage | undefined {
@@ -26,58 +34,45 @@ function pathnameToActivePage(pathname: string | null): HeaderActivePage | undef
   return undefined;
 }
 
-const navPillBase: CSSProperties = {
-  padding: '8px 16px',
-  borderRadius: 'var(--radius-pill)',
-  fontSize: 13,
-  fontWeight: 600,
-  border: '1px solid transparent',
-  textDecoration: 'none',
-  transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
-};
-
-const navPillActive: CSSProperties = {
-  ...navPillBase,
-  fontWeight: 700,
-  color: 'var(--color-text)',
-  border: '1px solid color-mix(in srgb, var(--color-accent) 40%, var(--color-border))',
-  background: 'color-mix(in srgb, var(--color-accent) 14%, var(--color-bg-card))',
-  boxShadow: 'var(--shadow-xs)',
-};
-
 const S = {
   headerBase: {
     borderBottom: '1px solid var(--color-border-subtle)',
-    padding: '14px 22px',
+    padding: '12px 22px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 16,
+    flexWrap: 'wrap',
+    rowGap: 12,
   } as CSSProperties,
   headerSticky: {
     position: 'sticky',
     top: 0,
     zIndex: 30,
-    background: 'color-mix(in srgb, var(--color-bg) 82%, transparent)',
+    background: 'color-mix(in srgb, var(--color-bg) 86%, transparent)',
     backdropFilter: 'saturate(160%) blur(14px)',
     WebkitBackdropFilter: 'saturate(160%) blur(14px)',
   } as CSSProperties,
-  logo: { display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit' } as CSSProperties,
-  logoIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  leftCluster: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 800,
-    fontSize: 17,
-    fontFamily: 'var(--font-display)',
-    color: '#052e14',
+    gap: 10,
     flexShrink: 0,
-    background:
-      'linear-gradient(145deg, var(--color-accent) 0%, color-mix(in srgb, var(--color-energy) 38%, var(--color-accent)) 100%)',
-    boxShadow: 'var(--shadow-xs), 0 0 24px color-mix(in srgb, var(--color-accent) 35%, transparent)',
+    minWidth: 0,
+  } as CSSProperties,
+  logoLink: {
+    display: 'flex',
+    alignItems: 'center',
+    textDecoration: 'none',
+    color: 'inherit',
+    flexShrink: 0,
+  } as CSSProperties,
+  rightCluster: {
+    display: 'flex',
+    gap: 10,
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
   } as CSSProperties,
   btnOutline: {
     padding: '9px 18px',
@@ -93,6 +88,85 @@ const S = {
   } as CSSProperties,
 };
 
+function ExplorerMenu({
+  resolvedActive,
+}: {
+  resolvedActive: HeaderActivePage | undefined;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const close = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) close();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open, close]);
+
+  return (
+    <div ref={rootRef} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        className="fuel-btn-pill"
+        aria-expanded={open}
+        aria-controls="fuel-explorer-menu"
+        aria-haspopup="true"
+        id="fuel-explorer-trigger"
+        onClick={() => setOpen((o) => !o)}
+        style={{ gap: 6 }}
+      >
+        <LayoutGrid size={16} strokeWidth={2} aria-hidden />
+        Menu
+        <ChevronDown
+          size={16}
+          strokeWidth={2}
+          aria-hidden
+          style={{
+            transition: 'transform 0.2s ease',
+            transform: open ? 'rotate(180deg)' : 'none',
+          }}
+        />
+      </button>
+      {open && (
+        <div
+          id="fuel-explorer-menu"
+          role="menu"
+          aria-labelledby="fuel-explorer-trigger"
+          className="fuel-header-menu-panel"
+        >
+          {NAV.map((item) => {
+            const Icon = item.icon;
+            const isActive = resolvedActive === item.page;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                role="menuitem"
+                aria-current={isActive ? 'page' : undefined}
+                onClick={close}
+              >
+                <Icon size={18} strokeWidth={1.75} aria-hidden />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export type HeaderProps = {
   /** Overrides automatic detection from `usePathname()`. */
   activePage?: HeaderActivePage;
@@ -107,56 +181,22 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
 
   return (
     <header style={{ ...S.headerBase, ...(sticky ? S.headerSticky : {}) }}>
-      <Link href="/" style={S.logo} aria-label="FuelOS — Accueil">
-        <div style={S.logoIcon}>F</div>
-        <span style={{ fontWeight: 800, fontSize: 20, fontFamily: 'var(--font-display)', letterSpacing: '-0.03em' }}>
-          FuelOS
-        </span>
-      </Link>
-      <div
-        style={{
-          display: 'flex',
-          gap: 10,
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          justifyContent: 'flex-end',
-        }}
-      >
-        <nav
-          aria-label="Navigation principale"
-          style={{
-            display: 'flex',
-            gap: 6,
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            padding: 4,
-            borderRadius: 'var(--radius-pill)',
-            background: 'color-mix(in srgb, var(--color-bg-card) 65%, transparent)',
-            border: '1px solid var(--color-border-subtle)',
-          }}
-        >
-          {NAV.map((item) => {
-            const isActive = resolvedActive === item.page;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={isActive ? 'page' : undefined}
-                style={
-                  isActive
-                    ? navPillActive
-                    : {
-                        ...navPillBase,
-                        color: 'var(--color-text-muted)',
-                      }
-                }
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+      <div style={S.leftCluster}>
+        <Link href="/" style={S.logoLink} aria-label="FuelOS — Accueil">
+          <FuelLogo size={38} withWordmark />
+        </Link>
+        <ExplorerMenu resolvedActive={resolvedActive} />
+      </div>
+
+      <div style={S.rightCluster}>
         {extra}
+        <Link
+          href="/plan?step=profile"
+          className="fuel-btn-pill fuel-btn-pill-accent"
+          title="Profil athlète — étape 1 du plan"
+        >
+          Profil athlète
+        </Link>
         <AuthMenu />
         {pathname !== '/' && (
           <Link

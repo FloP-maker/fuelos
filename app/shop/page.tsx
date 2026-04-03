@@ -219,11 +219,16 @@ export default function ShopPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--color-bg)", color: "var(--color-text)", fontFamily: "system-ui, sans-serif" }}>
-      <Header />
+    <div className="fuel-page">
+      <Header sticky />
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px", paddingBottom: showCompareDrawer ? 280 : 32 }}>
-        <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Catalogue produits</div>
+      <main
+        className="fuel-main"
+        style={{ paddingTop: 32, paddingBottom: showCompareDrawer ? 280 : 72 }}
+      >
+        <div className="font-display" style={{ fontSize: 26, fontWeight: 800, marginBottom: 4 }}>
+          Catalogue produits
+        </div>
         <div style={{ color: "var(--color-text-muted)", fontSize: 14, marginBottom: 24 }}>
           {allProducts.length} produits ({customProducts.length} perso) · Maurten, SiS, Tailwind, Näak, GU Energy…
         </div>

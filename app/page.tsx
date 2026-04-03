@@ -14,11 +14,7 @@ import {
 import { Header } from './components/Header';
 
 const S = {
-  page: {
-    minHeight: '100vh',
-    color: 'var(--color-text)',
-  } as CSSProperties,
-  main: { maxWidth: 1040, margin: '0 auto', padding: '48px 24px 72px' } as CSSProperties,
+  main: { paddingTop: 48 } as CSSProperties,
   card: {
     padding: 22,
     marginBottom: 20,
@@ -105,9 +101,9 @@ const FEATURE_CARDS: {
 
 export default function Home() {
   return (
-    <div style={S.page}>
+    <div className="fuel-page">
       <Header sticky />
-      <main style={S.main}>
+      <main className="fuel-main" style={S.main}>
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <div style={{ marginBottom: 22 }}>
             <span className="fuel-badge">Multi-marques · Multi-sports · Race Day Ready</span>

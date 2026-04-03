@@ -18,7 +18,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <DebriefCloudMigration />
       <ThemeProvider
         attribute="class"
-        defaultTheme="dark"
+        defaultTheme="light"
         enableSystem
         disableTransitionOnChange={false}
       >

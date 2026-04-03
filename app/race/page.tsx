@@ -21,12 +21,6 @@ const ONBOARDING_EVENT_KEY = 'fuelos_onboarding_event_done';
 const ONBOARDING_EVENT_STEP_KEY = 'fuelos_onboarding_event_step_done';
 
 const S = {
-  page: {
-    minHeight: '100vh',
-    background: 'var(--color-bg)',
-    color: 'var(--color-text)',
-    fontFamily: 'system-ui, sans-serif',
-  } as CSSProperties,
   btnOutline: {
     padding: '10px 20px',
     borderRadius: 8,
@@ -38,11 +32,12 @@ const S = {
     cursor: 'pointer',
     textDecoration: 'none',
   } as CSSProperties,
-  main: { maxWidth: 960, margin: '0 auto', padding: '28px 24px 48px' } as CSSProperties,
+  main: { paddingTop: 28 } as CSSProperties,
   card: {
     background: 'var(--color-bg-card)',
     border: '1px solid var(--color-border)',
-    borderRadius: 12,
+    borderRadius: 'var(--radius-lg)',
+    boxShadow: 'var(--shadow-xs)',
     padding: 18,
   } as CSSProperties,
   cardTitle: { fontWeight: 800, fontSize: 14 } as CSSProperties,
@@ -729,16 +724,14 @@ function RaceContent() {
     });
   }, []);
 
-  const pageShellStyle: CSSProperties = {
-    ...S.page,
-    ...(raceState.simulationSpeed > 1
+  const pageShellStyle: CSSProperties =
+    raceState.simulationSpeed > 1
       ? {
           background:
             'color-mix(in srgb, var(--color-bg) 82%, rgba(124, 58, 237, 0.2))',
           transition: 'background 0.35s ease',
         }
-      : { transition: 'background 0.35s ease' }),
-  };
+      : { transition: 'background 0.35s ease' };
 
   const simulationHeaderBadge =
     raceState.simulationSpeed > 1 ? (
@@ -756,14 +749,16 @@ function RaceContent() {
 
   if (!plan) {
     return (
-      <div style={pageShellStyle}>
+      <div className="fuel-page" style={pageShellStyle}>
         <Header sticky extra={simulationHeaderBadge} />
 
-        <main style={{ ...S.main, paddingTop: 52 }}>
+        <main className="fuel-main" style={{ ...S.main, paddingTop: 52 }}>
           <div style={{ maxWidth: 520, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
               <div style={{ fontSize: 40, marginBottom: 8 }}>⚡</div>
-              <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>Race Mode</h1>
+              <h1 className="font-display" style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>
+                Race Mode
+              </h1>
               <p style={{ ...S.muted, fontSize: 14, margin: 0 }}>
                 Aucun plan actif. Suis les étapes ci-dessous pour lancer le mode course.
               </p>
@@ -959,13 +954,15 @@ function RaceContent() {
   const progressPercent = Math.min(100, (elapsedMin / ((event?.targetTime || 1) * 60)) * 100);
 
   return (
-    <div style={pageShellStyle}>
+    <div className="fuel-page" style={pageShellStyle}>
       <Header sticky extra={simulationHeaderBadge} />
 
-      <main style={S.main}>
+      <main className="fuel-main" style={S.main}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 2 }}>Race Mode</div>
+            <div className="font-display" style={{ fontSize: 22, fontWeight: 900, marginBottom: 2 }}>
+              Race Mode
+            </div>
             <div style={{ ...S.muted, fontSize: 13 }}>
               {event ? `${event.sport} · ${event.distance} km · objectif ${event.targetTime} h` : 'Exécution du plan'}
             </div>

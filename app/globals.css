@@ -4,39 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Thème clair par défaut (next-themes ajoute la classe `dark` sur <html> en mode sombre) */
 :root {
+  color-scheme: light;
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Plus Jakarta Sans', var(--font-sans);
 
-  --color-bg: #070707;
-  --color-bg-elevated: #0c0c0c;
-  --color-bg-card: #121212;
-  --color-bg-card-hover: #181818;
-  --color-border: #2a2a2a;
-  --color-border-subtle: #1f1f1f;
-  --color-text: #f4f4f5;
-  --color-text-muted: #a1a1aa;
-  --color-accent: #38e07e;
-  --color-accent-hover: #2bc96b;
-  --color-accent-muted: color-mix(in srgb, var(--color-accent) 18%, transparent);
-  --color-energy: #ff5c00;
-  --color-energy-soft: color-mix(in srgb, #ff5c00 22%, transparent);
-  --color-danger: #ef4444;
-  --color-warning: #f59e0b;
-
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
-  --radius-pill: 9999px;
-
-  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.35);
-  --shadow-sm: 0 2px 8px rgb(0 0 0 / 0.4);
-  --shadow-md: 0 8px 24px rgb(0 0 0 / 0.45);
-  --shadow-glow-accent: 0 0 40px color-mix(in srgb, var(--color-accent) 25%, transparent);
-}
-
-.light {
   --color-bg: #f4f4f5;
   --color-bg-elevated: #fafafa;
   --color-bg-card: #ffffff;
@@ -53,10 +26,40 @@
   --color-danger: #dc2626;
   --color-warning: #f59e0b;
 
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-pill: 9999px;
+
   --shadow-xs: 0 1px 2px rgb(24 24 27 / 0.06);
   --shadow-sm: 0 2px 8px rgb(24 24 27 / 0.08);
   --shadow-md: 0 12px 32px rgb(24 24 27 / 0.1);
   --shadow-glow-accent: 0 0 48px color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+.dark {
+  color-scheme: dark;
+  --color-bg: #070707;
+  --color-bg-elevated: #0c0c0c;
+  --color-bg-card: #121212;
+  --color-bg-card-hover: #181818;
+  --color-border: #2a2a2a;
+  --color-border-subtle: #1f1f1f;
+  --color-text: #f4f4f5;
+  --color-text-muted: #a1a1aa;
+  --color-accent: #38e07e;
+  --color-accent-hover: #2bc96b;
+  --color-accent-muted: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  --color-energy: #ff5c00;
+  --color-energy-soft: color-mix(in srgb, #ff5c00 22%, transparent);
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-sm: 0 2px 8px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 8px 24px rgb(0 0 0 / 0.45);
+  --shadow-glow-accent: 0 0 40px color-mix(in srgb, var(--color-accent) 25%, transparent);
 }
 
 * {
@@ -67,7 +70,6 @@
 
 html {
   scroll-behavior: smooth;
-  color-scheme: dark light;
 }
 
 html,
@@ -91,15 +93,15 @@ h3,
 
 body {
   background-image:
-    radial-gradient(ellipse 120% 80% at 50% -30%, var(--color-accent-muted), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 100% 0%, var(--color-energy-soft), transparent 45%);
+    radial-gradient(ellipse 100% 70% at 50% -20%, var(--color-accent-muted), transparent 50%),
+    radial-gradient(ellipse 50% 35% at 100% 0%, var(--color-energy-soft), transparent 40%);
   background-attachment: fixed;
 }
 
-html.light body {
+html.dark body {
   background-image:
-    radial-gradient(ellipse 100% 70% at 50% -20%, var(--color-accent-muted), transparent 50%),
-    radial-gradient(ellipse 50% 35% at 100% 0%, var(--color-energy-soft), transparent 40%);
+    radial-gradient(ellipse 120% 80% at 50% -30%, var(--color-accent-muted), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, var(--color-energy-soft), transparent 45%);
 }
 
 a {
@@ -129,6 +131,25 @@ textarea:focus {
 }
 
 @layer components {
+  .fuel-page {
+    min-height: 100vh;
+    color: var(--color-text);
+  }
+
+  .fuel-main {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 40px 24px 72px;
+  }
+
+  .fuel-plan-wizard {
+    border-bottom: 1px solid var(--color-border-subtle);
+    padding: 12px 24px;
+    background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+    backdrop-filter: saturate(150%) blur(12px);
+    -webkit-backdrop-filter: saturate(150%) blur(12px);
+  }
+
   .fuel-card {
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
@@ -192,6 +213,41 @@ textarea:focus {
     border-color: color-mix(in srgb, var(--color-energy) 45%, var(--color-border));
     color: var(--color-energy);
     background: color-mix(in srgb, var(--color-energy) 10%, var(--color-bg-card));
+  }
+
+  .fuel-header-menu-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 240px;
+    padding: 6px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    z-index: 50;
+  }
+
+  .fuel-header-menu-panel a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+
+  .fuel-header-menu-panel a:hover {
+    background: var(--color-bg-card-hover);
+    color: var(--color-text);
+  }
+
+  .fuel-header-menu-panel a[aria-current='page'] {
+    background: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-card-hover));
+    color: var(--color-accent);
   }
 
   .fuel-input-compact {

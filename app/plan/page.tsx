@@ -40,22 +40,12 @@ const PLAN_WIZARD_STEPS: { num: PlanWizardStep; label: string }[] = [
 ];
 
 const S = {
-  page: {
-    minHeight: "100vh",
-    background: "var(--color-bg)",
-    color: "var(--color-text)",
-    fontFamily: "system-ui, sans-serif",
-  } as React.CSSProperties,
-  planWizardBar: {
-    borderBottom: "1px solid var(--color-border)",
-    padding: "12px 24px",
-    background: "var(--color-bg)",
-  } as React.CSSProperties,
-  main: { maxWidth: 960, margin: "0 auto", padding: "40px 24px" } as React.CSSProperties,
+  main: { paddingTop: 36 } as React.CSSProperties,
   card: {
     background: "var(--color-bg-card)",
     border: "1px solid var(--color-border)",
-    borderRadius: 12,
+    borderRadius: "var(--radius-lg)",
+    boxShadow: "var(--shadow-xs)",
     padding: 24,
     marginBottom: 20,
   } as React.CSSProperties,
@@ -492,9 +482,9 @@ function PlanPageContent() {
   }
 
   return (
-    <div style={S.page}>
-      <Header />
-      <div style={S.planWizardBar}>
+    <div className="fuel-page">
+      <Header sticky />
+      <div className="fuel-plan-wizard">
         <nav
           aria-label="Étapes du plan"
           style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}
@@ -606,10 +596,13 @@ function PlanPageContent() {
         </nav>
       </div>
 
-      <div style={S.main}>
+      <main className="fuel-main" style={S.main}>
         {currentStep === 1 && (
           <div id="plan-step-1" style={{ scrollMarginTop: 24 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.5px" }}>
+            <h1
+              className="font-display"
+              style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.5px" }}
+            >
               Ton profil athlète
             </h1>
             <p style={{ color: "var(--color-text-muted)", marginBottom: 32, fontSize: 14 }}>
@@ -1284,7 +1277,10 @@ function PlanPageContent() {
 
         {currentStep === 2 && (
           <div id="plan-step-2" style={{ scrollMarginTop: 24 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.5px" }}>
+            <h1
+              className="font-display"
+              style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.5px" }}
+            >
               Ta course
             </h1>
             <p style={{ color: "var(--color-text-muted)", marginBottom: 32, fontSize: 14 }}>
@@ -1883,7 +1879,7 @@ function PlanPageContent() {
             />
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }
@@ -2254,7 +2250,10 @@ function PlanResult({
         }}
       >
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.5px", marginBottom: 4 }}>
+          <h1
+            className="font-display"
+            style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.5px", marginBottom: 4 }}
+          >
             Ton plan nutritionnel
           </h1>
           <p style={{ color: "var(--color-text-muted)", fontSize: 14 }}>
@@ -3160,14 +3159,12 @@ export default function PlanPage() {
     <Suspense
       fallback={
         <div
+          className="fuel-page"
           style={{
-            minHeight: "100vh",
-            background: "var(--color-bg)",
-            color: "var(--color-text)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontFamily: "system-ui, sans-serif",
+            minHeight: "100vh",
           }}
         >
           Chargement…
