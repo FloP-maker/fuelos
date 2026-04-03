@@ -11,12 +11,15 @@ import {
   type DietStyle,
   CARB_DAY_ORDER,
   RACE_MATERIAL_CHECKLIST,
-  buildPrepShoppingListFromMealPools,
+  buildDayPurchaseListFromBlocks,
   buildPostRaceProtocol,
   carbDayChecklist,
   carbDayMeta,
   dailyChoFromBody,
   defaultCarbGPerKg,
+  enrichPurchaseLinesSeasonal,
+  estimateDayPurchasePriceEUR,
+  getPrepSeasonContext,
   inferDietFromProfile,
   pickCarbMealExamples,
   seedDropBagsFromAid,
@@ -136,7 +139,35 @@ const S = {
     border: 'none',
     cursor: 'pointer',
   } as CSSProperties,
+  detailsRecipe: {
+    marginTop: 12,
+    borderRadius: 10,
+    border: '1px solid color-mix(in srgb, #fb923c 28%, var(--color-border))',
+    padding: '12px 14px',
+    background: 'color-mix(in srgb, var(--color-bg) 94%, transparent)',
+  } as CSSProperties,
+  detailsSummary: {
+    cursor: 'pointer',
+    fontWeight: 800,
+    fontSize: 14,
+    listStyle: 'none',
+  } as CSSProperties,
 };
+
+const SHOP_COUNTRY_OPTIONS: { code: string; label: string }[] = [
+  { code: 'FR', label: 'France' },
+  { code: 'BE', label: 'Belgique' },
+  { code: 'CH', label: 'Suisse' },
+  { code: 'DE', label: 'Allemagne' },
+  { code: 'ES', label: 'Espagne' },
+  { code: 'IT', label: 'Italie' },
+  { code: 'GB', label: 'Royaume-Uni' },
+  { code: 'CA', label: 'Canada' },
+  { code: 'US', label: 'États-Unis' },
+  { code: 'AU', label: 'Australie' },
+  { code: 'NZ', label: 'Nouvelle-Zélande' },
+  { code: 'RE', label: 'La Réunion (hémisphère sud)' },
+];
 
 type ActiveBundle = {
   fuelPlan?: FuelPlan;
@@ -162,6 +193,10 @@ type PrepPersisted = {
   recoveryNaturalCare: boolean;
   recoveryMassage: boolean;
   recoverySaunaOk: boolean;
+  shoppingCountryCode: string;
+  shoppingCity: string;
+  seasonDateMode: 'today' | 'custom';
+  seasonCustomDate: string;
 };
 
 const DEFAULT_PRESTART = `—3h00 : Petit-déjeuner (voir encadré) + hydra habituelle
@@ -213,6 +248,10 @@ function loadOrInitPrep(): PrepPersisted {
       recoveryNaturalCare: false,
       recoveryMassage: false,
       recoverySaunaOk: false,
+      shoppingCountryCode: 'FR',
+      shoppingCity: '',
+      seasonDateMode: 'today',
+      seasonCustomDate: '',
     };
   };
   if (typeof window === 'undefined') {
@@ -254,6 +293,13 @@ function loadOrInitPrep(): PrepPersisted {
         recoveryNaturalCare: !!p.recoveryNaturalCare,
         recoveryMassage: !!p.recoveryMassage,
         recoverySaunaOk: !!p.recoverySaunaOk,
+        shoppingCountryCode:
+          typeof p.shoppingCountryCode === 'string' && p.shoppingCountryCode.length === 2
+            ? p.shoppingCountryCode.toUpperCase()
+            : 'FR',
+        shoppingCity: typeof p.shoppingCity === 'string' ? p.shoppingCity : '',
+        seasonDateMode: p.seasonDateMode === 'custom' ? 'custom' : 'today',
+        seasonCustomDate: typeof p.seasonCustomDate === 'string' ? p.seasonCustomDate : '',
       };
     }
   } catch {
@@ -271,7 +317,7 @@ export default function PrepPage() {
   const [bundle, setBundle] = useState<ActiveBundle | null>(null);
   const [prep, setPrep] = useState<PrepPersisted>(() => loadOrInitPrep());
   const [section, setSection] = useState<'carb' | 'race' | 'drop' | 'post'>('carb');
-  const [shopCopied, setShopCopied] = useState(false);
+  const [shopCopiedDayKey, setShopCopiedDayKey] = useState<CarbDayKey | null>(null);
 
   useEffect(() => {
     try {
@@ -334,7 +380,13 @@ export default function PrepPage() {
     return out;
   }, [carbDaysVisible]);
 
-  const prepShoppingList = useMemo(() => buildPrepShoppingListFromMealPools(effectiveDiet), [effectiveDiet]);
+  const seasonReferenceDate = useMemo(() => {
+    if (prep.seasonDateMode === 'custom' && prep.seasonCustomDate.trim()) {
+      const d = new Date(`${prep.seasonCustomDate.trim()}T12:00:00`);
+      return Number.isNaN(d.getTime()) ? new Date() : d;
+    }
+    return new Date();
+  }, [prep.seasonDateMode, prep.seasonCustomDate]);
 
   const postRaceBlocks = useMemo(
     () =>
@@ -416,8 +468,8 @@ export default function PrepPage() {
         </p>
         <h1 style={S.h1}>Pré/post course — charge, jour J & drop bags</h1>
         <p style={{ ...S.muted, margin: '0 0 20px' }}>
-          Assistant carb-loading (3 ou 7 jours avant la course), checklists, liste de courses liée aux menus, petit-déjeuner &
-          protocole pré-départ, récup post-épreuve. Les données du{' '}
+          Assistant carb-loading (3 ou 7 jours avant la course), liste d’achats par journée (menus affichés + lieu + saison),
+          checklists, petit-déjeuner & protocole pré-départ, récup post-épreuve. Les données du{' '}
           <Link href="/plan" style={{ color: '#fb923c', fontWeight: 700 }}>
             plan actif
           </Link>{' '}
@@ -573,62 +625,91 @@ export default function PrepPage() {
                   </p>
                 )}
               </div>
-            </div>
 
-            <div style={S.card}>
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  justifyContent: 'space-between',
-                  gap: 12,
-                  alignItems: 'flex-start',
-                }}
-              >
-                <h2 style={{ ...S.h2, margin: 0 }}>Liste de courses (menus possibles)</h2>
-                <button
-                  type="button"
-                  style={S.btnOutline}
-                  onClick={() => {
-                    const text = prepShoppingList
-                      .map((c) => `${c.category}\n${c.items.map((i) => `• ${i}`).join('\n')}`)
-                      .join('\n\n');
-                    void navigator.clipboard.writeText(text).then(() => {
-                      setShopCopied(true);
-                      window.setTimeout(() => setShopCopied(false), 2000);
-                    });
+              <div style={{ marginTop: 22, paddingTop: 18, borderTop: '1px solid var(--color-border)' }}>
+                <h3 style={{ ...S.h2, margin: '0 0 10px', fontSize: 15 }}>Localisation & saison des courses</h3>
+                <p style={{ ...S.muted, fontSize: 13, margin: '0 0 12px' }}>
+                  La saison (fruits / légumes, dispo, prix) s’adapte au pays (hémisphère) et à la date de référence. La ville
+                  sert de repère pour vos habitudes d’achat.
+                </p>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: 14,
                   }}
                 >
-                  {shopCopied ? 'Copié' : 'Copier la liste'}
-                </button>
-              </div>
-              <p style={{ ...S.muted, fontSize: 13, marginTop: 8 }}>
-                Ingrédients regroupés par famille, dédupliqués à partir de <strong>toutes</strong> les variantes de menus pour
-                le régime sélectionné — vous couvrez n’importe quel tirage des exemples. Ajustez les quantités à votre fenêtre (3
-                ou 7 jours) et à votre foyer.
-              </p>
-              {effectiveDiet === 'gluten_free' && (
-                <p style={{ ...S.muted, fontSize: 12, marginTop: 6 }}>
-                  Vérifiez les étiquettes <strong>sans gluten</strong> sur produits industriels (pâtes, pain, sauces…).
-                </p>
-              )}
-              <div style={{ marginTop: 16, display: 'grid', gap: 16 }}>
-                {prepShoppingList.map((cat) => (
-                  <div key={cat.category}>
-                    <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 8, color: '#fb923c' }}>{cat.category}</div>
-                    <ul style={{ ...S.muted, margin: 0, paddingLeft: 18, display: 'grid', gap: 4 }}>
-                      {cat.items.map((item) => (
-                        <li key={item}>{item}</li>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 700, fontSize: 12, marginBottom: 6 }}>Pays</label>
+                    <select
+                      value={prep.shoppingCountryCode}
+                      onChange={(e) => persist({ ...prep, shoppingCountryCode: e.target.value })}
+                      style={S.inputWide}
+                    >
+                      {SHOP_COUNTRY_OPTIONS.map((o) => (
+                        <option key={o.code} value={o.code}>
+                          {o.label}
+                        </option>
                       ))}
-                    </ul>
+                    </select>
                   </div>
-                ))}
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 700, fontSize: 12, marginBottom: 6 }}>Ville / région</label>
+                    <input
+                      type="text"
+                      value={prep.shoppingCity}
+                      onChange={(e) => persist({ ...prep, shoppingCity: e.target.value })}
+                      placeholder="Ex. : Lyon, Genève…"
+                      style={S.inputWide}
+                    />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <span style={{ display: 'block', fontWeight: 700, fontSize: 12, marginBottom: 8 }}>
+                      Date pour calcul de saison (fruits / légumes)
+                    </span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        style={prep.seasonDateMode === 'today' ? S.pillActive : S.pill}
+                        onClick={() => persist({ ...prep, seasonDateMode: 'today' })}
+                      >
+                        Aujourd’hui
+                      </button>
+                      <button
+                        type="button"
+                        style={prep.seasonDateMode === 'custom' ? S.pillActive : S.pill}
+                        onClick={() => persist({ ...prep, seasonDateMode: 'custom' })}
+                      >
+                        Date au choix
+                      </button>
+                      {prep.seasonDateMode === 'custom' && (
+                        <input
+                          type="date"
+                          value={prep.seasonCustomDate}
+                          onChange={(e) => persist({ ...prep, seasonCustomDate: e.target.value })}
+                          style={{ ...S.inputWide, maxWidth: 200 }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
             {carbDaysVisible.map((d) => {
               const daily = dailyChoFromBody(weight, prep.carbGPerKg[d.key]);
               const blocks = pickCarbMealExamples(effectiveDiet, daily, d.key, prep.mealIdeasSalt[d.key]);
+              const seasonCtx = getPrepSeasonContext(prep.shoppingCountryCode, seasonReferenceDate);
+              const purchaseLines = enrichPurchaseLinesSeasonal(
+                buildDayPurchaseListFromBlocks(blocks),
+                seasonCtx.season
+              );
+              const priceEst = estimateDayPurchasePriceEUR(purchaseLines);
+              const locHint =
+                `Saison (${seasonCtx.hemisphere === 'south' ? 'hémisphère sud' : 'hémisphère nord'}) : ${seasonCtx.seasonLabelFr}` +
+                (prep.shoppingCity.trim()
+                  ? ` — lieu de courses : ${prep.shoppingCity.trim()}, ${prep.shoppingCountryCode}.`
+                  : ` — pays : ${prep.shoppingCountryCode}.`);
               const checklist = carbDayChecklist(d.key, d.title);
               return (
                 <div key={d.key} style={S.card}>
@@ -686,37 +767,127 @@ export default function PrepPage() {
                             </li>
                           ))}
                         </ul>
-                        <div
-                          style={{
-                            marginTop: 12,
-                            paddingTop: 12,
-                            borderTop: '1px dashed color-mix(in srgb, #fb923c 35%, var(--color-border))',
-                          }}
-                        >
-                          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Quantités & recette</div>
-                          <p style={{ ...S.muted, fontSize: 12, margin: '0 0 8px' }}>{b.choRecap}</p>
-                          <ol
-                            style={{
-                              ...S.muted,
-                              margin: 0,
-                              paddingLeft: 20,
-                              fontSize: 13,
-                              lineHeight: 1.55,
-                            }}
-                          >
-                            {b.recipeSteps.map((step, si) => (
-                              <li key={`${b.label}-${si}`} style={{ marginBottom: 6 }}>
-                                {step}
-                              </li>
-                            ))}
-                          </ol>
-                          <p style={{ ...S.muted, fontSize: 11, margin: '10px 0 0', fontStyle: 'italic' }}>
-                            Portions calées sur l’objectif ~{b.approxChoG} g CHO pour ce créneau (moyennes nutritionnelles) — affinez
-                            avec les étiquettes et votre habitude.
-                          </p>
-                        </div>
+                        <details style={S.detailsRecipe}>
+                          <summary style={S.detailsSummary}>▼ Recette détaillée, quantités & pas à pas</summary>
+                          <div style={{ marginTop: 12 }}>
+                            <p style={{ ...S.muted, fontSize: 12, margin: '0 0 10px' }}>{b.choRecap}</p>
+                            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Quantités pour ce créneau</div>
+                            <ol
+                              style={{
+                                ...S.muted,
+                                margin: '0 0 14px',
+                                paddingLeft: 20,
+                                fontSize: 13,
+                                lineHeight: 1.55,
+                              }}
+                            >
+                              {b.recipeSteps.map((step, si) => (
+                                <li key={`${b.label}-${si}`} style={{ marginBottom: 6 }}>
+                                  {step}
+                                </li>
+                              ))}
+                            </ol>
+                            {b.recipeExpanded.length > 0 && (
+                              <>
+                                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
+                                  Préparation (méthode détaillée selon le type de plat)
+                                </div>
+                                <div style={{ ...S.muted, fontSize: 13, lineHeight: 1.6 }}>
+                                  {b.recipeExpanded.map((step, ei) => (
+                                    <p key={`${b.label}-ex-${ei}`} style={{ margin: '0 0 8px' }}>
+                                      {step}
+                                    </p>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                            <p style={{ ...S.muted, fontSize: 11, margin: '12px 0 0', fontStyle: 'italic' }}>
+                              Repères pour ~{b.approxChoG} g CHO sur ce repas ; affiner avec les étiquettes et votre tolérance
+                              digestive.
+                            </p>
+                          </div>
+                        </details>
                       </div>
                     ))}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 18,
+                      marginBottom: 0,
+                      padding: 18,
+                      borderRadius: 12,
+                      border: '1px solid color-mix(in srgb, #4ade80 35%, var(--color-border))',
+                      background: 'color-mix(in srgb, #4ade80 7%, var(--color-bg))',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        justifyContent: 'space-between',
+                        gap: 10,
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <h3 style={{ ...S.h2, margin: 0, fontSize: 15 }}>Liste d’achats — {d.title}</h3>
+                      <button
+                        type="button"
+                        style={S.btnOutline}
+                        onClick={() => {
+                          const head = `${d.title} — ${prep.shoppingCity || '—'}, ${prep.shoppingCountryCode} — saison ${seasonCtx.seasonLabelFr}\nEstimation prix : ${priceEst.min.toFixed(2)}–${priceEst.max.toFixed(2)} € (fourchette indicative)\n\n`;
+                          const body = purchaseLines
+                            .map((L) => {
+                              const hint = L.seasonalHint ? ` (${L.seasonalHint})` : '';
+                              return `• ${L.shopDetail}${hint}`;
+                            })
+                            .join('\n');
+                          void navigator.clipboard.writeText(head + body).then(() => {
+                            setShopCopiedDayKey(d.key);
+                            window.setTimeout(() => setShopCopiedDayKey(null), 2000);
+                          });
+                        }}
+                      >
+                        {shopCopiedDayKey === d.key ? 'Copié' : 'Copier cette journée'}
+                      </button>
+                    </div>
+                    <p style={{ ...S.muted, fontSize: 12, margin: '10px 0 0' }}>{locHint}</p>
+                    <p style={{ ...S.muted, fontSize: 13, margin: '10px 0 0' }}>
+                      <strong>Total estimé (courses type supermarché) :</strong> {priceEst.min.toFixed(2)} € —{' '}
+                      {priceEst.max.toFixed(2)} €. Les montants changent si vous cliquez sur « Nouvelles idées » (menus différents).
+                    </p>
+                    <p style={{ ...S.muted, fontSize: 12, margin: '8px 0 0' }}>
+                      Quantités <strong>cumulées pour les 4 menus affichés</strong> pour cette journée uniquement (achat sec / liquide
+                      / pièces selon la ligne).
+                    </p>
+                    {effectiveDiet === 'gluten_free' && (
+                      <p style={{ ...S.muted, fontSize: 12, margin: '8px 0 0' }}>
+                        Sans gluten : vérifiez farines, pain, sauces et céréales au rayon dédié.
+                      </p>
+                    )}
+                    {purchaseLines.length === 0 && (
+                      <p style={{ ...S.muted, margin: '12px 0 0' }}>Aucun ingrédient chiffré pour cette journée.</p>
+                    )}
+                    <ul style={{ listStyle: 'none', padding: 0, margin: '14px 0 0', display: 'grid', gap: 10 }}>
+                      {purchaseLines.map((L) => (
+                        <li
+                          key={L.mergeKey}
+                          style={{
+                            padding: '10px 12px',
+                            borderRadius: 8,
+                            border: '1px solid var(--color-border)',
+                            fontSize: 14,
+                            background: 'var(--color-bg)',
+                          }}
+                        >
+                          <div style={{ fontWeight: 700 }}>{L.displayLabel}</div>
+                          <div style={S.muted}>{L.shopDetail}</div>
+                          {L.seasonalHint && (
+                            <div style={{ ...S.muted, fontSize: 12, marginTop: 6, color: '#4ade80' }}>{L.seasonalHint}</div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
 
                   <h3 style={{ ...S.h2, marginTop: 22, fontSize: 15 }}>Checklist {d.title}</h3>
