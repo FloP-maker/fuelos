@@ -4,13 +4,15 @@ import { useMemo, useState } from "react";
 import type { AthleteProfile, EventDetails, FuelPlan } from "../lib/types";
 import {
   computeScienceMetrics,
+  getFuelScenario,
   SCIENCE_SOURCES,
+  type AdherencePct,
   type ScienceMetricId,
   type ScienceMetricsResult,
 } from "../lib/scienceMetrics";
 
 const NAV: { id: ScienceMetricId; label: string; hint: string }[] = [
-  { id: "fuel-score", label: "Fuel Score", hint: "Optimalité globale du plan" },
+  { id: "fuel-score", label: "Fuel Score", hint: "80 % · 90 % · 100 % d’exécution" },
   { id: "glycogen-balance", label: "Équilibre glycogène", hint: "Jauge fin de course" },
   { id: "glycogen-curve", label: "Déplétion glycogène", hint: "Courbe sur la durée" },
   { id: "energy-split", label: "Énergie CHO vs lipides", hint: "Répartition métabolique" },
@@ -196,30 +198,30 @@ function SourceList({ items }: { items: string[] }) {
 function buildMetricPanel(
   id: ScienceMetricId,
   plan: FuelPlan,
-  profile: AthleteProfile,
   event: EventDetails,
-  m: ScienceMetricsResult
+  m: ScienceMetricsResult,
+  adherenceContext: AdherencePct
 ): { title: string; value: string; explain: string; formula: string; sources: string[] } {
   const durH = event.targetTime;
   const totalCho = plan.timeline.reduce((s, it) => s + it.cho, 0);
+  const sc = getFuelScenario(m, adherenceContext);
 
   switch (id) {
-    case "fuel-score":
+    case "fuel-score": {
+      const [s80, s90, s100] = m.fuelScenarios;
       return {
         title: "Fuel Score",
-        value: `${m.fuelScore} / 100`,
+        value: `80 % exécution → ${s80.fuelScore}/100 · 90 % → ${s90.fuelScore}/100 · 100 % → ${s100.fuelScore}/100`,
         explain:
-          "Synthèse pédagogique (pas un diagnostic) : le plan est comparé à des repères usuels d’endurance — apport glucidique, eau par rapport à ta sudation estimée, sodium selon la météo, et une trajectoire de glycogène modélisée. Un score élevé indique une meilleure cohérence avec ces repères.",
-        formula: `FuelScore ≈ 100 × (
-  w₁·f(CHO/h) + w₂·f(eau / besoin sueur) +
-  w₃·f(glycogène résiduel %) + w₄·f(Na⁺ / cible)
-)\nw₁=0,34 · w₂=0,22 · w₃=0,28 · w₄=0,16`,
+          "Trois scores selon la part du plan réellement suivie : on suppose que glucides (timeline), eau moyenne et sodium moyenne sont tous exécutés au même pourcentage (80 %, 90 % ou 100 % du prescrit). Le glycogène modélisé et les sous-scores s’ajustent en conséquence. Ce n’est pas un diagnostic.",
+        formula: `Pour un facteur d’exécution r ∈ {0,8 ; 0,9 ; 1} :\n  CHO/h, eau/h, Na⁺/h effectifs = r × valeurs du plan\n  glycogène : même modèle avec CHO timeline × r\n\nFuelScore(r) = 100 × Σ wᵢ · fᵢ (composantes 0–1)\nw₁=0,34 · w₂=0,22 · w₃=0,28 · w₄=0,16`,
         sources: [SCIENCE_SOURCES.jeukendrupCHO, SCIENCE_SOURCES.acsmFluid, SCIENCE_SOURCES.burkeGlycogen],
       };
+    }
     case "glycogen-balance":
       return {
         title: "Équilibre glycogène (modèle simplifié)",
-        value: `${Math.round(m.glycogenEndG)} g restants (~${Math.round(m.glycogenEndPct)} % du départ)`,
+        value: `${Math.round(sc.glycogenEndG)} g restants (~${Math.round(sc.glycogenEndPct)} % du départ) — scénario ${adherenceContext} % du plan`,
         explain:
           "On estime des réserves musculaires de départ dans une fourchette physiologique classique, puis on soustrait chaque quart d’heure une oxydation liée à l’intensité relative (allure + dénivelé), atténuée par les glucides consommés sur la timeline. La jauge montre le pourcentage résiduel : plus il est bas, plus le modèle prédit une déplétion marquante si l’effort réel suit ces hypothèses.",
         formula: `À chaque pas Δt = 15 min :\n  burn = (oxydation_horaire / 4) × (G / G₀)^0,35\n  épargne = min(1, CHO_ingéré / 22 g) × 0,88\n  G ← max(0, G − burn × (1 − épargne))\n\nG₀ ≈ clamp(10×masse + 40, 320, 620) g`,
@@ -228,7 +230,7 @@ function buildMetricPanel(
     case "glycogen-curve":
       return {
         title: "Courbe de déplétion",
-        value: `${m.glycogenSeries.length} points · pas 15 min`,
+        value: `${sc.glycogenSeries.length} points · pas 15 min · scénario ${adherenceContext} %`,
         explain:
           "La courbe relie les stocks modélisés au fil du temps. Elle sert à visualiser si les prises de la timeline « remontent » suffisamment la courbe (épargne du glycogène) ou si la pente reste forte (risque relatif de bonking dans ce scénario).",
         formula: "Abscisse : temps (min). Ordonnée : glycogène musculaire modélisé (g). Même récurrence que pour l’équilibre glycogène.",
@@ -285,8 +287,10 @@ export function ScienceDashboard({
   event: EventDetails;
 }) {
   const [active, setActive] = useState<ScienceMetricId>("fuel-score");
+  const [adherenceContext, setAdherenceContext] = useState<AdherencePct>(100);
   const metrics = useMemo(() => computeScienceMetrics(profile, event, plan), [profile, event, plan]);
-  const panel = buildMetricPanel(active, plan, profile, event, metrics);
+  const panel = buildMetricPanel(active, plan, event, metrics, adherenceContext);
+  const scenarioVisual = getFuelScenario(metrics, adherenceContext);
   const durationMin = Math.max(15, event.targetTime * 60);
 
   return (
@@ -362,7 +366,15 @@ export function ScienceDashboard({
             Transparence scientifique — modèles explicites à vocation pédagogique
           </div>
           <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, letterSpacing: "-0.3px" }}>{panel.title}</h3>
-          <div style={{ fontSize: 28, fontWeight: 800, color: "var(--color-accent)", marginTop: 10 }}>
+          <div
+            style={{
+              fontSize: active === "fuel-score" ? 15 : 28,
+              fontWeight: active === "fuel-score" ? 600 : 800,
+              color: "var(--color-accent)",
+              marginTop: 10,
+              lineHeight: 1.55,
+            }}
+          >
             {panel.value}
           </div>
           <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--color-text)", marginTop: 14, marginBottom: 0 }}>
@@ -379,32 +391,51 @@ export function ScienceDashboard({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
             gap: 14,
             marginBottom: 16,
           }}
         >
-          <div
-            style={{
-              padding: "16px 18px",
-              borderRadius: 12,
-              border: "1px solid var(--color-border)",
-              background: "var(--color-bg-card)",
-            }}
-          >
-            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10 }}>Fuel Score</div>
-            <div style={{ fontSize: 36, fontWeight: 900, color: "var(--color-accent)", lineHeight: 1 }}>
-              {metrics.fuelScore}
+          {metrics.fuelScenarios.map((fs) => (
+            <div
+              key={fs.adherencePct}
+              style={{
+                padding: "16px 18px",
+                borderRadius: 12,
+                border: `1px solid ${
+                  adherenceContext === fs.adherencePct ? "var(--color-accent)" : "var(--color-border)"
+                }`,
+                background: "var(--color-bg-card)",
+                cursor: "pointer",
+              }}
+              role="button"
+              tabIndex={0}
+              onClick={() => setAdherenceContext(fs.adherencePct)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setAdherenceContext(fs.adherencePct);
+                }
+              }}
+            >
+              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+                Fuel Score — {fs.adherencePct} % du plan
+              </div>
+              <div style={{ fontSize: 36, fontWeight: 900, color: "var(--color-accent)", lineHeight: 1 }}>
+                {fs.fuelScore}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 6 }}>
+                sur 100 · cliquer pour jauge & courbe
+              </div>
+              <ul style={{ margin: "12px 0 0", paddingLeft: 16, fontSize: 10, color: "var(--color-text-muted)" }}>
+                {fs.fuelScoreBreakdown.map((b) => (
+                  <li key={b.label} style={{ marginBottom: 3 }}>
+                    {b.label}: {b.score}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 6 }}>sur 100</div>
-            <ul style={{ margin: "14px 0 0", paddingLeft: 16, fontSize: 11, color: "var(--color-text-muted)" }}>
-              {metrics.fuelScoreBreakdown.map((b) => (
-                <li key={b.label} style={{ marginBottom: 4 }}>
-                  {b.label}: {b.score} (poids {Math.round(b.weight * 100)}%)
-                </li>
-              ))}
-            </ul>
-          </div>
+          ))}
 
           <div
             style={{
@@ -418,9 +449,9 @@ export function ScienceDashboard({
             }}
           >
             <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4, alignSelf: "start" }}>
-              Jauge — glycogène fin de course
+              Jauge — glycogène fin ({adherenceContext} % exécution)
             </div>
-            <GlycogenGauge pct={metrics.glycogenEndPct} />
+            <GlycogenGauge pct={scenarioVisual.glycogenEndPct} />
           </div>
 
           <div
@@ -444,12 +475,14 @@ export function ScienceDashboard({
             background: "var(--color-bg-card)",
           }}
         >
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Déplétion glycogène sur {formatHours(durationMin)}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
+            Déplétion glycogène sur {formatHours(durationMin)} ({adherenceContext} % du plan)
+          </div>
           <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginBottom: 12 }}>
             Stock initial modélisé ≈ {Math.round(metrics.glycogenInitialG)} g — intensité relative (proxy) ≈{" "}
             {(metrics.relativeIntensity * 100).toFixed(0)} %
           </div>
-          <GlycogenCurveChart series={metrics.glycogenSeries} durationMin={durationMin} />
+          <GlycogenCurveChart series={scenarioVisual.glycogenSeries} durationMin={durationMin} />
         </div>
       </div>
     </div>
