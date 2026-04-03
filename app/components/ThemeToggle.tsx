@@ -17,7 +17,7 @@ export function ThemeToggle() {
     <button
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       className={[
-        'h-10 w-10 grid place-items-center rounded-full border transition-colors',
+        'grid h-11 w-11 touch-manipulation place-items-center rounded-full border transition-colors sm:h-10 sm:w-10',
         'shadow-sm hover:shadow-md active:scale-[0.98]',
         'bg-[var(--color-bg-card)] border-[var(--color-border)]',
         'text-[var(--color-text)]',

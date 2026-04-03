@@ -34,58 +34,17 @@ function pathnameToActivePage(pathname: string | null): HeaderActivePage | undef
   return undefined;
 }
 
-const S = {
-  headerBase: {
-    borderBottom: '1px solid var(--color-border-subtle)',
-    padding: '12px 22px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 16,
-    flexWrap: 'wrap',
-    rowGap: 12,
-  } as CSSProperties,
-  headerSticky: {
-    position: 'sticky',
-    top: 0,
-    zIndex: 30,
-    background: 'color-mix(in srgb, var(--color-bg) 86%, transparent)',
-    backdropFilter: 'saturate(160%) blur(14px)',
-    WebkitBackdropFilter: 'saturate(160%) blur(14px)',
-  } as CSSProperties,
-  leftCluster: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    flexShrink: 0,
-    minWidth: 0,
-  } as CSSProperties,
-  logoLink: {
-    display: 'flex',
-    alignItems: 'center',
-    textDecoration: 'none',
-    color: 'inherit',
-    flexShrink: 0,
-  } as CSSProperties,
-  rightCluster: {
-    display: 'flex',
-    gap: 10,
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-  } as CSSProperties,
-  btnOutline: {
-    padding: '9px 18px',
-    borderRadius: 'var(--radius-pill)',
-    background: 'transparent',
-    color: 'var(--color-text)',
-    fontWeight: 600,
-    fontSize: 13,
-    border: '1px solid var(--color-border)',
-    cursor: 'pointer',
-    textDecoration: 'none',
-    transition: 'background 0.15s ease, border-color 0.15s ease',
-  } as CSSProperties,
+const btnOutline: CSSProperties = {
+  padding: '9px 16px',
+  borderRadius: 'var(--radius-pill)',
+  background: 'transparent',
+  color: 'var(--color-text)',
+  fontWeight: 600,
+  fontSize: 13,
+  border: '1px solid var(--color-border)',
+  cursor: 'pointer',
+  textDecoration: 'none',
+  transition: 'background 0.15s ease, border-color 0.15s ease',
 };
 
 function ExplorerMenu({
@@ -115,27 +74,24 @@ function ExplorerMenu({
   }, [open, close]);
 
   return (
-    <div ref={rootRef} style={{ position: 'relative' }}>
+    <div ref={rootRef} className="relative">
       <button
         type="button"
-        className="fuel-btn-pill"
+        className="fuel-btn-pill min-h-[42px] touch-manipulation sm:min-h-0"
         aria-expanded={open}
         aria-controls="fuel-explorer-menu"
         aria-haspopup="true"
         id="fuel-explorer-trigger"
         onClick={() => setOpen((o) => !o)}
-        style={{ gap: 6 }}
       >
-        <LayoutGrid size={16} strokeWidth={2} aria-hidden />
-        Menu
+        <LayoutGrid size={18} strokeWidth={2} className="shrink-0" aria-hidden />
+        <span className="hidden sm:inline">Menu</span>
         <ChevronDown
           size={16}
           strokeWidth={2}
           aria-hidden
-          style={{
-            transition: 'transform 0.2s ease',
-            transform: open ? 'rotate(180deg)' : 'none',
-          }}
+          className="shrink-0 transition-transform duration-200"
+          style={{ transform: open ? 'rotate(180deg)' : 'none' }}
         />
       </button>
       {open && (
@@ -180,42 +136,46 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
   const resolvedActive = activePageProp ?? pathnameToActivePage(pathname);
 
   return (
-    <header style={{ ...S.headerBase, ...(sticky ? S.headerSticky : {}) }}>
-      <div style={S.leftCluster}>
-        <Link href="/" style={S.logoLink} aria-label="FuelOS — Accueil">
-          <FuelLogo size={38} withWordmark />
-        </Link>
-        <ExplorerMenu resolvedActive={resolvedActive} />
-      </div>
-
-      <div style={S.rightCluster}>
-        {extra}
-        <Link
-          href="/plan?step=profile"
-          className="fuel-btn-pill fuel-btn-pill-accent"
-          title="Profil athlète — étape 1 du plan"
-        >
-          Profil athlète
-        </Link>
-        <AuthMenu />
-        {pathname !== '/' && (
-          <Link
-            href="/"
-            style={S.btnOutline}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--color-bg-card-hover)';
-              e.currentTarget.style.borderColor =
-                'color-mix(in srgb, var(--color-text-muted) 35%, var(--color-border))';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.borderColor = 'var(--color-border)';
-            }}
-          >
-            Accueil
+    <header className={[sticky ? 'fuel-header-shell fuel-header-shell--sticky' : 'fuel-header-shell'].join(' ')}>
+      <div className="fuel-header-inner">
+        <div className="fuel-header-left">
+          <Link href="/" className="min-w-0 shrink text-inherit no-underline" aria-label="FuelOS — Accueil">
+            <FuelLogo size={38} withWordmark />
           </Link>
-        )}
-        <ThemeToggle />
+          <ExplorerMenu resolvedActive={resolvedActive} />
+        </div>
+
+        <div className="fuel-header-right">
+          {extra}
+          <Link
+            href="/plan?step=profile"
+            className="fuel-btn-pill fuel-btn-pill-accent min-h-[42px] touch-manipulation whitespace-nowrap sm:min-h-0"
+            title="Profil athlète — étape 1 du plan"
+          >
+            <span className="sm:hidden">Profil</span>
+            <span className="hidden sm:inline">Profil athlète</span>
+          </Link>
+          <AuthMenu />
+          {pathname !== '/' && (
+            <Link
+              href="/"
+              className="min-h-[42px] touch-manipulation max-sm:px-3 max-sm:py-2.5 sm:min-h-0"
+              style={btnOutline}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--color-bg-card-hover)';
+                e.currentTarget.style.borderColor =
+                  'color-mix(in srgb, var(--color-text-muted) 35%, var(--color-border))';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.borderColor = 'var(--color-border)';
+              }}
+            >
+              Accueil
+            </Link>
+          )}
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );

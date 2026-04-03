@@ -143,12 +143,12 @@ export default function Home() {
             Planifiez, achetez et exécutez votre stratégie nutritionnelle. Timer intelligent, alertes push, recalcul
             dynamique le jour J.
           </p>
-          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/plan" className="fuel-cta" style={{ color: '#052e14' }}>
+          <div className="flex w-full max-w-md flex-col items-stretch justify-center gap-3 sm:mx-auto sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:gap-3.5">
+            <Link href="/plan" className="fuel-cta w-full justify-center sm:w-auto" style={{ color: '#052e14' }}>
               Créer mon plan
               <span aria-hidden>→</span>
             </Link>
-            <Link href="/race" className="fuel-cta-outline">
+            <Link href="/race" className="fuel-cta-outline w-full justify-center sm:w-auto">
               Race Mode
               <Zap size={18} strokeWidth={2.25} aria-hidden />
             </Link>

@@ -38,7 +38,7 @@ export function FuelLogo({ size = 36, withWordmark, wordmarkClassName }: FuelLog
     <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
       {mark}
       <span
-        className={wordmarkClassName}
+        className={['fuel-logo-wordmark', wordmarkClassName].filter(Boolean).join(' ')}
         style={{
           fontWeight: 800,
           fontSize: Math.round(size * 0.58),

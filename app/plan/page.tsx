@@ -485,10 +485,11 @@ function PlanPageContent() {
     <div className="fuel-page">
       <Header sticky />
       <div className="fuel-plan-wizard">
-        <nav
-          aria-label="Étapes du plan"
-          style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}
-        >
+        <div className="fuel-plan-wizard-inner">
+          <nav
+            aria-label="Étapes du plan"
+            style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}
+          >
           {PLAN_WIZARD_STEPS.map(({ num, label }, i) => {
             const isLocked = num > maxReachedStep;
             const isActive = num === currentStep;
@@ -593,7 +594,8 @@ function PlanPageContent() {
               </div>
             );
           })}
-        </nav>
+          </nav>
+        </div>
       </div>
 
       <main className="fuel-main" style={S.main}>
