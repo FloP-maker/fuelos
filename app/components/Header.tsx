@@ -2,9 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronDown, ChefHat, BookOpen, Crosshair, ShoppingBag, Zap, LayoutGrid } from 'lucide-react';
+import { ChefHat, BookOpen, Crosshair, ShoppingBag, Zap } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { ThemeToggle } from './ThemeToggle';
 import { AuthMenu } from './AuthMenu';
 import { FuelLogo } from './FuelLogo';
@@ -47,82 +46,6 @@ const btnOutline: CSSProperties = {
   transition: 'background 0.15s ease, border-color 0.15s ease',
 };
 
-function ExplorerMenu({
-  resolvedActive,
-}: {
-  resolvedActive: HeaderActivePage | undefined;
-}) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  const close = useCallback(() => setOpen(false), []);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) close();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
-    };
-    document.addEventListener('mousedown', onDoc);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open, close]);
-
-  return (
-    <div ref={rootRef} className="relative">
-      <button
-        type="button"
-        className="fuel-btn-pill min-h-[42px] touch-manipulation sm:min-h-0"
-        aria-expanded={open}
-        aria-controls="fuel-explorer-menu"
-        aria-haspopup="true"
-        id="fuel-explorer-trigger"
-        onClick={() => setOpen((o) => !o)}
-      >
-        <LayoutGrid size={18} strokeWidth={2} className="shrink-0" aria-hidden />
-        <span className="hidden sm:inline">Menu</span>
-        <ChevronDown
-          size={16}
-          strokeWidth={2}
-          aria-hidden
-          className="shrink-0 transition-transform duration-200"
-          style={{ transform: open ? 'rotate(180deg)' : 'none' }}
-        />
-      </button>
-      {open && (
-        <div
-          id="fuel-explorer-menu"
-          role="menu"
-          aria-labelledby="fuel-explorer-trigger"
-          className="fuel-header-menu-panel"
-        >
-          {NAV.map((item) => {
-            const Icon = item.icon;
-            const isActive = resolvedActive === item.page;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                role="menuitem"
-                aria-current={isActive ? 'page' : undefined}
-                onClick={close}
-              >
-                <Icon size={18} strokeWidth={1.75} aria-hidden />
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export type HeaderProps = {
   /** Overrides automatic detection from `usePathname()`. */
   activePage?: HeaderActivePage;
@@ -142,7 +65,31 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
           <Link href="/" className="min-w-0 shrink text-inherit no-underline" aria-label="FuelOS — Accueil">
             <FuelLogo size={38} withWordmark />
           </Link>
-          <ExplorerMenu resolvedActive={resolvedActive} />
+          <nav
+            className="flex min-w-0 flex-wrap items-center gap-2"
+            aria-label="Sections principales"
+          >
+            {NAV.map((item) => {
+              const Icon = item.icon;
+              const isActive = resolvedActive === item.page;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={[
+                    'fuel-btn-pill min-h-[42px] touch-manipulation whitespace-nowrap sm:min-h-0',
+                    isActive ? 'fuel-btn-pill-accent' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  <Icon size={18} strokeWidth={1.75} className="shrink-0" aria-hidden />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
 
         <div className="fuel-header-right">
