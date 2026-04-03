@@ -79,6 +79,51 @@ export function positionAtDistanceKm(geo: CourseGeometry, km: number): [number, 
   return [lng0 + t * (lng1 - lng0), lat0 + t * (lat1 - lat0)];
 }
 
+/**
+ * Projection du point (lng, lat) sur le tracé : distance cumulée (km) et écart au tracé (km, Haversine).
+ * Segments interpolés en coordonnées plate (lng/lat) — suffisant pour le survol carte.
+ */
+export function nearestPointOnCourse(
+  geo: CourseGeometry,
+  lng: number,
+  lat: number
+): { km: number; distanceKm: number } {
+  const coords = geo.coordinates;
+  const kms = geo.cumulativeKm;
+  if (coords.length < 2) return { km: 0, distanceKm: Infinity };
+
+  const P: [number, number] = [lng, lat];
+  let bestKm = 0;
+  let bestD = Infinity;
+
+  for (let i = 0; i < coords.length - 1; i++) {
+    const A = coords[i]!;
+    const B = coords[i + 1]!;
+    const k0 = kms[i]!;
+    const k1 = kms[i + 1]!;
+
+    const abx = B[0] - A[0];
+    const aby = B[1] - A[1];
+    const apx = P[0] - A[0];
+    const apy = P[1] - A[1];
+    const segLen2 = abx * abx + aby * aby;
+    let t = 0;
+    if (segLen2 > 1e-20) {
+      t = (apx * abx + apy * aby) / segLen2;
+      t = Math.max(0, Math.min(1, t));
+    }
+    const clng = A[0] + t * abx;
+    const clat = A[1] + t * aby;
+    const d = haversineKm(P, [clng, clat]);
+    if (d < bestD) {
+      bestD = d;
+      bestKm = k0 + t * (k1 - k0);
+    }
+  }
+
+  return { km: bestKm, distanceKm: bestD };
+}
+
 /** Altitude approximative à une distance km (interpolation linéaire). */
 export function elevationAtDistanceKm(geo: CourseGeometry, km: number): number {
   const maxKm = geo.cumulativeKm[geo.cumulativeKm.length - 1] ?? 0;

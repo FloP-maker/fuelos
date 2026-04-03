@@ -2333,10 +2333,16 @@ function PlanResult({
     "all" | "gel" | "drink" | "bar" | "chew" | "real-food" | "electrolyte"
   >("all");
   const [compareSort, setCompareSort] = useState<"cho-euro" | "efficiency" | "price">("cho-euro");
+  /** Index dans `plan.timeline` — lié à la carte / profil GPX. */
+  const [selectedTimelineOrigIdx, setSelectedTimelineOrigIdx] = useState<number | null>(null);
 
   useEffect(() => {
     setPlanVariant("main");
     setShowAltInfo(false);
+  }, [planGenerationId]);
+
+  useEffect(() => {
+    setSelectedTimelineOrigIdx(null);
   }, [planGenerationId]);
 
   const revertSnapshotRef = useRef<FuelPlanGenerationResult>(structuredClone(planResult));
@@ -2348,6 +2354,12 @@ function PlanResult({
 
   const plan =
     planVariant === "alt" && planResult.altPlan ? planResult.altPlan : planResult.mainPlan;
+
+  useEffect(() => {
+    if (selectedTimelineOrigIdx != null && selectedTimelineOrigIdx >= plan.timeline.length) {
+      setSelectedTimelineOrigIdx(null);
+    }
+  }, [plan.timeline.length, selectedTimelineOrigIdx]);
 
   const productsCatalog = [...PRODUCTS, ...customProducts];
 
@@ -2383,6 +2395,11 @@ function PlanResult({
 
   const drinkCatalog = useMemo(
     () => productsCatalog.filter((p) => p.category === "drink" || p.category === "electrolyte"),
+    [productsCatalog]
+  );
+
+  const barCatalog = useMemo(
+    () => productsCatalog.filter((p) => p.category === "bar"),
     [productsCatalog]
   );
 
@@ -3211,8 +3228,10 @@ function PlanResult({
             <div>
               <h3 style={{ fontWeight: 700, marginBottom: 4 }}>Timeline in-race</h3>
               <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: 0, maxWidth: 520 }}>
-                Glisse une prise sur une autre pour <strong>échanger les horaires</strong>, ajuste au ±5 min, remplace
-                une boisson ou supprime une ligne — le Fuel Score se met à jour en direct.
+                Glisse une <strong>carte entière</strong> sur une autre pour échanger les horaires, ajuste au ±5 min,
+                remplace une <strong>boisson ou une barre</strong>, supprime une ligne ou{" "}
+                <strong>clique une ligne</strong> pour la mettre en évidence sur la carte et le profil — le Fuel Score
+                se met à jour en direct.
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
@@ -3274,34 +3293,57 @@ function PlanResult({
             </div>
           </div>
 
-          {event.courseGeometry && (
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ ...S.sectionTitle, marginBottom: 12 }}>
-                <span>🗺</span> Parcours & prises nutrition
-              </div>
-              <CourseMapPanel event={event} geometry={event.courseGeometry} timeline={plan.timeline} />
-            </div>
-          )}
-
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {sortedTimelineEntries.map(({ item, origIdx }, sortedIdx) => {
               const productData = productsCatalog.find((p) => p.id === item.productId);
+              const isSelected = selectedTimelineOrigIdx === origIdx;
+              const swapCatalog =
+                item.type === "drink" ? drinkCatalog : item.type === "bar" ? barCatalog : null;
               const rowHighlight =
                 item.source === "aid-station"
                   ? "rgba(96,165,250,0.08)"
-                  : sortedIdx === 0
-                    ? "rgba(34,197,94,0.05)"
-                    : "var(--color-bg)";
+                  : isSelected
+                    ? "rgba(251,191,36,0.12)"
+                    : sortedIdx === 0
+                      ? "rgba(34,197,94,0.05)"
+                      : "var(--color-bg)";
               const borderColor =
                 item.source === "aid-station"
                   ? "#60a5fa"
-                  : sortedIdx === 0
-                    ? "var(--color-accent)"
-                    : "var(--color-border)";
+                  : isSelected
+                    ? "#fbbf24"
+                    : sortedIdx === 0
+                      ? "var(--color-accent)"
+                      : "var(--color-border)";
+              const borderW = isSelected ? 2 : 1;
 
               return (
                 <div
                   key={`${item.timeMin}-${origIdx}`}
+                  draggable
+                  onDragStart={(e) => {
+                    if ((e.target as HTMLElement).closest("[data-timeline-control]")) {
+                      e.preventDefault();
+                      return;
+                    }
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", String(sortedIdx));
+                    dragSortedIdx.current = sortedIdx;
+                    const el = e.currentTarget as HTMLDivElement;
+                    try {
+                      const r = el.getBoundingClientRect();
+                      e.dataTransfer.setDragImage(el, e.clientX - r.left, e.clientY - r.top);
+                    } catch {
+                      /* Safari / certains navigateurs */
+                    }
+                  }}
+                  onDragEnd={() => {
+                    dragSortedIdx.current = null;
+                  }}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("[data-timeline-control]")) return;
+                    setSelectedTimelineOrigIdx((cur) => (cur === origIdx ? null : origIdx));
+                  }}
                   onDragOver={(e) => {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = "move";
@@ -3322,35 +3364,25 @@ function PlanResult({
                     padding: "12px 14px",
                     borderRadius: 8,
                     background: rowHighlight,
-                    border: `1px solid ${borderColor}`,
+                    border: `${borderW}px solid ${borderColor}`,
+                    cursor: "grab",
+                    boxShadow: isSelected ? "0 0 20px rgba(251,191,36,0.2)" : undefined,
                   }}
                 >
-                  <button
-                    type="button"
-                    title="Glisser vers une autre ligne pour échanger l’horaire"
-                    aria-label={`Glisser la prise à ${Math.floor(item.timeMin / 60)}h${String(item.timeMin % 60).padStart(2, "0")} pour échanger l’horaire avec une autre`}
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.effectAllowed = "move";
-                      e.dataTransfer.setData("text/plain", String(sortedIdx));
-                      dragSortedIdx.current = sortedIdx;
-                    }}
-                    onDragEnd={() => {
-                      dragSortedIdx.current = null;
-                    }}
+                  <span
                     style={{
-                      border: "none",
-                      background: "transparent",
                       color: "var(--color-text-muted)",
-                      cursor: "grab",
                       padding: "4px 2px",
                       marginTop: 2,
                       flexShrink: 0,
                       lineHeight: 0,
+                      pointerEvents: "none",
+                      userSelect: "none",
                     }}
+                    aria-hidden
                   >
-                    <GripVertical size={18} strokeWidth={2} aria-hidden />
-                  </button>
+                    <GripVertical size={18} strokeWidth={2} />
+                  </span>
 
                   <div
                     style={{
@@ -3364,10 +3396,14 @@ function PlanResult({
                     {Math.floor(item.timeMin / 60)}h{String(item.timeMin % 60).padStart(2, "0")}
                   </div>
 
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}
+                    data-timeline-control
+                  >
                     <button
                       type="button"
                       aria-label="Reculer de 5 minutes"
+                      data-timeline-control
                       onClick={() =>
                         commitSortedTimeline(
                           nudgeTimelineItemTime(plan.timeline, sortedIdx, -5, raceDurationMin)
@@ -3389,6 +3425,7 @@ function PlanResult({
                     <button
                       type="button"
                       aria-label="Avancer de 5 minutes"
+                      data-timeline-control
                       onClick={() =>
                         commitSortedTimeline(
                           nudgeTimelineItemTime(plan.timeline, sortedIdx, 5, raceDurationMin)
@@ -3448,16 +3485,17 @@ function PlanResult({
                       </div>
                     </div>
 
-                    {item.type === "drink" && (
-                      <div style={{ marginBottom: 8, maxWidth: 360 }}>
+                    {swapCatalog && (
+                      <div style={{ marginBottom: 8, maxWidth: 360 }} data-timeline-control>
                         <label
-                          htmlFor={`drink-swap-${origIdx}`}
+                          htmlFor={`product-swap-${item.type}-${origIdx}`}
                           style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", display: "block" }}
                         >
-                          Remplacer la boisson
+                          {item.type === "drink" ? "Remplacer la boisson" : "Remplacer la barre"}
                         </label>
                         <select
-                          id={`drink-swap-${origIdx}`}
+                          id={`product-swap-${item.type}-${origIdx}`}
+                          data-timeline-control
                           value={item.productId}
                           onChange={(e) => {
                             const p = productsCatalog.find((x) => x.id === e.target.value);
@@ -3470,12 +3508,12 @@ function PlanResult({
                           }}
                           style={{ ...S.select, width: "100%", marginTop: 4, fontSize: 12 }}
                         >
-                          {!drinkCatalog.some((p) => p.id === item.productId) ? (
+                          {!swapCatalog.some((p) => p.id === item.productId) ? (
                             <option value={item.productId}>
                               {item.product} (actuel · personnalisé)
                             </option>
                           ) : null}
-                          {drinkCatalog.map((p) => (
+                          {swapCatalog.map((p) => (
                             <option key={p.id} value={p.id}>
                               {p.brand} — {p.name}
                             </option>
@@ -3531,9 +3569,13 @@ function PlanResult({
                       type="button"
                       title="Supprimer cette prise"
                       aria-label={`Supprimer ${item.product}`}
+                      data-timeline-control
                       onClick={() => {
                         if (!window.confirm("Supprimer cette prise de la timeline ?")) return;
-                        commitSortedTimeline(deleteTimelineItemAtSortedIndex(plan.timeline, sortedIdx));
+                        setSelectedTimelineOrigIdx(null);
+                        commitSortedTimeline(
+                          deleteTimelineItemAtSortedIndex(plan.timeline, sortedIdx)
+                        );
                       }}
                       style={{
                         border: "1px solid rgba(239,68,68,0.45)",
@@ -3552,6 +3594,20 @@ function PlanResult({
               );
             })}
           </div>
+
+          {event.courseGeometry && (
+            <div style={{ marginTop: 20 }}>
+              <div style={{ ...S.sectionTitle, marginBottom: 12 }}>
+                <span>🗺</span> Parcours & prises nutrition
+              </div>
+              <CourseMapPanel
+                event={event}
+                geometry={event.courseGeometry}
+                timeline={plan.timeline}
+                selectedFuelOrigIdx={selectedTimelineOrigIdx}
+              />
+            </div>
+          )}
         </div>
       )}
 
