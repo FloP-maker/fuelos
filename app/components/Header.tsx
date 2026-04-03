@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ThemeToggle } from './ThemeToggle';
 import { AuthMenu } from './AuthMenu';
 import { FuelLogo } from './FuelLogo';
+import { SiteSearch } from './SiteSearch';
 
 export type HeaderActivePage = 'plan' | 'shop' | 'race' | 'learn' | 'prep';
 
@@ -39,7 +39,6 @@ export type HeaderProps = {
 export function Header({ activePage: activePageProp, sticky, extra }: HeaderProps) {
   const pathname = usePathname();
   const resolvedActive = activePageProp ?? pathnameToActivePage(pathname);
-  const onPlanSection = Boolean(pathname?.startsWith('/plan'));
 
   return (
     <header className={[sticky ? 'fuel-header-shell fuel-header-shell--sticky' : 'fuel-header-shell'].join(' ')}>
@@ -52,16 +51,7 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
           >
             <FuelLogo size={34} withWordmark wordmarkClassName="fuel-header-wordmark" />
           </Link>
-          <Link
-            href="/plan"
-            className={['fuel-header-search shrink-0 touch-manipulation', onPlanSection ? 'fuel-header-search--here' : '']
-              .filter(Boolean)
-              .join(' ')}
-            aria-label="Ouvrir le plan nutrition"
-            title="Plan — construire ou modifier votre stratégie"
-          >
-            <Search size={20} strokeWidth={2} aria-hidden />
-          </Link>
+          <SiteSearch />
           <nav className="fuel-header-text-nav" aria-label="Sections principales">
             {NAV.map((item) => {
               const isActive = resolvedActive === item.page;
@@ -82,7 +72,7 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
           {extra}
           <Link
             href="/plan?step=profile"
-            className="fuel-header-cta"
+            className="fuel-header-text-link"
             title="Profil athlète — étape 1 du plan"
           >
             <span className="sm:hidden">Profil</span>

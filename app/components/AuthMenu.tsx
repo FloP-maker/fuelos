@@ -99,7 +99,7 @@ export function AuthMenu() {
   if (session?.user) {
     const label = session.user.name || session.user.email || 'Compte';
     return (
-      <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-2.5">
+      <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
         <span
           style={{
             ...muted,
@@ -112,7 +112,7 @@ export function AuthMenu() {
         >
           {label}
         </span>
-        <button type="button" className="fuel-btn-pill max-w-[200px] truncate" onClick={() => void signOut()}>
+        <button type="button" className="fuel-header-text-btn shrink-0" onClick={() => void signOut()}>
           Déconnexion
         </button>
       </div>
@@ -140,7 +140,7 @@ export function AuthMenu() {
           }}
         >
           <span style={{ ...muted, textAlign: 'right' }}>Connexion — chargement impossible</span>
-          <button type="button" className="fuel-btn-pill fuel-btn-pill-accent" onClick={() => loadProviders()}>
+          <button type="button" className="fuel-header-text-btn shrink-0" onClick={() => loadProviders()}>
             Réessayer
           </button>
         </div>
@@ -178,17 +178,17 @@ export function AuthMenu() {
   const emailProviderId = ids.find((id) => providerMap[id].type === 'email');
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-2.5">
+    <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
       {oauthIds.map((id) => (
         <button
           key={id}
           type="button"
-          className="fuel-btn-pill max-w-[200px] truncate"
-          title={id === 'google' ? 'Connexion avec Google' : undefined}
-          aria-label={id === 'google' ? 'Connexion avec Google' : undefined}
+          className="fuel-header-text-btn max-w-[200px] truncate shrink-0"
+          title={id === 'google' ? 'Connexion (compte Google)' : undefined}
+          aria-label={id === 'google' ? 'Connexion avec compte Google' : undefined}
           onClick={() => void signIn(id)}
         >
-          {id === 'google' ? 'Google' : providerMap[id].name}
+          {id === 'google' ? 'Connexion' : providerMap[id].name}
         </button>
       ))}
       {emailProviderId && (
@@ -217,7 +217,7 @@ export function AuthMenu() {
             autoComplete="email"
             className="fuel-input-compact w-[168px] max-w-[46vw] sm:w-[180px]"
           />
-          <button type="submit" disabled={emailHint === 'sending'} className="fuel-btn-pill">
+          <button type="submit" disabled={emailHint === 'sending'} className="fuel-header-text-btn shrink-0">
             Lien magique
           </button>
         </form>
