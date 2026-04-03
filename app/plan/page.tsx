@@ -9,6 +9,7 @@ import { calculateFuelPlan } from "../lib/fuelCalculator";
 import { PRODUCTS } from "../lib/products";
 import type { AthleteProfile, EventDetails, FuelPlan, FuelPlanGenerationResult, Product } from "../lib/types";
 import { Header } from "../components/Header";
+import { ScienceDashboard } from "../components/ScienceDashboard";
 
 const SPORTS = ["Course à pied", "Trail", "Cyclisme", "Triathlon", "Ultra-trail"];
 const WEATHER = ["Froid (<10°C)", "Tempéré (10-20°C)", "Chaud (20-30°C)", "Très chaud (>30°C)"];
@@ -1645,7 +1646,7 @@ function PlanResult({
 }) {
   const [planVariant, setPlanVariant] = useState<"main" | "alt">("main");
   const [showAltInfo, setShowAltInfo] = useState(false);
-  const [activeTab, setActiveTab] = useState<"plan" | "shop" | "export">("plan");
+  const [activeTab, setActiveTab] = useState<"plan" | "shop" | "science" | "export">("plan");
   const [linkCopiedToast, setLinkCopiedToast] = useState(false);
   const [compareCategory, setCompareCategory] = useState<
     "all" | "gel" | "drink" | "bar" | "chew" | "real-food" | "electrolyte"
@@ -2438,7 +2439,7 @@ function PlanResult({
           paddingBottom: 0,
         }}
       >
-        {(["plan", "shop", "export"] as const).map((tab) => (
+        {(["plan", "shop", "science", "export"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -2454,7 +2455,13 @@ function PlanResult({
               marginBottom: -1,
             }}
           >
-            {tab === "plan" ? "📋 Timeline" : tab === "shop" ? "🛒 Shopping" : "📤 Export"}
+            {tab === "plan"
+              ? "📋 Timeline"
+              : tab === "shop"
+                ? "🛒 Shopping"
+                : tab === "science"
+                  ? "🔬 Science"
+                  : "📤 Export"}
           </button>
         ))}
       </div>
@@ -2583,6 +2590,12 @@ function PlanResult({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {activeTab === "science" && (
+        <div style={{ ...S.card, padding: 20 }}>
+          <ScienceDashboard plan={plan} profile={profile} event={event} />
         </div>
       )}
 
