@@ -22,6 +22,19 @@ export interface AthleteProfile {
   };
 }
 
+/** Parcours issu d’un GPX (coords MapLibre / GeoJSON : [lng, lat]) */
+export interface CourseGeometry {
+  coordinates: [number, number][];
+  elevationM: number[];
+  cumulativeKm: number[];
+}
+
+export interface WeatherAutoMeta {
+  tempC: number;
+  humidityPct: number;
+  fetchedAt: string;
+}
+
 export interface EventDetails {
   sport: string;
   distance: number;        // km
@@ -32,6 +45,19 @@ export interface EventDetails {
   
   // 🆕 NOUVELLES PROPRIÉTÉS - Ravitaillements
   aidStations?: AidStation[];  // Checkpoints avec ravitaillements
+
+  /** Lieu (recherche Open-Meteo / affichage) */
+  placeName?: string;
+  latitude?: number;
+  longitude?: number;
+  /** Fuseau IANA du lieu (ex. Europe/Paris) — renvoyé par le géocodage */
+  raceTimezone?: string;
+  /** Valeur champ datetime-local (heure locale du parcours de préférence) */
+  raceStartAt?: string;
+  /** Humidité relative % (météo auto ou saisie) */
+  weatherHumidityPct?: number;
+  weatherAuto?: WeatherAutoMeta;
+  courseGeometry?: CourseGeometry;
 }
 
 // 🆕 NOUVEAU TYPE - Ravitaillement fixe

@@ -1,15 +1,21 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import useLocalStorage from "../lib/hooks/useLocalStorage";
 import usePageTitle from "../lib/hooks/usePageTitle";
 import { calculateFuelPlan } from "../lib/fuelCalculator";
+import { toShareableEvent } from "../lib/eventShare";
+import { parseGpxDocument } from "../lib/gpx";
+import { defaultRaceStartLocal, geocodePlace, weatherCategoryFromTempC } from "../lib/meteo";
 import { PRODUCTS } from "../lib/products";
 import type { AthleteProfile, EventDetails, FuelPlan, FuelPlanGenerationResult, Product } from "../lib/types";
 import { Header } from "../components/Header";
 import { ScienceDashboard } from "../components/ScienceDashboard";
+
+const CourseMapPanel = dynamic(() => import("../components/CourseMapPanel"), { ssr: false });
 
 const SPORTS = ["Course à pied", "Trail", "Cyclisme", "Triathlon", "Ultra-trail"];
 const WEATHER = ["Froid (<10°C)", "Tempéré (10-20°C)", "Chaud (20-30°C)", "Très chaud (>30°C)"];
@@ -235,7 +241,13 @@ function PlanPageContent() {
     weather: "Tempéré (10-20°C)",
     elevation: "Montagneux (1500-3000m D+)",
     aidStations: [],
+    placeName: "",
+    raceStartAt: defaultRaceStartLocal(),
   });
+
+  const [meteoLoading, setMeteoLoading] = useState(false);
+  const [meteoBanner, setMeteoBanner] = useState<string | null>(null);
+  const gpxInputRef = useRef<HTMLInputElement>(null);
 
   const [showAidStationForm, setShowAidStationForm] = useState(false);
   const [newAidStation, setNewAidStation] = useState<AidStationDraft>({
@@ -328,6 +340,86 @@ function PlanPageContent() {
     if (n > maxReachedStep) return;
     setCurrentStep(n);
   }
+
+  const handleGeocodePlace = useCallback(async () => {
+    setMeteoBanner(null);
+    const hit = await geocodePlace(event.placeName || "");
+    if (!hit) {
+      setMeteoBanner("Lieu introuvable — précise le nom ou la commune.");
+      return;
+    }
+    const label = [hit.name, hit.admin1, hit.country].filter(Boolean).join(", ");
+    setEvent((prev) => ({
+      ...prev,
+      placeName: label,
+      latitude: hit.latitude,
+      longitude: hit.longitude,
+      raceTimezone: hit.timezone,
+    }));
+  }, [event.placeName]);
+
+  const handleFetchOpenMeteo = useCallback(async () => {
+    setMeteoBanner(null);
+    let lat = event.latitude;
+    let lon = event.longitude;
+    if ((lat == null || lon == null) && event.courseGeometry?.coordinates[0]) {
+      const c = event.courseGeometry.coordinates[0]!;
+      lon = c[0];
+      lat = c[1];
+    }
+    if (lat == null || lon == null || !event.raceStartAt) {
+      setMeteoBanner("Indique un lieu géocodé ou importe un GPX, et une date/heure de départ.");
+      return;
+    }
+    setMeteoLoading(true);
+    try {
+      const u = new URL("/api/meteo", window.location.origin);
+      u.searchParams.set("latitude", String(lat));
+      u.searchParams.set("longitude", String(lon));
+      u.searchParams.set("raceStartAt", event.raceStartAt);
+      const res = await fetch(u.toString());
+      const data = (await res.json()) as { error?: string; tempC?: number; humidityPct?: number | null };
+      if (!res.ok) throw new Error(data.error || "Météo indisponible");
+      const tempC = data.tempC!;
+      const humidity = data.humidityPct;
+      setEvent((prev) => ({
+        ...prev,
+        latitude: lat ?? prev.latitude,
+        longitude: lon ?? prev.longitude,
+        weather: weatherCategoryFromTempC(tempC),
+        weatherHumidityPct: humidity ?? undefined,
+        weatherAuto: {
+          tempC,
+          humidityPct: humidity ?? 0,
+          fetchedAt: new Date().toISOString(),
+        },
+      }));
+    } catch (e) {
+      setMeteoBanner(e instanceof Error ? e.message : "Impossible de récupérer la météo.");
+    } finally {
+      setMeteoLoading(false);
+    }
+  }, [event.latitude, event.longitude, event.raceStartAt, event.courseGeometry]);
+
+  const handleGpxFile = useCallback(async (file: File | null) => {
+    if (!file) return;
+    const text = await file.text();
+    const parsed = parseGpxDocument(text);
+    if (!parsed) {
+      setMeteoBanner("GPX invalide ou sans trace exploitable.");
+      return;
+    }
+    setMeteoBanner(null);
+    const start = parsed.geometry.coordinates[0]!;
+    setEvent((prev) => ({
+      ...prev,
+      distance: parsed.distanceKm,
+      elevationGain: parsed.elevationGainM,
+      courseGeometry: parsed.geometry,
+      latitude: prev.latitude ?? start[1],
+      longitude: prev.longitude ?? start[0],
+    }));
+  }, []);
 
   function handleCalculate() {
     console.log("🔍 Profile GI Tolerance:", profile.giTolerance);
@@ -1251,8 +1343,122 @@ function PlanPageContent() {
 
             <div style={S.card}>
               <div style={S.sectionTitle}>
+                <span>🗺</span> Parcours GPX (optionnel)
+              </div>
+              <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 12 }}>
+                Importe un fichier GPX : distance, D+ et carte sont mis à jour automatiquement. Les points de
+                ravitaillement et le plan calorie seront affichés sur la carte.
+              </p>
+              <input
+                ref={gpxInputRef}
+                type="file"
+                accept=".gpx,application/gpx+xml"
+                style={{ display: "none" }}
+                onChange={(e) => void handleGpxFile(e.target.files?.[0] ?? null)}
+              />
+              <div style={{ ...S.grid2, alignItems: "flex-end" }}>
+                <div>
+                  <button
+                    type="button"
+                    style={{ ...S.btnOutline, width: "100%" }}
+                    onClick={() => gpxInputRef.current?.click()}
+                  >
+                    Choisir un fichier GPX
+                  </button>
+                </div>
+                <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+                  {event.courseGeometry
+                    ? `${event.distance} km · ${event.elevationGain} m D+ · ${event.courseGeometry.coordinates.length} pts`
+                    : "Aucun GPX chargé"}
+                </div>
+              </div>
+              {event.courseGeometry && (
+                <div style={{ marginTop: 16 }}>
+                  <CourseMapPanel event={event} geometry={event.courseGeometry} />
+                </div>
+              )}
+            </div>
+
+            <div style={S.card}>
+              <div style={S.sectionTitle}>
                 <span>🌡</span> Météo prévue
               </div>
+
+              <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 12 }}>
+                Open-Meteo remplit température & humidité à partir du lieu et de l’heure de départ (fuseau du
+                parcours via coordonnées). Tu peux toujours corriger manuellement ci-dessous.
+              </p>
+
+              <div style={{ ...S.grid2, marginBottom: 12 }}>
+                <div>
+                  <label style={S.label}>LIEU DE LA COURSE</label>
+                  <input
+                    style={S.input}
+                    type="text"
+                    placeholder="Ex : Chamonix, UTMB..."
+                    value={event.placeName ?? ""}
+                    onChange={(e) => setEvent({ ...event, placeName: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={S.label}>DATE / HEURE DE DÉPART</label>
+                  <input
+                    style={S.input}
+                    type="datetime-local"
+                    value={event.raceStartAt ?? ""}
+                    onChange={(e) => setEvent({ ...event, raceStartAt: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ ...S.grid2, marginBottom: 12 }}>
+                <button type="button" style={S.btnOutline} onClick={() => void handleGeocodePlace()}>
+                  Géocoder le lieu
+                </button>
+                <button
+                  type="button"
+                  style={{ ...S.btnOutline, opacity: meteoLoading ? 0.6 : 1 }}
+                  disabled={meteoLoading}
+                  onClick={() => void handleFetchOpenMeteo()}
+                >
+                  {meteoLoading ? "Météo…" : "Remplir via Open-Meteo"}
+                </button>
+              </div>
+
+              {meteoBanner && (
+                <div
+                  style={{
+                    marginBottom: 12,
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    background: "rgba(239,68,68,0.12)",
+                    border: "1px solid rgba(239,68,68,0.45)",
+                    fontSize: 13,
+                    color: "var(--color-text)",
+                  }}
+                >
+                  {meteoBanner}
+                </div>
+              )}
+
+              {event.weatherAuto && (
+                <div
+                  style={{
+                    marginBottom: 14,
+                    padding: "12px 14px",
+                    borderRadius: 8,
+                    background: "rgba(34,197,94,0.08)",
+                    border: "1px solid rgba(34,197,94,0.35)",
+                    fontSize: 13,
+                  }}
+                >
+                  <strong>Open-Meteo</strong> — {event.weatherAuto.tempC}°C
+                  {event.weatherHumidityPct != null ? ` · humidité ${Math.round(event.weatherHumidityPct)} %` : ""}
+                  <span style={{ color: "var(--color-text-muted)", marginLeft: 8 }}>
+                    → catégorie « {event.weather} »
+                  </span>
+                </div>
+              )}
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
                 {WEATHER.map((w) => (
@@ -1901,7 +2107,7 @@ function PlanResult({
       altPlanExplanation: planResult.altPlanExplanation,
       racePlanVariant: planVariant,
       profile,
-      event,
+      event: toShareableEvent(event),
     }),
     [planResult, planVariant, profile, event]
   );
@@ -2472,6 +2678,15 @@ function PlanResult({
             <h3 style={{ fontWeight: 700 }}>Timeline in-race</h3>
             <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Durée totale: {event.targetTime}h</span>
           </div>
+
+          {event.courseGeometry && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ ...S.sectionTitle, marginBottom: 12 }}>
+                <span>🗺</span> Parcours & prises nutrition
+              </div>
+              <CourseMapPanel event={event} geometry={event.courseGeometry} timeline={plan.timeline} />
+            </div>
+          )}
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {plan.timeline.map((item, i) => {
