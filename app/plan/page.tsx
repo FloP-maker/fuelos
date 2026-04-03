@@ -2403,9 +2403,24 @@ function PlanResult({
     [productsCatalog]
   );
 
+  const gelCatalog = useMemo(
+    () => productsCatalog.filter((p) => p.category === "gel"),
+    [productsCatalog]
+  );
+
   const handleResetTimeline = useCallback(() => {
     onPlanTimelineCommit(structuredClone(revertSnapshotRef.current), planVariant);
   }, [onPlanTimelineCommit, planVariant]);
+
+  const selectTimelineRowFromCourse = useCallback((origIdx: number) => {
+    setSelectedTimelineOrigIdx(origIdx);
+    requestAnimationFrame(() => {
+      document.getElementById(`plan-timeline-row-${origIdx}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    });
+  }, []);
 
   const estimatedCost = plan.shoppingList.reduce((sum, item) => {
     const prod = productsCatalog.find((p) => p.id === item.productId);
@@ -3229,7 +3244,7 @@ function PlanResult({
               <h3 style={{ fontWeight: 700, marginBottom: 4 }}>Timeline in-race</h3>
               <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: 0, maxWidth: 520 }}>
                 Glisse une <strong>carte entière</strong> sur une autre pour échanger les horaires, ajuste au ±5 min,
-                remplace une <strong>boisson ou une barre</strong>, supprime une ligne ou{" "}
+                remplace <strong>boisson, barre ou gel</strong>, supprime une ligne ou{" "}
                 <strong>clique une ligne</strong> pour la mettre en évidence sur la carte et le profil — le Fuel Score
                 se met à jour en direct.
               </p>
@@ -3298,7 +3313,13 @@ function PlanResult({
               const productData = productsCatalog.find((p) => p.id === item.productId);
               const isSelected = selectedTimelineOrigIdx === origIdx;
               const swapCatalog =
-                item.type === "drink" ? drinkCatalog : item.type === "bar" ? barCatalog : null;
+                item.type === "drink"
+                  ? drinkCatalog
+                  : item.type === "bar"
+                    ? barCatalog
+                    : item.type === "gel"
+                      ? gelCatalog
+                      : null;
               const rowHighlight =
                 item.source === "aid-station"
                   ? "rgba(96,165,250,0.08)"
@@ -3319,6 +3340,7 @@ function PlanResult({
 
               return (
                 <div
+                  id={`plan-timeline-row-${origIdx}`}
                   key={`${item.timeMin}-${origIdx}`}
                   draggable
                   onDragStart={(e) => {
@@ -3491,7 +3513,11 @@ function PlanResult({
                           htmlFor={`product-swap-${item.type}-${origIdx}`}
                           style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", display: "block" }}
                         >
-                          {item.type === "drink" ? "Remplacer la boisson" : "Remplacer la barre"}
+                          {item.type === "drink"
+                            ? "Remplacer la boisson"
+                            : item.type === "bar"
+                              ? "Remplacer la barre"
+                              : "Remplacer le gel"}
                         </label>
                         <select
                           id={`product-swap-${item.type}-${origIdx}`}
@@ -3605,6 +3631,7 @@ function PlanResult({
                 geometry={event.courseGeometry}
                 timeline={plan.timeline}
                 selectedFuelOrigIdx={selectedTimelineOrigIdx}
+                onSelectFuelOrigIdx={selectTimelineRowFromCourse}
               />
             </div>
           )}

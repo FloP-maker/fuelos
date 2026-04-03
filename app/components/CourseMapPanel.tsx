@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Map, { Layer, Marker, NavigationControl, Source } from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import maplibregl from "maplibre-gl";
@@ -38,6 +38,30 @@ function kmFromTimelineItem(timeMin: number, event: EventDetails): number {
   return (timeMin / 60 / event.targetTime) * event.distance;
 }
 
+/** Index timeline dont la position km sur le plan est la plus proche de `km`. */
+function timelineOrigIdxNearestKm(
+  timeline: TimelineItem[],
+  event: EventDetails,
+  geometry: CourseGeometry,
+  km: number
+): number | null {
+  if (!timeline.length) return null;
+  const trackMax = geometry.cumulativeKm[geometry.cumulativeKm.length - 1] ?? 0;
+  let bestIdx = 0;
+  let bestGap = Infinity;
+  for (let i = 0; i < timeline.length; i++) {
+    const item = timeline[i]!;
+    let ki = kmFromTimelineItem(item.timeMin, event);
+    if (trackMax > 0) ki = Math.min(ki, trackMax);
+    const gap = Math.abs(km - ki);
+    if (gap < bestGap) {
+      bestGap = gap;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
 type MapMarker = {
   key: string;
   lng: number;
@@ -46,6 +70,7 @@ type MapMarker = {
   kind: "fuel" | "aid";
   sub?: string;
   selected?: boolean;
+  fuelOrigIdx?: number;
 };
 
 export type CourseMapPanelProps = {
@@ -54,6 +79,8 @@ export type CourseMapPanelProps = {
   timeline?: TimelineItem[];
   /** Index dans `timeline` de la prise sélectionnée (liste plan, pas triée). */
   selectedFuelOrigIdx?: number | null;
+  /** Clic sur la trace ou sur le profil : sélection de la ligne timeline la plus proche en km. */
+  onSelectFuelOrigIdx?: (origIdx: number) => void;
 };
 
 export default function CourseMapPanel({
@@ -61,6 +88,7 @@ export default function CourseMapPanel({
   geometry,
   timeline,
   selectedFuelOrigIdx = null,
+  onSelectFuelOrigIdx,
 }: CourseMapPanelProps) {
   const mapRef = useRef<MapRef>(null);
   const [hoverKm, setHoverKm] = useState<number | null>(null);
@@ -94,6 +122,7 @@ export default function CourseMapPanel({
         label: item.product,
         sub: `${Math.round(km * 10) / 10} km · ${item.timeMin} min`,
         selected,
+        fuelOrigIdx: i,
       });
     });
 
@@ -191,6 +220,15 @@ export default function CourseMapPanel({
 
   const center = geometry.coordinates[0] ?? [2.3522, 48.8566];
 
+  const selectNearestTimelineAtKm = useCallback(
+    (km: number) => {
+      if (!onSelectFuelOrigIdx || !timeline?.length) return;
+      const idx = timelineOrigIdxNearestKm(timeline, event, geometry, km);
+      if (idx != null) onSelectFuelOrigIdx(idx);
+    },
+    [onSelectFuelOrigIdx, timeline, event, geometry]
+  );
+
   return (
     <div
       onMouseLeave={() => setHoverKm(null)}
@@ -218,6 +256,13 @@ export default function CourseMapPanel({
             if (distanceKm <= HOVER_MAX_DIST_KM) setHoverKm(km);
             else setHoverKm(null);
           }}
+          onClick={(e) => {
+            if (!onSelectFuelOrigIdx || !timeline?.length) return;
+            const { lng, lat } = e.lngLat;
+            const { km, distanceKm } = nearestPointOnCourse(geometry, lng, lat);
+            if (distanceKm > HOVER_MAX_DIST_KM) return;
+            selectNearestTimelineAtKm(km);
+          }}
         >
           <NavigationControl position="top-right" showCompass={false} />
           <Source id="course-line" type="geojson" data={lineFeature}>
@@ -241,6 +286,14 @@ export default function CourseMapPanel({
               <Marker key={m.key} longitude={m.lng} latitude={m.lat} anchor="center">
                 <div
                   title={`${m.label}${m.sub ? ` · ${m.sub}` : ""}`}
+                  role={m.kind === "fuel" ? "button" : undefined}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    if (m.kind === "aid") return;
+                    if (m.kind === "fuel" && m.fuelOrigIdx != null) {
+                      onSelectFuelOrigIdx?.(m.fuelOrigIdx);
+                    }
+                  }}
                   style={{
                     width: w,
                     height: h,
@@ -251,7 +304,7 @@ export default function CourseMapPanel({
                       ? "0 0 0 3px rgba(251,191,36,0.55), 0 4px 14px rgba(0,0,0,0.4)"
                       : "0 1px 4px rgba(0,0,0,0.35)",
                     transform: "translate(-50%, -50%)",
-                    cursor: "pointer",
+                    cursor: m.kind === "fuel" && onSelectFuelOrigIdx ? "pointer" : "default",
                   }}
                 />
               </Marker>
@@ -262,6 +315,7 @@ export default function CourseMapPanel({
               <Marker longitude={startEnd.start[0]} latitude={startEnd.start[1]} anchor="center">
                 <div
                   title={`Départ · 0 km`}
+                  onClick={(ev) => ev.stopPropagation()}
                   style={{
                     padding: "4px 9px",
                     borderRadius: 8,
@@ -281,6 +335,7 @@ export default function CourseMapPanel({
               <Marker longitude={startEnd.end[0]} latitude={startEnd.end[1]} anchor="center">
                 <div
                   title={`Arrivée · ${startEnd.distanceKm.toFixed(1)} km`}
+                  onClick={(ev) => ev.stopPropagation()}
                   style={{
                     padding: "4px 9px",
                     borderRadius: 8,
@@ -338,7 +393,8 @@ export default function CourseMapPanel({
             lineHeight: 1.45,
           }}
         >
-          Survol de la trace ou du profil : position liée (km / altitude).
+          Survol : position liée. Clic sur la <strong>trace</strong> ou le <strong>profil</strong> : sélection de la prise
+          la plus proche dans la timeline.
         </p>
         {hoverKm != null ? (
           <div
@@ -359,6 +415,7 @@ export default function CourseMapPanel({
           selectedKm={selectedKm}
           hoverKm={hoverKm}
           onProfileHoverKm={setHoverKm}
+          onProfileClickKm={onSelectFuelOrigIdx ? selectNearestTimelineAtKm : undefined}
         />
         <div
           style={{

@@ -13,6 +13,8 @@ type Props = {
   hoverKm?: number | null;
   /** Notifie le km sous le curseur sur le profil (null si on sort du SVG sans que le parent gère). */
   onProfileHoverKm?: (km: number | null) => void;
+  /** Clic sur le domaine utile du profil (km interpolé). */
+  onProfileClickKm?: (km: number) => void;
   /** Affiche départ / arrivée sur l’axe du profil. */
   showStartEnd?: boolean;
 };
@@ -23,12 +25,38 @@ const PAD_L = 36;
 const PAD_R = 10;
 const PAD_Y = 10;
 
+/**
+ * Coordonnées dans l’espace viewBox (0…W, 0…H) depuis un point client,
+ * en tenant compte de preserveAspectRatio="xMidYMid meet" (bandes / centrage réels).
+ */
+function viewBoxPointFromClient(
+  clientX: number,
+  clientY: number,
+  rect: DOMRect,
+  vbW: number,
+  vbH: number
+): { x: number; y: number } | null {
+  const rw = rect.width;
+  const rh = rect.height;
+  if (rw <= 0 || rh <= 0) return null;
+  const scale = Math.min(rw / vbW, rh / vbH);
+  const drawW = scale * vbW;
+  const drawH = scale * vbH;
+  const offsetX = (rw - drawW) / 2;
+  const offsetY = (rh - drawH) / 2;
+  const localX = clientX - rect.left - offsetX;
+  const localY = clientY - rect.top - offsetY;
+  if (localX < 0 || localX > drawW || localY < 0 || localY > drawH) return null;
+  return { x: localX / scale, y: localY / scale };
+}
+
 export function ElevationProfileChart({
   geometry,
   highlightKm = [],
   selectedKm = null,
   hoverKm = null,
   onProfileHoverKm,
+  onProfileClickKm,
   showStartEnd = true,
 }: Props) {
   const gradId = useId().replace(/:/g, "");
@@ -129,10 +157,14 @@ export function ElevationProfileChart({
     ) : null;
 
   const handleSvgMouse = useCallback(
-    (clientX: number, rect: DOMRect) => {
+    (clientX: number, clientY: number, rect: DOMRect) => {
       if (!onProfileHoverKm) return;
-      const scale = W / rect.width;
-      const svgX = (clientX - rect.left) * scale;
+      const pt = viewBoxPointFromClient(clientX, clientY, rect, W, H);
+      if (pt == null) {
+        onProfileHoverKm(null);
+        return;
+      }
+      const svgX = pt.x;
       if (svgX < padL || svgX > padL + innerW) {
         onProfileHoverKm(null);
         return;
@@ -141,6 +173,19 @@ export function ElevationProfileChart({
       onProfileHoverKm(Math.max(0, Math.min(maxKm, km)));
     },
     [onProfileHoverKm, padL, innerW, maxKm]
+  );
+
+  const handleSvgClick = useCallback(
+    (clientX: number, clientY: number, rect: DOMRect) => {
+      if (!onProfileClickKm) return;
+      const pt = viewBoxPointFromClient(clientX, clientY, rect, W, H);
+      if (pt == null) return;
+      const svgX = pt.x;
+      if (svgX < padL || svgX > padL + innerW) return;
+      const km = Math.max(0, Math.min(maxKm, ((svgX - padL) / innerW) * maxKm));
+      onProfileClickKm(km);
+    },
+    [onProfileClickKm, padL, innerW, maxKm]
   );
 
   const startEndMarks = showStartEnd ? (
@@ -190,13 +235,21 @@ export function ElevationProfileChart({
         width="100%"
         height={H}
         preserveAspectRatio="xMidYMid meet"
-        style={{ display: "block", cursor: onProfileHoverKm ? "crosshair" : "default" }}
+        style={{
+          display: "block",
+          cursor: onProfileHoverKm || onProfileClickKm ? "crosshair" : "default",
+        }}
         role="img"
         aria-label="Profil d’élévation du parcours"
         onMouseMove={(e) => {
           if (!onProfileHoverKm) return;
           const rect = e.currentTarget.getBoundingClientRect();
-          handleSvgMouse(e.clientX, rect);
+          handleSvgMouse(e.clientX, e.clientY, rect);
+        }}
+        onClick={(e) => {
+          if (!onProfileClickKm) return;
+          const rect = e.currentTarget.getBoundingClientRect();
+          handleSvgClick(e.clientX, e.clientY, rect);
         }}
       >
         <defs>
