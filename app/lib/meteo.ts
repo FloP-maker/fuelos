@@ -70,3 +70,65 @@ export function defaultRaceStartLocal(): string {
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
+
+/**
+ * GPS du navigateur (ordinateur / téléphone). Nécessite HTTPS (ou localhost) et
+ * l’autorisation de l’utilisateur.
+ */
+export function getDeviceCoordinates(): Promise<{ latitude: number; longitude: number }> {
+  return new Promise((resolve, reject) => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      reject(new Error("Ce navigateur ne prend pas en charge la géolocalisation."));
+      return;
+    }
+    if (typeof globalThis !== "undefined" && !globalThis.isSecureContext) {
+      reject(new Error("La géolocalisation nécessite HTTPS (connexion sécurisée)."));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        resolve({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        });
+      },
+      (err: GeolocationPositionError) => {
+        const msg =
+          err.code === err.PERMISSION_DENIED
+            ? "Position refusée — autorise l’accès dans les réglages du site ou du navigateur."
+            : err.code === err.POSITION_UNAVAILABLE
+              ? "Position indisponible (GPS désactivé, mode avion, etc.)."
+              : err.code === err.TIMEOUT
+                ? "Délai dépassé en attendant le GPS."
+                : "Impossible de récupérer la position.";
+        reject(new Error(msg));
+      },
+      { enableHighAccuracy: true, timeout: 22_000, maximumAge: 120_000 }
+    );
+  });
+}
+
+/** Libellé lisible (ville, région…) à partir des coordonnées — API client BigDataCloud. */
+export async function reverseGeocodeClient(latitude: number, longitude: number): Promise<string | null> {
+  try {
+    const url = new URL("https://api.bigdatacloud.net/data/reverse-geocode-client");
+    url.searchParams.set("latitude", String(latitude));
+    url.searchParams.set("longitude", String(longitude));
+    url.searchParams.set("localityLanguage", "fr");
+    const res = await fetch(url.toString());
+    if (!res.ok) return null;
+    const d = (await res.json()) as {
+      city?: string;
+      locality?: string;
+      principalSubdivision?: string;
+      countryName?: string;
+    };
+    const line1 = d.city || d.locality;
+    const parts = [line1, d.principalSubdivision, d.countryName].filter(
+      (x): x is string => typeof x === "string" && x.length > 0
+    );
+    return parts.length > 0 ? parts.join(", ") : null;
+  } catch {
+    return null;
+  }
+}

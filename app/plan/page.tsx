@@ -9,7 +9,13 @@ import usePageTitle from "../lib/hooks/usePageTitle";
 import { calculateFuelPlan } from "../lib/fuelCalculator";
 import { toShareableEvent } from "../lib/eventShare";
 import { parseGpxDocument } from "../lib/gpx";
-import { defaultRaceStartLocal, geocodePlace, weatherCategoryFromTempC } from "../lib/meteo";
+import {
+  defaultRaceStartLocal,
+  geocodePlace,
+  getDeviceCoordinates,
+  reverseGeocodeClient,
+  weatherCategoryFromTempC,
+} from "../lib/meteo";
 import { PRODUCTS } from "../lib/products";
 import type { AthleteProfile, EventDetails, FuelPlan, FuelPlanGenerationResult, Product } from "../lib/types";
 import { Header } from "../components/Header";
@@ -246,6 +252,7 @@ function PlanPageContent() {
   });
 
   const [meteoLoading, setMeteoLoading] = useState(false);
+  const [deviceGeoLoading, setDeviceGeoLoading] = useState(false);
   const [meteoBanner, setMeteoBanner] = useState<string | null>(null);
   const gpxInputRef = useRef<HTMLInputElement>(null);
 
@@ -357,6 +364,26 @@ function PlanPageContent() {
       raceTimezone: hit.timezone,
     }));
   }, [event.placeName]);
+
+  const handleUseDeviceLocation = useCallback(async () => {
+    setMeteoBanner(null);
+    setDeviceGeoLoading(true);
+    try {
+      const { latitude, longitude } = await getDeviceCoordinates();
+      const label = await reverseGeocodeClient(latitude, longitude);
+      setEvent((prev) => ({
+        ...prev,
+        latitude,
+        longitude,
+        placeName: label ?? `Position GPS (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+        raceTimezone: undefined,
+      }));
+    } catch (e) {
+      setMeteoBanner(e instanceof Error ? e.message : "Géolocalisation impossible.");
+    } finally {
+      setDeviceGeoLoading(false);
+    }
+  }, []);
 
   const handleFetchOpenMeteo = useCallback(async () => {
     setMeteoBanner(null);
@@ -1386,7 +1413,9 @@ function PlanPageContent() {
 
               <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 12 }}>
                 Open-Meteo remplit température & humidité à partir du lieu et de l’heure de départ (fuseau du
-                parcours via coordonnées). Tu peux toujours corriger manuellement ci-dessous.
+                parcours via coordonnées). Tu peux utiliser le <strong>GPS du téléphone ou de l’ordinateur</strong>{" "}
+                pour prendre la météo là où tu es, ou saisir une ville. Corrige toujours au besoin avec les
+                pastilles ci-dessous (HTTPS requis pour le GPS).
               </p>
 
               <div style={{ ...S.grid2, marginBottom: 12 }}>
@@ -1411,9 +1440,27 @@ function PlanPageContent() {
                 </div>
               </div>
 
-              <div style={{ ...S.grid2, marginBottom: 12 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+                  gap: 10,
+                  marginBottom: 12,
+                }}
+              >
                 <button type="button" style={S.btnOutline} onClick={() => void handleGeocodePlace()}>
                   Géocoder le lieu
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    ...S.btnOutline,
+                    opacity: deviceGeoLoading ? 0.65 : 1,
+                  }}
+                  disabled={deviceGeoLoading}
+                  onClick={() => void handleUseDeviceLocation()}
+                >
+                  {deviceGeoLoading ? "Position…" : "Ma position (GPS)"}
                 </button>
                 <button
                   type="button"
