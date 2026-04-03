@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Search } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ThemeToggle } from './ThemeToggle';
 import { AuthMenu } from './AuthMenu';
@@ -12,7 +13,7 @@ export type HeaderActivePage = 'plan' | 'shop' | 'race' | 'learn' | 'prep';
 const NAV: { href: string; label: string; page: HeaderActivePage }[] = [
   { href: '/plan', label: 'Plan', page: 'plan' },
   { href: '/shop', label: 'Shop', page: 'shop' },
-  { href: '/prep', label: 'Pré/post course', page: 'prep' },
+  { href: '/prep', label: 'Pré / post', page: 'prep' },
   { href: '/race', label: 'Race Mode', page: 'race' },
   { href: '/learn', label: 'Learn', page: 'learn' },
 ];
@@ -38,15 +39,30 @@ export type HeaderProps = {
 export function Header({ activePage: activePageProp, sticky, extra }: HeaderProps) {
   const pathname = usePathname();
   const resolvedActive = activePageProp ?? pathnameToActivePage(pathname);
+  const onPlanSection = Boolean(pathname?.startsWith('/plan'));
 
   return (
     <header className={[sticky ? 'fuel-header-shell fuel-header-shell--sticky' : 'fuel-header-shell'].join(' ')}>
       <div className="fuel-header-inner">
         <div className="fuel-header-left">
-          <Link href="/" className="min-w-0 shrink text-inherit no-underline" aria-label="FuelOS — Accueil">
-            <FuelLogo size={36} withWordmark />
+          <Link
+            href="/"
+            className="fuel-header-logo-link min-w-0 shrink"
+            aria-label="FuelOS — Accueil"
+          >
+            <FuelLogo size={34} withWordmark wordmarkClassName="fuel-header-wordmark" />
           </Link>
-          <nav className="fuel-header-segment-nav" aria-label="Sections principales">
+          <Link
+            href="/plan"
+            className={['fuel-header-search shrink-0 touch-manipulation', onPlanSection ? 'fuel-header-search--here' : '']
+              .filter(Boolean)
+              .join(' ')}
+            aria-label="Ouvrir le plan nutrition"
+            title="Plan — construire ou modifier votre stratégie"
+          >
+            <Search size={20} strokeWidth={2} aria-hidden />
+          </Link>
+          <nav className="fuel-header-text-nav" aria-label="Sections principales">
             {NAV.map((item) => {
               const isActive = resolvedActive === item.page;
               return (
@@ -66,7 +82,7 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
           {extra}
           <Link
             href="/plan?step=profile"
-            className="fuel-btn-pill fuel-btn-pill-accent whitespace-nowrap"
+            className="fuel-header-cta"
             title="Profil athlète — étape 1 du plan"
           >
             <span className="sm:hidden">Profil</span>
@@ -74,7 +90,7 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
           </Link>
           <AuthMenu />
           {pathname !== '/' && (
-            <Link href="/" className="fuel-btn-pill fuel-btn-pill-ghost whitespace-nowrap">
+            <Link href="/" className="fuel-header-text-link">
               Accueil
             </Link>
           )}

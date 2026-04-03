@@ -183,7 +183,7 @@ export function AuthMenu() {
         <button
           key={id}
           type="button"
-          className="fuel-btn-pill fuel-btn-pill-accent max-w-[200px] truncate"
+          className="fuel-btn-pill max-w-[200px] truncate"
           title={id === 'google' ? 'Connexion avec Google' : undefined}
           aria-label={id === 'google' ? 'Connexion avec Google' : undefined}
           onClick={() => void signIn(id)}
@@ -217,7 +217,7 @@ export function AuthMenu() {
             autoComplete="email"
             className="fuel-input-compact w-[168px] max-w-[46vw] sm:w-[180px]"
           />
-          <button type="submit" disabled={emailHint === 'sending'} className="fuel-btn-pill fuel-btn-pill-accent">
+          <button type="submit" disabled={emailHint === 'sending'} className="fuel-btn-pill">
             Lien magique
           </button>
         </form>
