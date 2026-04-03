@@ -39,9 +39,9 @@ const ENTRIES: SiteSearchEntry[] = [
   },
   {
     href: '/shop',
-    title: 'Shop',
+    title: 'Produits',
     description: 'Catalogue produits et liste de courses',
-    keywords: 'boutique maurten sis gels barres acheter',
+    keywords: 'boutique shop maurten sis gels barres acheter',
   },
   {
     href: '/prep',
@@ -51,15 +51,15 @@ const ENTRIES: SiteSearchEntry[] = [
   },
   {
     href: '/race',
-    title: 'Race Mode',
+    title: 'Mode course',
     description: 'Timer, alertes et suivi le jour de la course',
-    keywords: 'course timer jour j simulation',
+    keywords: 'course race timer jour j simulation',
   },
   {
     href: '/learn',
-    title: 'Learn',
+    title: 'Analyses',
     description: 'Débrief, suivi GI et apprentissage',
-    keywords: 'apprendre analyse retour',
+    keywords: 'apprendre analyse learn retour débrief',
   },
 ];
 
@@ -87,8 +87,12 @@ export function SiteSearch({ className }: SiteSearchProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const trimmedQuery = query.trim();
+  const showSuggestions = trimmedQuery.length > 0;
+
   const filtered = useMemo(() => {
-    if (!query.trim()) return ENTRIES;
+    const t = query.trim();
+    if (!t) return [];
     return ENTRIES.filter((e) => matchesEntry(query, e));
   }, [query]);
 
@@ -175,7 +179,8 @@ export function SiteSearch({ className }: SiteSearchProps) {
                 className="fuel-header-search-field"
                 placeholder="Rechercher"
                 autoComplete="off"
-                aria-controls="fuel-site-search-results"
+                aria-controls={showSuggestions ? 'fuel-site-search-results' : undefined}
+                aria-expanded={showSuggestions}
               />
               <span className="fuel-header-search-field-icon" aria-hidden>
                 <Search size={17} strokeWidth={2} />
@@ -190,36 +195,38 @@ export function SiteSearch({ className }: SiteSearchProps) {
               <X size={18} strokeWidth={2} aria-hidden />
             </button>
           </div>
-          <div className="fuel-header-search-popover">
-            <ul id="fuel-site-search-results" className="fuel-site-search-results">
-              {filtered.length === 0 ? (
-                <li className="fuel-site-search-empty">Aucun résultat pour « {query.trim()} »</li>
-              ) : (
-                filtered.map((entry) => (
-                  <li key={entry.href}>
-                    <button
-                      type="button"
-                      className="fuel-site-search-hit"
-                      onClick={() => go(entry.href)}
-                    >
-                      <span className="fuel-site-search-hit-title">{entry.title}</span>
-                      {entry.description && (
-                        <span className="fuel-site-search-hit-desc">{entry.description}</span>
-                      )}
-                      <span className="fuel-site-search-hit-href">{entry.href}</span>
-                    </button>
-                  </li>
-                ))
-              )}
-            </ul>
-            <p className="fuel-site-search-hint">
-              Astuce :{' '}
-              <kbd className="fuel-site-search-kbd">⌘</kbd>{' '}
-              <kbd className="fuel-site-search-kbd">K</kbd> /{' '}
-              <kbd className="fuel-site-search-kbd">Ctrl</kbd>{' '}
-              <kbd className="fuel-site-search-kbd">K</kbd>
-            </p>
-          </div>
+          {showSuggestions && (
+            <div className="fuel-header-search-popover">
+              <ul id="fuel-site-search-results" className="fuel-site-search-results">
+                {filtered.length === 0 ? (
+                  <li className="fuel-site-search-empty">Aucun résultat pour « {trimmedQuery} »</li>
+                ) : (
+                  filtered.map((entry) => (
+                    <li key={entry.href}>
+                      <button
+                        type="button"
+                        className="fuel-site-search-hit"
+                        onClick={() => go(entry.href)}
+                      >
+                        <span className="fuel-site-search-hit-title">{entry.title}</span>
+                        {entry.description && (
+                          <span className="fuel-site-search-hit-desc">{entry.description}</span>
+                        )}
+                        <span className="fuel-site-search-hit-href">{entry.href}</span>
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
+              <p className="fuel-site-search-hint">
+                Astuce :{' '}
+                <kbd className="fuel-site-search-kbd">⌘</kbd>{' '}
+                <kbd className="fuel-site-search-kbd">K</kbd> /{' '}
+                <kbd className="fuel-site-search-kbd">Ctrl</kbd>{' '}
+                <kbd className="fuel-site-search-kbd">K</kbd>
+              </p>
+            </div>
+          )}
         </>
       )}
     </div>

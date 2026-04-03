@@ -321,7 +321,7 @@ const heroCardStyle = {
 
 
 export default function LearnPage() {
-  usePageTitle('Learn');
+  usePageTitle('Analyses');
   const { status } = useSession();
   const [activeTab, setActiveTab] = useState<'debriefs' | 'library'>('debriefs');
   const [debriefs, setDebriefs] = useState<StoredDebrief[]>([]);
@@ -417,10 +417,10 @@ export default function LearnPage() {
       >
         <div>
           <h1 className="font-display" style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>
-            Learn
+            Analyses
           </h1>
           <p style={{ marginTop: 8, color: 'var(--color-text-muted)' }}>
-            Debriefs des courses terminees dans Race Mode et bibliotheque de reperes nutrition verifiables.
+            Debriefs des courses terminees dans le mode course et bibliotheque de reperes nutrition verifiables.
           </p>
         </div>
         <div
@@ -446,7 +446,7 @@ export default function LearnPage() {
           </p>
           {debriefs.length === 0 ? (
             <div style={{ ...heroCardStyle, color: 'var(--color-text-muted)' }}>
-              Aucun debrief pour l instant. Lance le Race Mode, termine une course, puis reviens sur cet onglet.
+              Aucun debrief pour l instant. Lance le mode course, termine une course, puis reviens sur cet onglet.
             </div>
           ) : (
             <div style={{ display: 'grid', gap: 12 }}>

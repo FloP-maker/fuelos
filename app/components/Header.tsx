@@ -12,10 +12,10 @@ export type HeaderActivePage = 'plan' | 'shop' | 'race' | 'learn' | 'prep';
 
 const NAV: { href: string; label: string; page: HeaderActivePage }[] = [
   { href: '/plan', label: 'Plan', page: 'plan' },
-  { href: '/shop', label: 'Shop', page: 'shop' },
+  { href: '/shop', label: 'Produits', page: 'shop' },
   { href: '/prep', label: 'Pré / post', page: 'prep' },
-  { href: '/race', label: 'Race Mode', page: 'race' },
-  { href: '/learn', label: 'Learn', page: 'learn' },
+  { href: '/race', label: 'Mode course', page: 'race' },
+  { href: '/learn', label: 'Analyses', page: 'learn' },
 ];
 
 function pathnameToActivePage(pathname: string | null): HeaderActivePage | undefined {

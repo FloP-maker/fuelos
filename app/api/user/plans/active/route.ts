@@ -15,7 +15,7 @@ export async function GET() {
   return NextResponse.json({ snapshot: snap });
 }
 
-/** Remplace le JSON du plan marqué actif (ex. variant météo Race Mode). */
+/** Remplace le JSON du plan marqué actif (ex. variant météo mode course). */
 export async function PATCH(req: Request) {
   const gate = await requireUserId();
   if (!gate.ok) return gate.res;

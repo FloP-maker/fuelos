@@ -757,7 +757,7 @@ function RaceContent() {
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
               <div style={{ fontSize: 40, marginBottom: 8 }}>⚡</div>
               <h1 className="font-display" style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>
-                Race Mode
+                Mode course
               </h1>
               <p style={{ ...S.muted, fontSize: 14, margin: 0 }}>
                 Aucun plan actif. Suis les étapes ci-dessous pour lancer le mode course.
@@ -868,7 +868,7 @@ function RaceContent() {
                   {onboarding.profileDone && onboarding.eventStepDone ? '✓' : '3'}
                 </div>
                 <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
-                  <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>Lance le Race Mode</div>
+                  <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>Lance le mode course</div>
                   <p style={{ ...S.muted, fontSize: 12, margin: '0 0 12px', lineHeight: 1.45 }}>
                     Timer, alertes et suivi du plan le jour J.
                   </p>
@@ -890,7 +890,7 @@ function RaceContent() {
                         textDecoration: 'none',
                       }}
                     >
-                      Lance le Race Mode →
+                      Lance le mode course →
                     </Link>
                   ) : (
                     <div
@@ -906,7 +906,7 @@ function RaceContent() {
                         pointerEvents: 'none',
                       }}
                     >
-                      Lance le Race Mode
+                      Lance le mode course
                     </div>
                   )}
                 </div>
@@ -961,7 +961,7 @@ function RaceContent() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
           <div>
             <div className="font-display" style={{ fontSize: 22, fontWeight: 900, marginBottom: 2 }}>
-              Race Mode
+              Mode course
             </div>
             <div style={{ ...S.muted, fontSize: 13 }}>
               {event ? `${event.sport} · ${event.distance} km · objectif ${event.targetTime} h` : 'Exécution du plan'}
@@ -1512,7 +1512,7 @@ function RaceContent() {
 }
 
 export default function RacePage() {
-  usePageTitle('Race Mode');
+  usePageTitle('Mode course');
   return (
     <Suspense
       fallback={

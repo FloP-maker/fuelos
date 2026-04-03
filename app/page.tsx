@@ -50,7 +50,7 @@ const HOW_IT_WORKS_STEPS: {
   },
   {
     icon: IconStepRace,
-    title: 'Lance le Race Mode',
+    title: 'Lance le mode course',
     desc: 'Timer, alertes et suivi en direct pour rester aligné avec ton plan le jour J.',
   },
 ];
@@ -71,7 +71,7 @@ const FEATURE_CARDS: {
   },
   {
     icon: ShoppingBag,
-    title: 'SHOP',
+    title: 'PRODUITS',
     desc: '500+ produits (Maurten, SiS, Tailwind, Näak…). Liste de courses auto-générée',
     href: '/shop',
     accent: '#4ade80',
@@ -85,14 +85,14 @@ const FEATURE_CARDS: {
   },
   {
     icon: Zap,
-    title: 'RACE MODE',
+    title: 'MODE COURSE',
     desc: 'Timer intelligent + notifications push. Recalcul dynamique si vous déviez du plan',
     href: '/race',
     accent: 'var(--color-accent)',
   },
   {
     icon: BookOpen,
-    title: 'LEARN',
+    title: 'ANALYSES',
     desc: 'Débrief post-course, suivi GI, apprentissage entre les événements',
     href: '/learn',
     accent: '#c084fc',

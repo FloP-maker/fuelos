@@ -2719,7 +2719,7 @@ function PlanResult({
         }}
       >
         <span style={{ fontWeight: 600, fontSize: 15, color: "var(--color-text)" }}>
-          ✅ Plan sauvegardé — accessible depuis Race Mode
+          ✅ Plan sauvegardé — accessible depuis le mode course
         </span>
         <button type="button" style={{ ...S.btnOutline, flexShrink: 0 }} onClick={handleCopyShareLink}>
           Copier le lien du plan
@@ -2759,7 +2759,7 @@ function PlanResult({
               textDecoration: "none",
             }}
           >
-            ⏱ Lancer Race Mode
+            ⏱ Lancer le mode course
           </Link>
           <button style={S.btnOutline} onClick={onBack}>
             Modifier
@@ -3824,7 +3824,7 @@ function PlanResult({
                         savedAt: new Date().toISOString(),
                       })
                     );
-                    alert("Plan principal sauvegardé pour le Race Mode.");
+                    alert("Plan principal sauvegardé pour le mode course.");
                   } catch {
                     alert("Échec de la sauvegarde.");
                   }
@@ -3852,7 +3852,7 @@ function PlanResult({
                               savedAt: new Date().toISOString(),
                             })
                           );
-                          alert(`${planResult.altPlanLabel ?? "Variante"} sauvegardée pour le Race Mode.`);
+                          alert(`${planResult.altPlanLabel ?? "Variante"} sauvegardée pour le mode course.`);
                         } catch {
                           alert("Échec de la sauvegarde.");
                         }
@@ -3875,7 +3875,7 @@ function PlanResult({
               {
                 icon: "🔗",
                 label: "Lien de partage",
-                desc: "URL avec plan encodé (ouvre Race Mode)",
+                desc: "URL avec plan encodé (ouvre le mode course)",
                 action: handleCopyShareLink,
               },
               {

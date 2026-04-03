@@ -551,7 +551,8 @@ textarea:focus {
     display: flex;
     flex-wrap: nowrap;
     align-items: stretch;
-    gap: 0;
+    column-gap: clamp(8px, 1.2vw, 14px);
+    row-gap: 0;
     min-width: 0;
     overflow-x: auto;
     overscroll-behavior-x: contain;

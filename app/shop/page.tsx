@@ -62,7 +62,7 @@ function formatDietTags(p: Product): string {
 }
 
 export default function ShopPage() {
-  usePageTitle("Shop");
+  usePageTitle("Produits");
   const [category, setCategory] = useState("all");
   const [brand, setBrand] = useState("Tous");
   const [search, setSearch] = useState("");

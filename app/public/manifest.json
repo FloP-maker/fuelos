@@ -23,8 +23,8 @@
                                                                                         ],
                                                                                           "shortcuts": [
                                                                                               {
-                                                                                                    "name": "Race Mode",
-                                                                                                          "short_name": "Race",
+                                                                                                    "name": "Mode course",
+                                                                                                          "short_name": "Course",
                                                                                                                 "description": "Démarrer le mode course",
                                                                                                                       "url": "/race",
                                                                                                                             "icons": [{"src": "/icon-192.png", "sizes": "192x192"}]
