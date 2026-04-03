@@ -283,7 +283,7 @@ export default function Home() {
             gridTemplateColumns: 'repeat(3, 1fr)',
             textAlign: 'center',
             gap: 0,
-            marginBottom: 0,
+            marginBottom: 32,
             overflow: 'hidden',
             padding: 0,
           }}
