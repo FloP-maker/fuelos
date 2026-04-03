@@ -13,19 +13,9 @@ type ProviderEntry = {
   callbackUrl: string;
 };
 
-const btn: CSSProperties = {
-  padding: '8px 14px',
-  borderRadius: 8,
-  fontSize: 13,
-  fontWeight: 600,
-  border: '1px solid var(--color-border)',
-  background: 'var(--color-bg-card)',
-  color: 'var(--color-text)',
-  cursor: 'pointer',
-  maxWidth: 200,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
+const muted: CSSProperties = {
+  fontSize: 12,
+  color: 'var(--color-text-muted)',
 };
 
 function hintFromAuthMessage(message: string | null): string | null {
@@ -109,11 +99,10 @@ export function AuthMenu() {
   if (session?.user) {
     const label = session.user.name || session.user.email || 'Compte';
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <span
           style={{
-            fontSize: 12,
-            color: 'var(--color-text-muted)',
+            ...muted,
             maxWidth: 140,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -123,7 +112,7 @@ export function AuthMenu() {
         >
           {label}
         </span>
-        <button type="button" style={btn} onClick={() => void signOut()}>
+        <button type="button" className="fuel-btn-pill max-w-[200px] truncate" onClick={() => void signOut()}>
           Déconnexion
         </button>
       </div>
@@ -137,26 +126,30 @@ export function AuthMenu() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'flex-end',
-          gap: 6,
-          maxWidth: 320,
+          gap: 8,
+          maxWidth: 340,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <span style={{ fontSize: 12, color: 'var(--color-text-muted)', textAlign: 'right' }}>
-            Connexion — chargement impossible
-          </span>
-          <button
-            type="button"
-            style={{ ...btn, borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }}
-            onClick={() => loadProviders()}
-          >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <span style={{ ...muted, textAlign: 'right' }}>Connexion — chargement impossible</span>
+          <button type="button" className="fuel-btn-pill fuel-btn-pill-accent" onClick={() => loadProviders()}>
             Réessayer
           </button>
         </div>
         {fetchDetail && (
-          <span style={{ fontSize: 11, color: '#f87171', textAlign: 'right', lineHeight: 1.4 }}>{fetchDetail}</span>
+          <span style={{ fontSize: 11, color: 'var(--color-danger)', textAlign: 'right', lineHeight: 1.45 }}>
+            {fetchDetail}
+          </span>
         )}
-        <span style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'right', lineHeight: 1.4 }}>
+        <span style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'right', lineHeight: 1.45 }}>
           Si vous aviez une ancienne version du site : désinscrivez le service worker (DevTools → Application), puis
           rechargez la page.
         </span>
@@ -167,9 +160,9 @@ export function AuthMenu() {
   const ids = Object.keys(providerMap);
   if (ids.length === 0) {
     return (
-      <span style={{ fontSize: 12, color: 'var(--color-text-muted)', maxWidth: 300, textAlign: 'right' }}>
+      <span style={{ ...muted, maxWidth: 320, textAlign: 'right', lineHeight: 1.45 }}>
         Connexion indisponible —{' '}
-        <Link href="/debug/auth" style={{ color: 'var(--color-accent)' }} prefetch={false}>
+        <Link href="/debug/auth" style={{ color: 'var(--color-accent)', fontWeight: 600 }} prefetch={false}>
           diagnostic
         </Link>{' '}
         · configurez Google ou Resend côté serveur.
@@ -185,20 +178,12 @@ export function AuthMenu() {
   const emailProviderId = ids.find((id) => providerMap[id].type === 'email');
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        gap: 8,
-        justifyContent: 'flex-end',
-      }}
-    >
+    <div className="flex flex-wrap items-center justify-end gap-2">
       {oauthIds.map((id) => (
         <button
           key={id}
           type="button"
-          style={{ ...btn, borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }}
+          className="fuel-btn-pill fuel-btn-pill-accent max-w-[200px] truncate"
           onClick={() => void signIn(id)}
         >
           {id === 'google' ? 'Connexion Google' : providerMap[id].name}
@@ -206,7 +191,7 @@ export function AuthMenu() {
       ))}
       {emailProviderId && (
         <form
-          style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}
+          className="flex flex-wrap items-center gap-2"
           onSubmit={(e) => {
             e.preventDefault();
             const trimmed = email.trim();
@@ -228,33 +213,26 @@ export function AuthMenu() {
             }}
             placeholder="E-mail"
             autoComplete="email"
-            style={{
-              padding: '8px 10px',
-              borderRadius: 8,
-              border: '1px solid var(--color-border)',
-              background: 'var(--color-bg)',
-              color: 'var(--color-text)',
-              fontSize: 13,
-              width: 168,
-              maxWidth: '46vw',
-            }}
+            className="fuel-input-compact w-[168px] max-w-[46vw] sm:w-[180px]"
           />
-          <button
-            type="submit"
-            disabled={emailHint === 'sending'}
-            style={{ ...btn, borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }}
-          >
+          <button type="submit" disabled={emailHint === 'sending'} className="fuel-btn-pill fuel-btn-pill-accent">
             Lien magique
           </button>
         </form>
       )}
       {emailHint === 'sent' && (
-        <span style={{ fontSize: 12, color: 'var(--color-accent)', flexBasis: '100%', textAlign: 'right' }}>
+        <span
+          className="w-full text-right text-xs font-semibold sm:text-[13px]"
+          style={{ color: 'var(--color-accent)' }}
+        >
           E-mail envoyé — ouvrez le lien reçu.
         </span>
       )}
       {emailHint === 'err' && (
-        <span style={{ fontSize: 12, color: '#f87171', flexBasis: '100%', textAlign: 'right' }}>
+        <span
+          className="w-full text-right text-xs font-medium sm:text-[13px]"
+          style={{ color: 'var(--color-danger)' }}
+        >
           Envoi impossible. Réessayez plus tard.
         </span>
       )}

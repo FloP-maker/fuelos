@@ -26,10 +26,29 @@ function pathnameToActivePage(pathname: string | null): HeaderActivePage | undef
   return undefined;
 }
 
+const navPillBase: CSSProperties = {
+  padding: '8px 16px',
+  borderRadius: 'var(--radius-pill)',
+  fontSize: 13,
+  fontWeight: 600,
+  border: '1px solid transparent',
+  textDecoration: 'none',
+  transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
+};
+
+const navPillActive: CSSProperties = {
+  ...navPillBase,
+  fontWeight: 700,
+  color: 'var(--color-text)',
+  border: '1px solid color-mix(in srgb, var(--color-accent) 40%, var(--color-border))',
+  background: 'color-mix(in srgb, var(--color-accent) 14%, var(--color-bg-card))',
+  boxShadow: 'var(--shadow-xs)',
+};
+
 const S = {
   headerBase: {
-    borderBottom: '1px solid var(--color-border)',
-    padding: '16px 24px',
+    borderBottom: '1px solid var(--color-border-subtle)',
+    padding: '14px 22px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -39,51 +58,38 @@ const S = {
     position: 'sticky',
     top: 0,
     zIndex: 30,
-    background: 'color-mix(in srgb, var(--color-bg) 88%, transparent)',
-    backdropFilter: 'blur(10px)',
+    background: 'color-mix(in srgb, var(--color-bg) 82%, transparent)',
+    backdropFilter: 'saturate(160%) blur(14px)',
+    WebkitBackdropFilter: 'saturate(160%) blur(14px)',
   } as CSSProperties,
-  logo: { display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'inherit' } as CSSProperties,
+  logo: { display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit' } as CSSProperties,
   logoIcon: {
-    width: 32,
-    height: 32,
-    background: 'var(--color-accent)',
-    borderRadius: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontWeight: 800,
-    fontSize: 18,
-    color: '#000',
+    fontSize: 17,
+    fontFamily: 'var(--font-display)',
+    color: '#052e14',
     flexShrink: 0,
-  } as CSSProperties,
-  navLink: {
-    padding: '8px 14px',
-    borderRadius: 8,
-    fontSize: 13,
-    fontWeight: 600,
-    border: '1px solid transparent',
-    textDecoration: 'none',
-  } as CSSProperties,
-  navLinkActive: {
-    padding: '8px 14px',
-    borderRadius: 8,
-    fontSize: 13,
-    fontWeight: 700,
-    color: 'var(--color-accent)',
-    border: '1px solid var(--color-accent)',
-    background: 'rgba(34,197,94,0.08)',
-    textDecoration: 'none',
+    background:
+      'linear-gradient(145deg, var(--color-accent) 0%, color-mix(in srgb, var(--color-energy) 38%, var(--color-accent)) 100%)',
+    boxShadow: 'var(--shadow-xs), 0 0 24px color-mix(in srgb, var(--color-accent) 35%, transparent)',
   } as CSSProperties,
   btnOutline: {
-    padding: '10px 20px',
-    borderRadius: 8,
+    padding: '9px 18px',
+    borderRadius: 'var(--radius-pill)',
     background: 'transparent',
     color: 'var(--color-text)',
     fontWeight: 600,
-    fontSize: 14,
+    fontSize: 13,
     border: '1px solid var(--color-border)',
     cursor: 'pointer',
     textDecoration: 'none',
+    transition: 'background 0.15s ease, border-color 0.15s ease',
   } as CSSProperties,
 };
 
@@ -103,18 +109,32 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
     <header style={{ ...S.headerBase, ...(sticky ? S.headerSticky : {}) }}>
       <Link href="/" style={S.logo} aria-label="FuelOS — Accueil">
         <div style={S.logoIcon}>F</div>
-        <span style={{ fontWeight: 800, fontSize: 20 }}>FuelOS</span>
+        <span style={{ fontWeight: 800, fontSize: 20, fontFamily: 'var(--font-display)', letterSpacing: '-0.03em' }}>
+          FuelOS
+        </span>
       </Link>
       <div
         style={{
           display: 'flex',
-          gap: 8,
+          gap: 10,
           alignItems: 'center',
           flexWrap: 'wrap',
           justifyContent: 'flex-end',
         }}
       >
-        <nav aria-label="Navigation principale" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <nav
+          aria-label="Navigation principale"
+          style={{
+            display: 'flex',
+            gap: 6,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            padding: 4,
+            borderRadius: 'var(--radius-pill)',
+            background: 'color-mix(in srgb, var(--color-bg-card) 65%, transparent)',
+            border: '1px solid var(--color-border-subtle)',
+          }}
+        >
           {NAV.map((item) => {
             const isActive = resolvedActive === item.page;
             return (
@@ -122,7 +142,14 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
                 key={item.href}
                 href={item.href}
                 aria-current={isActive ? 'page' : undefined}
-                style={isActive ? S.navLinkActive : { ...S.navLink, color: 'var(--color-text-muted)' }}
+                style={
+                  isActive
+                    ? navPillActive
+                    : {
+                        ...navPillBase,
+                        color: 'var(--color-text-muted)',
+                      }
+                }
               >
                 {item.label}
               </Link>
@@ -132,7 +159,19 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
         {extra}
         <AuthMenu />
         {pathname !== '/' && (
-          <Link href="/" style={S.btnOutline}>
+          <Link
+            href="/"
+            style={S.btnOutline}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--color-bg-card-hover)';
+              e.currentTarget.style.borderColor =
+                'color-mix(in srgb, var(--color-text-muted) 35%, var(--color-border))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.borderColor = 'var(--color-border)';
+            }}
+          >
             Accueil
           </Link>
         )}
