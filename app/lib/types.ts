@@ -58,6 +58,8 @@ export interface EventDetails {
   weatherHumidityPct?: number;
   weatherAuto?: WeatherAutoMeta;
   courseGeometry?: CourseGeometry;
+  /** Si true et qu’un GPX est chargé, décale les prises « perso » vers le créneau le plus favorable (plat/descente) dans la même heure. */
+  adjustIntakesToCourse?: boolean;
 }
 
 // 🆕 NOUVEAU TYPE - Ravitaillement fixe
@@ -84,6 +86,8 @@ export interface TimelineItem {
   source?: "personal" | "aid-station"; // Origine du produit
   aidStationName?: string;             // Nom du ravito si applicable
   choTarget?: number;                  // Objectif CHO/h à ce moment (pour charge progressive)
+  /** Renseigné à la génération pour total kcal fiable (produits custom / hors catalogue). */
+  caloriesPerUnit?: number;
 }
 
 export interface ShoppingItem {

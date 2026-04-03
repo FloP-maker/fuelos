@@ -66,6 +66,14 @@ function choIntakeInWindow(items: TimelineItem[], t0: number, t1: number): numbe
     .reduce((s, it) => s + it.cho, 0);
 }
 
+/**
+ * Intensité relative 0.32–1 (allure + dénivelé / km), alignée sur le modèle « science ».
+ * À utiliser côté moteur de plan pour moduler les cibles CHO.
+ */
+export function computeRelativeIntensity(profile: AthleteProfile, event: EventDetails): number {
+  return intensityContext(profile, event).relativeIntensity;
+}
+
 function intensityContext(profile: AthleteProfile, event: EventDetails) {
   const durationMin = Math.max(15, event.targetTime * 60);
   const speedKmh = event.distance / Math.max(0.1, event.targetTime);

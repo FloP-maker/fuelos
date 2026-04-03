@@ -18,6 +18,12 @@ import {
   getProductsForRacePhase,
   getCaffeinatedProducts,
 } from "./products";
+import { computeRelativeIntensity } from "./scienceMetrics";
+import { distanceKmAtRaceTime, gradientPercentAtKm } from "./courseGeometry";
+
+function clamp(n: number, lo: number, hi: number): number {
+  return Math.min(hi, Math.max(lo, n));
+}
 
 // ============ CONSTANTES ============
 
@@ -73,7 +79,7 @@ export function clonePlanHydrationAdjusted(
     };
   });
 
-  const totals = calculateTotals(timeline, targetTimeHours);
+  const totals = calculateTotals(timeline, targetTimeHours, undefined);
 
   return {
     ...plan,
@@ -128,8 +134,10 @@ export function buildFuelPlan(profile: AthleteProfile, event: EventDetails): Fue
   const choStrategy = determineChoStrategy(profile, event, warnings);
   const productMix = selectProducts(profile, event, choStrategy);
   const timeline = generateTimeline(profile, event, choStrategy, productMix, warnings);
+  refineIntakeTimesForCourse(timeline, event, warnings);
+  appendChoHourGapWarnings(timeline, choStrategy, event, warnings);
   const shoppingList = generateShoppingList(timeline, event);
-  const totals = calculateTotals(timeline, event.targetTime);
+  const totals = calculateTotals(timeline, event.targetTime, warnings);
   const estimatedCost = calculatePlanCost(shoppingList);
 
   if (profile.giTolerance === "sensitive" && totals.avgChoPerHour < 40) {
@@ -271,6 +279,22 @@ function determineChoStrategy(
     );
   }
 
+  const ri = computeRelativeIntensity(profile, event);
+  const terrainScale = clamp(0.92 + 0.35 * (ri - 0.58), 0.85, 1.15);
+  for (const ph of phases) {
+    ph.choPerHour = Math.round(ph.choPerHour * terrainScale);
+    ph.choPerHour = Math.min(ph.choPerHour, maxCHO);
+  }
+  if (terrainScale >= 1.07) {
+    warnings.push(
+      "⛰ Intensité relative élevée (allure + dénivelé) : cibles CHO par phase légèrement majorées vs un profil plus plat."
+    );
+  } else if (terrainScale <= 0.9) {
+    warnings.push(
+      "🏃 Intensité relative plus modérée : cibles CHO par phase légèrement réduites — ajustez selon votre ressenti réel."
+    );
+  }
+
   return {
     type: durationMin <= 90 ? "constant" : "progressive",
     phases,
@@ -365,6 +389,7 @@ function generateTimeline(
           cho: product.cho_per_unit,
           water: product.water_per_unit,
           sodium: product.sodium_per_unit,
+          caloriesPerUnit: product.calories_per_unit,
           choTarget,
           source: "aid-station",
           aidStationName: aidStation.name,
@@ -409,6 +434,7 @@ function generateTimeline(
             cho: drink.cho_per_unit,
             water: drink.water_per_unit,
             sodium: drink.sodium_per_unit,
+            caloriesPerUnit: drink.calories_per_unit,
             choTarget,
             source: "personal",
           });
@@ -426,6 +452,7 @@ function generateTimeline(
             type: "gel",
             cho: gel.cho_per_unit,
             sodium: gel.sodium_per_unit,
+            caloriesPerUnit: gel.calories_per_unit,
             choTarget,
             source: "personal",
           });
@@ -447,6 +474,7 @@ function generateTimeline(
             cho: drink.cho_per_unit,
             water: drink.water_per_unit,
             sodium: drink.sodium_per_unit,
+            caloriesPerUnit: drink.calories_per_unit,
             choTarget,
             source: "personal",
           });
@@ -467,6 +495,7 @@ function generateTimeline(
               type: "bar",
               cho: bar.cho_per_unit,
               sodium: bar.sodium_per_unit,
+              caloriesPerUnit: bar.calories_per_unit,
               choTarget,
               source: "personal",
               alert: "Variété : barre énergétique",
@@ -485,6 +514,7 @@ function generateTimeline(
               type: "gel",
               cho: gel.cho_per_unit,
               sodium: gel.sodium_per_unit,
+              caloriesPerUnit: gel.calories_per_unit,
               choTarget,
               source: "personal",
             });
@@ -507,6 +537,7 @@ function generateTimeline(
             cho: drink.cho_per_unit,
             water: drink.water_per_unit,
             sodium: drink.sodium_per_unit,
+            caloriesPerUnit: drink.calories_per_unit,
             choTarget,
             source: "personal",
           });
@@ -527,6 +558,7 @@ function generateTimeline(
               type: "gel",
               cho: cafGel.cho_per_unit,
               sodium: cafGel.sodium_per_unit,
+              caloriesPerUnit: cafGel.calories_per_unit,
               choTarget,
               source: "personal",
               alert: `⚡ Boost caféine (${cafGel.caffeineContent}mg)`,
@@ -545,6 +577,7 @@ function generateTimeline(
               type: "real-food",
               cho: realFood.cho_per_unit,
               sodium: realFood.sodium_per_unit,
+              caloriesPerUnit: realFood.calories_per_unit,
               choTarget,
               source: "personal",
               alert: "🍌 Variété : aliment naturel",
@@ -563,6 +596,7 @@ function generateTimeline(
               type: "gel",
               cho: gel.cho_per_unit,
               sodium: gel.sodium_per_unit,
+              caloriesPerUnit: gel.calories_per_unit,
               choTarget,
               source: "personal",
             });
@@ -575,6 +609,101 @@ function generateTimeline(
   }
 
   return timeline;
+}
+
+/** Recale les prises « perso » sur le meilleur passage (pente minimale) dans la même heure, si GPX + option actifs. */
+function refineIntakeTimesForCourse(
+  timeline: TimelineItem[],
+  event: EventDetails,
+  warnings: string[]
+): void {
+  const geo = event.courseGeometry;
+  if (!geo || !event.adjustIntakesToCourse) return;
+
+  const durationMin = event.targetTime * 60;
+  const distKm = event.distance;
+  if (distKm <= 0 || durationMin < 30) return;
+
+  let anyMoved = false;
+  for (const item of timeline) {
+    if (item.source === "aid-station") continue;
+
+    const h = Math.floor(item.timeMin / 60);
+    const hourStart = h * 60;
+    const originalT = item.timeMin;
+    let bestT = originalT;
+    const origKm = distanceKmAtRaceTime(originalT, durationMin, distKm);
+    let bestGrad = gradientPercentAtKm(geo, origKm);
+
+    for (let t = hourStart; t < hourStart + 60 && t < durationMin; t += 5) {
+      if (t < 0) continue;
+      const km = distanceKmAtRaceTime(t, durationMin, distKm);
+      const g = gradientPercentAtKm(geo, km);
+      if (g < bestGrad - 1e-6) {
+        bestGrad = g;
+        bestT = t;
+      } else if (Math.abs(g - bestGrad) <= 1e-6 && Math.abs(t - originalT) < Math.abs(bestT - originalT)) {
+        bestT = t;
+      }
+    }
+
+    if (bestT !== originalT) {
+      anyMoved = true;
+      item.timeMin = bestT;
+    }
+  }
+
+  timeline.sort((a, b) => a.timeMin - b.timeMin);
+  for (let i = 1; i < timeline.length; i++) {
+    if (timeline[i]!.timeMin <= timeline[i - 1]!.timeMin) {
+      timeline[i]!.timeMin = Math.min(durationMin - 1, timeline[i - 1]!.timeMin + 5);
+    }
+  }
+
+  if (anyMoved) {
+    warnings.push(
+      "🗺 Créneaux ajustés au profil GPX : chaque prise personnelle est recalée vers le passage le plus favorable (pente la plus faible) dans la même heure. Vérifiez la cohérence avec vos ravito fixes."
+    );
+  }
+}
+
+function choTargetAtMinute(choStrategy: ChoStrategy, timeMin: number): number {
+  const ph =
+    choStrategy.phases.find((p) => timeMin >= p.startTimeMin && timeMin < p.endTimeMin) ??
+    choStrategy.phases[choStrategy.phases.length - 1];
+  return ph?.choPerHour ?? 0;
+}
+
+/** Détecte les heures où l’apport CHO réalisé reste nettement sous l’objectif (effet quota +5 % / produits calibrés). */
+function appendChoHourGapWarnings(
+  timeline: TimelineItem[],
+  choStrategy: ChoStrategy,
+  event: EventDetails,
+  warnings: string[]
+): void {
+  const durationMin = event.targetTime * 60;
+  const nHours = Math.max(1, Math.ceil(durationMin / 60));
+
+  for (let h = 0; h < nHours; h++) {
+    const t0 = h * 60;
+    const t1 = Math.min((h + 1) * 60, durationMin);
+    const spanH = (t1 - t0) / 60;
+    if (spanH <= 0) continue;
+
+    const targetH = choTargetAtMinute(choStrategy, t0);
+    if (targetH < 22) continue;
+
+    const expectedChunk = targetH * spanH;
+    const actual = timeline
+      .filter((it) => it.timeMin >= t0 && it.timeMin < t1)
+      .reduce((s, it) => s + it.cho, 0);
+
+    if (actual < expectedChunk * 0.88) {
+      warnings.push(
+        `⚠️ Trou possible autour de l’heure ${h + 1} : ~${Math.round(actual)} g CHO prévus sur cette période pour ~${Math.round(expectedChunk)} g cibles — le plafond horaire à +5 % peut empêcher d’ajouter un gel/barre. Essayez des produits un peu moins chargés en CHO ou ajustez manuellement.`
+      );
+    }
+  }
 }
 
 // ============ GÉNÉRATION LISTE DE COURSES ============
@@ -601,14 +730,46 @@ function generateShoppingList(
 
 // ============ CALCUL DES TOTAUX ============
 
-function calculateTotals(timeline: TimelineItem[], targetTimeHours: number) {
+function calculateTotals(
+  timeline: TimelineItem[],
+  targetTimeHours: number,
+  warnings: string[] | undefined
+) {
   const totalCho = timeline.reduce((sum, item) => sum + item.cho, 0);
   const totalWater = timeline.reduce((sum, item) => sum + (item.water || 0), 0);
   const totalSodium = timeline.reduce((sum, item) => sum + (item.sodium || 0), 0);
+
+  let usedChoCalorieEstimate = false;
+  let missingCalorieData = false;
+
   const totalCalories = timeline.reduce((sum, item) => {
-    const product = getProductById(item.productId);
-    return sum + (product?.calories_per_unit || 0);
+    const catalog = getProductById(item.productId);
+    let cal = item.caloriesPerUnit ?? catalog?.calories_per_unit;
+    if (cal != null && cal > 0) {
+      return sum + cal;
+    }
+    if (item.cho > 0) {
+      usedChoCalorieEstimate = true;
+      return sum + item.cho * 4;
+    }
+    if (!catalog && (item.caloriesPerUnit == null || item.caloriesPerUnit === 0)) {
+      missingCalorieData = true;
+    }
+    return sum;
   }, 0);
+
+  if (warnings) {
+    if (usedChoCalorieEstimate) {
+      warnings.push(
+        "💡 Calories totales : partie estimée à 4 kcal/g CHO faute de données caloriques sur certains produits."
+      );
+    }
+    if (missingCalorieData) {
+      warnings.push(
+        "⚠️ Au moins une ligne du plan n’a ni calories catalogue ni CHO : kcal sous-estimées pour ces prises."
+      );
+    }
+  }
 
   return {
     avgChoPerHour: Math.round(totalCho / targetTimeHours),

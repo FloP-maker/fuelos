@@ -1402,6 +1402,31 @@ function PlanPageContent() {
               {event.courseGeometry && (
                 <div style={{ marginTop: 16 }}>
                   <CourseMapPanel event={event} geometry={event.courseGeometry} />
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 10,
+                      marginTop: 14,
+                      fontSize: 13,
+                      color: "var(--color-text)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={event.adjustIntakesToCourse ?? false}
+                      onChange={(e) =>
+                        setEvent({ ...event, adjustIntakesToCourse: e.target.checked })
+                      }
+                      style={{ marginTop: 3 }}
+                    />
+                    <span>
+                      <strong>Ajuster les prises au parcours (GPX)</strong> — recaler chaque prise « perso » vers
+                      le créneau de la même heure avec la pente la plus faible (replat ou descente), sans déplacer
+                      les ravitaillements fixes.
+                    </span>
+                  </label>
                 </div>
               )}
             </div>

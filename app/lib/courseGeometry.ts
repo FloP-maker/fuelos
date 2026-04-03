@@ -94,3 +94,37 @@ export function elevationAtDistanceKm(geo: CourseGeometry, km: number): number {
   const e1 = geo.elevationM[i + 1] ?? e0;
   return e0 + t * (e1 - e0);
 }
+
+const DEFAULT_GRADIENT_WINDOW_KM = 0.2;
+
+/**
+ * Pente moyenne % sur une fenêtre symétrique autour de `km` (montée positive, descente négative).
+ * Utile pour placer les prises sur replats ou descentes.
+ */
+export function gradientPercentAtKm(
+  geo: CourseGeometry,
+  km: number,
+  windowKm: number = DEFAULT_GRADIENT_WINDOW_KM
+): number {
+  const maxKm = geo.cumulativeKm[geo.cumulativeKm.length - 1] ?? 0;
+  if (maxKm <= 0) return 0;
+  const half = Math.max(0.02, windowKm);
+  const k0 = Math.max(0, km - half);
+  const k1 = Math.min(maxKm, km + half);
+  const runM = (k1 - k0) * 1000;
+  if (runM < 1) return 0;
+  const e0 = elevationAtDistanceKm(geo, k0);
+  const e1 = elevationAtDistanceKm(geo, k1);
+  return ((e1 - e0) / runM) * 100;
+}
+
+/** km le long du parcours pour une répartition uniforme du temps (allure constante). */
+export function distanceKmAtRaceTime(
+  timeMin: number,
+  durationMin: number,
+  totalDistanceKm: number
+): number {
+  if (durationMin <= 0 || totalDistanceKm <= 0) return 0;
+  const t = Math.max(0, Math.min(1, timeMin / durationMin));
+  return t * totalDistanceKm;
+}
