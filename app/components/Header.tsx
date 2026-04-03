@@ -11,7 +11,7 @@ export type HeaderActivePage = 'plan' | 'shop' | 'race' | 'learn' | 'prep';
 const NAV: { href: string; label: string; page: HeaderActivePage }[] = [
   { href: '/plan', label: 'Plan', page: 'plan' },
   { href: '/shop', label: 'Shop', page: 'shop' },
-  { href: '/prep', label: 'Prep', page: 'prep' },
+  { href: '/prep', label: 'Pré/post course', page: 'prep' },
   { href: '/race', label: 'Race Mode', page: 'race' },
   { href: '/learn', label: 'Learn', page: 'learn' },
 ];

@@ -74,6 +74,10 @@ export type MealExample = {
   label: string;
   items: string[];
   approxChoG: number;
+  /** Étapes indicatives (quantités pour viser ~approxChoG g CHO sur ce repas) */
+  recipeSteps: string[];
+  /** Phrase récap (objectif vs somme des lignes) */
+  choRecap: string;
 };
 
 type MealSlot = "Petit-déjeuner" | "Déjeuner" | "Collation" | "Dîner";
@@ -105,12 +109,256 @@ export function pickCarbMealExamples(
   return slots.map((slot, i) => {
     const variants = p[slot];
     const idx = fnv1a32(`${diet}|${dayKey}|${slot}|${salt}`) % variants.length;
+    const approxChoG = q(pcts[i]);
+    const items = variants[idx];
+    const { recipeSteps, choRecap } = buildChoScaledRecipe(items, approxChoG, slot);
     return {
       label: slot,
-      items: variants[idx],
-      approxChoG: q(pcts[i]),
+      items,
+      approxChoG,
+      recipeSteps,
+      choRecap,
     };
   });
+}
+
+/** Poids relatif pour répartir l’objectif CHO du repas entre les aliments. */
+function carbFragmentWeight(fragment: string): number {
+  const t = fragment.toLowerCase();
+  if (
+    /^(protéine simple|glucides en priorité|éviter|légumes peu fibreux|algues)/i.test(fragment) ||
+    /demander peu|éviter haricots|mushy peas|roquette symbolique/i.test(t)
+  ) {
+    return 0.15;
+  }
+  if (
+    /\b(poulet|dinde|poisson|saumon|blanc de|tofu|tempeh|seitan|œuf|oeuf|volaille|jambon|escalope|protéine)\b/i.test(
+      t
+    ) &&
+    !/nouilles|wrap|pad thaï/i.test(t)
+  ) {
+    return 0.35;
+  }
+  if (
+    /\b(salade|brocoli|courgette|carotte|courge|mâche|iceberg|champignon|artichaut|épinard|ratatouille|légume|taboulé)\b/i.test(
+      t
+    )
+  ) {
+    return 0.35;
+  }
+  if (/\b(algues|pickle|kimchi)\b/i.test(t)) return 0.2;
+  if (
+    /\b(yaourt|yogourt|fromage blanc|ribot|beurre(?! vég)|crème(?! lég)|lait\b|boisson vég|lait avoine|cacao|cannelle)\b/i.test(
+      t
+    )
+  ) {
+    return 1.35;
+  }
+  if (/\b(jus|nectar|smoothie|compote|banane|mang|datte|fig|clément|orange|fruit|baie|pomme|poire|raisin|confiture|miel|sirop|coulis|marmelade|nectar)\b/i.test(t)) {
+    return 1.45;
+  }
+  if (/\b(thé|café|tisane|infusion)\b/i.test(t)) return 0.05;
+  return 2.1;
+}
+
+/** g CHO pour 100 g (ou 100 ml liquides « type jus/lait ») sauf exceptions. */
+type ChoDensityRule = { re: RegExp; choPer100: number; mode?: "dry" | "cooked" | "as_eaten" | "liquid" };
+
+const CHO_DENSITY_RULES: ChoDensityRule[] = [
+  { re: /flocon|avoine(?! lait)|porridge|overnight/i, choPer100: 59, mode: "dry" },
+  { re: /céréale|cornflake|riz soufflé|granola/i, choPer100: 82, mode: "dry" },
+  { re: /riz(?! au lait)|basmati|jasmin|sushi/i, choPer100: 28, mode: "cooked" },
+  { re: /semoule(?! au lait)|couscous/i, choPer100: 23, mode: "cooked" },
+  { re: /quinoa/i, choPer100: 18, mode: "cooked" },
+  { re: /boulgour|blé concassé/i, choPer100: 20, mode: "cooked" },
+  { re: /pâtes?|penne|tagliatelles?|lasagne|nouilles?|ramen|pad thaï|vermicelle/i, choPer100: 26, mode: "cooked" },
+  { re: /gnocchi/i, choPer100: 30, mode: "cooked" },
+  { re: /polenta/i, choPer100: 16, mode: "cooked" },
+  { re: /pizza/i, choPer100: 32, mode: "as_eaten" },
+  { re: /pain|brioche|bagel|toast|naan|chapati|focaccia/i, choPer100: 48, mode: "as_eaten" },
+  { re: /tortilla|wrap/i, choPer100: 45, mode: "as_eaten" },
+  { re: /galette|sarrasin/i, choPer100: 20, mode: "as_eaten" },
+  { re: /pancake|crêpe|waffle|gaufr|muffin|cake|viennois|madeleine|brioche|biscuit|cookie|barre|gaufrette|pain d’épices/i, choPer100: 45, mode: "as_eaten" },
+  { re: /pomme de terre|purée|patate douce|gratin dauphinois|frites?/i, choPer100: 17, mode: "cooked" },
+  { re: /patate\b/i, choPer100: 17, mode: "cooked" },
+  { re: /riz au lait/i, choPer100: 20, mode: "as_eaten" },
+  { re: /semolino|bouillie/i, choPer100: 15, mode: "cooked" },
+  { re: /lentille|pois chich|haricot|légumineuses|chili|dahl/i, choPer100: 14, mode: "cooked" },
+  { re: /riz sec|pâtes? secs/i, choPer100: 75, mode: "dry" },
+  { re: /parmesan|feta|fromage(?! blanc)/i, choPer100: 4, mode: "as_eaten" },
+  { re: /yaourt|yogourt|fromage blanc/i, choPer100: 5.5, mode: "liquid" },
+  { re: /lait\b|boisson avoine|boisson céréale/i, choPer100: 5, mode: "liquid" },
+  { re: /jus |nectar|smoothie malt/i, choPer100: 10, mode: "liquid" },
+  { re: /compote/i, choPer100: 16, mode: "as_eaten" },
+  { re: /confiture|marmelade/i, choPer100: 60, mode: "as_eaten" },
+  { re: /miel|sirop|sirop d’érable|agave|coulis/i, choPer100: 78, mode: "as_eaten" },
+  { re: /tahin|houmous|pesto|sauce tomate|guacamole|beurre végétal|pâte à tartiner/i, choPer100: 12, mode: "as_eaten" },
+  { re: /banane/i, choPer100: 23, mode: "as_eaten" },
+  { re: /datte|fig/i, choPer100: 65, mode: "dry" },
+  { re: /sorbet|glace fruit/i, choPer100: 30, mode: "as_eaten" },
+  { re: /chips|plantain/i, choPer100: 55, mode: "as_eaten" },
+  { re: /quiche/i, choPer100: 22, mode: "as_eaten" },
+  { re: /\btarte\b/i, choPer100: 22, mode: "as_eaten" },
+  { re: /risotto|paella/i, choPer100: 22, mode: "cooked" },
+];
+
+function splitMealRowIntoFragments(row: string): string[] {
+  const cleaned = row.replace(/\([^)]{0,120}\)/g, " ").trim();
+  return cleaned
+    .split(/\s*\+\s*|\s*\/\s*|\s*—\s*/i)
+    .map((s) => s.replace(/\s+/g, " ").trim())
+    .flatMap((s) => (/\s\bou\s/i.test(s) ? s.split(/\s\bou\s/i) : [s]))
+    .map((s) => s.replace(/^[^:]+:\s*/, "").trim())
+    .filter((s) => s.length > 1);
+}
+
+function allocateChoBudgets(totalCho: number, weights: number[]): number[] {
+  const wsum = weights.reduce((a, b) => a + b, 0) || 1;
+  const raw = weights.map((w) => (totalCho * w) / wsum);
+  const rounded = raw.map((x) => Math.max(0, Math.round(x)));
+  let diff = totalCho - rounded.reduce((a, b) => a + b, 0);
+  const order = rounded.map((_, i) => i).sort((i, j) => raw[j] - raw[i]);
+  let k = 0;
+  while (diff !== 0 && order.length) {
+    const i = order[k % order.length];
+    if (diff > 0) {
+      rounded[i] += 1;
+      diff -= 1;
+    } else if (rounded[i] > 0) {
+      rounded[i] -= 1;
+      diff += 1;
+    }
+    k += 1;
+    if (k > 2000) break;
+  }
+  return rounded;
+}
+
+function formatQuantityForFragment(fragment: string, choG: number): string {
+  const f = fragment.trim();
+  const t = f.toLowerCase();
+  if (choG <= 0) return `${f} (négligeable en CHO ici).`;
+
+  if (/\b(banane)\b/i.test(t)) {
+    const n = choG / 24;
+    const approx = n < 0.65 ? "½ banane moyenne" : n < 1.15 ? "1 banane moyenne" : `${Math.round(n * 10) / 10} bananes moyennes`;
+    return `${f} → ~${approx} (≈ ${choG} g CHO).`;
+  }
+
+  if (/\b(datte)\b/i.test(t)) {
+    const n = Math.max(1, Math.round(choG / 5));
+    return `${f} → ~${n} petite(s) datte(s) (≈ ${choG} g CHO).`;
+  }
+
+  if (/\b(confiture|marmelade)\b/i.test(t)) {
+    const g = Math.max(15, Math.round((choG * 100) / 60));
+    return `${f} → ~${g} g (≈ ${choG} g CHO).`;
+  }
+
+  if (/\bcoulis\b/i.test(t)) {
+    const g = Math.max(10, Math.round((choG * 100) / 55));
+    return `${f} → ~${g} g (≈ ${choG} g CHO).`;
+  }
+
+  if (
+    /\b(miel|sirop d[’']?(?:érable|agave))\b/i.test(t) ||
+    (/sirop\b/i.test(t) && !/sirop d[’']?(?:érable|agave)/i.test(t))
+  ) {
+    const càs = Math.max(0.5, Math.round(((choG / 78) * 15) * 2) / 2);
+    return `${f} → ~${càs} c. à soupe rase(s) (≈ ${choG} g CHO).`;
+  }
+
+  if (/\bsmoothie\b/i.test(t)) {
+    const ml = Math.round((choG * 100) / 12);
+    return `${f} → ~${ml} ml (≈ ${choG} g CHO — doser flocons / fruits selon mixeur).`;
+  }
+
+  if (/\b(jus|nectar)\b/i.test(t)) {
+    const ml = Math.round((choG * 100) / 10);
+    return `${f} → ~${ml} ml (≈ ${choG} g CHO).`;
+  }
+
+  if (/\b(compote)\b/i.test(t)) {
+    const g = Math.round((choG * 100) / 16);
+    return `${f} → 1 petite portion ~${Math.max(80, g)} g ou pots cumulés (≈ ${choG} g CHO).`;
+  }
+
+  if (/\b(lait\b|boisson avoine|boisson céréale)\b/i.test(t) && !/flocon|banane|smoothie/i.test(t)) {
+    const ml = Math.round((choG * 100) / Math.max(4, 5.5));
+    return `${f} → ~${ml} ml (≈ ${choG} g CHO).`;
+  }
+
+  if (/\byaourt|yogourt|fromage blanc\b/i.test(t)) {
+    const g = Math.round((choG * 100) / 5.5);
+    return `${f} → ~${Math.max(100, g)} g (≈ ${choG} g CHO).`;
+  }
+
+  for (const rule of CHO_DENSITY_RULES) {
+    if (!rule.re.test(t)) continue;
+    const g = Math.max(10, Math.round((choG * 100) / rule.choPer100));
+    let unit = "g";
+    let prep = "";
+    if (rule.mode === "dry" && !/sec/i.test(t)) prep = " (poids sec / cru)";
+    if (rule.mode === "cooked") prep = " (poids cuit / prêt à manger)";
+    if (rule.mode === "liquid") prep = " (ml équivalent)";
+    if (rule.mode === "dry" && /lait|jus/i.test(t)) unit = "ml";
+
+    if (rule.mode === "liquid" && /lait|boisson/i.test(t)) {
+      const ml = Math.round((choG * 100) / rule.choPer100);
+      return `${f} → ~${ml} ml${prep} (≈ ${choG} g CHO).`;
+    }
+
+    return `${f} → ~${g} ${unit}${prep} (≈ ${choG} g CHO).`;
+  }
+
+  const gGen = Math.round((choG * 100) / 45);
+  return `${f} → portion type ~${Math.max(40, gGen)} g aliment mixte à ~45 % CHO (≈ ${choG} g CHO — affiner avec étiquette).`;
+}
+
+/** Recette chiffrée : répartition de `targetChoG` entre fragments + phrases portions. */
+export function buildChoScaledRecipe(
+  items: string[],
+  targetChoG: number,
+  _slot: MealSlot
+): { recipeSteps: string[]; choRecap: string } {
+  const rows = items.map((row) => splitMealRowIntoFragments(row));
+  const flatParts = rows.flat();
+  if (flatParts.length === 0) {
+    return {
+      recipeSteps: ["Ajuster les portions familières pour viser l’objectif glucidique du repas."],
+      choRecap: `Objectif repas ~${targetChoG} g CHO.`,
+    };
+  }
+
+  const weights = flatParts.map(carbFragmentWeight);
+  const choByPart = allocateChoBudgets(targetChoG, weights);
+
+  const steps: string[] = [];
+  let idx = 0;
+  for (let r = 0; r < items.length; r++) {
+    const parts = rows[r];
+    if (parts.length === 0) continue;
+    const subCho = choByPart.slice(idx, idx + parts.length);
+    idx += parts.length;
+    const lineTotal = subCho.reduce((a, b) => a + b, 0);
+
+    if (parts.length === 1) {
+      steps.push(`${r + 1}. ${formatQuantityForFragment(parts[0], subCho[0])}`);
+      continue;
+    }
+
+    steps.push(
+      `${r + 1}. Composer ce volet (~${lineTotal} g CHO) : ${parts.map((p, i) => formatQuantityForFragment(p, subCho[i] ?? 0)).join(" ; ")}`
+    );
+  }
+
+  const sum = choByPart.reduce((a, b) => a + b, 0);
+  const choRecap =
+    sum === targetChoG
+      ? `Objectif repas : ~${targetChoG} g CHO — répartition ci-dessus (~${sum} g).`
+      : `Objectif repas : ~${targetChoG} g CHO — total indicatif des lignes ~${sum} g (arrondis).`;
+
+  return { recipeSteps: steps, choRecap };
 }
 
 const MEAL_ITEM_POOLS: Record<DietStyle, Pool> = {
@@ -265,6 +513,189 @@ const MEAL_ITEM_POOLS: Record<DietStyle, Pool> = {
     ],
   },
 };
+
+const MEAL_SLOT_ORDER: MealSlot[] = ["Petit-déjeuner", "Déjeuner", "Collation", "Dîner"];
+
+function fragmentsFromMealLine(line: string): string[] {
+  let s = line.replace(/\([^)]{0,160}\)/g, " ");
+  s = s.replace(/\[[^\]]{0,40}\]/g, " ");
+  s = s.replace(/\d+[–-]\d+\s*(?:ml|g)\b/gi, " ");
+  s = s.replace(/\d+\s*(?:ml|g)\b/gi, " ");
+  s = s.replace(/\s+/g, " ").trim();
+
+  const splitTail = (tail: string): string[] =>
+    tail
+      .split(/\s*(?:\+|\/|—|–|;)\s*|\s*,\s*|\s+\bou\b\s+|\s+\bet\b\s+/i)
+      .map((x) => x.trim())
+      .filter(Boolean);
+
+  let parts: string[];
+  if (/:\s/.test(s)) {
+    const i = s.indexOf(":");
+    const tail = s.slice(i + 1).trim();
+    parts = splitTail(tail.length ? tail : s);
+  } else {
+    parts = splitTail(s);
+  }
+
+  return parts.flatMap((p) => (/\s\bou\s/i.test(p) ? p.split(/\s\bou\s/i) : [p])).map(trimIngredientFragment);
+}
+
+function trimIngredientFragment(s: string): string {
+  return s
+    .replace(/^(?:Grande|Petite|Gros|Quelques|Bol|Wrap|Tranche\s+de|Part\s+de|Type\s+)\s+/i, "")
+    .replace(/^(?:gros bol|petit bol|grande portion|double ration)\s+/i, "")
+    .replace(/^portion\s+/i, "")
+    .replace(/\s+modéré$/i, "")
+    .replace(/\s+symbolique$/i, "")
+    .replace(/\s+légère$/i, "")
+    .replace(/\s+si\s+.{3,}$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function shouldSkipShoppingFragment(s: string): boolean {
+  const t = s.toLowerCase();
+  if (s.length < 3 || s.length > 85) return true;
+  if (/^(demander|éviter|sans excès|sans farine|si coutume|si chaud|si entraînement|si toléré|si besoin|si trouvé|si sensible)/i.test(s))
+    return true;
+  if (/^peu de |^algues en petite|^légumes crus en fibres|^demander peu/i.test(t)) return true;
+  if (/^protéine$/i.test(s) || /^glucides /i.test(t)) return true;
+  if (/^légumes passés/i.test(t)) return true;
+  if (/^densité énergétique$/i.test(t)) return true;
+  if (/boisson habituelle$/i.test(t)) return true;
+  if (/^facile à digérer$/i.test(t)) return true;
+  return false;
+}
+
+function displayIngredientLabel(s: string): string {
+  const t = s.trim();
+  if (/^(SG|CP)$/i.test(t)) return t.toUpperCase();
+  if (!t) return t;
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+function shoppingDedupeKey(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function pickShoppingCategory(item: string): string {
+  const t = item.toLowerCase();
+
+  if (
+    /\b(banane|compote|jus\b|nectar|datte|figue|figues|pomme|poire|mang|raisin|smoothie|clément|orange|fruit|baies?|marmelade|coulis|poire rôtie|citron)\b/i.test(
+      t
+    )
+  ) {
+    return "Fruits, jus & compotes";
+  }
+
+  if (
+    /\b(riz|pâtes?|pates|polenta|gnocch|semoule|couscous|nouille|vermicelle|quinoa|boulgour|avoine|flocon|céréale|cornflake|maïs|sarrasin|pomme de terre|patate|purée|tortilla|pain|brioche|bagel|toast|galette|waffl|gaufr|pancake|crêpe|muffin|cake|génoise|madeleine|viennois|lasagne|gratin|risotto|wrap|pizza|quiche|frites?|chips|plantain|naan|chapati|bouillie|semolino|riz au lait|granola|flocon de riz|pad thaï|tartine|bulgur|penne|tagliatelles?|sushi|milanais|falafel)\b/i.test(
+      t
+    )
+  ) {
+    return "Féculents, céréales & pains";
+  }
+
+  if (/\b(yaourt|yogourt|fromage|lait\b|ribot|crème\b|beurre\b|parmesan|feta|œuf|oeuf)\b/i.test(t)) {
+    return "Produits laitiers & œufs (ou alternatives)";
+  }
+
+  if (
+    /\b(poulet|dinde|poisson|saumon|tofu|tempeh|seitan|volaille|jambon|lentille|pois chich|légumineuses?|haricot|hachée|steak soja|escalope|milanaise)\b/i.test(
+      t
+    )
+  ) {
+    return "Protéines & légumineuses";
+  }
+
+  if (/\b(thé\b|café|tisane|infusion|boisson maltée|boisson avoine|boisson céréale|cacaotée)\b/i.test(t)) {
+    return "Boissons chaudes & boissons végétales";
+  }
+
+  if (/\b(barre\b|biscuit|cookie|gaufrette|trail mix|énergétique)\b/i.test(t)) {
+    return "Encas & viennoiseries";
+  }
+
+  if (
+    /\b(confiture|miel|sirop|pesto|sauce\b|tahin|houmous|guacamole|pickle|miso|cannelle|épices?|algues|bouillon|velouté|curry|tomate\b|écrasé|huile|pâte à tartiner|parmesan vegan)\b/i.test(
+      t
+    )
+  ) {
+    return "Condiments, épices & aides culinaires";
+  }
+
+  if (
+    /\b(salade|courgette|carotte|courge|brocoli|oignon|poireau|aubergine|ratatouille|mâche|roquette|légume|champignon|maïs doux|artichaut|haricot vert|épinard|persil|taboulé|kimchi|iceberg)\b/i.test(
+      t
+    )
+  ) {
+    return "Légumes & herbes";
+  }
+
+  return "Divers";
+}
+
+export type PrepShoppingCategory = { category: string; items: string[] };
+
+/**
+ * Liste de courses « optimisée » : union dédupliquée de tous les intitulés possibles
+ * dans les pools de menus pour le régime choisi (couvre tirages au hasard des exemples).
+ */
+export function buildPrepShoppingListFromMealPools(diet: DietStyle): PrepShoppingCategory[] {
+  const pool = MEAL_ITEM_POOLS[diet];
+  const byKey = new Map<string, string>();
+
+  for (const slot of MEAL_SLOT_ORDER) {
+    for (const variant of pool[slot]) {
+      for (const line of variant) {
+        for (const frag of fragmentsFromMealLine(line)) {
+          if (shouldSkipShoppingFragment(frag)) continue;
+          const label = displayIngredientLabel(frag);
+          const key = shoppingDedupeKey(label);
+          if (key.length < 3) continue;
+          if (!byKey.has(key)) byKey.set(key, label);
+        }
+      }
+    }
+  }
+
+  const buckets = new Map<string, string[]>();
+  for (const label of byKey.values()) {
+    const cat = pickShoppingCategory(label);
+    const arr = buckets.get(cat) ?? [];
+    arr.push(label);
+    buckets.set(cat, arr);
+  }
+
+  const order = [
+    "Féculents, céréales & pains",
+    "Fruits, jus & compotes",
+    "Protéines & légumineuses",
+    "Produits laitiers & œufs (ou alternatives)",
+    "Légumes & herbes",
+    "Condiments, épices & aides culinaires",
+    "Boissons chaudes & boissons végétales",
+    "Encas & viennoiseries",
+    "Divers",
+  ];
+
+  const out: PrepShoppingCategory[] = [];
+  for (const category of order) {
+    const items = buckets.get(category);
+    if (items?.length) {
+      items.sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
+      out.push({ category, items });
+    }
+  }
+  return out;
+}
 
 export type CarbChecklistItem = { id: string; label: string };
 

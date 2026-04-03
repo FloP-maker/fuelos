@@ -11,6 +11,7 @@ import {
   type DietStyle,
   CARB_DAY_ORDER,
   RACE_MATERIAL_CHECKLIST,
+  buildPrepShoppingListFromMealPools,
   buildPostRaceProtocol,
   carbDayChecklist,
   carbDayMeta,
@@ -266,10 +267,11 @@ function newBagId(): string {
 }
 
 export default function PrepPage() {
-  usePageTitle('Prep');
+  usePageTitle('Pré/post course');
   const [bundle, setBundle] = useState<ActiveBundle | null>(null);
   const [prep, setPrep] = useState<PrepPersisted>(() => loadOrInitPrep());
   const [section, setSection] = useState<'carb' | 'race' | 'drop' | 'post'>('carb');
+  const [shopCopied, setShopCopied] = useState(false);
 
   useEffect(() => {
     try {
@@ -331,6 +333,8 @@ export default function PrepPage() {
     }
     return out;
   }, [carbDaysVisible]);
+
+  const prepShoppingList = useMemo(() => buildPrepShoppingListFromMealPools(effectiveDiet), [effectiveDiet]);
 
   const postRaceBlocks = useMemo(
     () =>
@@ -408,11 +412,12 @@ export default function PrepPage() {
       <Header activePage="prep" />
       <main style={S.main}>
         <p style={{ ...S.muted, margin: '0 0 6px', fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', color: '#fb923c' }}>
-          PRÉPARATION PRÉ-COURSE
+          PRÉPARATION & RÉCUPÉRATION
         </p>
-        <h1 style={S.h1}>Prep — charge, jour J & drop bags</h1>
+        <h1 style={S.h1}>Pré/post course — charge, jour J & drop bags</h1>
         <p style={{ ...S.muted, margin: '0 0 20px' }}>
-          Assistant carb-loading (3 ou 7 jours avant la course), checklists, petit-déjeuner & protocole pré-départ. Les données du{' '}
+          Assistant carb-loading (3 ou 7 jours avant la course), checklists, liste de courses liée aux menus, petit-déjeuner &
+          protocole pré-départ, récup post-épreuve. Les données du{' '}
           <Link href="/plan" style={{ color: '#fb923c', fontWeight: 700 }}>
             plan actif
           </Link>{' '}
@@ -435,7 +440,7 @@ export default function PrepPage() {
           </div>
         )}
 
-        <nav style={S.navPills} aria-label="Sections Prep">
+        <nav style={S.navPills} aria-label="Sections Pré/post course">
           {(
             [
               ['carb', 'Carb loading'],
@@ -570,6 +575,57 @@ export default function PrepPage() {
               </div>
             </div>
 
+            <div style={S.card}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <h2 style={{ ...S.h2, margin: 0 }}>Liste de courses (menus possibles)</h2>
+                <button
+                  type="button"
+                  style={S.btnOutline}
+                  onClick={() => {
+                    const text = prepShoppingList
+                      .map((c) => `${c.category}\n${c.items.map((i) => `• ${i}`).join('\n')}`)
+                      .join('\n\n');
+                    void navigator.clipboard.writeText(text).then(() => {
+                      setShopCopied(true);
+                      window.setTimeout(() => setShopCopied(false), 2000);
+                    });
+                  }}
+                >
+                  {shopCopied ? 'Copié' : 'Copier la liste'}
+                </button>
+              </div>
+              <p style={{ ...S.muted, fontSize: 13, marginTop: 8 }}>
+                Ingrédients regroupés par famille, dédupliqués à partir de <strong>toutes</strong> les variantes de menus pour
+                le régime sélectionné — vous couvrez n’importe quel tirage des exemples. Ajustez les quantités à votre fenêtre (3
+                ou 7 jours) et à votre foyer.
+              </p>
+              {effectiveDiet === 'gluten_free' && (
+                <p style={{ ...S.muted, fontSize: 12, marginTop: 6 }}>
+                  Vérifiez les étiquettes <strong>sans gluten</strong> sur produits industriels (pâtes, pain, sauces…).
+                </p>
+              )}
+              <div style={{ marginTop: 16, display: 'grid', gap: 16 }}>
+                {prepShoppingList.map((cat) => (
+                  <div key={cat.category}>
+                    <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 8, color: '#fb923c' }}>{cat.category}</div>
+                    <ul style={{ ...S.muted, margin: 0, paddingLeft: 18, display: 'grid', gap: 4 }}>
+                      {cat.items.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {carbDaysVisible.map((d) => {
               const daily = dailyChoFromBody(weight, prep.carbGPerKg[d.key]);
               const blocks = pickCarbMealExamples(effectiveDiet, daily, d.key, prep.mealIdeasSalt[d.key]);
@@ -630,6 +686,35 @@ export default function PrepPage() {
                             </li>
                           ))}
                         </ul>
+                        <div
+                          style={{
+                            marginTop: 12,
+                            paddingTop: 12,
+                            borderTop: '1px dashed color-mix(in srgb, #fb923c 35%, var(--color-border))',
+                          }}
+                        >
+                          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Quantités & recette</div>
+                          <p style={{ ...S.muted, fontSize: 12, margin: '0 0 8px' }}>{b.choRecap}</p>
+                          <ol
+                            style={{
+                              ...S.muted,
+                              margin: 0,
+                              paddingLeft: 20,
+                              fontSize: 13,
+                              lineHeight: 1.55,
+                            }}
+                          >
+                            {b.recipeSteps.map((step, si) => (
+                              <li key={`${b.label}-${si}`} style={{ marginBottom: 6 }}>
+                                {step}
+                              </li>
+                            ))}
+                          </ol>
+                          <p style={{ ...S.muted, fontSize: 11, margin: '10px 0 0', fontStyle: 'italic' }}>
+                            Portions calées sur l’objectif ~{b.approxChoG} g CHO pour ce créneau (moyennes nutritionnelles) — affinez
+                            avec les étiquettes et votre habitude.
+                          </p>
+                        </div>
                       </div>
                     ))}
                   </div>

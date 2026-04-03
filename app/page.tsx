@@ -80,7 +80,7 @@ const HOW_IT_WORKS_STEPS: {
 const FEATURE_CARDS = [
   { icon: '🎯', title: 'PLAN', desc: 'CHO/h, hydratation, sodium calculés selon votre profil, la météo et le dénivelé', href: '/plan', accent: '#60a5fa' },
   { icon: '🛒', title: 'SHOP', desc: '500+ produits (Maurten, SiS, Tailwind, Näak…). Liste de courses auto-générée', href: '/shop', accent: '#4ade80' },
-  { icon: '🥣', title: 'PREP', desc: 'Carb-loading J−3 à J−1, checklist jour J, protocole pré-départ, drop bags ultra', href: '/prep', accent: '#fb923c' },
+  { icon: '🥣', title: 'PRÉ/POST', desc: 'Charge 3 ou 7 j, liste de courses des menus, jour J, drop bags & récup', href: '/prep', accent: '#fb923c' },
   { icon: '⚡', title: 'RACE MODE', desc: 'Timer intelligent + notifications push. Recalcul dynamique si vous déviez du plan', href: '/race', accent: 'var(--color-accent)' },
   { icon: '📊', title: 'LEARN', desc: 'Débrief post-course, suivi GI, apprentissage entre les événements', href: '/learn', accent: '#c084fc' },
 ];
