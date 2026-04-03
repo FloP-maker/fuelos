@@ -808,7 +808,7 @@ export default function PrepPage() {
                     ))}
                   </div>
 
-                  <div
+                  <details
                     style={{
                       marginTop: 18,
                       marginBottom: 0,
@@ -818,74 +818,91 @@ export default function PrepPage() {
                       background: 'color-mix(in srgb, #4ade80 7%, var(--color-bg))',
                     }}
                   >
-                    <div
+                    <summary
                       style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        justifyContent: 'space-between',
-                        gap: 10,
-                        alignItems: 'flex-start',
+                        cursor: 'pointer',
+                        listStyle: 'none',
                       }}
                     >
-                      <h3 style={{ ...S.h2, margin: 0, fontSize: 15 }}>Liste d’achats — {d.title}</h3>
-                      <button
-                        type="button"
-                        style={S.btnOutline}
-                        onClick={() => {
-                          const head = `${d.title} — ${prep.shoppingCity || '—'}, ${prep.shoppingCountryCode} — saison ${seasonCtx.seasonLabelFr}\nEstimation prix : ${priceEst.min.toFixed(2)}–${priceEst.max.toFixed(2)} € (fourchette indicative)\n\n`;
-                          const body = purchaseLines
-                            .map((L) => {
-                              const hint = L.seasonalHint ? ` (${L.seasonalHint})` : '';
-                              return `• ${L.shopDetail}${hint}`;
-                            })
-                            .join('\n');
-                          void navigator.clipboard.writeText(head + body).then(() => {
-                            setShopCopiedDayKey(d.key);
-                            window.setTimeout(() => setShopCopiedDayKey(null), 2000);
-                          });
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          justifyContent: 'space-between',
+                          gap: 10,
+                          alignItems: 'flex-start',
                         }}
                       >
-                        {shopCopiedDayKey === d.key ? 'Copié' : 'Copier cette journée'}
-                      </button>
-                    </div>
-                    <p style={{ ...S.muted, fontSize: 12, margin: '10px 0 0' }}>{locHint}</p>
-                    <p style={{ ...S.muted, fontSize: 13, margin: '10px 0 0' }}>
-                      <strong>Total estimé (courses type supermarché) :</strong> {priceEst.min.toFixed(2)} € —{' '}
-                      {priceEst.max.toFixed(2)} €. Les montants changent si vous cliquez sur « Nouvelles idées » (menus différents).
-                    </p>
-                    <p style={{ ...S.muted, fontSize: 12, margin: '8px 0 0' }}>
-                      Quantités <strong>cumulées pour les 4 menus affichés</strong> pour cette journée uniquement (achat sec / liquide
-                      / pièces selon la ligne).
-                    </p>
-                    {effectiveDiet === 'gluten_free' && (
-                      <p style={{ ...S.muted, fontSize: 12, margin: '8px 0 0' }}>
-                        Sans gluten : vérifiez farines, pain, sauces et céréales au rayon dédié.
-                      </p>
-                    )}
-                    {purchaseLines.length === 0 && (
-                      <p style={{ ...S.muted, margin: '12px 0 0' }}>Aucun ingrédient chiffré pour cette journée.</p>
-                    )}
-                    <ul style={{ listStyle: 'none', padding: 0, margin: '14px 0 0', display: 'grid', gap: 10 }}>
-                      {purchaseLines.map((L) => (
-                        <li
-                          key={L.mergeKey}
-                          style={{
-                            padding: '10px 12px',
-                            borderRadius: 8,
-                            border: '1px solid var(--color-border)',
-                            fontSize: 14,
-                            background: 'var(--color-bg)',
+                        <div style={{ flex: '1 1 200px' }}>
+                          <div style={{ ...S.h2, margin: 0, fontSize: 15 }}>Liste d’achats — {d.title}</div>
+                          <p style={{ ...S.muted, fontSize: 12, margin: '8px 0 0' }}>
+                            {purchaseLines.length} article{purchaseLines.length !== 1 ? 's' : ''} · ~{priceEst.min.toFixed(2)}–
+                            {priceEst.max.toFixed(2)} € — cliquer pour afficher la liste
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          style={S.btnOutline}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const head = `${d.title} — ${prep.shoppingCity || '—'}, ${prep.shoppingCountryCode} — saison ${seasonCtx.seasonLabelFr}\nEstimation prix : ${priceEst.min.toFixed(2)}–${priceEst.max.toFixed(2)} € (fourchette indicative)\n\n`;
+                            const body = purchaseLines
+                              .map((L) => {
+                                const hint = L.seasonalHint ? ` (${L.seasonalHint})` : '';
+                                return `• ${L.shopDetail}${hint}`;
+                              })
+                              .join('\n');
+                            void navigator.clipboard.writeText(head + body).then(() => {
+                              setShopCopiedDayKey(d.key);
+                              window.setTimeout(() => setShopCopiedDayKey(null), 2000);
+                            });
                           }}
                         >
-                          <div style={{ fontWeight: 700 }}>{L.displayLabel}</div>
-                          <div style={S.muted}>{L.shopDetail}</div>
-                          {L.seasonalHint && (
-                            <div style={{ ...S.muted, fontSize: 12, marginTop: 6, color: '#4ade80' }}>{L.seasonalHint}</div>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                          {shopCopiedDayKey === d.key ? 'Copié' : 'Copier cette journée'}
+                        </button>
+                      </div>
+                    </summary>
+                    <div style={{ paddingTop: 14 }}>
+                      <p style={{ ...S.muted, fontSize: 12, margin: 0 }}>{locHint}</p>
+                      <p style={{ ...S.muted, fontSize: 13, margin: '10px 0 0' }}>
+                        <strong>Total estimé (courses type supermarché) :</strong> {priceEst.min.toFixed(2)} € —{' '}
+                        {priceEst.max.toFixed(2)} €. Les montants changent si vous cliquez sur « Nouvelles idées » (menus différents).
+                      </p>
+                      <p style={{ ...S.muted, fontSize: 12, margin: '8px 0 0' }}>
+                        Quantités <strong>cumulées pour les 4 menus affichés</strong> pour cette journée uniquement (achat sec / liquide
+                        / pièces selon la ligne).
+                      </p>
+                      {effectiveDiet === 'gluten_free' && (
+                        <p style={{ ...S.muted, fontSize: 12, margin: '8px 0 0' }}>
+                          Sans gluten : vérifiez farines, pain, sauces et céréales au rayon dédié.
+                        </p>
+                      )}
+                      {purchaseLines.length === 0 && (
+                        <p style={{ ...S.muted, margin: '12px 0 0' }}>Aucun ingrédient chiffré pour cette journée.</p>
+                      )}
+                      <ul style={{ listStyle: 'none', padding: 0, margin: '14px 0 0', display: 'grid', gap: 10 }}>
+                        {purchaseLines.map((L) => (
+                          <li
+                            key={L.mergeKey}
+                            style={{
+                              padding: '10px 12px',
+                              borderRadius: 8,
+                              border: '1px solid var(--color-border)',
+                              fontSize: 14,
+                              background: 'var(--color-bg)',
+                            }}
+                          >
+                            <div style={{ fontWeight: 700 }}>{L.displayLabel}</div>
+                            <div style={S.muted}>{L.shopDetail}</div>
+                            {L.seasonalHint && (
+                              <div style={{ ...S.muted, fontSize: 12, marginTop: 6, color: '#4ade80' }}>{L.seasonalHint}</div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </details>
 
                   <h3 style={{ ...S.h2, marginTop: 22, fontSize: 15 }}>Checklist {d.title}</h3>
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
