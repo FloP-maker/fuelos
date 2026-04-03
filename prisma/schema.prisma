@@ -46,11 +46,12 @@ model User {
   emailVerified DateTime? @map("email_verified")
   image         String?
 
-  accounts           Account[]
-  sessions           Session[]
-  planSnapshots      PlanSnapshot[]
-  raceDebriefs       RaceDebrief[]
-  customProductList  CustomProductList?
+  accounts             Account[]
+  sessions             Session[]
+  planSnapshots        PlanSnapshot[]
+  raceDebriefs         RaceDebrief[]
+  customProductList    CustomProductList?
+  storedAthleteProfiles StoredAthleteProfile[]
 }
 
 model VerificationToken {
@@ -100,4 +101,20 @@ model CustomProductList {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("custom_product_lists")
+}
+
+/// Profils athlète persistés (plusieurs par utilisateur : ex. été / hiver). `data` = payload AthleteProfile (JSON).
+model StoredAthleteProfile {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  isDefault Boolean  @default(false) @map("is_default")
+  data      Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([userId, isDefault])
+  @@map("athlete_profiles")
 }

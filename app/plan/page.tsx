@@ -4,6 +4,8 @@ import dynamic from "next/dynamic";
 import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { athleteProfileFromJson } from "../lib/athleteProfileData";
 import useLocalStorage from "../lib/hooks/useLocalStorage";
 import usePageTitle from "../lib/hooks/usePageTitle";
 import { calculateFuelPlan } from "../lib/fuelCalculator";
@@ -30,6 +32,16 @@ const CUSTOM_PRODUCTS_STORAGE_KEY = "fuelos_custom_products";
 const ONBOARDING_PROFILE_KEY = "fuelos_onboarding_profile_done";
 const ONBOARDING_EVENT_KEY = "fuelos_onboarding_event_done";
 const ONBOARDING_EVENT_STEP_KEY = "fuelos_onboarding_event_step_done";
+const SELECTED_CLOUD_PROFILE_KEY = "fuelos_selected_athlete_profile_id";
+
+type CloudAthleteProfileRow = {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  data: unknown;
+  createdAt: string;
+  updatedAt: string;
+};
 
 type PlanWizardStep = 1 | 2 | 3;
 
@@ -204,7 +216,10 @@ function ProductThumb({
 function PlanPageContent() {
   usePageTitle("Plan");
   const searchParams = useSearchParams();
+  const { status, data: sessionData } = useSession();
   const [athleteProfile, setAthleteProfile] = useLocalStorage<AthleteProfile | null>("athlete-profile", null);
+  const cloudHydratedRef = useRef(false);
+  const lastCloudUserIdRef = useRef<string | undefined>(undefined);
 
   const [currentStep, setCurrentStep] = useState<PlanWizardStep>(1);
   const [maxReachedStep, setMaxReachedStep] = useState<PlanWizardStep>(1);
@@ -218,6 +233,7 @@ function PlanPageContent() {
     sweatRate: athleteProfile?.sweatRate || 1.0,
     giTolerance: athleteProfile?.giTolerance || "normal",
     allergies: athleteProfile?.allergies || [],
+    avoidProducts: athleteProfile?.avoidProducts || [],
     preferredProducts: athleteProfile?.preferredProducts || {
       gels: [],
       drinks: [],
@@ -228,6 +244,12 @@ function PlanPageContent() {
       flavors: [],
     },
   });
+
+  const [cloudProfiles, setCloudProfiles] = useState<CloudAthleteProfileRow[]>([]);
+  const [cloudProfilesLoading, setCloudProfilesLoading] = useState(false);
+  const [selectedCloudProfileId, setSelectedCloudProfileId] = useState<string | null>(null);
+  const [cloudProfileName, setCloudProfileName] = useState("");
+  const [cloudHint, setCloudHint] = useState<string | null>(null);
 
   const [event, setEvent] = useState<EventDetails>({
     sport: "Trail",
@@ -297,6 +319,73 @@ function PlanPageContent() {
 
     return () => clearTimeout(timer);
   }, [profile, setAthleteProfile]);
+
+  useEffect(() => {
+    if (status !== "authenticated") {
+      cloudHydratedRef.current = false;
+      lastCloudUserIdRef.current = undefined;
+      setCloudProfiles([]);
+      setSelectedCloudProfileId(null);
+      setCloudProfileName("");
+      setCloudProfilesLoading(false);
+      return;
+    }
+
+    const userId = sessionData?.user?.id;
+    if (userId && lastCloudUserIdRef.current !== userId) {
+      lastCloudUserIdRef.current = userId;
+      cloudHydratedRef.current = false;
+    }
+
+    let cancelled = false;
+    setCloudProfilesLoading(true);
+    setCloudHint(null);
+
+    void (async () => {
+      try {
+        const res = await fetch("/api/user/athlete-profiles", { credentials: "include" });
+        if (!res.ok) throw new Error("Impossible de charger les profils");
+        const body = (await res.json()) as { profiles?: CloudAthleteProfileRow[] };
+        const list = Array.isArray(body.profiles) ? body.profiles : [];
+        if (cancelled) return;
+        setCloudProfiles(list);
+
+        if (!cloudHydratedRef.current && list.length > 0) {
+          cloudHydratedRef.current = true;
+          let storedId: string | null = null;
+          try {
+            storedId = localStorage.getItem(SELECTED_CLOUD_PROFILE_KEY);
+          } catch {
+            /* ignore */
+          }
+          const pick =
+            (storedId ? list.find((p) => p.id === storedId) : undefined) ||
+            list.find((p) => p.isDefault) ||
+            list[0];
+          if (pick) {
+            const parsed = athleteProfileFromJson(pick.data);
+            if (parsed) {
+              setProfile(parsed);
+              setSelectedCloudProfileId(pick.id);
+              setCloudProfileName(pick.name);
+            }
+          }
+        } else if (!cloudHydratedRef.current) {
+          cloudHydratedRef.current = true;
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setCloudHint(e instanceof Error ? e.message : "Erreur chargement profils");
+        }
+      } finally {
+        if (!cancelled) setCloudProfilesLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status, sessionData?.user?.id]);
 
   useEffect(() => {
     const s = searchParams.get("step");
@@ -437,6 +526,146 @@ function PlanPageContent() {
       longitude: prev.longitude ?? start[0],
     }));
   }, []);
+
+  const applyCloudRow = useCallback((row: CloudAthleteProfileRow) => {
+    const parsed = athleteProfileFromJson(row.data);
+    if (!parsed) {
+      setCloudHint("Ce profil contient des données invalides.");
+      return;
+    }
+    setProfile(parsed);
+    setSelectedCloudProfileId(row.id);
+    setCloudProfileName(row.name);
+    try {
+      localStorage.setItem(SELECTED_CLOUD_PROFILE_KEY, row.id);
+    } catch {
+      /* ignore */
+    }
+    setCloudHint(null);
+  }, []);
+
+  const newCloudProfileDraft = useCallback(() => {
+    setSelectedCloudProfileId(null);
+    setCloudProfileName("");
+    try {
+      localStorage.removeItem(SELECTED_CLOUD_PROFILE_KEY);
+    } catch {
+      /* ignore */
+    }
+    setCloudHint("Brouillon : saisir un nom puis enregistrer pour créer un profil en ligne.");
+  }, []);
+
+  const refreshCloudProfiles = useCallback(async (): Promise<CloudAthleteProfileRow[]> => {
+    const res = await fetch("/api/user/athlete-profiles", { credentials: "include" });
+    if (!res.ok) throw new Error("Synchronisation impossible");
+    const body = (await res.json()) as { profiles?: CloudAthleteProfileRow[] };
+    const list = Array.isArray(body.profiles) ? body.profiles : [];
+    setCloudProfiles(list);
+    return list;
+  }, []);
+
+  const saveCloudProfile = useCallback(async () => {
+    if (status !== "authenticated") return;
+    const name = cloudProfileName.trim();
+    if (!name) {
+      setCloudHint("Indique un nom pour ce profil (ex. « Été chaleur »).");
+      return;
+    }
+    setCloudHint(null);
+    try {
+      if (selectedCloudProfileId) {
+        const res = await fetch(`/api/user/athlete-profiles/${selectedCloudProfileId}`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, data: profile }),
+        });
+        if (!res.ok) {
+          const err = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(err.error || "Mise à jour refusée");
+        }
+        setCloudHint("Profil mis à jour.");
+      } else {
+        const res = await fetch("/api/user/athlete-profiles", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, data: profile }),
+        });
+        if (!res.ok) {
+          const err = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(err.error || "Création refusée");
+        }
+        const created = (await res.json()) as {
+          profile?: { id: string; name: string; data: unknown };
+        };
+        if (created.profile?.id) {
+          setSelectedCloudProfileId(created.profile.id);
+          try {
+            localStorage.setItem(SELECTED_CLOUD_PROFILE_KEY, created.profile.id);
+          } catch {
+            /* ignore */
+          }
+        }
+        setCloudHint("Profil créé.");
+      }
+      await refreshCloudProfiles();
+    } catch (e) {
+      setCloudHint(e instanceof Error ? e.message : "Erreur enregistrement");
+    }
+  }, [
+    status,
+    cloudProfileName,
+    selectedCloudProfileId,
+    profile,
+    refreshCloudProfiles,
+  ]);
+
+  const setCloudProfileAsDefault = useCallback(async () => {
+    if (!selectedCloudProfileId || status !== "authenticated") return;
+    setCloudHint(null);
+    try {
+      const res = await fetch(`/api/user/athlete-profiles/${selectedCloudProfileId}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isDefault: true }),
+      });
+      if (!res.ok) throw new Error("Action refusée");
+      setCloudHint("Profil défini par défaut pour tes prochaines visites.");
+      await refreshCloudProfiles();
+    } catch (e) {
+      setCloudHint(e instanceof Error ? e.message : "Erreur");
+    }
+  }, [selectedCloudProfileId, status, refreshCloudProfiles]);
+
+  const deleteCloudProfile = useCallback(async () => {
+    if (!selectedCloudProfileId || status !== "authenticated") return;
+    if (!window.confirm("Supprimer ce profil enregistré ? Cette action est définitive.")) return;
+    setCloudHint(null);
+    try {
+      const res = await fetch(`/api/user/athlete-profiles/${selectedCloudProfileId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Suppression refusée");
+      const idRemoved = selectedCloudProfileId;
+      setSelectedCloudProfileId(null);
+      setCloudProfileName("");
+      try {
+        localStorage.removeItem(SELECTED_CLOUD_PROFILE_KEY);
+      } catch {
+        /* ignore */
+      }
+      const list = await refreshCloudProfiles();
+      if (list.length > 0) applyCloudRow(list[0]!);
+      else {
+        setCloudHint("Profil supprimé. Tu peux en créer un autre ou continuer en brouillon.");
+      }
+    } catch (e) {
+      setCloudHint(e instanceof Error ? e.message : "Erreur suppression");
+    }
+  }, [selectedCloudProfileId, status, refreshCloudProfiles, applyCloudRow]);
 
   function handleCalculate() {
     console.log("🔍 Profile GI Tolerance:", profile.giTolerance);
@@ -611,22 +840,145 @@ function PlanPageContent() {
               Ces données permettent de personnaliser tes besoins nutritionnels.
             </p>
 
-            {athleteProfile && (
+            {status === "unauthenticated" && (
+              <p
+                style={{
+                  fontSize: 13,
+                  color: "var(--color-text-muted)",
+                  marginBottom: 20,
+                  marginTop: -20,
+                  lineHeight: 1.5,
+                }}
+              >
+                Connecte-toi pour enregistrer plusieurs profils (ex. été / hiver) et les retrouver sur tous tes
+                appareils.
+              </p>
+            )}
+
+            {status === "authenticated" && (
+              <div style={{ ...S.card, marginBottom: 20 }}>
+                <div style={S.sectionTitle}>
+                  <span>☁️</span> Profils enregistrés
+                </div>
+                {cloudProfilesLoading ? (
+                  <p style={{ fontSize: 13, color: "var(--color-text-muted)" }}>Chargement…</p>
+                ) : (
+                  <>
+                    <label style={S.label}>PROFIL ACTIF</label>
+                    <select
+                      style={{ ...S.select, marginBottom: 16 }}
+                      value={selectedCloudProfileId ?? ""}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (!v) {
+                          newCloudProfileDraft();
+                          return;
+                        }
+                        const row = cloudProfiles.find((p) => p.id === v);
+                        if (row) applyCloudRow(row);
+                      }}
+                    >
+                      <option value="">— Nouveau brouillon (non enregistré) —</option>
+                      {cloudProfiles.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                          {p.isDefault ? " (défaut)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <label style={S.label}>NOM DU PROFIL</label>
+                    <input
+                      style={{ ...S.input, marginBottom: 16 }}
+                      value={cloudProfileName}
+                      onChange={(e) => setCloudProfileName(e.target.value)}
+                      placeholder="Ex. Été chaleur, Hiver trail…"
+                      autoComplete="off"
+                    />
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 10,
+                        marginBottom: cloudHint ? 12 : 0,
+                      }}
+                    >
+                      <button type="button" style={S.btnOutline} onClick={() => void saveCloudProfile()}>
+                        {selectedCloudProfileId ? "Mettre à jour" : "Créer ce profil"}
+                      </button>
+                      <button type="button" style={S.btnOutline} onClick={newCloudProfileDraft}>
+                        Nouveau brouillon
+                      </button>
+                      {selectedCloudProfileId && (
+                        <>
+                          <button type="button" style={S.btnOutline} onClick={() => void setCloudProfileAsDefault()}>
+                            Définir par défaut
+                          </button>
+                          <button
+                            type="button"
+                            style={{
+                              ...S.btnOutline,
+                              borderColor: "rgba(239,68,68,0.45)",
+                              color: "#ef4444",
+                            }}
+                            onClick={() => void deleteCloudProfile()}
+                          >
+                            Supprimer
+                          </button>
+                        </>
+                      )}
+                    </div>
+                    {cloudHint && (
+                      <p style={{ fontSize: 13, margin: 0, color: "var(--color-text-muted)" }}>{cloudHint}</p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {(athleteProfile || status === "authenticated") && (
               <div
                 style={{
                   padding: "12px 16px",
                   borderRadius: 8,
-                  background: "rgba(34,197,94,0.1)",
-                  border: "1px solid var(--color-accent)",
+                  background:
+                    status === "authenticated" && selectedCloudProfileId
+                      ? "rgba(234,179,8,0.12)"
+                      : "rgba(34,197,94,0.1)",
+                  border:
+                    status === "authenticated" && selectedCloudProfileId
+                      ? "1px solid rgba(234,179,8,0.45)"
+                      : "1px solid var(--color-accent)",
                   marginBottom: 20,
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
                 }}
               >
-                <span style={{ fontSize: 18 }}>✓</span>
-                <span style={{ fontSize: 13, color: "var(--color-accent)", fontWeight: 600 }}>
-                  Profil sauvegardé automatiquement
+                <span style={{ fontSize: 18 }}>
+                  {status === "authenticated" && selectedCloudProfileId ? "⏱" : "✓"}
+                </span>
+                <span
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color:
+                      status === "authenticated" && selectedCloudProfileId
+                        ? "rgb(180, 140, 40)"
+                        : "var(--color-accent)",
+                  }}
+                >
+                  {status === "authenticated" ? (
+                    selectedCloudProfileId ? (
+                      <>
+                        Profil « {cloudProfileName} » : utilise « Mettre à jour » après modification, ou enchaîne vers la
+                        course.
+                      </>
+                    ) : (
+                      <>Sauvegarde locale ; enregistre un profil ci-dessus pour le retrouver en ligne.</>
+                    )
+                  ) : (
+                    <>Profil sauvegardé automatiquement sur cet appareil.</>
+                  )}
                 </span>
               </div>
             )}
