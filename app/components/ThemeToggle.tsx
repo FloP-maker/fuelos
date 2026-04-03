@@ -15,15 +15,11 @@ export function ThemeToggle() {
 
   return (
     <button
+      type="button"
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className={[
-        'grid h-11 w-11 touch-manipulation place-items-center rounded-full border transition-colors sm:h-10 sm:w-10',
-        'shadow-sm hover:shadow-md active:scale-[0.98]',
-        'bg-[var(--color-bg-card)] border-[var(--color-border)]',
-        'text-[var(--color-text)]',
-      ].join(' ')}
+      className="fuel-header-icon-btn shrink-0 touch-manipulation"
       aria-label={isDark ? 'Passer en thème clair' : 'Passer en thème sombre'}
-      title={isDark ? 'Light mode' : 'Dark mode'}
+      title={isDark ? 'Thème clair' : 'Thème sombre'}
     >
       {isDark ? (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">

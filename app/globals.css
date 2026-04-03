@@ -164,7 +164,7 @@ textarea:focus {
     }
   }
 
-  /* Barre du haut : alignée sur .fuel-main, actions poussées à droite (y compris après retour à la ligne) */
+  /* Barre du haut : pleine largeur ; actions à droite ancrées au viewport */
   .fuel-header-shell {
     width: 100%;
     border-bottom: 1px solid var(--color-border-subtle);
@@ -179,16 +179,17 @@ textarea:focus {
     -webkit-backdrop-filter: saturate(160%) blur(14px);
   }
 
+  /* Pleine largeur : le bloc droit s’aligne sur le bord droit du viewport (pas sur le fil de l’eau d’une colonne centrée). */
   .fuel-header-inner {
-    max-width: var(--fuel-shell-max);
-    margin-inline: auto;
+    max-width: none;
+    margin-inline: 0;
     width: 100%;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px 16px;
-    padding-block: 12px;
+    justify-content: flex-start;
+    gap: 8px 12px;
+    padding-block: 10px;
     padding-inline: clamp(12px, 3.5vw, 22px);
   }
 
@@ -216,9 +217,76 @@ textarea:focus {
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
-    gap: 8px 10px;
+    gap: 6px 8px;
     min-width: 0;
     margin-left: auto;
+  }
+
+  .fuel-header-inner .fuel-btn-pill {
+    padding: 0.32rem 0.72rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    gap: 0.3rem;
+    min-height: 34px;
+    line-height: 1.2;
+  }
+
+  @media (max-width: 640px) {
+    .fuel-header-inner .fuel-btn-pill {
+      min-height: 40px;
+      padding: 0.38rem 0.8rem;
+    }
+  }
+
+  .fuel-header-inner .fuel-input-compact {
+    padding: 0.32rem 0.55rem;
+    font-size: 0.75rem;
+    min-height: 34px;
+  }
+
+  @media (max-width: 640px) {
+    .fuel-header-inner .fuel-input-compact {
+      min-height: 40px;
+    }
+  }
+
+  .fuel-header-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    padding: 0;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-card);
+    color: var(--color-text);
+    cursor: pointer;
+    box-shadow: var(--shadow-xs);
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      transform 0.12s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .fuel-header-icon-btn:hover {
+    background: var(--color-bg-card-hover);
+    border-color: color-mix(in srgb, var(--color-text-muted) 35%, var(--color-border));
+    box-shadow: var(--shadow-sm);
+  }
+
+  .fuel-header-icon-btn:active {
+    transform: scale(0.98);
+  }
+
+  @media (max-width: 640px) {
+    .fuel-header-icon-btn {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+    }
   }
 
   @media (max-width: 720px) {
@@ -316,6 +384,16 @@ textarea:focus {
     border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
     color: var(--color-accent);
     background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card));
+  }
+
+  .fuel-btn-pill.fuel-btn-pill-ghost {
+    background: transparent;
+    color: var(--color-text);
+  }
+
+  .fuel-btn-pill.fuel-btn-pill-ghost:hover {
+    background: var(--color-bg-card-hover);
+    border-color: color-mix(in srgb, var(--color-text-muted) 35%, var(--color-border));
   }
 
   .fuel-btn-pill-energy {
