@@ -6,11 +6,12 @@ import type { CSSProperties, ReactNode } from 'react';
 import { ThemeToggle } from './ThemeToggle';
 import { AuthMenu } from './AuthMenu';
 
-export type HeaderActivePage = 'plan' | 'shop' | 'race' | 'learn';
+export type HeaderActivePage = 'plan' | 'shop' | 'race' | 'learn' | 'prep';
 
 const NAV: { href: string; label: string; page: HeaderActivePage }[] = [
   { href: '/plan', label: 'Plan', page: 'plan' },
   { href: '/shop', label: 'Shop', page: 'shop' },
+  { href: '/prep', label: 'Prep', page: 'prep' },
   { href: '/race', label: 'Race Mode', page: 'race' },
   { href: '/learn', label: 'Learn', page: 'learn' },
 ];
@@ -20,6 +21,7 @@ function pathnameToActivePage(pathname: string | null): HeaderActivePage | undef
   if (pathname.startsWith('/plan')) return 'plan';
   if (pathname.startsWith('/shop')) return 'shop';
   if (pathname.startsWith('/race')) return 'race';
+  if (pathname.startsWith('/prep')) return 'prep';
   if (pathname.startsWith('/learn')) return 'learn';
   return undefined;
 }
