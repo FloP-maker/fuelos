@@ -161,7 +161,7 @@ textarea:focus {
     width: min(100%, var(--fuel-shell-max));
     margin-left: auto;
     margin-right: auto;
-    padding-block: clamp(28px, 4vw, 40px) clamp(44px, 6vw, 72px);
+    padding-block: clamp(28px, 4vw, 40px) clamp(64px, 11vw, 120px);
     padding-inline: clamp(16px, 4vw, 28px);
   }
 
@@ -558,7 +558,6 @@ textarea:focus {
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    mask-image: linear-gradient(to right, transparent 0, #000 10px, #000 calc(100% - 10px), transparent 100%);
   }
 
   .fuel-header-text-nav::-webkit-scrollbar {
@@ -569,7 +568,8 @@ textarea:focus {
     display: inline-flex;
     align-items: center;
     flex-shrink: 0;
-    padding: 0 clamp(10px, 1.35vw, 16px);
+    padding: 6px clamp(10px, 1.35vw, 16px);
+    border-radius: 7px;
     font-size: 0.8125rem;
     font-weight: 600;
     font-family: var(--font-sans);
@@ -577,17 +577,37 @@ textarea:focus {
     text-decoration: none;
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease,
+      background 0.15s ease,
+      box-shadow 0.15s ease;
     white-space: nowrap;
   }
 
   .fuel-header-text-nav a:hover {
     color: var(--color-text);
+    background: color-mix(in srgb, var(--color-text) 7%, var(--color-bg-card));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border) 65%, transparent);
   }
 
   .fuel-header-text-nav a[aria-current='page'] {
     color: var(--color-text);
     border-bottom-color: var(--color-accent);
+  }
+
+  .fuel-header-text-nav a[aria-current='page']:hover {
+    background: color-mix(in srgb, var(--color-accent) 9%, var(--color-bg-card));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 22%, transparent);
+  }
+
+  .dark .fuel-header-text-nav a:hover {
+    background: color-mix(in srgb, var(--color-text) 9%, var(--color-bg-card));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border) 80%, transparent);
+  }
+
+  .dark .fuel-header-text-nav a[aria-current='page']:hover {
+    background: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-card));
   }
 
   /* CTA principal (équivalent « bouton orange » Strava → vert FuelOS) */
