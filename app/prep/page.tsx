@@ -7,13 +7,17 @@ import usePageTitle from '../lib/hooks/usePageTitle';
 import { Header } from '../components/Header';
 import {
   type CarbDayKey,
+  type CarbLoadWindow,
   type DietStyle,
-  DEFAULT_CARB_G_PER_KG,
+  CARB_DAY_ORDER,
   RACE_MATERIAL_CHECKLIST,
+  buildPostRaceProtocol,
   carbDayChecklist,
+  carbDayMeta,
   dailyChoFromBody,
-  getCarbLoadingMealBlocks,
+  defaultCarbGPerKg,
   inferDietFromProfile,
+  pickCarbMealExamples,
   seedDropBagsFromAid,
   summarizeRaceNutritionFromPlan,
 } from '../lib/prepContent';
@@ -142,7 +146,9 @@ type ActiveBundle = {
 type DropBagRow = { id: string; cpLabel: string; distanceKm: string; contents: string };
 
 type PrepPersisted = {
+  carbWindow: CarbLoadWindow;
   carbGPerKg: Record<CarbDayKey, number>;
+  mealIdeasSalt: Record<CarbDayKey, number>;
   dietStyle: DietStyle;
   checkedCarb: Record<string, boolean>;
   checkedRaceMat: Record<string, boolean>;
@@ -151,6 +157,10 @@ type PrepPersisted = {
   breakfastQuantityNote: string;
   preStartProtocol: string;
   dropBags: DropBagRow[];
+  recoveryCryotherapy: boolean;
+  recoveryNaturalCare: boolean;
+  recoveryMassage: boolean;
+  recoverySaunaOk: boolean;
 };
 
 const DEFAULT_PRESTART = `—3h00 : Petit-déjeuner (voir encadré) + hydra habituelle
@@ -159,16 +169,37 @@ const DEFAULT_PRESTART = `—3h00 : Petit-déjeuner (voir encadré) + hydra habi
 —20–15 min : 1 gel d’échauffement (~25–30 g CHO) si validé à l’entraînement
 —45–60 min avant le départ : caféine prévue (ex. espresso) si stratégie habituelle`;
 
-const CARB_DAYS: { key: CarbDayKey; title: string; subtitle: string }[] = [
-  { key: 'j3', title: 'J−3', subtitle: 'Lancement doux de la charge' },
-  { key: 'j2', title: 'J−2', subtitle: 'Pic glucidique principal' },
-  { key: 'j1', title: 'J−1', subtitle: 'Maintien + faciliter digestion' },
-];
+function normalizeCarbGPerKg(
+  stored: Partial<Record<CarbDayKey, number>> | undefined,
+  window: CarbLoadWindow
+): Record<CarbDayKey, number> {
+  const base = defaultCarbGPerKg(window);
+  if (!stored) return { ...base };
+  const out = { ...base };
+  for (const k of CARB_DAY_ORDER) {
+    const v = stored[k];
+    if (typeof v === 'number' && !Number.isNaN(v)) out[k] = v;
+  }
+  return out;
+}
+
+function normalizeMealIdeasSalt(stored: Partial<Record<CarbDayKey, number>> | undefined): Record<CarbDayKey, number> {
+  const out = Object.fromEntries(CARB_DAY_ORDER.map((k) => [k, 0])) as Record<CarbDayKey, number>;
+  if (!stored) return out;
+  for (const k of CARB_DAY_ORDER) {
+    const v = stored[k];
+    if (typeof v === 'number' && !Number.isNaN(v)) out[k] = v;
+  }
+  return out;
+}
 
 function loadOrInitPrep(): PrepPersisted {
-  if (typeof window === 'undefined') {
+  const empty = (): PrepPersisted => {
+    const w: CarbLoadWindow = '3';
     return {
-      carbGPerKg: { ...DEFAULT_CARB_G_PER_KG },
+      carbWindow: w,
+      carbGPerKg: defaultCarbGPerKg(w),
+      mealIdeasSalt: normalizeMealIdeasSalt(undefined),
       dietStyle: 'omnivore',
       checkedCarb: {},
       checkedRaceMat: {},
@@ -177,18 +208,35 @@ function loadOrInitPrep(): PrepPersisted {
       breakfastQuantityNote: '',
       preStartProtocol: DEFAULT_PRESTART,
       dropBags: [],
+      recoveryCryotherapy: false,
+      recoveryNaturalCare: false,
+      recoveryMassage: false,
+      recoverySaunaOk: false,
     };
+  };
+  if (typeof window === 'undefined') {
+    return empty();
   }
   try {
     const raw = localStorage.getItem(PREP_STORAGE_KEY);
     if (raw) {
-      const p = JSON.parse(raw) as Partial<PrepPersisted>;
+      const p = JSON.parse(raw) as Partial<PrepPersisted> & { mealIdeasSalt?: unknown };
+      const carbWindow: CarbLoadWindow =
+        p.carbWindow === '7' || p.carbWindow === '3' ? p.carbWindow : '3';
+      const rawSalt = p.mealIdeasSalt;
+      let mealIdeasSalt: Record<CarbDayKey, number>;
+      if (typeof rawSalt === 'number') {
+        mealIdeasSalt = normalizeMealIdeasSalt(undefined);
+        for (const k of CARB_DAY_ORDER) mealIdeasSalt[k] = rawSalt;
+      } else {
+        mealIdeasSalt = normalizeMealIdeasSalt(
+          rawSalt && typeof rawSalt === 'object' ? (rawSalt as Partial<Record<CarbDayKey, number>>) : undefined
+        );
+      }
       return {
-        carbGPerKg: {
-          j3: typeof p.carbGPerKg?.j3 === 'number' ? p.carbGPerKg.j3 : DEFAULT_CARB_G_PER_KG.j3,
-          j2: typeof p.carbGPerKg?.j2 === 'number' ? p.carbGPerKg.j2 : DEFAULT_CARB_G_PER_KG.j2,
-          j1: typeof p.carbGPerKg?.j1 === 'number' ? p.carbGPerKg.j1 : DEFAULT_CARB_G_PER_KG.j1,
-        },
+        carbWindow,
+        carbGPerKg: normalizeCarbGPerKg(p.carbGPerKg, carbWindow),
+        mealIdeasSalt,
         dietStyle: p.dietStyle && ['omnivore', 'vegetarian', 'vegan', 'gluten_free'].includes(p.dietStyle)
           ? p.dietStyle
           : 'omnivore',
@@ -201,22 +249,16 @@ function loadOrInitPrep(): PrepPersisted {
           ? p.preStartProtocol
           : DEFAULT_PRESTART,
         dropBags: Array.isArray(p.dropBags) ? p.dropBags : [],
+        recoveryCryotherapy: !!p.recoveryCryotherapy,
+        recoveryNaturalCare: !!p.recoveryNaturalCare,
+        recoveryMassage: !!p.recoveryMassage,
+        recoverySaunaOk: !!p.recoverySaunaOk,
       };
     }
   } catch {
     /* ignore */
   }
-  return {
-    carbGPerKg: { ...DEFAULT_CARB_G_PER_KG },
-    dietStyle: 'omnivore',
-    checkedCarb: {},
-    checkedRaceMat: {},
-    breakfastTime: '06:30',
-    breakfastComposition: '',
-    breakfastQuantityNote: '',
-    preStartProtocol: DEFAULT_PRESTART,
-    dropBags: [],
-  };
+  return empty();
 }
 
 function newBagId(): string {
@@ -227,7 +269,7 @@ export default function PrepPage() {
   usePageTitle('Prep');
   const [bundle, setBundle] = useState<ActiveBundle | null>(null);
   const [prep, setPrep] = useState<PrepPersisted>(() => loadOrInitPrep());
-  const [section, setSection] = useState<'carb' | 'race' | 'drop'>('carb');
+  const [section, setSection] = useState<'carb' | 'race' | 'drop' | 'post'>('carb');
 
   useEffect(() => {
     try {
@@ -278,15 +320,37 @@ export default function PrepPage() {
 
   const nutritionSummary = useMemo(() => summarizeRaceNutritionFromPlan(plan), [plan]);
 
+  const carbDaysVisible = useMemo(() => carbDayMeta(prep.carbWindow), [prep.carbWindow]);
+
   const carbChecklistAll = useMemo(() => {
     const out: { id: string; label: string }[] = [];
-    for (const d of CARB_DAYS) {
+    for (const d of carbDaysVisible) {
       for (const item of carbDayChecklist(d.key, d.title)) {
         out.push(item);
       }
     }
     return out;
-  }, []);
+  }, [carbDaysVisible]);
+
+  const postRaceBlocks = useMemo(
+    () =>
+      buildPostRaceProtocol(
+        {
+          cryotherapy: prep.recoveryCryotherapy,
+          naturalCare: prep.recoveryNaturalCare,
+          massage: prep.recoveryMassage,
+          saunaOk: prep.recoverySaunaOk,
+        },
+        profile?.giTolerance
+      ),
+    [
+      prep.recoveryCryotherapy,
+      prep.recoveryNaturalCare,
+      prep.recoveryMassage,
+      prep.recoverySaunaOk,
+      profile?.giTolerance,
+    ]
+  );
 
   const carbProgress = useMemo(() => {
     const total = carbChecklistAll.length;
@@ -319,6 +383,8 @@ export default function PrepPage() {
     persist({ ...prep, carbGPerKg: { ...prep.carbGPerKg, [key]: v } });
   };
 
+  const defCarbG = defaultCarbGPerKg(prep.carbWindow);
+
   const importAidToDropBags = () => {
     const seeds = seedDropBagsFromAid(event?.aidStations);
     const existing = prep.dropBags;
@@ -346,7 +412,7 @@ export default function PrepPage() {
         </p>
         <h1 style={S.h1}>Prep — charge, jour J & drop bags</h1>
         <p style={{ ...S.muted, margin: '0 0 20px' }}>
-          Assistant carb-loading (J−3 à J−1), checklists, petit-déjeuner & protocole pré-départ. Les données du{' '}
+          Assistant carb-loading (3 ou 7 jours avant la course), checklists, petit-déjeuner & protocole pré-départ. Les données du{' '}
           <Link href="/plan" style={{ color: '#fb923c', fontWeight: 700 }}>
             plan actif
           </Link>{' '}
@@ -375,6 +441,7 @@ export default function PrepPage() {
               ['carb', 'Carb loading'],
               ['race', 'Jour J'],
               ['drop', 'Drop bags'],
+              ['post', 'Après course'],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -390,6 +457,42 @@ export default function PrepPage() {
 
         {section === 'carb' && (
           <>
+            <div style={S.card}>
+              <h2 style={S.h2}>Fenêtre de charge</h2>
+              <p style={S.muted}>
+                Charge courte (J−3 à J−1) ou semaine complète (J−7 à J−1) selon votre calendrier et l’avis de votre entourage
+                pro.
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
+                <button
+                  type="button"
+                  style={prep.carbWindow === '3' ? S.pillActive : S.pill}
+                  onClick={() =>
+                    persist({
+                      ...prep,
+                      carbWindow: '3',
+                      carbGPerKg: normalizeCarbGPerKg(prep.carbGPerKg, '3'),
+                    })
+                  }
+                >
+                  3 jours (J−3 → J−1)
+                </button>
+                <button
+                  type="button"
+                  style={prep.carbWindow === '7' ? S.pillActive : S.pill}
+                  onClick={() =>
+                    persist({
+                      ...prep,
+                      carbWindow: '7',
+                      carbGPerKg: normalizeCarbGPerKg(prep.carbGPerKg, '7'),
+                    })
+                  }
+                >
+                  7 jours (J−7 → J−1)
+                </button>
+              </div>
+            </div>
+
             <div style={S.card}>
               <h2 style={S.h2}>Objectifs glucides (g CHO / kg / jour)</h2>
               <p style={S.muted}>
@@ -408,7 +511,7 @@ export default function PrepPage() {
                   marginTop: 16,
                 }}
               >
-                {CARB_DAYS.map((d) => {
+                {carbDaysVisible.map((d) => {
                   const gKg = prep.carbGPerKg[d.key];
                   const total = dailyChoFromBody(weight, gKg);
                   return (
@@ -432,7 +535,7 @@ export default function PrepPage() {
                         max={12}
                         step={0.5}
                         value={gKg}
-                        onChange={(e) => setCarbG(d.key, parseFloat(e.target.value) || DEFAULT_CARB_G_PER_KG[d.key])}
+                        onChange={(e) => setCarbG(d.key, parseFloat(e.target.value) || defCarbG[d.key])}
                         style={S.input}
                       />
                       <div style={{ marginTop: 10, fontSize: 14, fontWeight: 700 }}>
@@ -467,15 +570,45 @@ export default function PrepPage() {
               </div>
             </div>
 
-            {CARB_DAYS.map((d) => {
+            {carbDaysVisible.map((d) => {
               const daily = dailyChoFromBody(weight, prep.carbGPerKg[d.key]);
-              const blocks = getCarbLoadingMealBlocks(effectiveDiet, daily);
+              const blocks = pickCarbMealExamples(effectiveDiet, daily, d.key, prep.mealIdeasSalt[d.key]);
               const checklist = carbDayChecklist(d.key, d.title);
               return (
                 <div key={d.key} style={S.card}>
-                  <h2 style={S.h2}>
-                    {d.title} — exemples concrets (~{daily} g CHO visés)
-                  </h2>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      marginBottom: 4,
+                    }}
+                  >
+                    <h2 style={{ ...S.h2, margin: 0, flex: '1 1 200px' }}>
+                      {d.title} — exemples concrets (~{daily} g CHO visés)
+                    </h2>
+                    <button
+                      type="button"
+                      style={S.btnOutline}
+                      title="Tirer d’autres idées au hasard dans les suggestions"
+                      onClick={() =>
+                        persist({
+                          ...prep,
+                          mealIdeasSalt: {
+                            ...prep.mealIdeasSalt,
+                            [d.key]: (prep.mealIdeasSalt[d.key] ?? 0) + 1,
+                          },
+                        })
+                      }
+                    >
+                      ↻ Nouvelles idées
+                    </button>
+                  </div>
+                  <p style={{ ...S.muted, fontSize: 12, margin: '0 0 14px' }}>
+                    Chaque clic mélange des suggestions différentes pour le même objectif glucidique.
+                  </p>
                   <div style={{ display: 'grid', gap: 14 }}>
                     {blocks.map((b) => (
                       <div
@@ -530,7 +663,9 @@ export default function PrepPage() {
             })}
 
             <div style={S.card}>
-              <h2 style={S.h2}>Progression charge (J−3 → J−1)</h2>
+              <h2 style={S.h2}>
+                Progression charge ({prep.carbWindow === '7' ? 'J−7 → J−1' : 'J−3 → J−1'})
+              </h2>
               <div style={{ fontSize: 14, fontWeight: 700 }}>
                 {carbProgress.done} / {carbProgress.total} étapes cochées
               </div>
@@ -749,6 +884,105 @@ export default function PrepPage() {
               ))}
             </div>
           </div>
+        )}
+
+        {section === 'post' && (
+          <>
+            <div style={S.card}>
+              <h2 style={S.h2}>Préférences récupération</h2>
+              <p style={S.muted}>
+                Cochez ce que vous utilisez déjà ou souhaitez voir dans le protocole. Rien n’est obligatoire — contenu indicatif
+                seulement.
+              </p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '14px 0 0' }}>
+                <li style={{ marginBottom: 12 }}>
+                  <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', fontSize: 14 }}>
+                    <input
+                      type="checkbox"
+                      checked={prep.recoveryNaturalCare}
+                      onChange={() => persist({ ...prep, recoveryNaturalCare: !prep.recoveryNaturalCare })}
+                      style={{ marginTop: 3 }}
+                    />
+                    <span>
+                      <strong style={{ display: 'block' }}>Soins « naturels »</strong>
+                      <span style={S.muted}>Douche/mobilisation légère, compression douce, tisanes…</span>
+                    </span>
+                  </label>
+                </li>
+                <li style={{ marginBottom: 12 }}>
+                  <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', fontSize: 14 }}>
+                    <input
+                      type="checkbox"
+                      checked={prep.recoveryMassage}
+                      onChange={() => persist({ ...prep, recoveryMassage: !prep.recoveryMassage })}
+                      style={{ marginTop: 3 }}
+                    />
+                    <span>
+                      <strong style={{ display: 'block' }}>Massage</strong>
+                      <span style={S.muted}>Repères si vous avez l’habitude du toucher post-effort</span>
+                    </span>
+                  </label>
+                </li>
+                <li style={{ marginBottom: 12 }}>
+                  <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', fontSize: 14 }}>
+                    <input
+                      type="checkbox"
+                      checked={prep.recoveryCryotherapy}
+                      onChange={() => persist({ ...prep, recoveryCryotherapy: !prep.recoveryCryotherapy })}
+                      style={{ marginTop: 3 }}
+                    />
+                    <span>
+                      <strong style={{ display: 'block' }}>Cryo / bain froid</strong>
+                      <span style={S.muted}>Uniquement si déjà validé à l’entraînement</span>
+                    </span>
+                  </label>
+                </li>
+                <li style={{ marginBottom: 12 }}>
+                  <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', fontSize: 14 }}>
+                    <input
+                      type="checkbox"
+                      checked={prep.recoverySaunaOk}
+                      onChange={() => persist({ ...prep, recoverySaunaOk: !prep.recoverySaunaOk })}
+                      style={{ marginTop: 3 }}
+                    />
+                    <span>
+                      <strong style={{ display: 'block' }}>Sauna possible</strong>
+                      <span style={S.muted}>Prudent : hydratation et sensation du jour</span>
+                    </span>
+                  </label>
+                </li>
+              </ul>
+            </div>
+
+            <div style={S.card}>
+              <h2 style={S.h2}>Protocole post-course</h2>
+              <p style={S.muted}>
+                Nutrition de récupération, hydratation et repères temporels. Le ton digestif s’adapte si votre profil indique une
+                sensibilité GI (onglet Plan).
+              </p>
+              <div style={{ display: 'grid', gap: 18, marginTop: 16 }}>
+                {postRaceBlocks.map((block) => (
+                  <div
+                    key={block.title}
+                    style={{
+                      padding: 14,
+                      borderRadius: 10,
+                      border: '1px solid color-mix(in srgb, #4ade80 22%, var(--color-border))',
+                    }}
+                  >
+                    <div style={{ fontWeight: 800, marginBottom: 8 }}>{block.title}</div>
+                    <ul style={{ ...S.muted, margin: 0, paddingLeft: 18 }}>
+                      {block.items.map((line) => (
+                        <li key={line} style={{ marginBottom: 6 }}>
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
         )}
 
         <p style={{ ...S.muted, fontSize: 12, marginTop: 8 }}>
