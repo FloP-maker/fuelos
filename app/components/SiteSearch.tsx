@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export type SiteSearchEntry = {
@@ -77,7 +77,6 @@ function matchesEntry(query: string, entry: SiteSearchEntry): boolean {
 }
 
 type SiteSearchProps = {
-  /** Classes pour le bouton loupe (aligné sur l’ancien lien plan) */
   className?: string;
 };
 
@@ -138,84 +137,91 @@ export function SiteSearch({ className }: SiteSearchProps) {
     return () => document.removeEventListener('mousedown', onPointer);
   }, [open, close]);
 
-  const searchBtnClass = [
-    'fuel-header-search shrink-0 touch-manipulation',
-    open ? 'fuel-header-search--here' : '',
+  const slotClass = [
+    'fuel-header-search-slot',
+    open ? 'fuel-header-search-slot--open' : '',
     className ?? '',
   ]
     .filter(Boolean)
     .join(' ');
 
   return (
-    <>
-      <button
-        type="button"
-        className={searchBtnClass}
-        onClick={() => setOpen(true)}
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        aria-label="Rechercher une page du site"
-        title="Recherche (⌘K ou Ctrl+K)"
-      >
-        <Search size={20} strokeWidth={2} aria-hidden />
-      </button>
-
-      {open && (
-        <div className="fuel-site-search-portal" aria-hidden={false}>
-          <div
-            ref={panelRef}
-            className="fuel-site-search-panel"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="fuel-site-search-title"
-          >
-            <div className="fuel-site-search-head">
-              <h2 id="fuel-site-search-title" className="fuel-site-search-title">
-                Recherche sur le site
-              </h2>
-              <button type="button" className="fuel-site-search-close" onClick={close} aria-label="Fermer">
-                ×
-              </button>
+    <div ref={panelRef} className={slotClass}>
+      {!open ? (
+        <button
+          type="button"
+          className="fuel-header-search-trigger touch-manipulation"
+          onClick={() => setOpen(true)}
+          aria-expanded={false}
+          aria-haspopup="dialog"
+          aria-label="Rechercher une page du site"
+          title="Recherche (⌘K ou Ctrl+K)"
+        >
+          <Search size={19} strokeWidth={2} aria-hidden />
+        </button>
+      ) : (
+        <>
+          <div className="fuel-header-search-bar" role="search">
+            <label htmlFor="fuel-header-search-field" className="fuel-sr-only">
+              Recherche sur le site
+            </label>
+            <div className="fuel-header-search-input-wrap">
+              <input
+                id="fuel-header-search-field"
+                ref={inputRef}
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="fuel-header-search-field"
+                placeholder="Rechercher"
+                autoComplete="off"
+                aria-controls="fuel-site-search-results"
+              />
+              <span className="fuel-header-search-field-icon" aria-hidden>
+                <Search size={17} strokeWidth={2} />
+              </span>
             </div>
-            <input
-              ref={inputRef}
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="fuel-site-search-input"
-              placeholder="Plan, shop, race…"
-              autoComplete="off"
-              aria-controls="fuel-site-search-results"
-            />
+            <button
+              type="button"
+              className="fuel-header-search-dismiss"
+              onClick={close}
+              aria-label="Fermer la recherche"
+            >
+              <X size={18} strokeWidth={2} aria-hidden />
+            </button>
+          </div>
+          <div className="fuel-header-search-popover">
             <ul id="fuel-site-search-results" className="fuel-site-search-results">
               {filtered.length === 0 ? (
                 <li className="fuel-site-search-empty">Aucun résultat pour « {query.trim()} »</li>
               ) : (
                 filtered.map((entry) => (
-                    <li key={entry.href}>
-                      <button
-                        type="button"
-                        className="fuel-site-search-hit"
-                        onClick={() => go(entry.href)}
-                      >
-                        <span className="fuel-site-search-hit-title">{entry.title}</span>
-                        {entry.description && (
-                          <span className="fuel-site-search-hit-desc">{entry.description}</span>
-                        )}
-                        <span className="fuel-site-search-hit-href">{entry.href}</span>
-                      </button>
-                    </li>
-                  ))
+                  <li key={entry.href}>
+                    <button
+                      type="button"
+                      className="fuel-site-search-hit"
+                      onClick={() => go(entry.href)}
+                    >
+                      <span className="fuel-site-search-hit-title">{entry.title}</span>
+                      {entry.description && (
+                        <span className="fuel-site-search-hit-desc">{entry.description}</span>
+                      )}
+                      <span className="fuel-site-search-hit-href">{entry.href}</span>
+                    </button>
+                  </li>
+                ))
               )}
             </ul>
             <p className="fuel-site-search-hint">
-              Astuce : raccourci clavier <kbd className="fuel-site-search-kbd">⌘</kbd>{' '}
-              <kbd className="fuel-site-search-kbd">K</kbd> / <kbd className="fuel-site-search-kbd">Ctrl</kbd>{' '}
+              Astuce :{' '}
+              <kbd className="fuel-site-search-kbd">⌘</kbd>{' '}
+              <kbd className="fuel-site-search-kbd">K</kbd> /{' '}
+              <kbd className="fuel-site-search-kbd">Ctrl</kbd>{' '}
               <kbd className="fuel-site-search-kbd">K</kbd>
             </p>
           </div>
-        </div>
+        </>
       )}
-    </>
+    </div>
   );
 }

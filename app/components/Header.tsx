@@ -46,12 +46,11 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
         <div className="fuel-header-left">
           <Link
             href="/"
-            className="fuel-header-logo-link min-w-0 shrink"
+            className="fuel-header-logo-link shrink-0"
             aria-label="FuelOS — Accueil"
           >
             <FuelLogo size={34} withWordmark wordmarkClassName="fuel-header-wordmark" />
           </Link>
-          <SiteSearch />
           <nav className="fuel-header-text-nav" aria-label="Sections principales">
             {NAV.map((item) => {
               const isActive = resolvedActive === item.page;
@@ -68,23 +67,28 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
           </nav>
         </div>
 
-        <div className="fuel-header-right">
-          {extra}
-          <Link
-            href="/plan?step=profile"
-            className="fuel-header-text-link"
-            title="Profil athlète — étape 1 du plan"
-          >
-            <span className="sm:hidden">Profil</span>
-            <span className="hidden sm:inline">Profil athlète</span>
-          </Link>
-          <AuthMenu />
-          {pathname !== '/' && (
-            <Link href="/" className="fuel-header-text-link">
-              Accueil
+        <div className="fuel-header-tail">
+          <div className="fuel-header-search-column">
+            <SiteSearch />
+          </div>
+          <div className="fuel-header-right">
+            {extra}
+            <Link
+              href="/plan?step=profile"
+              className="fuel-header-text-link"
+              title="Profil athlète — étape 1 du plan"
+            >
+              <span className="sm:hidden">Profil</span>
+              <span className="hidden sm:inline">Profil athlète</span>
             </Link>
-          )}
-          <ThemeToggle />
+            <AuthMenu />
+            {pathname !== '/' && (
+              <Link href="/" className="fuel-header-text-link">
+                Accueil
+              </Link>
+            )}
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </header>
