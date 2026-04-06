@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
+import { Search } from "lucide-react";
 import { PRODUCTS } from "../lib/products";
 import type { Product } from "../lib/types";
 import usePageTitle from "../lib/hooks/usePageTitle";
@@ -231,34 +232,73 @@ export default function ShopPage() {
         <div className="font-display" style={{ fontSize: 26, fontWeight: 800, marginBottom: 4 }}>
           Catalogue produits
         </div>
-        <div style={{ color: "var(--color-text-muted)", fontSize: 14, marginBottom: 24 }}>
+        <div style={{ color: "var(--color-text-muted)", fontSize: 14, marginBottom: 20 }}>
           {allProducts.length} produits ({customProducts.length} perso) · Maurten, SiS, Tailwind, Näak, GU Energy…
         </div>
 
-        {/* Search + Sort */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16, alignItems: "center" }}>
-          <input
-            style={{ flex: 1, minWidth: 200, padding: "10px 14px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)", fontSize: 14, outline: "none" }}
-            placeholder="Rechercher un produit, une marque…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-          <select
-            style={{ padding: "8px 12px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)", fontSize: 13, outline: "none" }}
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value as "name" | "cho" | "price")}
-          >
-            <option value="name">Trier : Nom</option>
-            <option value="cho">Trier : CHO</option>
-            <option value="price">Trier : Prix</option>
-          </select>
-          <select
-            style={{ padding: "8px 12px", borderRadius: 8, background: "var(--color-bg-card)", border: "1px solid var(--color-border)", color: "var(--color-text)", fontSize: 13, outline: "none" }}
-            value={brand}
-            onChange={e => setBrand(e.target.value)}
-          >
-            {availableBrands.map(b => <option key={b} value={b}>{b}</option>)}
-          </select>
+        <div className="fuel-shop-toolbar">
+          <div className="fuel-shop-toolbar-top">
+            <div>
+              <label htmlFor="fuel-shop-catalog-search" className="fuel-shop-search-label">
+                Recherche dans le catalogue
+              </label>
+              <div className="fuel-shop-search-wrap">
+                <Search className="fuel-shop-search-icon" size={22} strokeWidth={2.25} aria-hidden />
+                <input
+                  id="fuel-shop-catalog-search"
+                  className="fuel-shop-search-field"
+                  type="search"
+                  placeholder="Marque, nom de produit, mot-clé…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  autoComplete="off"
+                  enterKeyHint="search"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="fuel-shop-toolbar-row">
+            <select
+              style={{
+                flex: "1 1 140px",
+                minWidth: 120,
+                padding: "10px 12px",
+                borderRadius: 8,
+                background: "var(--color-bg-card)",
+                border: "1px solid var(--color-border)",
+                color: "var(--color-text)",
+                fontSize: 13,
+                outline: "none",
+              }}
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as "name" | "cho" | "price")}
+            >
+              <option value="name">Trier : Nom</option>
+              <option value="cho">Trier : CHO</option>
+              <option value="price">Trier : Prix</option>
+            </select>
+            <select
+              style={{
+                flex: "1 1 160px",
+                minWidth: 140,
+                padding: "10px 12px",
+                borderRadius: 8,
+                background: "var(--color-bg-card)",
+                border: "1px solid var(--color-border)",
+                color: "var(--color-text)",
+                fontSize: 13,
+                outline: "none",
+              }}
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+            >
+              {availableBrands.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Category chips */}

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Flag, ArrowRight } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import type { AthleteProfile, EventDetails, FuelPlan, RaceState } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
@@ -320,6 +322,60 @@ const heroCardStyle = {
   background: 'var(--color-bg-card)',
 };
 
+function DebriefsEmptyIllustration() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 360 200"
+      fill="none"
+      aria-hidden
+      style={{ width: '100%', height: 'auto', maxWidth: 320, display: 'block', margin: '0 auto' }}
+    >
+      <defs>
+        <linearGradient id="learn-empty-bg" x1="0" y1="0" x2="360" y2="200" gradientUnits="userSpaceOnUse">
+          <stop stopColor="var(--color-accent)" stopOpacity="0.12" />
+          <stop offset="1" stopColor="var(--color-energy)" stopOpacity="0.08" />
+        </linearGradient>
+        <linearGradient id="learn-empty-line" x1="40" y1="140" x2="300" y2="56" gradientUnits="userSpaceOnUse">
+          <stop stopColor="var(--color-accent)" />
+          <stop offset="1" stopColor="var(--color-energy)" />
+        </linearGradient>
+      </defs>
+      <rect x="8" y="12" width="344" height="176" rx="18" fill="url(#learn-empty-bg)" stroke="var(--color-border)" strokeWidth="1" />
+      <rect x="36" y="44" width="52" height="100" rx="8" fill="var(--color-accent)" fillOpacity={0.1} />
+      <rect x="100" y="72" width="52" height="72" rx="8" fill="var(--color-accent)" fillOpacity={0.18} />
+      <rect x="164" y="56" width="52" height="88" rx="8" fill="var(--color-accent)" fillOpacity={0.08} />
+      <rect x="228" y="88" width="52" height="56" rx="8" fill="var(--color-text-muted)" fillOpacity={0.12} />
+      <path
+        d="M44 132 C 100 118, 140 52, 308 64"
+        stroke="url(#learn-empty-line)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeDasharray="6 8"
+        opacity="0.85"
+      />
+      <circle cx="308" cy="64" r="10" fill="var(--color-bg-card)" stroke="var(--color-accent)" strokeWidth="2.5" />
+      <path
+        d="M304 64 L307 67 L314 58"
+        stroke="var(--color-accent)"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <text
+        x="180"
+        y="178"
+        textAnchor="middle"
+        fill="var(--color-text-muted)"
+        fontFamily="var(--font-sans), system-ui, sans-serif"
+        fontSize={11}
+        fontWeight={600}
+      >
+        Débrief · nutrition · GI
+      </text>
+    </svg>
+  );
+}
 
 export default function LearnPage() {
   usePageTitle('Analyses');
@@ -447,8 +503,71 @@ export default function LearnPage() {
             l historique cloud plus long).
           </p>
           {debriefs.length === 0 ? (
-            <div style={{ ...heroCardStyle, color: 'var(--color-text-muted)' }}>
-              Aucun debrief pour l instant. Lance le mode course, termine une course, puis reviens sur cet onglet.
+            <div
+              style={{
+                ...heroCardStyle,
+                padding: 'clamp(28px, 5vw, 44px) clamp(20px, 4vw, 36px)',
+                textAlign: 'center',
+                borderColor: 'color-mix(in srgb, var(--color-accent) 20%, var(--color-border))',
+                background:
+                  'linear-gradient(165deg, color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 55%)',
+              }}
+            >
+              <div style={{ marginBottom: 20 }}>
+                <DebriefsEmptyIllustration />
+              </div>
+              <h3
+                className="font-display"
+                style={{
+                  margin: '0 0 10px',
+                  fontSize: 'clamp(1.25rem, 2.5vw, 1.5rem)',
+                  fontWeight: 800,
+                  letterSpacing: '-0.02em',
+                  color: 'var(--color-text)',
+                }}
+              >
+                Ta première analyse t&apos;attend — lance une course !
+              </h3>
+              <p
+                style={{
+                  margin: '0 auto 22px',
+                  maxWidth: 440,
+                  fontSize: 15,
+                  lineHeight: 1.55,
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                Termine une sortie dans le <strong style={{ color: 'var(--color-text)', fontWeight: 600 }}>mode course</strong> pour
+                enregistrer ton débrief nutrition, le suivi digestif et les repères pour la prochaine fois. Tout
+                s&apos;affichera ici automatiquement.
+              </p>
+              <Link
+                href="/race"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  padding: '14px 24px',
+                  borderRadius: 12,
+                  fontWeight: 700,
+                  fontSize: 15,
+                  textDecoration: 'none',
+                  color: '#000',
+                  background: 'var(--color-accent)',
+                  border: '1px solid color-mix(in srgb, var(--color-accent) 40%, #000)',
+                  boxShadow: '0 4px 14px color-mix(in srgb, var(--color-accent) 35%, transparent)',
+                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                }}
+              >
+                <Flag size={20} strokeWidth={2.25} aria-hidden />
+                Ouvrir le mode course
+                <ArrowRight size={18} strokeWidth={2.25} aria-hidden />
+              </Link>
+              <p style={{ margin: '18px 0 0', fontSize: 13, color: 'var(--color-text-muted)' }}>
+                Astuce : prépare ton plan sur la page <Link href="/plan" style={{ color: 'var(--color-accent)', fontWeight: 600 }}>Plan</Link>{' '}
+                avant de partir.
+              </p>
             </div>
           ) : (
             <div style={{ display: 'grid', gap: 12 }}>

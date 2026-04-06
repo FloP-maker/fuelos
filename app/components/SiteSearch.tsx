@@ -82,13 +82,14 @@ type SiteSearchProps = {
 
 export function SiteSearch({ className }: SiteSearchProps) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [focusWithin, setFocusWithin] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const trimmedQuery = query.trim();
   const showSuggestions = trimmedQuery.length > 0;
+  const popoverOpen = focusWithin && showSuggestions;
 
   const filtered = useMemo(() => {
     const t = query.trim();
@@ -96,138 +97,144 @@ export function SiteSearch({ className }: SiteSearchProps) {
     return ENTRIES.filter((e) => matchesEntry(query, e));
   }, [query]);
 
-  const close = useCallback(() => {
-    setOpen(false);
+  const clear = useCallback(() => {
     setQuery('');
+    inputRef.current?.focus();
   }, []);
 
   const go = useCallback(
     (href: string) => {
-      close();
+      setQuery('');
+      setFocusWithin(false);
+      inputRef.current?.blur();
       router.push(href);
     },
-    [close, router]
+    [router]
   );
-
-  useEffect(() => {
-    if (!open) return;
-    const t = requestAnimationFrame(() => inputRef.current?.focus());
-    return () => cancelAnimationFrame(t);
-  }, [open]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        setOpen((v) => !v);
+        inputRef.current?.focus();
+        inputRef.current?.select();
         return;
       }
-      if (e.key === 'Escape' && open) {
+      if (e.key === 'Escape' && (focusWithin || trimmedQuery.length > 0)) {
         e.preventDefault();
-        close();
+        if (trimmedQuery.length > 0) {
+          clear();
+        } else {
+          inputRef.current?.blur();
+        }
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, close]);
+  }, [focusWithin, trimmedQuery.length, clear]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!popoverOpen) return;
     const onPointer = (e: MouseEvent) => {
       const el = panelRef.current;
-      if (el && !el.contains(e.target as Node)) close();
+      if (el && !el.contains(e.target as Node)) {
+        inputRef.current?.blur();
+      }
     };
     document.addEventListener('mousedown', onPointer);
     return () => document.removeEventListener('mousedown', onPointer);
-  }, [open, close]);
+  }, [popoverOpen]);
 
-  const slotClass = [
-    'fuel-header-search-slot',
-    open ? 'fuel-header-search-slot--open' : '',
-    className ?? '',
-  ]
+  useEffect(() => {
+    const el = panelRef.current;
+    if (!el) return;
+    const onFocusIn = () => setFocusWithin(true);
+    const onFocusOut = (e: FocusEvent) => {
+      const next = e.relatedTarget as Node | null;
+      if (!next || !el.contains(next)) {
+        setFocusWithin(false);
+      }
+    };
+    el.addEventListener('focusin', onFocusIn);
+    el.addEventListener('focusout', onFocusOut);
+    return () => {
+      el.removeEventListener('focusin', onFocusIn);
+      el.removeEventListener('focusout', onFocusOut);
+    };
+  }, []);
+
+  const slotClass = ['fuel-header-search-slot', 'fuel-header-search-slot--persistent', className ?? '']
     .filter(Boolean)
     .join(' ');
 
   return (
     <div ref={panelRef} className={slotClass}>
-      {!open ? (
-        <button
-          type="button"
-          className="fuel-header-search-trigger touch-manipulation"
-          onClick={() => setOpen(true)}
-          aria-expanded={false}
-          aria-haspopup="dialog"
-          aria-label="Rechercher une page du site"
-          title="Recherche (⌘K ou Ctrl+K)"
-        >
-          <Search size={19} strokeWidth={2} aria-hidden />
-        </button>
-      ) : (
-        <>
-          <div className="fuel-header-search-bar" role="search">
-            <label htmlFor="fuel-header-search-field" className="fuel-sr-only">
-              Recherche sur le site
-            </label>
-            <div className="fuel-header-search-input-wrap">
-              <input
-                id="fuel-header-search-field"
-                ref={inputRef}
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="fuel-header-search-field"
-                placeholder="Rechercher"
-                autoComplete="off"
-                aria-controls={showSuggestions ? 'fuel-site-search-results' : undefined}
-                aria-expanded={showSuggestions}
-              />
-              <span className="fuel-header-search-field-icon" aria-hidden>
-                <Search size={17} strokeWidth={2} />
-              </span>
-            </div>
+      <div className="fuel-header-search-bar" role="search">
+        <label htmlFor="fuel-header-search-field" className="fuel-sr-only">
+          Recherche sur le site
+        </label>
+        <div className="fuel-header-search-input-wrap">
+          <input
+            id="fuel-header-search-field"
+            ref={inputRef}
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="fuel-header-search-field"
+            placeholder="Pages, modules… (⌘K)"
+            autoComplete="off"
+            aria-expanded={popoverOpen}
+            aria-controls={popoverOpen ? 'fuel-site-search-results' : undefined}
+            aria-autocomplete="list"
+          />
+          <span className="fuel-header-search-field-icon" aria-hidden>
+            <Search size={17} strokeWidth={2} />
+          </span>
+          {trimmedQuery.length > 0 && (
             <button
               type="button"
-              className="fuel-header-search-dismiss"
-              onClick={close}
-              aria-label="Fermer la recherche"
+              className="fuel-header-search-clear"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={clear}
+              aria-label="Effacer la recherche"
             >
-              <X size={18} strokeWidth={2} aria-hidden />
+              <X size={16} strokeWidth={2} aria-hidden />
             </button>
-          </div>
-          {showSuggestions && (
-            <div className="fuel-header-search-popover">
-              <ul id="fuel-site-search-results" className="fuel-site-search-results">
-                {filtered.length === 0 ? (
-                  <li className="fuel-site-search-empty">Aucun résultat pour « {trimmedQuery} »</li>
-                ) : (
-                  filtered.map((entry) => (
-                    <li key={entry.href}>
-                      <button
-                        type="button"
-                        className="fuel-site-search-hit"
-                        onClick={() => go(entry.href)}
-                      >
-                        <span className="fuel-site-search-hit-title">{entry.title}</span>
-                        {entry.description && (
-                          <span className="fuel-site-search-hit-desc">{entry.description}</span>
-                        )}
-                        <span className="fuel-site-search-hit-href">{entry.href}</span>
-                      </button>
-                    </li>
-                  ))
-                )}
-              </ul>
-              <p className="fuel-site-search-hint">
-                Astuce :{' '}
-                <kbd className="fuel-site-search-kbd">⌘</kbd>{' '}
-                <kbd className="fuel-site-search-kbd">K</kbd> /{' '}
-                <kbd className="fuel-site-search-kbd">Ctrl</kbd>{' '}
-                <kbd className="fuel-site-search-kbd">K</kbd>
-              </p>
-            </div>
           )}
-        </>
+        </div>
+      </div>
+      {popoverOpen && (
+        <div className="fuel-header-search-popover">
+          <ul id="fuel-site-search-results" className="fuel-site-search-results">
+            {filtered.length === 0 ? (
+              <li className="fuel-site-search-empty">Aucun résultat pour « {trimmedQuery} »</li>
+            ) : (
+              filtered.map((entry) => (
+                <li key={entry.href}>
+                  <button
+                    type="button"
+                    className="fuel-site-search-hit"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => go(entry.href)}
+                  >
+                    <span className="fuel-site-search-hit-title">{entry.title}</span>
+                    {entry.description && (
+                      <span className="fuel-site-search-hit-desc">{entry.description}</span>
+                    )}
+                    <span className="fuel-site-search-hit-href">{entry.href}</span>
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+          <p className="fuel-site-search-hint">
+            <kbd className="fuel-site-search-kbd">⌘</kbd>{' '}
+            <kbd className="fuel-site-search-kbd">K</kbd> /{' '}
+            <kbd className="fuel-site-search-kbd">Ctrl</kbd>{' '}
+            <kbd className="fuel-site-search-kbd">K</kbd> · Le catalogue complet se filtre sur la page{' '}
+            <strong>Produits</strong>.
+          </p>
+        </div>
       )}
     </div>
   );
