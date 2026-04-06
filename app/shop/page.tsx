@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Search } from "lucide-react";
 import { PRODUCTS } from "../lib/products";
+import { REFERENCE_PRODUCT_BRANDS } from "../lib/referenceProductBrands";
 import type { Product } from "../lib/types";
 import usePageTitle from "../lib/hooks/usePageTitle";
 import { Header } from "../components/Header";
@@ -133,10 +134,11 @@ export default function ShopPage() {
   }, [addProductOpen]);
 
   const allProducts = useMemo(() => [...customProducts, ...PRODUCTS], [customProducts]);
-  const availableBrands = useMemo(
-    () => ["Tous", ...Array.from(new Set(allProducts.map((p) => p.brand))).sort((a, b) => a.localeCompare(b))],
-    [allProducts]
-  );
+  const availableBrands = useMemo(() => {
+    const fromCatalog = new Set(allProducts.map((p) => p.brand));
+    const merged = new Set<string>([...REFERENCE_PRODUCT_BRANDS, ...fromCatalog]);
+    return ["Tous", ...Array.from(merged).sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }))];
+  }, [allProducts]);
 
   const toggleDiet = (id: string) => {
     setDietFilters(prev =>
@@ -526,7 +528,14 @@ export default function ShopPage() {
             <div style={{ padding: 18 }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10 }}>
                 <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Nom" value={newCustomProduct.name} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, name: e.target.value })} />
-                <input style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Marque" value={newCustomProduct.brand} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, brand: e.target.value })} />
+                <input
+                  style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }}
+                  placeholder="Marque"
+                  list="fuelos-shop-brand-datalist"
+                  autoComplete="off"
+                  value={newCustomProduct.brand}
+                  onChange={(e) => setNewCustomProduct({ ...newCustomProduct, brand: e.target.value })}
+                />
                 <select style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} value={newCustomProduct.category} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, category: e.target.value as Product["category"] })}>
                   {(["gel", "drink", "bar", "chew", "real-food", "electrolyte"] as const).map((c) => (
                     <option key={c} value={c}>{c}</option>
@@ -541,6 +550,11 @@ export default function ShopPage() {
                 <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Na mg (optionnel)" value={newCustomProduct.sodium_per_unit} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, sodium_per_unit: +e.target.value })} />
                 <input type="number" style={{ padding: "9px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-text)" }} placeholder="Poids g" value={newCustomProduct.weight_g} onChange={(e) => setNewCustomProduct({ ...newCustomProduct, weight_g: +e.target.value })} />
               </div>
+              <datalist id="fuelos-shop-brand-datalist">
+                {REFERENCE_PRODUCT_BRANDS.map((b) => (
+                  <option key={b} value={b} />
+                ))}
+              </datalist>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 16, justifyContent: "flex-end" }}>
                 <button type="button" onClick={() => setAddProductOpen(false)} style={btnOutlineStyle}>
                   Annuler

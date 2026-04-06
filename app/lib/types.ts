@@ -110,6 +110,14 @@ export interface ShoppingItem {
   source?: "personal" | "aid-station"; // Pour distinguer ce qu'il faut acheter vs ce qui sera fourni
 }
 
+/** Repères Na⁺ / K⁺ / Mg (affichage plan — les apports réels passent par la timeline). */
+export interface ElectrolyteStrategy {
+  sodiumMgPerHour: number;
+  potassiumMgPerHourHint: number;
+  magnesiumMgPerHourHint: number;
+  bulletPoints: string[];
+}
+
 export interface FuelPlan {
   choPerHour: number;
   waterPerHour: number;    // ml/h
@@ -122,6 +130,7 @@ export interface FuelPlan {
   // 🆕 NOUVELLES PROPRIÉTÉS
   choStrategy?: ChoStrategy;  // Stratégie de charge glucidique
   estimatedCost?: number;     // Coût total des produits à acheter (EUR)
+  electrolyteStrategy?: ElectrolyteStrategy;
 }
 
 /** Résultat de generateFuelPlan : plan principal + variante météo optionnelle */

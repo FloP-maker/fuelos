@@ -27,6 +27,7 @@ import {
   weatherCategoryFromTempC,
 } from "../lib/meteo";
 import { PRODUCTS } from "../lib/products";
+import { REFERENCE_PRODUCT_BRANDS } from "../lib/referenceProductBrands";
 import type {
   AthleteProfile,
   EventDetails,
@@ -1502,10 +1503,17 @@ function PlanPageContent() {
                   <label style={S.label}>MARQUE</label>
                   <input
                     style={S.input}
+                    list="fuelos-reference-brands"
                     value={newCustomProduct.brand}
                     onChange={(e) => setNewCustomProduct({ ...newCustomProduct, brand: e.target.value })}
                     placeholder="Ex: Perso"
+                    autoComplete="off"
                   />
+                  <datalist id="fuelos-reference-brands">
+                    {REFERENCE_PRODUCT_BRANDS.map((b) => (
+                      <option key={b} value={b} />
+                    ))}
+                  </datalist>
                 </div>
                 <div>
                   <label style={S.label}>URL PHOTO (optionnel)</label>
@@ -2618,6 +2626,12 @@ function PlanResult({
       })
       .join("");
 
+    const electrolyteBlocks = plan.electrolyteStrategy
+      ? plan.electrolyteStrategy.bulletPoints
+          .map((b) => `<li>${escapeHtml(b)}</li>`)
+          .join("")
+      : "";
+
     const html = `<!doctype html>
 <html>
   <head>
@@ -2657,6 +2671,12 @@ function PlanResult({
       <div class="kpi"><div class="v">${plan.sodiumPerHour}mg</div><div class="l">Sodium / heure</div></div>
       <div class="kpi"><div class="v">${plan.totalCalories}</div><div class="l">Calories totales</div></div>
     </div>
+
+    ${
+      plan.electrolyteStrategy
+        ? `<h2>Électrolytes</h2><p class="muted">Na⁺ ~${plan.electrolyteStrategy.sodiumMgPerHour} mg/h · K⁺ repère ~${plan.electrolyteStrategy.potassiumMgPerHourHint} mg/h · Mg repère ~${plan.electrolyteStrategy.magnesiumMgPerHourHint} mg/h</p><ul>${electrolyteBlocks}</ul>`
+        : ""
+    }
 
     ${warningBlocks ? `<h2>Avertissements & conseils</h2><ul>${warningBlocks}</ul>` : ""}
     <h2>Timeline de course</h2>
@@ -3011,6 +3031,60 @@ function PlanResult({
           </div>
         ))}
       </div>
+
+      {plan.electrolyteStrategy && (
+        <div
+          style={{
+            marginBottom: 24,
+            padding: "16px 20px",
+            borderRadius: 12,
+            background: "var(--color-bg-card)",
+            border: "1px solid color-mix(in srgb, #14b8a6 38%, var(--color-border))",
+            boxShadow: "0 6px 24px color-mix(in srgb, #14b8a6 8%, transparent)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 16 }} aria-hidden>
+              🧪
+            </span>
+            <h4 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: "var(--color-text)" }}>
+              Électrolytes (sodium, potassium, magnésium)
+            </h4>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 10,
+              marginBottom: 12,
+              fontSize: 12,
+              fontWeight: 700,
+              color: "var(--color-text)",
+            }}
+          >
+            <span>Na⁺ ~{plan.electrolyteStrategy.sodiumMgPerHour} mg/h</span>
+            <span style={{ fontWeight: 600, color: "var(--color-text-muted)" }}>
+              K⁺ repère ~{plan.electrolyteStrategy.potassiumMgPerHourHint} mg/h · Mg repère ~
+              {plan.electrolyteStrategy.magnesiumMgPerHourHint} mg/h
+            </span>
+          </div>
+          <ul
+            style={{
+              margin: 0,
+              paddingLeft: 18,
+              fontSize: 13,
+              lineHeight: 1.55,
+              color: "var(--color-text-muted)",
+            }}
+          >
+            {plan.electrolyteStrategy.bulletPoints.map((line, idx) => (
+              <li key={idx} style={{ marginBottom: 6 }}>
+                {line}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {plan.warnings && plan.warnings.length > 0 && (
         <div style={{ marginBottom: 24 }}>

@@ -253,7 +253,7 @@ const S = {
   } as CSSProperties,
 };
 
-const SIMULATION_SPEEDS = [1, 10, 20, 30] as const;
+const SIMULATION_SPEEDS = [1, 10, 20, 30, 60] as const;
 
 function DestructiveConfirmOverlay({
   open,
@@ -1354,7 +1354,7 @@ function RaceContent() {
             <div
               role="group"
               aria-label="Vitesse de simulation du chronomètre"
-              style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))', gap: 8 }}
             >
               {SIMULATION_SPEEDS.map((s) => (
                 <button

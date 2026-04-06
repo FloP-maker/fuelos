@@ -1,6 +1,7 @@
 import type {
   AthleteProfile,
   EventDetails,
+  ElectrolyteStrategy,
   FuelPlan,
   FuelPlanGenerationResult,
   TimelineItem,
@@ -55,6 +56,32 @@ const CHO_PROGRESSION_PROFILES = {
 const WEATHER_HOT = new Set(["Chaud (20-30°C)", "Très chaud (>30°C)"]);
 const WEATHER_COLD = new Set(["Froid (<10°C)"]);
 
+function buildElectrolyteStrategyForPlan(plan: FuelPlan, event: EventDetails): ElectrolyteStrategy {
+  const na = plan.sodiumPerHour;
+  const heat = WEATHER_HOT.has(event.weather);
+  const longRace = event.targetTime >= 4;
+  const kHint = clamp(
+    Math.round(100 + (heat ? 70 : 0) + (longRace ? 60 : 0) + (na > 0 ? na * 0.18 : 0)),
+    75,
+    320
+  );
+  const mgHint = 35;
+  return {
+    sodiumMgPerHour: na,
+    potassiumMgPerHourHint: kHint,
+    magnesiumMgPerHourHint: mgHint,
+    bulletPoints: [
+      `Sodium cible : environ ${na} mg/h (apports cumulés via boissons, gels et comprimés du plan).`,
+      heat
+        ? "Météo chaude : augmente l’apport hydrique et les électrolytes (Na⁺, K⁺) ; privilégie boissons et/ou pastilles électrolytes en plus de l’eau pure."
+        : "Même par temps frais, l’eau seule ne remplace pas le sodium perdu à la sueur.",
+      `Potassium (repère indicatif) : ~${kHint} mg/h en moyenne — souvent couvert par les produits du plan ; ajuste selon tes tests.`,
+      `Magnésium (repère) : ~${mgHint} mg/h max en appoint — utile surtout sur les longues épreuves.`,
+      "Teste à l’entraînement les produits type comprimés, sels et boissons électrolytes du catalogue avant le jour J.",
+    ],
+  };
+}
+
 function scaleDrinkQuantity(quantity: string, waterMl: number): string {
   if (waterMl > 0) return `${waterMl}ml`;
   return quantity;
@@ -65,7 +92,8 @@ export function clonePlanHydrationAdjusted(
   plan: FuelPlan,
   waterScale: number,
   sodiumScale: number,
-  targetTimeHours: number
+  targetTimeHours: number,
+  event?: EventDetails
 ): FuelPlan {
   const timeline: TimelineItem[] = plan.timeline.map((item) => {
     const rawW = item.water ?? 0;
@@ -86,13 +114,17 @@ export function clonePlanHydrationAdjusted(
 
   const totals = calculateTotals(timeline, targetTimeHours, undefined);
 
-  return {
+  const next: FuelPlan = {
     ...plan,
     timeline,
     waterPerHour: totals.avgWaterPerHour,
     sodiumPerHour: totals.avgSodiumPerHour,
     warnings: [...(plan.warnings || [])],
   };
+
+  return event
+    ? { ...next, electrolyteStrategy: buildElectrolyteStrategyForPlan(next, event) }
+    : next;
 }
 
 function buildWeatherAltExplanation(
@@ -152,7 +184,7 @@ export function buildFuelPlan(profile: AthleteProfile, event: EventDetails): Fue
     );
   }
 
-  return {
+  const mainPlan: FuelPlan = {
     choPerHour: totals.avgChoPerHour,
     waterPerHour: totals.avgWaterPerHour,
     sodiumPerHour: totals.avgSodiumPerHour,
@@ -163,6 +195,11 @@ export function buildFuelPlan(profile: AthleteProfile, event: EventDetails): Fue
     choStrategy,
     estimatedCost,
   };
+
+  return {
+    ...mainPlan,
+    electrolyteStrategy: buildElectrolyteStrategyForPlan(mainPlan, event),
+  };
 }
 
 export function generateFuelPlan(
@@ -172,7 +209,7 @@ export function generateFuelPlan(
   const mainPlan = buildFuelPlan(profile, event);
 
   if (WEATHER_HOT.has(event.weather)) {
-    const altPlan = clonePlanHydrationAdjusted(mainPlan, 1.3, 1.2, event.targetTime);
+    const altPlan = clonePlanHydrationAdjusted(mainPlan, 1.3, 1.2, event.targetTime, event);
     altPlan.warnings = [
       ...(altPlan.warnings || []),
       "🌡 Variante chaleur : +30 % sur les volumes d’eau des boissons, +20 % sur le sodium des prises (vs plan principal).",
@@ -186,7 +223,7 @@ export function generateFuelPlan(
   }
 
   if (WEATHER_COLD.has(event.weather)) {
-    const altPlan = clonePlanHydrationAdjusted(mainPlan, 0.7, 0.8, event.targetTime);
+    const altPlan = clonePlanHydrationAdjusted(mainPlan, 0.7, 0.8, event.targetTime, event);
     altPlan.warnings = [
       ...(altPlan.warnings || []),
       "❄️ Variante froid : −30 % sur les volumes d’eau des boissons, −20 % sur le sodium des prises (vs plan principal).",
@@ -811,7 +848,7 @@ export function recalculateFuelPlanFromTimeline(
 ): FuelPlan {
   const hours = Math.max(0.25, targetTimeHours);
   const totals = calculateTotals(timeline, hours, undefined);
-  return {
+  const next: FuelPlan = {
     ...basePlan,
     timeline,
     choPerHour: totals.avgChoPerHour,
@@ -819,6 +856,10 @@ export function recalculateFuelPlanFromTimeline(
     sodiumPerHour: totals.avgSodiumPerHour,
     totalCalories: totals.totalCalories,
     shoppingList: generateShoppingList(timeline, event),
+  };
+  return {
+    ...next,
+    electrolyteStrategy: buildElectrolyteStrategyForPlan(next, event),
   };
 }
 
