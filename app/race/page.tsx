@@ -151,6 +151,60 @@ const S = {
     overflow: 'hidden',
     marginBottom: 6,
   } as CSSProperties,
+  /** Zone sous le timer : suivi, stats, timeline */
+  raceBottomDock: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 18,
+    marginTop: 6,
+    paddingTop: 22,
+    paddingBottom: 'max(32px, env(safe-area-inset-bottom, 0px))',
+    borderTop: '1px solid color-mix(in srgb, var(--color-accent) 24%, var(--color-border))',
+    background:
+      'linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 7%, transparent) 0%, transparent 100px)',
+  } as CSSProperties,
+  raceStatCell: {
+    borderRadius: 16,
+    padding: '14px 10px',
+    textAlign: 'center' as const,
+    border: '1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border))',
+    background:
+      'linear-gradient(165deg, color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 60%)',
+    boxShadow: 'var(--shadow-xs)',
+  } as CSSProperties,
+  raceInfoCard: {
+    borderRadius: 16,
+    padding: '14px 16px',
+    border: '1px solid var(--color-border)',
+    background: 'color-mix(in srgb, var(--color-bg-card) 97%, var(--color-bg))',
+    boxShadow: 'var(--shadow-xs)',
+  } as CSSProperties,
+  raceTimelineShell: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    border: '1px solid color-mix(in srgb, var(--color-accent) 22%, var(--color-border))',
+    background: 'var(--color-bg-card)',
+    boxShadow: '0 10px 40px color-mix(in srgb, #000 10%, transparent)',
+  } as CSSProperties,
+  raceTimelineHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    flexWrap: 'wrap' as const,
+    padding: '14px 18px',
+    background:
+      'linear-gradient(95deg, color-mix(in srgb, var(--color-accent) 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 55%)',
+    borderBottom: '1px solid color-mix(in srgb, var(--color-border) 80%, transparent)',
+  } as CSSProperties,
+  raceNextCard: {
+    borderRadius: 18,
+    padding: '16px 18px',
+    border: '1px solid color-mix(in srgb, var(--color-accent) 28%, var(--color-border))',
+    background:
+      'linear-gradient(145deg, color-mix(in srgb, var(--color-accent) 9%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
+    boxShadow: 'var(--shadow-sm)',
+  } as CSSProperties,
 };
 
 const SIMULATION_SPEEDS = [1, 10, 20, 30] as const;
@@ -942,8 +996,16 @@ function RaceContent() {
               <div
                 style={{
                   marginTop: 22,
-                  paddingTop: 20,
-                  borderTop: '1px solid var(--color-border)',
+                  paddingTop: 22,
+                  paddingBottom: 4,
+                  borderTop: '1px solid color-mix(in srgb, var(--color-accent) 22%, var(--color-border))',
+                  background:
+                    'linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 8%, transparent) 0%, transparent 72px)',
+                  borderRadius: '0 0 var(--radius-lg) var(--radius-lg)',
+                  marginLeft: -4,
+                  marginRight: -4,
+                  paddingLeft: 4,
+                  paddingRight: 4,
                 }}
               >
                 {onboarding.hasPlanInStorage ? (
@@ -952,16 +1014,28 @@ function RaceContent() {
                     onClick={() => {
                       window.location.assign('/race');
                     }}
-                    style={S.btnPrimary}
+                    style={{
+                      ...S.btnPrimary,
+                      boxShadow: '0 8px 28px color-mix(in srgb, var(--color-accent) 35%, transparent)',
+                    }}
                   >
                     Démarrer le mode course
                   </button>
                 ) : nextPrepAction ? (
-                  <Link href={nextPrepAction.href} style={{ ...S.btnPrimary, display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+                  <Link
+                    href={nextPrepAction.href}
+                    style={{
+                      ...S.btnPrimary,
+                      display: 'block',
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                      boxShadow: '0 8px 28px color-mix(in srgb, var(--color-accent) 35%, transparent)',
+                    }}
+                  >
                     {nextPrepAction.label} →
                   </Link>
                 ) : null}
-                <p style={{ ...S.muted, fontSize: 11, margin: '12px 0 0', lineHeight: 1.45, textAlign: 'center' }}>
+                <p style={{ ...S.muted, fontSize: 11, margin: '14px 0 0', lineHeight: 1.5, textAlign: 'center' }}>
                   Quand tu reviens sur cette page après une étape, l’avancement se met à jour tout seul
                   (retour au navigateur ou changement d’onglet).
                 </p>
@@ -1183,13 +1257,16 @@ function RaceContent() {
           )}
         </section>
 
+        <section style={S.raceBottomDock} aria-label="Suivi et timeline">
           {/* Alert Card */}
           {showAlert && alertItem && raceState.status === 'running' && (
             <div
               className="rounded-2xl p-5"
               style={{
                 border: '1px solid color-mix(in srgb, var(--color-warning) 55%, var(--color-border))',
-                background: 'color-mix(in srgb, var(--color-warning) 12%, var(--color-bg-card))',
+                background:
+                  'linear-gradient(160deg, color-mix(in srgb, var(--color-warning) 16%, var(--color-bg-card)) 0%, color-mix(in srgb, var(--color-warning) 8%, var(--color-bg-card)) 100%)',
+                boxShadow: '0 12px 36px color-mix(in srgb, var(--color-warning) 12%, transparent)',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
@@ -1234,11 +1311,8 @@ function RaceContent() {
           {/* Next Item */}
           {nextItem && !showAlert && raceState.status !== 'finished' && (
             <div
-              className="rounded-2xl p-4 backdrop-blur-xl"
-              style={{
-                border: '1px solid var(--color-border)',
-                background: 'var(--color-bg-card)',
-              }}
+              className="backdrop-blur-xl"
+              style={S.raceNextCard}
             >
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-semibold" style={{ ...S.muted, letterSpacing: '0.18em' }}>
@@ -1269,42 +1343,37 @@ function RaceContent() {
           )}
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-3">
+          <div>
             <div
-              className="rounded-xl p-3 text-center"
               style={{
-                border: '1px solid var(--color-border)',
-                background: 'var(--color-bg-card)',
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'var(--color-text-muted)',
+                marginBottom: 10,
               }}
             >
+              Aujourd&apos;hui sur la course
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+            <div className="text-center" style={S.raceStatCell}>
               <div className="text-xl font-bold" style={{ color: 'var(--color-accent)' }}>
                 {raceState.choConsumed}g
               </div>
-              <div className="mt-1 text-xs" style={S.muted}>
+              <div className="mt-1 text-xs" style={{ ...S.muted, fontWeight: 600 }}>
                 CHO pris
               </div>
             </div>
 
-            <div
-              className="rounded-xl p-3 text-center"
-              style={{
-                border: '1px solid var(--color-border)',
-                background: 'var(--color-bg-card)',
-              }}
-            >
-              <div className="text-xl font-bold">{raceState.waterConsumed}ml</div>
-              <div className="mt-1 text-xs" style={S.muted}>
+            <div className="text-center" style={S.raceStatCell}>
+              <div className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>{raceState.waterConsumed}ml</div>
+              <div className="mt-1 text-xs" style={{ ...S.muted, fontWeight: 600 }}>
                 Eau
               </div>
             </div>
 
-            <div
-              className="rounded-xl p-3 text-center"
-              style={{
-                border: '1px solid var(--color-border)',
-                background: 'var(--color-bg-card)',
-              }}
-            >
+            <div className="text-center" style={S.raceStatCell}>
               <div
                 className="text-xl font-bold"
                 style={{
@@ -1313,9 +1382,10 @@ function RaceContent() {
               >
                 {compliance}%
               </div>
-              <div className="mt-1 text-xs" style={S.muted}>
+              <div className="mt-1 text-xs" style={{ ...S.muted, fontWeight: 600 }}>
                 Compliance
               </div>
+            </div>
             </div>
           </div>
 
@@ -1324,8 +1394,10 @@ function RaceContent() {
             <div
               className="rounded-xl p-4"
               style={{
-                border: '1px solid color-mix(in srgb, var(--color-warning) 55%, var(--color-border))',
-                background: 'color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-card))',
+                border: '1px solid color-mix(in srgb, var(--color-warning) 45%, var(--color-border))',
+                background:
+                  'linear-gradient(135deg, color-mix(in srgb, var(--color-warning) 14%, var(--color-bg-card)) 0%, color-mix(in srgb, var(--color-warning) 6%, var(--color-bg-card)) 100%)',
+                boxShadow: 'var(--shadow-xs)',
               }}
             >
               <div className="mb-1 text-sm font-bold">🔄 Recalcul dynamique</div>
@@ -1336,54 +1408,38 @@ function RaceContent() {
             </div>
           )}
 
-          <div
-            className="rounded-xl p-4"
-            style={{
-              border: '1px solid var(--color-border)',
-              background: 'var(--color-bg-card)',
-            }}
-          >
+          <div style={S.raceInfoCard}>
             <div className="mb-1 text-sm font-bold">⏱ Adaptation temps réel</div>
             <div className="text-sm" style={S.muted}>
-              {paceStatus} · Les rappels futurs sont automatiquement decalés de {Math.abs(timingOffsetMin).toFixed(1)} min.
+              {paceStatus} · Les rappels futurs sont automatiquement décalés de {Math.abs(timingOffsetMin).toFixed(1)} min.
             </div>
           </div>
 
           {/* Timeline */}
-          <div
-            className="overflow-hidden rounded-2xl backdrop-blur-xl"
-            style={{
-              border: '1px solid var(--color-border)',
-              background: 'var(--color-bg-card)',
-            }}
-          >
-            <div
-              className="flex items-center justify-between px-4 py-3"
-              style={{
-                borderBottom: '1px solid var(--color-border)',
-              }}
-            >
-              <span className="font-bold" style={{ color: 'var(--color-text)' }}>
-                📋 Timeline
+          <div className="overflow-hidden backdrop-blur-xl" style={S.raceTimelineShell}>
+            <div style={S.raceTimelineHeader}>
+              <span className="font-bold" style={{ color: 'var(--color-text)', fontSize: 15, letterSpacing: '-0.02em' }}>
+                Timeline
               </span>
-              <span className="text-sm" style={S.muted}>
+              <span className="text-sm" style={{ ...S.muted, fontWeight: 600 }}>
                 {consumedCount} pris · {skippedCount} passés · {totalItems - consumedCount - skippedCount} restants
               </span>
             </div>
 
-            <div className="max-h-64 overflow-y-auto">
+            <div className="max-h-72 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
               {timelineByHour.map((group) => (
                 <div key={group.hour}>
                   <div
-                    className="sticky top-0 z-10 px-4 py-2 backdrop-blur"
+                    className="sticky top-0 z-10 px-4 py-2.5 backdrop-blur"
                     style={{
-                      borderTop: '1px solid var(--color-border)',
+                      borderTop: '1px solid color-mix(in srgb, var(--color-border) 70%, transparent)',
                       borderBottom: '1px solid var(--color-border)',
-                      background: 'color-mix(in srgb, var(--color-bg-card) 86%, var(--color-bg))',
+                      background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card))',
+                      borderLeft: '3px solid var(--color-accent)',
                     }}
                   >
-                    <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                      Heure {group.hour} ({group.hour * 60}-{group.hour * 60 + 59} min)
+                    <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                      Heure {group.hour} · {group.hour * 60}–{group.hour * 60 + 59} min
                     </span>
                   </div>
 
@@ -1396,12 +1452,12 @@ function RaceContent() {
                     return (
                       <div
                         key={index}
-                        className="flex items-center gap-3 px-4 py-3 last:border-0"
+                        className="flex items-center gap-3 px-4 py-3.5 last:border-0"
                         style={{
-                          borderBottom: '1px solid var(--color-border)',
-                          opacity: isConsumed ? 0.45 : isSkipped ? 0.35 : 1,
+                          borderBottom: '1px solid color-mix(in srgb, var(--color-border) 65%, transparent)',
+                          opacity: isConsumed ? 0.5 : isSkipped ? 0.38 : 1,
                           textDecoration: isSkipped ? 'line-through' : 'none',
-                          background: isCurrent ? 'color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-card))' : 'transparent',
+                          background: isCurrent ? 'color-mix(in srgb, var(--color-warning) 12%, var(--color-bg-card))' : 'transparent',
                         }}
                       >
                         <div
@@ -1474,6 +1530,7 @@ function RaceContent() {
               ))}
             </div>
           </div>
+        </section>
       </main>
 
       <DestructiveConfirmOverlay
