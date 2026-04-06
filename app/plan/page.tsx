@@ -2310,7 +2310,12 @@ function PlanPageContent() {
               <button style={{ ...S.btnOutline, flex: 1 }} onClick={() => setCurrentStep(1)}>
                 ← Profil
               </button>
-              <button style={{ ...S.btn, flex: 2 }} onClick={handleCalculate}>
+              <button
+                id="fuelos-plan-calculate"
+                type="button"
+                style={{ ...S.btn, flex: 2 }}
+                onClick={handleCalculate}
+              >
                 Calculer mon plan →
               </button>
             </div>

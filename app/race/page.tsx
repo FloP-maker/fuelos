@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useCallback,
+  useMemo,
   useId,
   type CSSProperties,
   type ReactNode,
@@ -143,6 +144,13 @@ const S = {
     border: '1px solid color-mix(in srgb, #7c3aed 45%, var(--color-border))',
     cursor: 'pointer',
   } as CSSProperties,
+  prepProgressTrack: {
+    height: 8,
+    borderRadius: 99,
+    background: 'var(--color-border)',
+    overflow: 'hidden',
+    marginBottom: 6,
+  } as CSSProperties,
 };
 
 const SIMULATION_SPEEDS = [1, 10, 20, 30] as const;
@@ -270,6 +278,8 @@ function RaceContent() {
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [timingOffsetMin, setTimingOffsetMin] = useState(0);
   const [completedAtMinByItem, setCompletedAtMinByItem] = useState<Record<number, number>>({});
+  /** Évite d’afficher la checklist avant la fin du chargement cloud / localStorage. */
+  const [planLoadResolved, setPlanLoadResolved] = useState(false);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const alertShownRef = useRef<Set<number>>(new Set());
@@ -407,6 +417,8 @@ function RaceContent() {
         }
       } catch (e) {
         console.error('Plan load error:', e);
+      } finally {
+        setPlanLoadResolved(true);
       }
     })();
   }, [searchParams]);
@@ -748,7 +760,71 @@ function RaceContent() {
       </span>
     ) : null;
 
+  const prepProgress = useMemo(() => {
+    const completed = [
+      onboarding.profileDone,
+      onboarding.eventStepDone,
+      onboarding.hasPlanInStorage,
+    ].filter(Boolean).length;
+    return { completed, pct: (completed / 3) * 100 };
+  }, [onboarding.profileDone, onboarding.eventStepDone, onboarding.hasPlanInStorage]);
+
+  const nextPrepAction = useMemo(() => {
+    if (!onboarding.profileDone) {
+      return { href: '/plan?step=profile', label: 'Compléter le profil' };
+    }
+    if (!onboarding.eventStepDone) {
+      return { href: '/plan?step=event', label: 'Configurer la course' };
+    }
+    if (!onboarding.hasPlanInStorage) {
+      return { href: '/plan?step=event#fuelos-plan-calculate', label: 'Calculer mon plan' };
+    }
+    return null;
+  }, [onboarding.profileDone, onboarding.eventStepDone, onboarding.hasPlanInStorage]);
+
+  if (!planLoadResolved) {
+    return (
+      <div className="fuel-page" style={pageShellStyle}>
+        <Header sticky extra={simulationHeaderBadge} />
+        <main className="fuel-main" style={{ ...S.main, paddingTop: 52 }}>
+          <SectionBreadcrumb />
+          <div style={{ maxWidth: 520, margin: '0 auto', textAlign: 'center', paddingTop: 56 }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>⚡</div>
+            <p style={{ ...S.muted, fontSize: 14, margin: 0 }}>Chargement du plan…</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   if (!plan) {
+    const prepSteps = [
+      {
+        n: 1,
+        title: 'Profil athlète',
+        desc: 'Poids, transpiration, tolérance digestive…',
+        done: onboarding.profileDone,
+        href: '/plan?step=profile',
+        cta: 'Ouvrir',
+      },
+      {
+        n: 2,
+        title: 'Ta course',
+        desc: 'Sport, distance, dénivelé, météo, départ…',
+        done: onboarding.eventStepDone,
+        href: '/plan?step=event',
+        cta: 'Ouvrir',
+      },
+      {
+        n: 3,
+        title: 'Plan nutritionnel',
+        desc: 'Calcule la timeline sur l’étape Course (bouton en bas de page).',
+        done: onboarding.hasPlanInStorage,
+        href: '/plan?step=event#fuelos-plan-calculate',
+        cta: 'Calculer',
+      },
+    ] as const;
+
     return (
       <div className="fuel-page" style={pageShellStyle}>
         <Header sticky extra={simulationHeaderBadge} />
@@ -756,45 +832,69 @@ function RaceContent() {
         <main className="fuel-main" style={{ ...S.main, paddingTop: 52 }}>
           <SectionBreadcrumb />
           <div style={{ maxWidth: 520, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
               <div style={{ fontSize: 40, marginBottom: 8 }}>⚡</div>
               <h1 className="font-display" style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>
                 Mode course
               </h1>
-              <p style={{ ...S.muted, fontSize: 14, margin: 0 }}>
-                Aucun plan actif. Suis les étapes ci-dessous pour lancer le mode course.
+              <p style={{ ...S.muted, fontSize: 14, margin: 0, lineHeight: 1.5 }}>
+                Aucun plan chargé. Trois étapes dans le planificateur, puis tu reviens ici pour lancer le
+                chronomètre et les alertes.
               </p>
             </div>
 
-            <div style={{ ...S.card, position: 'relative', padding: '24px 20px 24px 28px' }}>
+            <div style={{ ...S.card, position: 'relative', padding: '22px 20px 22px 28px' }}>
               <div style={S.stepperRail} aria-hidden />
-              {(
-                [
-                  {
-                    n: 1,
-                    title: 'Crée ton profil athlète',
-                    desc: 'Poids, transpiration, tolérance GI…',
-                    done: onboarding.profileDone,
-                    href: '/plan?step=profile',
-                    cta: 'Ouvrir',
-                  },
-                  {
-                    n: 2,
-                    title: 'Configure ta course',
-                    desc: 'Sport, distance, dénivelé, météo…',
-                    done: onboarding.eventStepDone,
-                    href: '/plan?step=event',
-                    cta: 'Ouvrir',
-                  },
-                ] as const
-              ).map((step) => (
+              <div style={{ marginBottom: 22 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                    marginBottom: 8,
+                    gap: 12,
+                  }}
+                >
+                  <span style={{ fontWeight: 900, fontSize: 13, letterSpacing: '0.02em' }}>
+                    Préparation mode course
+                  </span>
+                  <span style={{ ...S.muted, fontSize: 12, fontWeight: 800 }}>
+                    {prepProgress.completed}/3
+                  </span>
+                </div>
+                <div
+                  style={S.prepProgressTrack}
+                  role="progressbar"
+                  aria-valuenow={prepProgress.completed}
+                  aria-valuemin={0}
+                  aria-valuemax={3}
+                  aria-label={`Avancement de la préparation : ${prepProgress.completed} sur 3 étapes`}
+                >
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${prepProgress.pct}%`,
+                      background: 'var(--color-accent)',
+                      borderRadius: 99,
+                      transition: 'width 0.25s ease',
+                    }}
+                  />
+                </div>
+                <p style={{ ...S.muted, fontSize: 12, margin: '10px 0 0', lineHeight: 1.45 }}>
+                  {nextPrepAction
+                    ? `Prochaine étape : ${nextPrepAction.label.toLowerCase()}.`
+                    : 'Tout est prêt — lance le mode course ci-dessous.'}
+                </p>
+              </div>
+
+              {prepSteps.map((step) => (
                 <div
                   key={step.n}
                   style={{
                     display: 'flex',
                     gap: 16,
                     alignItems: 'flex-start',
-                    marginBottom: step.n === 2 ? 22 : 20,
+                    marginBottom: step.n === 3 ? 0 : 20,
                   }}
                 >
                   <div
@@ -839,79 +939,32 @@ function RaceContent() {
                 </div>
               ))}
 
-              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 900,
-                    fontSize: 13,
-                    background:
-                      onboarding.profileDone && onboarding.eventStepDone
-                        ? 'var(--color-accent)'
-                        : 'var(--color-bg-card)',
-                    color:
-                      onboarding.profileDone && onboarding.eventStepDone
-                        ? '#000'
-                        : 'var(--color-text-muted)',
-                    border:
-                      onboarding.profileDone && onboarding.eventStepDone
-                        ? 'none'
-                        : '2px solid var(--color-border)',
-                    position: 'relative',
-                    zIndex: 1,
-                  }}
-                >
-                  {onboarding.profileDone && onboarding.eventStepDone ? '✓' : '3'}
-                </div>
-                <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
-                  <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>Lance le mode course</div>
-                  <p style={{ ...S.muted, fontSize: 12, margin: '0 0 12px', lineHeight: 1.45 }}>
-                    Timer, alertes et suivi du plan le jour J.
-                  </p>
-                  {onboarding.profileDone && onboarding.eventStepDone ? (
-                    <Link
-                      href={onboarding.hasPlanInStorage ? '/race' : '/plan?step=event'}
-                      onClick={(e) => {
-                        if (onboarding.hasPlanInStorage) {
-                          e.preventDefault();
-                          window.location.assign('/race');
-                        }
-                      }}
-                      style={{
-                        ...S.btnPrimary,
-                        display: 'inline-block',
-                        width: 'auto',
-                        padding: '10px 18px',
-                        fontSize: 14,
-                        textDecoration: 'none',
-                      }}
-                    >
-                      Lance le mode course →
-                    </Link>
-                  ) : (
-                    <div
-                      role="status"
-                      style={{
-                        ...S.btnPrimary,
-                        display: 'inline-block',
-                        width: 'auto',
-                        padding: '10px 18px',
-                        fontSize: 14,
-                        opacity: 0.42,
-                        cursor: 'not-allowed',
-                        pointerEvents: 'none',
-                      }}
-                    >
-                      Lance le mode course
-                    </div>
-                  )}
-                </div>
+              <div
+                style={{
+                  marginTop: 22,
+                  paddingTop: 20,
+                  borderTop: '1px solid var(--color-border)',
+                }}
+              >
+                {onboarding.hasPlanInStorage ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.assign('/race');
+                    }}
+                    style={S.btnPrimary}
+                  >
+                    Démarrer le mode course
+                  </button>
+                ) : nextPrepAction ? (
+                  <Link href={nextPrepAction.href} style={{ ...S.btnPrimary, display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+                    {nextPrepAction.label} →
+                  </Link>
+                ) : null}
+                <p style={{ ...S.muted, fontSize: 11, margin: '12px 0 0', lineHeight: 1.45, textAlign: 'center' }}>
+                  Quand tu reviens sur cette page après une étape, l’avancement se met à jour tout seul
+                  (retour au navigateur ou changement d’onglet).
+                </p>
               </div>
             </div>
           </div>
