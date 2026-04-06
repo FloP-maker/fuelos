@@ -65,11 +65,6 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
               <span className="hidden sm:inline">Profil athlète</span>
             </Link>
             <AuthMenu />
-            {pathname !== '/' && (
-              <Link href="/" className="fuel-header-text-link">
-                Accueil
-              </Link>
-            )}
             <ThemeToggle />
           </div>
         </div>

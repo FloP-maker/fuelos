@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { athleteProfileFromJson } from "../lib/athleteProfileData";
 import useLocalStorage from "../lib/hooks/useLocalStorage";
@@ -232,6 +232,7 @@ function ProductThumb({
 
 function PlanPageContent() {
   usePageTitle("Plan");
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { status, data: sessionData } = useSession();
   const [athleteProfile, setAthleteProfile] = useLocalStorage<AthleteProfile | null>("athlete-profile", null);
@@ -239,7 +240,6 @@ function PlanPageContent() {
   const lastCloudUserIdRef = useRef<string | undefined>(undefined);
 
   const [currentStep, setCurrentStep] = useState<PlanWizardStep>(1);
-  const [maxReachedStep, setMaxReachedStep] = useState<PlanWizardStep>(1);
   const skipInitialScrollRef = useRef(true);
   const [showProductSelector, setShowProductSelector] = useState<"gels" | "drinks" | "bars" | null>(null);
 
@@ -412,11 +412,21 @@ function PlanPageContent() {
     const s = searchParams.get("step");
     if (s === "event") {
       setCurrentStep(2);
-      setMaxReachedStep((m) => Math.max(m, 2) as PlanWizardStep);
     } else if (s === "profile") {
       setCurrentStep(1);
+    } else if (s === "plan") {
+      setCurrentStep(3);
     }
   }, [searchParams]);
+
+  const navigateToPlanStep = useCallback(
+    (n: PlanWizardStep) => {
+      setCurrentStep(n);
+      const stepParam = n === 1 ? "profile" : n === 2 ? "event" : "plan";
+      router.replace(`/plan?step=${stepParam}`, { scroll: false });
+    },
+    [router]
+  );
 
   useEffect(() => {
     if (skipInitialScrollRef.current) {
@@ -442,11 +452,6 @@ function PlanPageContent() {
       }
     }
   }, [currentStep]);
-
-  function goToPlanStep(n: PlanWizardStep) {
-    if (n > maxReachedStep) return;
-    setCurrentStep(n);
-  }
 
   const handleGeocodePlace = useCallback(async () => {
     setMeteoBanner(null);
@@ -756,8 +761,7 @@ function PlanPageContent() {
     } catch {
       /* ignore */
     }
-    setMaxReachedStep(3);
-    setCurrentStep(3);
+    navigateToPlanStep(3);
   }
 
   return (
@@ -771,7 +775,6 @@ function PlanPageContent() {
             style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}
           >
           {PLAN_WIZARD_STEPS.map(({ num, label }, i) => {
-            const isLocked = num > maxReachedStep;
             const isActive = num === currentStep;
             const isCompleted = num < currentStep;
 
@@ -789,22 +792,7 @@ function PlanPageContent() {
             let visual: React.CSSProperties;
             let text: React.ReactNode;
 
-            if (isLocked) {
-              visual = {
-                ...base,
-                cursor: "not-allowed",
-                opacity: 0.45,
-                background: "var(--color-bg-card)",
-                color: "var(--color-text-muted)",
-                border: "1px solid var(--color-border)",
-              };
-              text = (
-                <>
-                  <span aria-hidden>{num}</span>
-                  <span>{label}</span>
-                </>
-              );
-            } else if (isActive) {
+            if (isActive) {
               visual = {
                 ...base,
                 cursor: "pointer",
@@ -858,10 +846,8 @@ function PlanPageContent() {
               <div key={num} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <button
                   type="button"
-                  disabled={isLocked}
                   aria-current={isActive ? "step" : undefined}
-                  aria-disabled={isLocked || undefined}
-                  onClick={() => goToPlanStep(num)}
+                  onClick={() => navigateToPlanStep(num)}
                   style={visual}
                 >
                   {text}
@@ -1715,8 +1701,7 @@ function PlanPageContent() {
                 } catch {
                   /* ignore */
                 }
-                setMaxReachedStep((m) => (Math.max(m, 2) as PlanWizardStep));
-                setCurrentStep(2);
+                navigateToPlanStep(2);
               }}
             >
               Continuer → Paramètres course
@@ -2307,7 +2292,7 @@ function PlanPageContent() {
             </div>
 
             <div style={{ display: "flex", gap: 12 }}>
-              <button style={{ ...S.btnOutline, flex: 1 }} onClick={() => setCurrentStep(1)}>
+              <button style={{ ...S.btnOutline, flex: 1 }} onClick={() => navigateToPlanStep(1)}>
                 ← Profil
               </button>
               <button
@@ -2322,13 +2307,36 @@ function PlanPageContent() {
           </div>
         )}
 
+        {currentStep === 3 && !planResult && (
+          <div id="plan-step-3" style={{ scrollMarginTop: 24 }}>
+            <h1
+              className="font-display"
+              style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.5px" }}
+            >
+              Ton plan d&apos;alimentation
+            </h1>
+            <p style={{ color: "var(--color-text-muted)", marginBottom: 24, fontSize: 14 }}>
+              Aucun calcul n&apos;a encore été lancé pour cette session.
+            </p>
+            <div style={S.card}>
+              <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>
+                Pour afficher ton plan, configure ta course puis clique sur « Calculer mon plan » à l&apos;étape Course.
+                Tu peux aussi revenir aux paramètres pour ajuster distance, horaires ou parcours.
+              </p>
+              <button type="button" style={S.btn} onClick={() => navigateToPlanStep(2)}>
+                Aller aux paramètres course →
+              </button>
+            </div>
+          </div>
+        )}
+
         {currentStep === 3 && planResult && (
           <div id="plan-step-3" style={{ scrollMarginTop: 24 }}>
             <PlanResult
               planResult={planResult}
               profile={profile}
               event={event}
-              onBack={() => setCurrentStep(2)}
+              onBack={() => navigateToPlanStep(2)}
               customProducts={customProducts}
               planGenerationId={planGenerationId}
               onPlanTimelineCommit={handleEditorPlanUpdate}
