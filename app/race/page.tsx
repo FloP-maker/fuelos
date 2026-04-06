@@ -15,6 +15,7 @@ import { Suspense } from 'react';
 import type { FuelPlan, AthleteProfile, EventDetails, TimelineItem } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
 import { Header } from '../components/Header';
+import { SectionBreadcrumb } from '../components/SectionBreadcrumb';
 
 const ONBOARDING_PROFILE_KEY = 'fuelos_onboarding_profile_done';
 const ONBOARDING_EVENT_KEY = 'fuelos_onboarding_event_done';
@@ -753,6 +754,7 @@ function RaceContent() {
         <Header sticky extra={simulationHeaderBadge} />
 
         <main className="fuel-main" style={{ ...S.main, paddingTop: 52 }}>
+          <SectionBreadcrumb />
           <div style={{ maxWidth: 520, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
               <div style={{ fontSize: 40, marginBottom: 8 }}>⚡</div>
@@ -958,6 +960,7 @@ function RaceContent() {
       <Header sticky extra={simulationHeaderBadge} />
 
       <main className="fuel-main" style={S.main}>
+        <SectionBreadcrumb />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
           <div>
             <div className="font-display" style={{ fontSize: 22, fontWeight: 900, marginBottom: 2 }}>

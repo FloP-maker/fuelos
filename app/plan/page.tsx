@@ -37,6 +37,7 @@ import type {
 } from "../lib/types";
 import { GripVertical, RotateCcw, Trash2 } from "lucide-react";
 import { Header } from "../components/Header";
+import { SectionBreadcrumb } from "../components/SectionBreadcrumb";
 import { ScienceDashboard } from "../components/ScienceDashboard";
 
 const CourseMapPanel = dynamic(() => import("../components/CourseMapPanel"), { ssr: false });
@@ -764,6 +765,7 @@ function PlanPageContent() {
       <Header sticky />
       <div className="fuel-plan-wizard">
         <div className="fuel-plan-wizard-inner">
+          <SectionBreadcrumb />
           <nav
             aria-label="Étapes du plan"
             style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}

@@ -140,6 +140,27 @@ export default function Home() {
             Planifiez, achetez et exécutez votre stratégie nutritionnelle. Timer intelligent, alertes push, recalcul
             dynamique le jour J.
           </p>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 12,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: 8,
+            }}
+          >
+            <Link
+              href="/plan?step=profile"
+              className="fuel-btn-pill fuel-btn-pill-accent font-display"
+              style={{ fontWeight: 800, fontSize: 15, padding: '0.65rem 1.35rem' }}
+            >
+              Commencer ici
+            </Link>
+            <span style={{ fontSize: 13, color: 'var(--color-text-muted)', maxWidth: 280, lineHeight: 1.45 }}>
+              Parcours conseillé : créer ton profil dans le Plan, puis Produits et Mode course.
+            </span>
+          </div>
         </div>
 
         <div

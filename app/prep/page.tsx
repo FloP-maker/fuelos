@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { AthleteProfile, EventDetails, FuelPlan } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
 import { Header } from '../components/Header';
+import { SectionBreadcrumb } from '../components/SectionBreadcrumb';
 import {
   type CarbDayKey,
   type CarbLoadWindow,
@@ -458,6 +459,7 @@ export default function PrepPage() {
     <div className="fuel-page">
       <Header sticky activePage="prep" />
       <main className="fuel-main" style={S.main}>
+        <SectionBreadcrumb />
         <p style={{ ...S.muted, margin: '0 0 6px', fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', color: '#fb923c' }}>
           PRÉPARATION & RÉCUPÉRATION
         </p>

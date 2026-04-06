@@ -4,6 +4,7 @@ import { PRODUCTS } from "../lib/products";
 import type { Product } from "../lib/types";
 import usePageTitle from "../lib/hooks/usePageTitle";
 import { Header } from "../components/Header";
+import { SectionBreadcrumb } from "../components/SectionBreadcrumb";
 
 const CUSTOM_PRODUCTS_STORAGE_KEY = "fuelos_custom_products";
 
@@ -226,6 +227,7 @@ export default function ShopPage() {
         className="fuel-main"
         style={{ paddingTop: 32, paddingBottom: showCompareDrawer ? 280 : 72 }}
       >
+        <SectionBreadcrumb />
         <div className="font-display" style={{ fontSize: 26, fontWeight: 800, marginBottom: 4 }}>
           Catalogue produits
         </div>

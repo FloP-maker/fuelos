@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import type { AthleteProfile, EventDetails, FuelPlan, RaceState } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
 import { Header } from '../components/Header';
+import { SectionBreadcrumb } from '../components/SectionBreadcrumb';
 
 const DEBRIEFS_STORAGE_KEY = 'fuelos_debriefs';
 
@@ -401,6 +402,7 @@ export default function LearnPage() {
     <div className="fuel-page">
       <Header sticky />
       <main className="fuel-main" style={{ paddingTop: 28 }}>
+      <SectionBreadcrumb />
       <div
         className="fuel-card"
         style={{
