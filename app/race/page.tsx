@@ -144,6 +144,41 @@ const S = {
     border: '1px solid color-mix(in srgb, #7c3aed 45%, var(--color-border))',
     cursor: 'pointer',
   } as CSSProperties,
+  raceTabBar: {
+    display: 'flex',
+    gap: 4,
+    padding: 4,
+    borderRadius: 12,
+    background: 'color-mix(in srgb, var(--color-bg) 55%, var(--color-bg-card))',
+    border: '1px solid var(--color-border)',
+    marginBottom: 10,
+    maxWidth: 440,
+  } as CSSProperties,
+  raceTabBtn: {
+    flex: 1,
+    padding: '10px 12px',
+    borderRadius: 9,
+    border: 'none',
+    background: 'transparent',
+    fontWeight: 800,
+    fontSize: 13,
+    cursor: 'pointer',
+    color: 'var(--color-text-muted)',
+    fontFamily: 'inherit',
+  } as CSSProperties,
+  raceTabBtnActive: {
+    flex: 1,
+    padding: '10px 12px',
+    borderRadius: 9,
+    border: 'none',
+    background: 'var(--color-bg-card)',
+    fontWeight: 800,
+    fontSize: 13,
+    cursor: 'pointer',
+    color: 'var(--color-text)',
+    boxShadow: 'var(--shadow-xs)',
+    fontFamily: 'inherit',
+  } as CSSProperties,
   prepProgressTrack: {
     height: 8,
     borderRadius: 99,
@@ -319,6 +354,7 @@ function RaceContent() {
   const searchParams = useSearchParams();
 
   const [raceState, setRaceState] = useState<RaceState>(INITIAL_RACE_STATE);
+  const [raceViewTab, setRaceViewTab] = useState<'real' | 'simulation'>('real');
 
   const [mainPlan, setMainPlan] = useState<FuelPlan | null>(null);
   const [altPlan, setAltPlan] = useState<FuelPlan | null>(null);
@@ -691,6 +727,7 @@ function RaceContent() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     alertShownRef.current = new Set();
     setRaceState({ ...INITIAL_RACE_STATE });
+    setRaceViewTab('real');
     setCompletedAtMinByItem({});
     setChoDeficit(0);
     setTimingOffsetMin(0);
@@ -801,6 +838,32 @@ function RaceContent() {
       return { ...prev, simulationSpeed: speed };
     });
   }, []);
+
+  const handleRaceViewTab = useCallback(
+    (tab: 'real' | 'simulation') => {
+      setRaceViewTab(tab);
+      if (tab === 'real') {
+        handleSimulationSpeedChange(1);
+      }
+    },
+    [handleSimulationSpeedChange]
+  );
+
+  const raceModeSubtitle = useMemo(() => {
+    if (raceState.status === 'finished') {
+      return event
+        ? `${event.sport} · ${event.distance} km · objectif ${event.targetTime} h`
+        : 'Course terminée';
+    }
+    if (raceViewTab === 'simulation') {
+      return raceState.simulationSpeed > 1
+        ? `Simulation ×${raceState.simulationSpeed} — temps accéléré pour tester (le plan nutritionnel est inchangé)`
+        : 'Simulation — accélère le chronomètre pour répéter un plan sans attendre des heures.';
+    }
+    return event
+      ? `${event.sport} · ${event.distance} km · objectif ${event.targetTime} h`
+      : 'Exécution du plan';
+  }, [raceState.status, raceState.simulationSpeed, raceViewTab, event]);
 
   const prepProgress = useMemo(() => {
     const completed = [
@@ -1077,17 +1140,33 @@ function RaceContent() {
       <main className="fuel-main" style={S.main}>
         <SectionBreadcrumb />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div className="font-display" style={{ fontSize: 22, fontWeight: 900, marginBottom: 2 }}>
               Mode course
             </div>
-            <div style={{ ...S.muted, fontSize: 13 }}>
-              {raceState.simulationSpeed > 1
-                ? `Simulation ×${raceState.simulationSpeed} — temps accéléré pour tester (le plan nutritionnel est inchangé)`
-                : event
-                  ? `${event.sport} · ${event.distance} km · objectif ${event.targetTime} h`
-                  : 'Exécution du plan'}
-            </div>
+            {raceState.status !== 'finished' && (
+              <div role="tablist" aria-label="Type de course" style={S.raceTabBar}>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={raceViewTab === 'real'}
+                  onClick={() => handleRaceViewTab('real')}
+                  style={raceViewTab === 'real' ? S.raceTabBtnActive : S.raceTabBtn}
+                >
+                  Course réelle
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={raceViewTab === 'simulation'}
+                  onClick={() => handleRaceViewTab('simulation')}
+                  style={raceViewTab === 'simulation' ? S.raceTabBtnActive : S.raceTabBtn}
+                >
+                  Simulation
+                </button>
+              </div>
+            )}
+            <div style={{ ...S.muted, fontSize: 13 }}>{raceModeSubtitle}</div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
             {notifEnabled && <span style={{ ...S.badge, borderColor: 'rgba(34,197,94,0.5)', color: 'var(--color-accent)' }}>🔔 notifications</span>}
@@ -1225,7 +1304,7 @@ function RaceContent() {
           )}
         </section>
 
-        {raceState.status !== 'finished' && (
+        {raceState.status !== 'finished' && raceViewTab === 'simulation' && (
           <section
             aria-labelledby="fuel-race-simulation-title"
             style={{
@@ -1478,45 +1557,51 @@ function RaceContent() {
 
             <div
               style={{
-                padding: '14px 18px 0',
+                padding: '12px 18px 0',
                 borderBottom: '1px solid color-mix(in srgb, var(--color-border) 65%, transparent)',
               }}
             >
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 13,
-                  lineHeight: 1.6,
-                  color: 'var(--color-text-muted)',
-                }}
-              >
-                <strong style={{ color: 'var(--color-text)' }}>Pourquoi cette timeline ?</strong> Les travaux en
-                nutrition d&apos;endurance et les{' '}
-                <abbr
-                  title="American College of Sports Medicine (recommandations en médecine du sport)"
-                  style={{ textDecoration: 'underline dotted', cursor: 'help' }}
+              <details className="fuel-race-timeline-details">
+                <summary className="fuel-race-timeline-details-summary">
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)' }}>
+                    Pourquoi cette timeline ? (recommandations)
+                  </span>
+                </summary>
+                <p
+                  style={{
+                    margin: '12px 0 14px',
+                    fontSize: 13,
+                    lineHeight: 1.6,
+                    color: 'var(--color-text-muted)',
+                  }}
                 >
-                  ACSM
-                </abbr>
-                , synthèses du{' '}
-                <abbr
-                  title="International Society of Sports Nutrition (société scientifique de nutrition du sport)"
-                  style={{ textDecoration: 'underline dotted', cursor: 'help' }}
-                >
-                  ISSN
-                </abbr>
-                , et les guides des diététicien·nes du sport s&apos;accordent sur l&apos;essentiel :{' '}
-                <strong style={{ color: 'var(--color-text)' }}>
-                  étaler les glucides sur l&apos;effort
-                </strong>{' '}
-                (souvent de l&apos;ordre de 60–90&nbsp;g/h selon la tolérance),{' '}
-                <strong style={{ color: 'var(--color-text)' }}>maintenir hydratation et sodium</strong> selon la
-                chaleur et la transpiration, et{' '}
-                <strong style={{ color: 'var(--color-text)' }}>fractionner les prises</strong> pour limiter les
-                inconforts digestifs. Ta timeline matérialise ce rythme pour ta course ; la pastille verte pulse sur la{' '}
-                <strong style={{ color: 'var(--color-text)' }}>prochaine prise attendue</strong> pendant que le
-                chronomètre tourne.
-              </p>
+                  Les travaux en nutrition d&apos;endurance et les{' '}
+                  <abbr
+                    title="American College of Sports Medicine (recommandations en médecine du sport)"
+                    style={{ textDecoration: 'underline dotted', cursor: 'help' }}
+                  >
+                    ACSM
+                  </abbr>
+                  , synthèses du{' '}
+                  <abbr
+                    title="International Society of Sports Nutrition (société scientifique de nutrition du sport)"
+                    style={{ textDecoration: 'underline dotted', cursor: 'help' }}
+                  >
+                    ISSN
+                  </abbr>
+                  , et les guides des diététicien·nes du sport s&apos;accordent sur l&apos;essentiel :{' '}
+                  <strong style={{ color: 'var(--color-text)' }}>
+                    étaler les glucides sur l&apos;effort
+                  </strong>{' '}
+                  (souvent de l&apos;ordre de 60–90&nbsp;g/h selon la tolérance),{' '}
+                  <strong style={{ color: 'var(--color-text)' }}>maintenir hydratation et sodium</strong> selon la
+                  chaleur et la transpiration, et{' '}
+                  <strong style={{ color: 'var(--color-text)' }}>fractionner les prises</strong> pour limiter les
+                  inconforts digestifs. Ta timeline matérialise ce rythme pour ta course ; la pastille verte pulse sur la{' '}
+                  <strong style={{ color: 'var(--color-text)' }}>prochaine prise attendue</strong> pendant que le
+                  chronomètre tourne.
+                </p>
+              </details>
             </div>
 
             <div style={S.raceTimelineBody}>

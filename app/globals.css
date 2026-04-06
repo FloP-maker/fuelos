@@ -1363,11 +1363,45 @@ textarea:focus {
     animation: fuel-race-timeline-status-pulse 1.8s ease-in-out infinite;
   }
 
+  .fuel-race-timeline-details {
+    margin: 0;
+  }
+
+  .fuel-race-timeline-details-summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    user-select: none;
+  }
+
+  .fuel-race-timeline-details-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .fuel-race-timeline-details-summary::before {
+    content: '▸';
+    font-size: 11px;
+    opacity: 0.65;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .fuel-race-timeline-details[open] .fuel-race-timeline-details-summary::before {
+    transform: rotate(90deg);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .fuel-race-timeline-time-pulse-wrap,
     .fuel-race-timeline-time-pulse-wrap--danger,
     .fuel-race-timeline-status-pulse {
       animation: none;
+    }
+
+    .fuel-race-timeline-details-summary::before {
+      transition: none;
     }
   }
 }
