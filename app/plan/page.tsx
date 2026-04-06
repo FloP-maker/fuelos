@@ -305,6 +305,8 @@ function PlanPageContent() {
     weight_g: 40,
   });
 
+  const [customProductsExpanded, setCustomProductsExpanded] = useState(false);
+
   const [planResult, setPlanResult] = useState<FuelPlanGenerationResult | null>(null);
   /** Incrémenté uniquement à chaque calcul — snapshot « Réinitialiser timeline » côté PlanResult. */
   const [planGenerationId, setPlanGenerationId] = useState(0);
@@ -1073,6 +1075,62 @@ function PlanPageContent() {
 
             <div style={S.card}>
               <div style={S.sectionTitle}>
+                <span>💧</span> Hydratation & tolérance
+              </div>
+              <div style={S.grid2}>
+                <div>
+                  <label style={S.label}>TAUX DE SUDATION (L/h)</label>
+                  <select
+                    style={S.select}
+                    value={profile.sweatRate}
+                    onChange={(e) => setProfile({ ...profile, sweatRate: +e.target.value })}
+                  >
+                    <option value={0.5}>Faible (0.5 L/h)</option>
+                    <option value={0.8}>Modéré (0.8 L/h)</option>
+                    <option value={1.0}>Normal (1.0 L/h)</option>
+                    <option value={1.3}>Élevé (1.3 L/h)</option>
+                    <option value={1.6}>Très élevé (1.6 L/h)</option>
+                  </select>
+                  <p style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 4 }}>
+                    Effectuez un test sudation pour plus de précision
+                  </p>
+                </div>
+
+                <div>
+                  <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6 }}>
+                    <label style={S.label}>TOLÉRANCE GI</label>
+                    <div
+                      title={
+                        "Sensible : Système digestif fragile, max ~45g CHO/h\n" +
+                        "Normal : Tolérance standard, max ~60g CHO/h\n" +
+                        "Robuste : Haute capacité d'absorption, max ~90g CHO/h"
+                      }
+                      style={{ cursor: "help", fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1 }}
+                    >
+                      ⓘ
+                    </div>
+                  </div>
+
+                  <select
+                    style={S.select}
+                    value={profile.giTolerance}
+                    onChange={(e) =>
+                      setProfile({
+                        ...profile,
+                        giTolerance: e.target.value as "sensitive" | "normal" | "robust",
+                      })
+                    }
+                  >
+                    <option value="sensitive">Sensible (≤45g CHO/h)</option>
+                    <option value="normal">Normal (≤60g CHO/h)</option>
+                    <option value="robust">Robuste (≤90g CHO/h)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div style={S.card}>
+              <div style={S.sectionTitle}>
                 <span>⭐</span> Préférences produits
               </div>
               <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 16 }}>
@@ -1382,12 +1440,54 @@ function PlanPageContent() {
             </div>
 
             <div style={S.card}>
-              <div style={S.sectionTitle}>
-                <span>🧪</span> Produits custom
-              </div>
-              <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 16 }}>
-                Ajoute tes propres produits (gel, boisson, barre, chew, real-food ou électrolyte). Ils seront disponibles dans les sélecteurs.
-              </p>
+              <button
+                type="button"
+                aria-expanded={customProductsExpanded}
+                onClick={() => setCustomProductsExpanded((v) => !v)}
+                style={{
+                  display: "flex",
+                  width: "100%",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  textAlign: "left",
+                  font: "inherit",
+                  color: "inherit",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={S.sectionTitle}>
+                    <span>🧪</span> Produits custom
+                  </div>
+                  <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 4 }}>
+                    {customProducts.length > 0
+                      ? `${customProducts.length} produit${customProducts.length > 1 ? "s" : ""} personnalisé${customProducts.length > 1 ? "s" : ""} — clique pour gérer.`
+                      : "Optionnel — ajoute tes propres produits pour les sélecteurs."}
+                  </p>
+                </div>
+                <span
+                  aria-hidden
+                  style={{
+                    fontSize: 14,
+                    color: "var(--color-text-muted)",
+                    flexShrink: 0,
+                    marginTop: 4,
+                    fontWeight: 700,
+                  }}
+                >
+                  {customProductsExpanded ? "▼" : "▶"}
+                </span>
+              </button>
+
+              {customProductsExpanded && (
+                <>
+                  <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 16, marginTop: 4 }}>
+                    Gel, boisson, barre, chew, real-food ou électrolyte — disponibles dans les sélecteurs.
+                  </p>
 
               <div style={{ ...S.grid3, marginBottom: 10 }}>
                 <div>
@@ -1601,62 +1701,8 @@ function PlanPageContent() {
                   ))}
                 </div>
               )}
-            </div>
-
-            <div style={S.card}>
-              <div style={S.sectionTitle}>
-                <span>💧</span> Hydratation & tolérance
-              </div>
-              <div style={S.grid2}>
-                <div>
-                  <label style={S.label}>TAUX DE SUDATION (L/h)</label>
-                  <select
-                    style={S.select}
-                    value={profile.sweatRate}
-                    onChange={(e) => setProfile({ ...profile, sweatRate: +e.target.value })}
-                  >
-                    <option value={0.5}>Faible (0.5 L/h)</option>
-                    <option value={0.8}>Modéré (0.8 L/h)</option>
-                    <option value={1.0}>Normal (1.0 L/h)</option>
-                    <option value={1.3}>Élevé (1.3 L/h)</option>
-                    <option value={1.6}>Très élevé (1.6 L/h)</option>
-                  </select>
-                  <p style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 4 }}>
-                    Effectuez un test sudation pour plus de précision
-                  </p>
-                </div>
-
-                <div>
-                  <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6 }}>
-                    <label style={S.label}>TOLÉRANCE GI</label>
-                    <div
-                      title={
-                        "Sensible : Système digestif fragile, max ~45g CHO/h\n" +
-                        "Normal : Tolérance standard, max ~60g CHO/h\n" +
-                        "Robuste : Haute capacité d'absorption, max ~90g CHO/h"
-                      }
-                      style={{ cursor: "help", fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1 }}
-                    >
-                      ⓘ
-                    </div>
-                  </div>
-
-                  <select
-                    style={S.select}
-                    value={profile.giTolerance}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        giTolerance: e.target.value as "sensitive" | "normal" | "robust",
-                      })
-                    }
-                  >
-                    <option value="sensitive">Sensible (≤45g CHO/h)</option>
-                    <option value="normal">Normal (≤60g CHO/h)</option>
-                    <option value="robust">Robuste (≤90g CHO/h)</option>
-                  </select>
-                </div>
-              </div>
+                </>
+              )}
             </div>
 
             <button
