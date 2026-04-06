@@ -1446,10 +1446,54 @@ function RaceContent() {
                   background: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-bg))',
                   color: 'var(--color-text)',
                   border: '1px solid color-mix(in srgb, var(--color-accent) 35%, var(--color-border))',
+                  flexShrink: 0,
                 }}
               >
                 {consumedCount} ✓ · {skippedCount} passés · {totalItems - consumedCount - skippedCount} restants
               </span>
+            </div>
+
+            <div
+              style={{
+                padding: '14px 18px 0',
+                borderBottom: '1px solid color-mix(in srgb, var(--color-border) 65%, transparent)',
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 13,
+                  lineHeight: 1.6,
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                <strong style={{ color: 'var(--color-text)' }}>Pourquoi cette timeline ?</strong> Les travaux en
+                nutrition d&apos;endurance et les{' '}
+                <abbr
+                  title="American College of Sports Medicine (recommandations en médecine du sport)"
+                  style={{ textDecoration: 'underline dotted', cursor: 'help' }}
+                >
+                  ACSM
+                </abbr>
+                , synthèses du{' '}
+                <abbr
+                  title="International Society of Sports Nutrition (société scientifique de nutrition du sport)"
+                  style={{ textDecoration: 'underline dotted', cursor: 'help' }}
+                >
+                  ISSN
+                </abbr>
+                , et les guides des diététicien·nes du sport s&apos;accordent sur l&apos;essentiel :{' '}
+                <strong style={{ color: 'var(--color-text)' }}>
+                  étaler les glucides sur l&apos;effort
+                </strong>{' '}
+                (souvent de l&apos;ordre de 60–90&nbsp;g/h selon la tolérance),{' '}
+                <strong style={{ color: 'var(--color-text)' }}>maintenir hydratation et sodium</strong> selon la
+                chaleur et la transpiration, et{' '}
+                <strong style={{ color: 'var(--color-text)' }}>fractionner les prises</strong> pour limiter les
+                inconforts digestifs. Ta timeline matérialise ce rythme pour ta course ; la pastille verte pulse sur la{' '}
+                <strong style={{ color: 'var(--color-text)' }}>prochaine prise attendue</strong> pendant que le
+                chronomètre tourne.
+              </p>
             </div>
 
             <div style={S.raceTimelineBody}>
@@ -1490,11 +1534,17 @@ function RaceContent() {
                         const isSkipped = raceState.skippedItems.includes(index);
                         const isCurrent = index === raceState.currentItemIndex && showAlert;
                         const isPast = item.timeMin <= elapsedMin && !isConsumed && !isSkipped;
+                        const isFocusRow =
+                          (raceState.status === 'running' || raceState.status === 'paused') &&
+                          index === nextItemIndex &&
+                          !isConsumed &&
+                          !isSkipped;
 
                         return (
                           <div
                             key={index}
                             className="fuel-race-timeline-card"
+                            aria-current={isFocusRow ? 'step' : undefined}
                             style={{
                               padding: '12px 14px',
                               borderRadius: 16,
@@ -1510,6 +1560,13 @@ function RaceContent() {
                             }}
                           >
                             <div
+                              className={
+                                isFocusRow
+                                  ? isPast && !isConsumed
+                                    ? 'fuel-race-timeline-time-pulse-danger'
+                                    : 'fuel-race-timeline-time-pulse'
+                                  : undefined
+                              }
                               style={{
                                 flexShrink: 0,
                                 padding: '7px 11px',
@@ -1530,6 +1587,11 @@ function RaceContent() {
                                     ? '1px solid color-mix(in srgb, var(--color-danger) 35%, var(--color-border))'
                                     : '1px solid color-mix(in srgb, var(--color-accent) 25%, var(--color-border))',
                               }}
+                              aria-label={
+                                isFocusRow
+                                  ? `Prochaine prise attendue, ${Math.floor(item.timeMin)} minutes`
+                                  : undefined
+                              }
                             >
                               {Math.floor(item.timeMin)} min
                             </div>

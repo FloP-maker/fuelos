@@ -1308,4 +1308,31 @@ textarea:focus {
       align-items: stretch;
     }
   }
+
+  @keyframes fuel-race-timeline-focus-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.78;
+    }
+  }
+
+  .fuel-race-timeline-time-pulse {
+    animation: fuel-race-timeline-focus-pulse 2.2s ease-in-out infinite;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 45%, transparent);
+  }
+
+  .fuel-race-timeline-time-pulse-danger {
+    animation: fuel-race-timeline-focus-pulse 2.2s ease-in-out infinite;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-danger) 45%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fuel-race-timeline-time-pulse,
+    .fuel-race-timeline-time-pulse-danger {
+      animation: none;
+    }
+  }
 }
