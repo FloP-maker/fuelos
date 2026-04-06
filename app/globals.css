@@ -1293,4 +1293,19 @@ textarea:focus {
     color: var(--color-accent);
     background: color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card));
   }
+
+  /* Mode course : ligne timeline — colonne sur petit écran */
+  .fuel-race-timeline-card {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  @media (max-width: 540px) {
+    .fuel-race-timeline-card {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
 }

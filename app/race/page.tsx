@@ -205,6 +205,17 @@ const S = {
       'linear-gradient(145deg, color-mix(in srgb, var(--color-accent) 9%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
     boxShadow: 'var(--shadow-sm)',
   } as CSSProperties,
+  raceTimelineBody: {
+    padding: '16px 14px 20px',
+    background: 'color-mix(in srgb, var(--color-bg) 55%, var(--color-bg-card))',
+  } as CSSProperties,
+  raceTimelineHourLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+    paddingLeft: 2,
+  } as CSSProperties,
 };
 
 const SIMULATION_SPEEDS = [1, 10, 20, 30] as const;
@@ -1415,119 +1426,253 @@ function RaceContent() {
             </div>
           </div>
 
-          {/* Timeline */}
+          {/* Timeline — prises groupées par heure, cartes lisibles */}
           <div className="overflow-hidden backdrop-blur-xl" style={S.raceTimelineShell}>
             <div style={S.raceTimelineHeader}>
-              <span className="font-bold" style={{ color: 'var(--color-text)', fontSize: 15, letterSpacing: '-0.02em' }}>
-                Timeline
-              </span>
-              <span className="text-sm" style={{ ...S.muted, fontWeight: 600 }}>
-                {consumedCount} pris · {skippedCount} passés · {totalItems - consumedCount - skippedCount} restants
+              <div>
+                <span className="font-bold" style={{ color: 'var(--color-text)', fontSize: 15, letterSpacing: '-0.02em' }}>
+                  Prises prévues
+                </span>
+                <div style={{ ...S.muted, fontSize: 11, fontWeight: 600, marginTop: 4 }}>
+                  Ordre du plan · glisse pour parcourir
+                </div>
+              </div>
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  padding: '6px 12px',
+                  borderRadius: 999,
+                  background: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-bg))',
+                  color: 'var(--color-text)',
+                  border: '1px solid color-mix(in srgb, var(--color-accent) 35%, var(--color-border))',
+                }}
+              >
+                {consumedCount} ✓ · {skippedCount} passés · {totalItems - consumedCount - skippedCount} restants
               </span>
             </div>
 
-            <div className="max-h-72 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
-              {timelineByHour.map((group) => (
-                <div key={group.hour}>
-                  <div
-                    className="sticky top-0 z-10 px-4 py-2.5 backdrop-blur"
-                    style={{
-                      borderTop: '1px solid color-mix(in srgb, var(--color-border) 70%, transparent)',
-                      borderBottom: '1px solid var(--color-border)',
-                      background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card))',
-                      borderLeft: '3px solid var(--color-accent)',
-                    }}
-                  >
-                    <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                      Heure {group.hour} · {group.hour * 60}–{group.hour * 60 + 59} min
-                    </span>
-                  </div>
-
-                  {group.items.map(({ item, index }) => {
-                    const isConsumed = raceState.consumedItems.includes(index);
-                    const isSkipped = raceState.skippedItems.includes(index);
-                    const isCurrent = index === raceState.currentItemIndex && showAlert;
-                    const isPast = item.timeMin <= elapsedMin && !isConsumed && !isSkipped;
-
-                    return (
-                      <div
-                        key={index}
-                        className="flex items-center gap-3 px-4 py-3.5 last:border-0"
+            <div style={S.raceTimelineBody}>
+              <div className="max-h-[min(420px,55vh)] overflow-y-auto pr-1" style={{ scrollbarGutter: 'stable' }}>
+                {timelineByHour.map((group) => (
+                  <div key={group.hour} style={{ marginBottom: 22 }}>
+                    <div style={S.raceTimelineHourLabel}>
+                      <span
+                        aria-hidden
                         style={{
-                          borderBottom: '1px solid color-mix(in srgb, var(--color-border) 65%, transparent)',
-                          opacity: isConsumed ? 0.5 : isSkipped ? 0.38 : 1,
-                          textDecoration: isSkipped ? 'line-through' : 'none',
-                          background: isCurrent ? 'color-mix(in srgb, var(--color-warning) 12%, var(--color-bg-card))' : 'transparent',
+                          width: 10,
+                          height: 10,
+                          borderRadius: '50%',
+                          flexShrink: 0,
+                          background: 'var(--color-accent)',
+                          boxShadow: '0 0 0 3px color-mix(in srgb, var(--color-accent) 28%, transparent)',
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 800,
+                          letterSpacing: '0.14em',
+                          textTransform: 'uppercase',
+                          color: 'var(--color-text-muted)',
                         }}
                       >
-                        <div
-                          className="w-10 flex-shrink-0 text-sm font-mono"
-                          style={{
-                            color: isPast && !isConsumed ? 'var(--color-danger)' : 'var(--color-text-muted)',
-                          }}
-                        >
-                          {Math.floor(item.timeMin)}min
-                        </div>
+                        Heure {group.hour}
+                      </span>
+                      <span style={{ fontSize: 12, color: 'var(--color-text-muted)', fontWeight: 600 }}>
+                        min {group.hour * 60}–{group.hour * 60 + 59}
+                      </span>
+                    </div>
 
-                        <div
-                          className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-xs"
-                          style={{
-                            background: isConsumed
-                              ? 'var(--color-accent)'
-                              : isSkipped
-                              ? 'color-mix(in srgb, var(--color-danger) 22%, transparent)'
-                              : isCurrent
-                              ? 'var(--color-warning)'
-                              : 'color-mix(in srgb, var(--color-bg) 65%, transparent)',
-                            color: isConsumed || isCurrent ? '#000' : 'var(--color-text)',
-                            border: '1px solid var(--color-border)',
-                          }}
-                        >
-                          {isConsumed ? '✓' : isSkipped ? '×' : isCurrent ? '!' : ''}
-                        </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 2 }}>
+                      {group.items.map(({ item, index }) => {
+                        const isConsumed = raceState.consumedItems.includes(index);
+                        const isSkipped = raceState.skippedItems.includes(index);
+                        const isCurrent = index === raceState.currentItemIndex && showAlert;
+                        const isPast = item.timeMin <= elapsedMin && !isConsumed && !isSkipped;
 
-                        <div className="flex-1 min-w-0">
-                          <div className="truncate text-sm font-medium" style={{ color: 'var(--color-text)' }}>
-                            {item.product}
-                          </div>
-                          <div className="flex gap-2 text-xs" style={S.muted}>
-                            <span>⚡{item.cho}g</span>
-                            {item.water && <span>💧{item.water}ml</span>}
-                            {item.sodium && <span>🧂{item.sodium}mg</span>}
-                          </div>
-                        </div>
-
-                        {isPast && raceState.status === 'running' && (
-                          <div className="flex gap-1 flex-shrink-0">
-                            <button
-                              onClick={() => handleConsumed(index)}
-                              className="rounded-lg px-2 py-1 text-xs active:scale-95"
+                        return (
+                          <div
+                            key={index}
+                            className="fuel-race-timeline-card"
+                            style={{
+                              padding: '12px 14px',
+                              borderRadius: 16,
+                              border: isCurrent
+                                ? '2px solid color-mix(in srgb, var(--color-warning) 65%, var(--color-border))'
+                                : '1px solid color-mix(in srgb, var(--color-border) 75%, transparent)',
+                              background: isCurrent
+                                ? 'color-mix(in srgb, var(--color-warning) 12%, var(--color-bg-card))'
+                                : 'var(--color-bg-card)',
+                              boxShadow: '0 4px 14px color-mix(in srgb, #000 6%, transparent)',
+                              opacity: isConsumed ? 0.58 : isSkipped ? 0.45 : 1,
+                              textDecoration: isSkipped ? 'line-through' : 'none',
+                            }}
+                          >
+                            <div
                               style={{
-                                background: 'rgba(34,197,94,0.10)',
-                                color: 'var(--color-accent)',
-                                border: '1px solid color-mix(in srgb, var(--color-accent) 55%, var(--color-border))',
+                                flexShrink: 0,
+                                padding: '7px 11px',
+                                borderRadius: 12,
+                                fontFamily: S.monoTime.fontFamily,
+                                fontSize: 13,
+                                fontWeight: 800,
+                                fontVariantNumeric: 'tabular-nums',
+                                letterSpacing: '-0.02em',
+                                background:
+                                  isPast && !isConsumed
+                                    ? 'color-mix(in srgb, var(--color-danger) 18%, var(--color-bg-card))'
+                                    : 'color-mix(in srgb, var(--color-accent) 11%, var(--color-bg))',
+                                color:
+                                  isPast && !isConsumed ? 'var(--color-danger)' : 'var(--color-text)',
+                                border:
+                                  isPast && !isConsumed
+                                    ? '1px solid color-mix(in srgb, var(--color-danger) 35%, var(--color-border))'
+                                    : '1px solid color-mix(in srgb, var(--color-accent) 25%, var(--color-border))',
                               }}
                             >
-                              Pris
-                            </button>
-                            <button
-                              onClick={() => handleSkipped(index)}
-                              className="rounded-lg px-2 py-1 text-xs active:scale-95"
+                              {Math.floor(item.timeMin)} min
+                            </div>
+
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div
+                                style={{
+                                  fontWeight: 700,
+                                  fontSize: 14,
+                                  lineHeight: 1.35,
+                                  color: 'var(--color-text)',
+                                  marginBottom: 8,
+                                }}
+                              >
+                                {item.product}
+                              </div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    padding: '4px 9px',
+                                    borderRadius: 999,
+                                    background: 'color-mix(in srgb, var(--color-accent) 10%, var(--color-bg))',
+                                    color: 'var(--color-accent)',
+                                    border: '1px solid color-mix(in srgb, var(--color-accent) 28%, transparent)',
+                                  }}
+                                >
+                                  {item.cho} g CHO
+                                </span>
+                                {item.water ? (
+                                  <span
+                                    style={{
+                                      fontSize: 11,
+                                      fontWeight: 600,
+                                      padding: '4px 9px',
+                                      borderRadius: 999,
+                                      background: 'var(--color-bg)',
+                                      color: 'var(--color-text-muted)',
+                                      border: '1px solid var(--color-border)',
+                                    }}
+                                  >
+                                    {item.water} ml
+                                  </span>
+                                ) : null}
+                                {item.sodium ? (
+                                  <span
+                                    style={{
+                                      fontSize: 11,
+                                      fontWeight: 600,
+                                      padding: '4px 9px',
+                                      borderRadius: 999,
+                                      background: 'var(--color-bg)',
+                                      color: 'var(--color-text-muted)',
+                                      border: '1px solid var(--color-border)',
+                                    }}
+                                  >
+                                    {item.sodium} mg Na
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            <div
                               style={{
-                                background: 'transparent',
-                                color: 'var(--color-text-muted)',
-                                border: '1px solid var(--color-border)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'flex-end',
+                                gap: 8,
+                                flexShrink: 0,
                               }}
                             >
-                              Pass
-                            </button>
+                              <div
+                                title={
+                                  isConsumed ? 'Pris' : isSkipped ? 'Passé' : isCurrent ? 'En cours' : 'À venir'
+                                }
+                                style={{
+                                  width: 30,
+                                  height: 30,
+                                  borderRadius: '50%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: 13,
+                                  fontWeight: 900,
+                                  background: isConsumed
+                                    ? 'var(--color-accent)'
+                                    : isSkipped
+                                      ? 'color-mix(in srgb, var(--color-danger) 20%, var(--color-bg-card))'
+                                      : isCurrent
+                                        ? 'var(--color-warning)'
+                                        : 'color-mix(in srgb, var(--color-text-muted) 14%, var(--color-bg))',
+                                  color: isConsumed || isCurrent ? '#000' : 'var(--color-text-muted)',
+                                  border: '1px solid color-mix(in srgb, var(--color-border) 80%, transparent)',
+                                }}
+                              >
+                                {isConsumed ? '✓' : isSkipped ? '×' : isCurrent ? '!' : '·'}
+                              </div>
+
+                              {isPast && raceState.status === 'running' && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleConsumed(index)}
+                                    style={{
+                                      padding: '6px 12px',
+                                      borderRadius: 10,
+                                      fontSize: 12,
+                                      fontWeight: 700,
+                                      background: 'color-mix(in srgb, var(--color-accent) 14%, var(--color-bg-card))',
+                                      color: 'var(--color-accent)',
+                                      border: '1px solid color-mix(in srgb, var(--color-accent) 45%, var(--color-border))',
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    Pris
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSkipped(index)}
+                                    style={{
+                                      padding: '6px 12px',
+                                      borderRadius: 10,
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      background: 'transparent',
+                                      color: 'var(--color-text-muted)',
+                                      border: '1px solid var(--color-border)',
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    Passé
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>

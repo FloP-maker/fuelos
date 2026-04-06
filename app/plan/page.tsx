@@ -2845,7 +2845,7 @@ function PlanResult({
 
         <div style={{ display: "flex", gap: 8 }}>
           <Link
-            href={`/race?plan=${encodeURIComponent(JSON.stringify(raceSharePayload()))}`}
+            href="/race"
             style={{
               padding: "12px 20px",
               borderRadius: 10,
