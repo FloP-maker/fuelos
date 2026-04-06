@@ -63,13 +63,35 @@ function formatDietTags(p: Product): string {
   return p.diet_tags.length > 0 ? p.diet_tags.join(", ") : "—";
 }
 
+/** Ordre d’apparition dans le catalogue (proxy « popularité » éditoriale). */
+const PRODUCT_CATALOG_ORDER: Map<string, number> = new Map(
+  PRODUCTS.map((p, i) => [p.id, i] as const)
+);
+
+function catalogOrderIndex(p: Product): number {
+  return PRODUCT_CATALOG_ORDER.get(p.id) ?? 100_000;
+}
+
+function choPerEuro(p: Product): number {
+  if (p.price_per_unit <= 0) return 0;
+  return p.cho_per_unit / p.price_per_unit;
+}
+
+/** Densité glucidique : g CHO par gramme de produit (portion). */
+function choPerGramProduct(p: Product): number {
+  if (p.weight_g <= 0) return 0;
+  return p.cho_per_unit / p.weight_g;
+}
+
+type ShopSortKey = "relevance" | "name" | "cho" | "cho_per_g" | "cho_per_euro" | "price";
+
 export default function ShopPage() {
   usePageTitle("Produits");
   const [category, setCategory] = useState("all");
   const [brand, setBrand] = useState("Tous");
   const [search, setSearch] = useState("");
   const [dietFilters, setDietFilters] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<"name" | "cho" | "price">("name");
+  const [sortBy, setSortBy] = useState<ShopSortKey>("relevance");
   const [customProducts, setCustomProducts] = useState<Product[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -135,7 +157,22 @@ export default function ShopPage() {
       })
       .filter(p => dietFilters.every(d => p.diet_tags.includes(d)))
       .sort((a, b) => {
+        if (sortBy === "relevance") {
+          const d = catalogOrderIndex(a) - catalogOrderIndex(b);
+          if (d !== 0) return d;
+          return a.name.localeCompare(b.name);
+        }
         if (sortBy === "cho") return b.cho_per_unit - a.cho_per_unit;
+        if (sortBy === "cho_per_g") {
+          const d = choPerGramProduct(b) - choPerGramProduct(a);
+          if (d !== 0) return d;
+          return a.name.localeCompare(b.name);
+        }
+        if (sortBy === "cho_per_euro") {
+          const d = choPerEuro(b) - choPerEuro(a);
+          if (d !== 0) return d;
+          return a.name.localeCompare(b.name);
+        }
         if (sortBy === "price") return a.price_per_unit - b.price_per_unit;
         return a.name.localeCompare(b.name);
       });
@@ -271,11 +308,14 @@ export default function ShopPage() {
                 outline: "none",
               }}
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as "name" | "cho" | "price")}
+              onChange={(e) => setSortBy(e.target.value as ShopSortKey)}
             >
-              <option value="name">Trier : Nom</option>
-              <option value="cho">Trier : CHO</option>
-              <option value="price">Trier : Prix</option>
+              <option value="relevance">Pertinence (catalogue)</option>
+              <option value="cho_per_euro">CHO / € (meilleur rapport)</option>
+              <option value="cho_per_g">CHO / g (densité)</option>
+              <option value="cho">Glucides / ration (max)</option>
+              <option value="name">Nom (A→Z)</option>
+              <option value="price">Prix (€)</option>
             </select>
             <select
               style={{
@@ -365,11 +405,53 @@ export default function ShopPage() {
                 color: compareMode ? "var(--color-accent)" : "var(--color-text-muted)",
               }}
               aria-pressed={compareMode}
+              aria-describedby="shop-compare-help"
+              title={
+                !compareMode
+                  ? "Active d’abord le mode comparaison, puis coche 2 à 3 produits sur les cartes (cases à gauche). Le tableau s’affiche en bas."
+                  : compareIds.length < 2
+                    ? `Sélectionne au moins 2 produits dans la grille (${compareIds.length} sur ${MAX_COMPARE} max pour l’instant).`
+                    : "Mode comparaison actif — le tableau est disponible sous la liste. Clique à nouveau pour quitter le mode."
+              }
             >
               Comparer
             </button>
           </div>
         </div>
+
+        <p
+          id="shop-compare-help"
+          style={{
+            fontSize: 12,
+            color: "var(--color-text-muted)",
+            margin: "0 0 16px",
+            lineHeight: 1.5,
+            padding: "10px 14px",
+            borderRadius: 10,
+            background: "color-mix(in srgb, var(--color-accent) 7%, var(--color-bg-card))",
+            border: "1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border))",
+          }}
+        >
+          <span style={{ fontWeight: 800, color: "var(--color-text)" }}>Comparaison · </span>
+          {!compareMode ? (
+            <>
+              Clique sur <strong>Comparer</strong> pour activer le mode, puis coche <strong>2 à 3 produits</strong> sur les
+              cartes (case à gauche du titre). Un <strong>tableau récapitulatif</strong> apparaît sous la grille dès que deux
+              produits sont choisis.
+            </>
+          ) : compareIds.length < 2 ? (
+            <>
+              Mode actif : sélectionne encore <strong>{2 - compareIds.length}</strong> produit
+              {2 - compareIds.length > 1 ? "s" : ""} minimum ({compareIds.length}/{MAX_COMPARE} coché
+              {compareIds.length !== 1 ? "s" : ""}).
+            </>
+          ) : (
+            <>
+              <strong>{compareIds.length} produit{compareIds.length !== 1 ? "s" : ""}</strong> dans le comparatif — fais
+              défiler vers le bas pour le tableau. Tu peux désactiver le mode avec le bouton Comparer.
+            </>
+          )}
+        </p>
 
         {filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--color-text-muted)" }}>
@@ -378,7 +460,7 @@ export default function ShopPage() {
             <div style={{ fontSize: 13 }}>Essayez de modifier vos filtres</div>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
+          <div className="fuel-shop-product-grid">
             {filtered.map(p => (
               <ProductCard
                 key={p.id}
@@ -514,6 +596,8 @@ export default function ShopPage() {
                 Vider la sélection
               </button>
             </div>
+            <p className="fuel-compare-table-hint">Fais défiler horizontalement pour voir toutes les colonnes.</p>
+            <div className="fuel-compare-table-wrap">
             <div
               style={{
                 display: "grid",
@@ -523,6 +607,7 @@ export default function ShopPage() {
                 border: "1px solid var(--color-border)",
                 borderRadius: 10,
                 overflow: "hidden",
+                minWidth: `${108 + compareProducts.length * 96}px`,
               }}
             >
               <div style={{ padding: "10px 12px", fontWeight: 700, background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)", borderRight: "1px solid var(--color-border)" }} />
@@ -545,6 +630,7 @@ export default function ShopPage() {
               ].map((row, rowIndex) => (
                 <FragmentRow key={row.label} label={row.label} cells={row.cells} isLast={rowIndex === 6} />
               ))}
+            </div>
             </div>
           </div>
         </div>
@@ -606,7 +692,7 @@ function ProductCard({
     CAT_COLORS[p.category] || { bg: "color-mix(in srgb, var(--color-bg) 88%, transparent)", color: "var(--color-text-muted)" };
   const showImg = p.imageUrl && /^https?:\/\//.test(p.imageUrl);
   return (
-    <div style={{ background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 12, padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
+    <div className="fuel-product-card" style={{ background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 12, display: "flex", flexDirection: "column", gap: 10 }}>
       {compareMode && (
         <label style={{ display: "flex", alignItems: "center", cursor: compareDisabled ? "not-allowed" : "pointer" }}>
           <input

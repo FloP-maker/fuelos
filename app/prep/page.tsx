@@ -29,6 +29,17 @@ import {
 
 const PREP_STORAGE_KEY = 'fuelos_prep_state';
 const ACTIVE_PLAN_KEY = 'fuelos_active_plan';
+const CARB_VIEW_STORAGE_KEY = 'fuelos_prep_carb_view_mode';
+
+function loadCarbViewMode(): 'compact' | 'full' {
+  try {
+    const v = localStorage.getItem(CARB_VIEW_STORAGE_KEY);
+    if (v === 'compact' || v === 'full') return v;
+  } catch {
+    /* ignore */
+  }
+  return 'compact';
+}
 
 const S = {
   main: { paddingTop: 28 } as CSSProperties,
@@ -314,6 +325,25 @@ export default function PrepPage() {
   const [prep, setPrep] = useState<PrepPersisted>(() => loadOrInitPrep());
   const [section, setSection] = useState<'carb' | 'race' | 'drop' | 'post'>('carb');
   const [shopCopiedDayKey, setShopCopiedDayKey] = useState<CarbDayKey | null>(null);
+  const [carbViewMode, setCarbViewMode] = useState<'compact' | 'full'>(() =>
+    typeof window !== 'undefined' ? loadCarbViewMode() : 'compact'
+  );
+  /** Micro-feedback après « Nouvelles idées » (toast + animation grille). */
+  const [ideasFreshNonce, setIdeasFreshNonce] = useState<{ key: CarbDayKey; nonce: number } | null>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CARB_VIEW_STORAGE_KEY, carbViewMode);
+    } catch {
+      /* ignore */
+    }
+  }, [carbViewMode]);
+
+  useEffect(() => {
+    if (!ideasFreshNonce) return;
+    const t = window.setTimeout(() => setIdeasFreshNonce(null), 2400);
+    return () => window.clearTimeout(t);
+  }, [ideasFreshNonce]);
 
   useEffect(() => {
     try {
@@ -346,6 +376,25 @@ export default function PrepPage() {
     } catch {
       /* ignore */
     }
+  }, []);
+
+  const bumpMealIdeasForDay = useCallback((dayKey: CarbDayKey) => {
+    setPrep((prev) => {
+      const next: PrepPersisted = {
+        ...prev,
+        mealIdeasSalt: {
+          ...prev.mealIdeasSalt,
+          [dayKey]: (prev.mealIdeasSalt[dayKey] ?? 0) + 1,
+        },
+      };
+      try {
+        localStorage.setItem(PREP_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+    setIdeasFreshNonce({ key: dayKey, nonce: Date.now() });
   }, []);
 
   const profile = bundle?.profile ?? null;
@@ -513,6 +562,41 @@ export default function PrepPage() {
 
         {section === 'carb' && (
           <>
+            <div
+              style={{
+                ...S.card,
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                gap: 10,
+                padding: '14px 16px',
+                marginBottom: 16,
+                borderColor: 'color-mix(in srgb, #fb923c 25%, var(--color-border))',
+                background: 'color-mix(in srgb, #fb923c 8%, var(--color-bg-card))',
+              }}
+            >
+              <span style={{ fontWeight: 800, fontSize: 13, marginRight: 4 }}>Carb-loading</span>
+              <button
+                type="button"
+                onClick={() => setCarbViewMode('compact')}
+                style={carbViewMode === 'compact' ? S.pillActive : S.pill}
+              >
+                Résumé
+              </button>
+              <button
+                type="button"
+                onClick={() => setCarbViewMode('full')}
+                style={carbViewMode === 'full' ? S.pillActive : S.pill}
+              >
+                Tout le détail
+              </button>
+              <span style={{ ...S.muted, fontSize: 12, flex: '1 1 220px', minWidth: 0 }}>
+                {carbViewMode === 'compact'
+                  ? 'Journées et repas repliés — ouvre ce dont tu as besoin pour limiter le défilement (mobile).'
+                  : 'Tout est visible comme avant.'}
+              </span>
+            </div>
+
             <div style={S.card}>
               <h2 style={S.h2}>Fenêtre de charge</h2>
               <p style={S.muted}>
@@ -625,9 +709,23 @@ export default function PrepPage() {
                 )}
               </div>
 
-              <div style={{ marginTop: 22, paddingTop: 18, borderTop: '1px solid var(--color-border)' }}>
-                <h3 style={{ ...S.h2, margin: '0 0 10px', fontSize: 15 }}>Localisation & saison des courses</h3>
-                <p style={{ ...S.muted, fontSize: 13, margin: '0 0 12px' }}>
+              <details
+                key={`prep-loc-${carbViewMode}`}
+                className="fuel-prep-details"
+                style={{ marginTop: 22, paddingTop: 18, borderTop: '1px solid var(--color-border)' }}
+                {...({ defaultOpen: carbViewMode === 'full' } as { defaultOpen?: boolean })}
+              >
+                <summary
+                  style={{
+                    cursor: 'pointer',
+                    fontWeight: 800,
+                    fontSize: 15,
+                    listStyle: 'none',
+                  }}
+                >
+                  Localisation & saison des courses
+                </summary>
+                <p style={{ ...S.muted, fontSize: 13, margin: '12px 0 12px' }}>
                   La saison (fruits / légumes, dispo, prix) s’adapte au pays (hémisphère) et à la date de référence. La ville
                   sert de repère pour vos habitudes d’achat.
                 </p>
@@ -692,7 +790,7 @@ export default function PrepPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </details>
             </div>
 
             {carbDaysVisible.map((d) => {
@@ -710,8 +808,72 @@ export default function PrepPage() {
                   ? ` — lieu de courses : ${prep.shoppingCity.trim()}, ${prep.shoppingCountryCode}.`
                   : ` — pays : ${prep.shoppingCountryCode}.`);
               const checklist = carbDayChecklist(d.key, d.title);
-              return (
-                <div key={d.key} style={S.card}>
+              const checklistDone = checklist.filter((i) => prep.checkedCarb[i.id]).length;
+
+              const mealBlockBody = (b: (typeof blocks)[number]) => (
+                <>
+                  <ul style={{ margin: 0, paddingLeft: 18, ...S.muted }}>
+                    {b.items.map((line) => (
+                      <li key={line} style={{ marginBottom: 4 }}>
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                  <details style={S.detailsRecipe}>
+                    <summary style={S.detailsSummary}>▼ Recette détaillée, quantités & pas à pas</summary>
+                    <div style={{ marginTop: 12 }}>
+                      <p style={{ ...S.muted, fontSize: 12, margin: '0 0 10px' }}>{b.choRecap}</p>
+                      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Quantités pour ce créneau</div>
+                      <ol
+                        style={{
+                          ...S.muted,
+                          margin: '0 0 14px',
+                          paddingLeft: 20,
+                          fontSize: 13,
+                          lineHeight: 1.55,
+                        }}
+                      >
+                        {b.recipeSteps.map((step, si) => (
+                          <li key={`${b.label}-${si}`} style={{ marginBottom: 6 }}>
+                            {step}
+                          </li>
+                        ))}
+                      </ol>
+                      {b.recipeExpanded.length > 0 && (
+                        <>
+                          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
+                            Préparation (méthode détaillée selon le type de plat)
+                          </div>
+                          <div style={{ ...S.muted, fontSize: 13, lineHeight: 1.6 }}>
+                            {b.recipeExpanded.map((step, ei) => (
+                              <p key={`${b.label}-ex-${ei}`} style={{ margin: '0 0 8px' }}>
+                                {step}
+                              </p>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      <p style={{ ...S.muted, fontSize: 11, margin: '12px 0 0', fontStyle: 'italic' }}>
+                        Repères pour ~{b.approxChoG} g CHO sur ce repas ; affiner avec les étiquettes et votre tolérance
+                        digestive.
+                      </p>
+                    </div>
+                  </details>
+                </>
+              );
+
+              const mealBlockInner = (b: (typeof blocks)[number]) => (
+                <>
+                  <div style={{ fontWeight: 800, marginBottom: 8 }}>
+                    {b.label}{' '}
+                    <span style={{ ...S.muted, fontWeight: 600, fontSize: 12 }}>~{b.approxChoG} g CHO</span>
+                  </div>
+                  {mealBlockBody(b)}
+                </>
+              );
+
+              const dayHeaderAndControls = (
+                <>
                   <div
                     style={{
                       display: 'flex',
@@ -727,26 +889,74 @@ export default function PrepPage() {
                     </h2>
                     <button
                       type="button"
-                      style={S.btnOutline}
+                      style={{
+                        ...S.btnOutline,
+                        ...(ideasFreshNonce?.key === d.key
+                          ? {
+                              borderColor: 'var(--color-accent)',
+                              background: 'color-mix(in srgb, var(--color-accent) 14%, transparent)',
+                              color: 'var(--color-text)',
+                            }
+                          : {}),
+                      }}
                       title="Tirer d’autres idées au hasard dans les suggestions"
-                      onClick={() =>
-                        persist({
-                          ...prep,
-                          mealIdeasSalt: {
-                            ...prep.mealIdeasSalt,
-                            [d.key]: (prep.mealIdeasSalt[d.key] ?? 0) + 1,
-                          },
-                        })
-                      }
+                      onClick={() => bumpMealIdeasForDay(d.key)}
                     >
-                      ↻ Nouvelles idées
+                      {ideasFreshNonce?.key === d.key ? '✓ Actualisé' : '↻ Nouvelles idées'}
                     </button>
                   </div>
+                  {ideasFreshNonce?.key === d.key ? (
+                    <p
+                      role="status"
+                      aria-live="polite"
+                      className="fuel-prep-ideas-toast"
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: 'var(--color-accent)',
+                        margin: '0 0 12px',
+                        padding: '8px 12px',
+                        borderRadius: 8,
+                        background: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-bg))',
+                        border: '1px solid color-mix(in srgb, var(--color-accent) 35%, var(--color-border))',
+                      }}
+                    >
+                      Suggestions actualisées — les menus et la liste d’achats ont été recalculés.
+                    </p>
+                  ) : null}
                   <p style={{ ...S.muted, fontSize: 12, margin: '0 0 14px' }}>
                     Chaque clic mélange des suggestions différentes pour le même objectif glucidique.
                   </p>
-                  <div style={{ display: 'grid', gap: 14 }}>
-                    {blocks.map((b) => (
+                </>
+              );
+
+              const mealGrid = (
+                <div style={{ display: 'grid', gap: 14 }}>
+                  {blocks.map((b) =>
+                    carbViewMode === 'compact' ? (
+                      <details
+                        key={b.label}
+                        className="fuel-prep-details"
+                        style={{
+                          padding: 12,
+                          borderRadius: 10,
+                          border: '1px solid color-mix(in srgb, #fb923c 22%, var(--color-border))',
+                          background: 'var(--color-bg-card)',
+                        }}
+                      >
+                        <summary
+                          style={{
+                            cursor: 'pointer',
+                            fontWeight: 800,
+                            fontSize: 14,
+                            listStyle: 'none',
+                          }}
+                        >
+                          {b.label} · ~{b.approxChoG} g CHO
+                        </summary>
+                        <div style={{ marginTop: 12 }}>{mealBlockBody(b)}</div>
+                      </details>
+                    ) : (
                       <div
                         key={b.label}
                         style={{
@@ -755,62 +965,17 @@ export default function PrepPage() {
                           border: '1px solid color-mix(in srgb, #fb923c 22%, var(--color-border))',
                         }}
                       >
-                        <div style={{ fontWeight: 800, marginBottom: 8 }}>
-                          {b.label}{' '}
-                          <span style={{ ...S.muted, fontWeight: 600, fontSize: 12 }}>~{b.approxChoG} g CHO</span>
-                        </div>
-                        <ul style={{ margin: 0, paddingLeft: 18, ...S.muted }}>
-                          {b.items.map((line) => (
-                            <li key={line} style={{ marginBottom: 4 }}>
-                              {line}
-                            </li>
-                          ))}
-                        </ul>
-                        <details style={S.detailsRecipe}>
-                          <summary style={S.detailsSummary}>▼ Recette détaillée, quantités & pas à pas</summary>
-                          <div style={{ marginTop: 12 }}>
-                            <p style={{ ...S.muted, fontSize: 12, margin: '0 0 10px' }}>{b.choRecap}</p>
-                            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Quantités pour ce créneau</div>
-                            <ol
-                              style={{
-                                ...S.muted,
-                                margin: '0 0 14px',
-                                paddingLeft: 20,
-                                fontSize: 13,
-                                lineHeight: 1.55,
-                              }}
-                            >
-                              {b.recipeSteps.map((step, si) => (
-                                <li key={`${b.label}-${si}`} style={{ marginBottom: 6 }}>
-                                  {step}
-                                </li>
-                              ))}
-                            </ol>
-                            {b.recipeExpanded.length > 0 && (
-                              <>
-                                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
-                                  Préparation (méthode détaillée selon le type de plat)
-                                </div>
-                                <div style={{ ...S.muted, fontSize: 13, lineHeight: 1.6 }}>
-                                  {b.recipeExpanded.map((step, ei) => (
-                                    <p key={`${b.label}-ex-${ei}`} style={{ margin: '0 0 8px' }}>
-                                      {step}
-                                    </p>
-                                  ))}
-                                </div>
-                              </>
-                            )}
-                            <p style={{ ...S.muted, fontSize: 11, margin: '12px 0 0', fontStyle: 'italic' }}>
-                              Repères pour ~{b.approxChoG} g CHO sur ce repas ; affiner avec les étiquettes et votre tolérance
-                              digestive.
-                            </p>
-                          </div>
-                        </details>
+                        {mealBlockInner(b)}
                       </div>
-                    ))}
-                  </div>
+                    )
+                  )}
+                </div>
+              );
 
+              const shoppingDetails = (
                   <details
+                    key={`shop-${d.key}-${carbViewMode}`}
+                    className="fuel-prep-details"
                     style={{
                       marginTop: 18,
                       marginBottom: 0,
@@ -819,6 +984,7 @@ export default function PrepPage() {
                       border: '1px solid color-mix(in srgb, #4ade80 35%, var(--color-border))',
                       background: 'color-mix(in srgb, #4ade80 7%, var(--color-bg))',
                     }}
+                    {...({ defaultOpen: carbViewMode === 'full' } as { defaultOpen?: boolean })}
                   >
                     <summary
                       style={{
@@ -905,8 +1071,79 @@ export default function PrepPage() {
                       </ul>
                     </div>
                   </details>
+              );
 
-                  <h3 style={{ ...S.h2, marginTop: 22, fontSize: 15 }}>Checklist {d.title}</h3>
+              const compactControls = (
+                <>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      gap: 12,
+                      marginBottom: 4,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      style={{
+                        ...S.btnOutline,
+                        ...(ideasFreshNonce?.key === d.key
+                          ? {
+                              borderColor: 'var(--color-accent)',
+                              background: 'color-mix(in srgb, var(--color-accent) 14%, transparent)',
+                              color: 'var(--color-text)',
+                            }
+                          : {}),
+                      }}
+                      title="Tirer d’autres idées au hasard dans les suggestions"
+                      onClick={() => bumpMealIdeasForDay(d.key)}
+                    >
+                      {ideasFreshNonce?.key === d.key ? '✓ Actualisé' : '↻ Nouvelles idées'}
+                    </button>
+                  </div>
+                  {ideasFreshNonce?.key === d.key ? (
+                    <p
+                      role="status"
+                      aria-live="polite"
+                      className="fuel-prep-ideas-toast"
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: 'var(--color-accent)',
+                        margin: '0 0 12px',
+                        padding: '8px 12px',
+                        borderRadius: 8,
+                        background: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-bg))',
+                        border: '1px solid color-mix(in srgb, var(--color-accent) 35%, var(--color-border))',
+                      }}
+                    >
+                      Suggestions actualisées — les menus et la liste d’achats ont été recalculés.
+                    </p>
+                  ) : null}
+                  <p style={{ ...S.muted, fontSize: 12, margin: '0 0 14px' }}>
+                    Chaque clic mélange des suggestions différentes pour le même objectif glucidique.
+                  </p>
+                </>
+              );
+
+              const checklistSection = (
+                <details
+                  key={`check-${d.key}-${carbViewMode}`}
+                  className="fuel-prep-details"
+                  style={{
+                    marginTop: 18,
+                    borderRadius: 12,
+                    border: '1px solid var(--color-border)',
+                    padding: '4px 14px 14px',
+                    background: 'color-mix(in srgb, var(--color-bg) 96%, transparent)',
+                  }}
+                  {...({ defaultOpen: carbViewMode === 'full' } as { defaultOpen?: boolean })}
+                >
+                  <summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 15, listStyle: 'none', padding: '10px 0' }}>
+                    Checklist {d.title} — {checklistDone}/{checklist.length}
+                  </summary>
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                     {checklist.map((item) => (
                       <li key={item.id} style={{ marginBottom: 10 }}>
@@ -930,6 +1167,43 @@ export default function PrepPage() {
                       </li>
                     ))}
                   </ul>
+                </details>
+              );
+
+              if (carbViewMode === 'compact') {
+                return (
+                  <details
+                    key={d.key}
+                    className="fuel-prep-details"
+                    style={{ ...S.card }}
+                    {...({ defaultOpen: false } as { defaultOpen?: boolean })}
+                  >
+                    <summary style={{ cursor: 'pointer', listStyle: 'none' }}>
+                      <div style={{ fontWeight: 900, fontSize: 17 }}>{d.title}</div>
+                      <div style={{ ...S.muted, fontSize: 13, marginTop: 6, lineHeight: 1.45 }}>
+                        ~{daily} g CHO visés · {blocks.length} repas · {purchaseLines.length} article
+                        {purchaseLines.length !== 1 ? 's' : ''} au panier · checklist {checklistDone}/{checklist.length}
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#fb923c', marginTop: 8 }}>
+                        Menus, liste d’achats & étapes — toucher pour développer
+                      </div>
+                    </summary>
+                    <div style={{ paddingTop: 16 }}>
+                      {compactControls}
+                      {mealGrid}
+                      {shoppingDetails}
+                      {checklistSection}
+                    </div>
+                  </details>
+                );
+              }
+
+              return (
+                <div key={d.key} style={S.card}>
+                  {dayHeaderAndControls}
+                  {mealGrid}
+                  {shoppingDetails}
+                  {checklistSection}
                 </div>
               );
             })}

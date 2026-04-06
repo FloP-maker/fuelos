@@ -183,12 +183,24 @@ export function AuthMenu() {
         <button
           key={id}
           type="button"
-          className="fuel-header-text-btn max-w-[200px] truncate shrink-0"
-          title={id === 'google' ? 'Connexion (compte Google)' : undefined}
-          aria-label={id === 'google' ? 'Connexion avec compte Google' : undefined}
+          className={
+            id === 'google'
+              ? 'fuel-header-cta fuel-header-cta--compact max-w-[min(220px,46vw)] truncate shrink-0'
+              : 'fuel-header-text-btn max-w-[200px] truncate shrink-0'
+          }
+          title={
+            id === 'google'
+              ? 'Synchronisation multi-appareils, profils et historique illimités dans le cloud — connexion avec Google.'
+              : undefined
+          }
+          aria-label={
+            id === 'google'
+              ? 'Connexion avec Google : sync multi-appareils et historique cloud'
+              : undefined
+          }
           onClick={() => void signIn(id)}
         >
-          {id === 'google' ? 'Connexion' : providerMap[id].name}
+          {id === 'google' ? 'Connexion Google' : providerMap[id].name}
         </button>
       ))}
       {emailProviderId && (

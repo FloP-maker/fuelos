@@ -21,7 +21,7 @@ type StoredDebrief = {
 
 type LearnItem = {
   id: string;
-  category: 'Repere' | 'Conseil';
+  category: 'Repère' | 'Conseil';
   title: string;
   subtitle: string;
   value: string;
@@ -36,74 +36,74 @@ type LearnItem = {
 const keyNumbers: LearnItem[] = [
   {
     id: 'cho-endurance',
-    category: 'Repere',
+    category: 'Repère',
     title: 'Apport glucidique en endurance',
     subtitle: 'Carburant principal sur efforts longs',
-    value: '30-60 g/h (jusqu a 90 g/h si intestin entraine)',
-    why: 'Aide a maintenir la performance et limiter la baisse d energie sur efforts prolonges.',
+    value: '30-60 g/h (jusqu’à 90 g/h si intestin entraîné)',
+    why: 'Aide à maintenir la performance et limiter la baisse d’énergie sur efforts prolongés.',
     details: [
-      'Commencer plutot vers la borne basse puis augmenter progressivement.',
-      'Fractionner les prises toutes les 15-20 minutes pour mieux tolerer.',
+      'Commencer plutôt vers la borne basse puis augmenter progressivement.',
+      'Fractionner les prises toutes les 15-20 minutes pour mieux tolérer.',
       'Tester les produits en conditions proches de la course.',
     ],
     imageUrl:
       'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=1200&q=80',
-    imageAlt: 'Coureuse en tenue d endurance sur route',
+    imageAlt: 'Coureuse en tenue d’endurance sur route',
     sourceLabel: 'AIS Sports Supplement Framework',
     sourceUrl: 'https://www.ais.gov.au/nutrition/supplements/group_a',
   },
   {
     id: 'hydration-base',
-    category: 'Repere',
-    title: 'Hydratation de base a l effort',
+    category: 'Repère',
+    title: 'Hydratation de base à l’effort',
     subtitle: 'Volume ajustable selon environnement',
-    value: 'Environ 400-800 ml/h selon chaleur, intensite et sudation',
-    why: 'Reduit le risque de dehydration sans surconsommation hydrique.',
+    value: 'Environ 400-800 ml/h selon chaleur, intensité et sudation',
+    why: 'Réduit le risque de déshydratation sans surconsommation hydrique.',
     details: [
-      'Visez une strategie flexible selon meteo et duree.',
-      'Le poids avant/apres seance peut aider a mieux calibrer les besoins.',
-      'Eviter de boire uniquement a la sensation de soif sur efforts longs.',
+      'Visez une stratégie flexible selon météo et durée.',
+      'Le poids avant/après séance peut aider à mieux calibrer les besoins.',
+      'Éviter de boire uniquement à la sensation de soif sur efforts longs.',
     ],
     imageUrl:
       'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1200&q=80',
-    imageAlt: 'Athlete qui boit pendant une sortie longue',
+    imageAlt: 'Athlète qui boit pendant une sortie longue',
     sourceLabel: 'American College of Sports Medicine',
     sourceUrl:
       'https://journals.lww.com/acsm-msse/fulltext/2016/03000/exercise_and_fluid_replacement.22.aspx',
   },
   {
     id: 'sodium-long',
-    category: 'Repere',
-    title: 'Sodium pendant l effort long',
+    category: 'Repère',
+    title: 'Sodium pendant l’effort long',
     subtitle: 'Ajustement selon pertes sudorales',
     value: '300-600 mg/h (ajuster selon perte sudorale)',
-    why: 'Peut aider a maintenir l equilibre hydrique chez les athletes qui transpirent beaucoup.',
+    why: 'Peut aider à maintenir l’équilibre hydrique chez les athlètes qui transpirent beaucoup.',
     details: [
-      'Particulierement utile en ambiance chaude et humide.',
-      'A integrer via boisson, gels ou capsules selon tolerance.',
-      'Les besoins varient fortement d un athlete a l autre.',
+      'Particulièrement utile en ambiance chaude et humide.',
+      'À intégrer via boisson, gels ou capsules selon tolérance.',
+      'Les besoins varient fortement d’un athlète à l’autre.',
     ],
     imageUrl:
       'https://images.unsplash.com/photo-1486218119243-13883505764c?auto=format&fit=crop&w=1200&q=80',
-    imageAlt: 'Boissons et nutrition sportive poses sur une table',
+    imageAlt: 'Boissons et nutrition sportive posés sur une table',
     sourceLabel: 'IOC Consensus Statement (Dietary Supplements and the High-Performance Athlete)',
     sourceUrl: 'https://bjsm.bmj.com/content/52/7/439',
   },
   {
     id: 'caffeine-performance',
-    category: 'Repere',
-    title: 'Cafeine pour la performance',
-    subtitle: 'Effet ergogene dose-dependant',
+    category: 'Repère',
+    title: 'Caféine pour la performance',
+    subtitle: 'Effet ergogène dose-dépendant',
     value: '3-6 mg/kg, 30-60 min avant',
-    why: 'Peut ameliorer vigilance, perception de l effort et performance en endurance.',
+    why: 'Peut améliorer vigilance, perception de l’effort et performance en endurance.',
     details: [
-      'Commencer bas si sensibilite a la cafeine.',
-      'Eviter de tester une premiere fois le jour J.',
-      'Prendre en compte la qualite du sommeil autour de la course.',
+      'Commencer bas si sensibilité à la caféine.',
+      'Éviter de tester une première fois le jour J.',
+      'Prendre en compte la qualité du sommeil autour de la course.',
     ],
     imageUrl:
       'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80',
-    imageAlt: 'Tasse de cafe sur table en bois',
+    imageAlt: 'Tasse de café sur table en bois',
     sourceLabel: 'International Society of Sports Nutrition Position Stand',
     sourceUrl: 'https://jissn.biomedcentral.com/articles/10.1186/s12970-021-00445-4',
   },
@@ -113,18 +113,18 @@ const practicalTips: LearnItem[] = [
   {
     id: 'test-training',
     category: 'Conseil',
-    title: 'Tester en entrainement, pas en jour de course',
-    subtitle: 'Securiser la strategie avant l evenement',
-    value: 'Repeter la meme strategie sur sorties cles',
-    why: 'Permet de valider la tolerance digestive et la praticite logistique.',
+    title: 'Tester en entraînement, pas en jour de course',
+    subtitle: 'Sécuriser la stratégie avant l’événement',
+    value: 'Répéter la même stratégie sur sorties clés',
+    why: 'Permet de valider la tolérance digestive et la praticité logistique.',
     details: [
-      'Simuler horaires et intensites de la course.',
-      'Noter ce qui passe bien ou non juste apres la seance.',
-      'Ajuster un parametre a la fois pour isoler les effets.',
+      'Simuler horaires et intensités de la course.',
+      'Noter ce qui passe bien ou non juste après la séance.',
+      'Ajuster un paramètre à la fois pour isoler les effets.',
     ],
     imageUrl:
       'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=1200&q=80',
-    imageAlt: 'Athlete en seance d entrainement exterieur',
+    imageAlt: 'Athlète en séance d’entraînement extérieur',
     sourceLabel: 'Australian Institute of Sport - Competition nutrition',
     sourceUrl: 'https://www.ais.gov.au/nutrition',
   },
@@ -132,35 +132,35 @@ const practicalTips: LearnItem[] = [
     id: 'glucose-fructose',
     category: 'Conseil',
     title: 'Combiner glucose + fructose',
-    subtitle: 'Strategie multi-transportable',
-    value: 'Melange multi-transportable pour apports eleves',
-    why: 'Peut augmenter l oxydation des glucides exogenes et limiter l inconfort chez certains athletes.',
+    subtitle: 'Stratégie multi-transportable',
+    value: 'Mélange multi-transportable pour apports élevés',
+    why: 'Peut augmenter l’oxydation des glucides exogènes et limiter l’inconfort chez certains athlètes.',
     details: [
-      'Utile quand l objectif est de monter au-dela de 60 g/h.',
-      'Verifier la tolerance digestive de la marque choisie.',
-      'Associer a une hydratation reguliere pour faciliter l absorption.',
+      'Utile quand l’objectif est de monter au-delà de 60 g/h.',
+      'Vérifier la tolérance digestive de la marque choisie.',
+      'Associer à une hydratation régulière pour faciliter l’absorption.',
     ],
     imageUrl:
       'https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=1200&q=80',
-    imageAlt: 'Produits nutrition sportive et gels energetiques',
+    imageAlt: 'Produits nutrition sportive et gels énergétiques',
     sourceLabel: 'Jeukendrup - Carbohydrate intake during exercise',
     sourceUrl: 'https://pubmed.ncbi.nlm.nih.gov/19478342/',
   },
   {
     id: 'schedule-intake',
     category: 'Conseil',
-    title: 'Planifier la prise avant d avoir faim/soif',
-    subtitle: 'Regularite plutot que compensation tardive',
+    title: 'Planifier la prise avant d’avoir faim/soif',
+    subtitle: 'Régularité plutôt que compensation tardive',
     value: 'Rappels toutes les 15-20 minutes',
-    why: 'Aide a lisser les apports et eviter les gros ecarts en fin d epreuve.',
+    why: 'Aide à lisser les apports et éviter les gros écarts en fin d’épreuve.',
     details: [
       'Programmer une alerte montre peut simplifier le suivi.',
-      'Adapter les quantites par tranche selon allure et terrain.',
-      'Eviter les grosses prises ponctuelles difficiles a tolerer.',
+      'Adapter les quantités par tranche selon allure et terrain.',
+      'Éviter les grosses prises ponctuelles difficiles à tolérer.',
     ],
     imageUrl:
       'https://images.unsplash.com/photo-1599058917765-a780eda07a3e?auto=format&fit=crop&w=1200&q=80',
-    imageAlt: 'Montre de sport affichant un chronometre',
+    imageAlt: 'Montre de sport affichant un chronomètre',
     sourceLabel: 'ACSM hydration and fueling guidance',
     sourceUrl:
       'https://journals.lww.com/acsm-msse/fulltext/2016/03000/exercise_and_fluid_replacement.22.aspx',
@@ -169,12 +169,12 @@ const practicalTips: LearnItem[] = [
     id: 'adjust-context',
     category: 'Conseil',
     title: 'Ajuster selon conditions',
-    subtitle: 'Personnalisation en temps reel',
-    value: 'Chaleur, altitude, duree, intensite modifient les besoins',
-    why: 'La strategie optimale varie selon le contexte et le profil de l athlete.',
+    subtitle: 'Personnalisation en temps réel',
+    value: 'Chaleur, altitude, durée, intensité modifient les besoins',
+    why: 'La stratégie optimale varie selon le contexte et le profil de l’athlète.',
     details: [
-      'Prevoir une version A (standard) et B (chaleur) du plan.',
-      'Revoir les besoins si allure, temperature ou duree changent.',
+      'Prévoir une version A (standard) et B (chaleur) du plan.',
+      'Revoir les besoins si allure, température ou durée changent.',
       'Apprendre de chaque course pour affiner la prochaine.',
     ],
     imageUrl:
@@ -205,7 +205,7 @@ function Card({ item }: { item: LearnItem }) {
           <h3 style={{ margin: 0, fontSize: 16 }}>{item.title}</h3>
           <p style={{ margin: '4px 0 8px', color: 'var(--color-text-muted)', fontSize: 13 }}>{item.subtitle}</p>
           <p style={{ margin: 0, fontWeight: 700 }}>{item.value}</p>
-          <p style={{ marginTop: 10, fontSize: 13, color: 'var(--color-text-muted)' }}>Cliquer pour afficher les details</p>
+          <p style={{ marginTop: 10, fontSize: 13, color: 'var(--color-text-muted)' }}>Cliquer pour afficher les détails</p>
         </div>
       </summary>
       <div style={{ padding: '0 14px 14px' }}>
@@ -478,7 +478,7 @@ export default function LearnPage() {
             Analyses
           </h1>
           <p style={{ marginTop: 8, color: 'var(--color-text-muted)' }}>
-            Debriefs des courses terminees dans le mode course et bibliotheque de reperes nutrition verifiables.
+            Débriefs des courses terminées dans le mode course et bibliothèque de repères nutrition vérifiables.
           </p>
         </div>
         <div
@@ -490,17 +490,17 @@ export default function LearnPage() {
             justifyContent: 'flex-end',
           }}
         >
-          {tabButton('debriefs', 'Debriefs')}
+          {tabButton('debriefs', 'Débriefs')}
           {tabButton('library', 'Bibliothèque')}
         </div>
       </div>
 
       {activeTab === 'debriefs' && (
         <section style={{ marginTop: 24 }}>
-          <h2 style={{ marginBottom: 10 }}>Courses passees</h2>
+          <h2 style={{ marginBottom: 10 }}>Courses passées</h2>
           <p style={{ marginTop: 0, color: 'var(--color-text-muted)', marginBottom: 18 }}>
-            Chaque fin de course enregistre un debrief (10 derniers sur cet appareil ; compte Google pour
-            l historique cloud plus long).
+            Chaque fin de course enregistre un débrief (10 derniers sur cet appareil ; compte Google pour
+            l’historique cloud plus long).
           </p>
           {debriefs.length === 0 ? (
             <div
@@ -597,18 +597,18 @@ export default function LearnPage() {
             <aside style={heroCardStyle}>
               <h3 style={{ marginTop: 0 }}>Comment utiliser cette page</h3>
               <p style={{ marginTop: 0, color: 'var(--color-text-muted)' }}>
-                Ouvre les cartes pour lire les details actionnables et garder une trace des recommandations utiles pour tes prochaines courses.
+                Ouvre les cartes pour lire les détails actionnables et garder une trace des recommandations utiles pour tes prochaines courses.
               </p>
               <p style={{ marginBottom: 0, color: 'var(--color-text-muted)', fontSize: 14 }}>
-                Chaque article inclut une source cliquable afin de verifier facilement la reference.
+                Chaque article inclut une source cliquable afin de vérifier facilement la référence.
               </p>
             </aside>
           </section>
 
           <section style={{ marginTop: 26 }}>
-            <h2 style={{ marginBottom: 10 }}>Reperes utiles</h2>
+            <h2 style={{ marginBottom: 10 }}>Repères utiles</h2>
             <p style={{ marginTop: 0, color: 'var(--color-text-muted)' }}>
-              Ces chiffres servent de base, puis se personnalisent selon votre reponse individuelle.
+              Ces chiffres servent de base, puis se personnalisent selon votre réponse individuelle.
             </p>
             <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
               {keyNumbers.map((item) => (
@@ -620,7 +620,7 @@ export default function LearnPage() {
           <section style={{ marginTop: 28 }}>
             <h2 style={{ marginBottom: 10 }}>Conseils pratiques</h2>
             <p style={{ marginTop: 0, color: 'var(--color-text-muted)' }}>
-              Objectif: rendre la strategie executable en entrainement puis en competition.
+              Objectif : rendre la stratégie exécutable en entraînement puis en compétition.
             </p>
             <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
               {practicalTips.map((item) => (

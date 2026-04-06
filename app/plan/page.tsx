@@ -37,8 +37,10 @@ import type {
 } from "../lib/types";
 import { GripVertical, RotateCcw, Trash2 } from "lucide-react";
 import { Header } from "../components/Header";
+import { StravaImportPanel } from "../components/StravaImportPanel";
 import { SectionBreadcrumb } from "../components/SectionBreadcrumb";
 import { ScienceDashboard } from "../components/ScienceDashboard";
+import { GlossaryHint } from "../components/GlossaryHint";
 
 const CourseMapPanel = dynamic(() => import("../components/CourseMapPanel"), { ssr: false });
 
@@ -878,18 +880,26 @@ function PlanPageContent() {
             </p>
 
             {status === "unauthenticated" && (
-              <p
+              <div
                 style={{
-                  fontSize: 13,
-                  color: "var(--color-text-muted)",
-                  marginBottom: 20,
-                  marginTop: -20,
-                  lineHeight: 1.5,
+                  marginBottom: 24,
+                  marginTop: -12,
+                  padding: "14px 16px",
+                  borderRadius: 12,
+                  border: "1px solid color-mix(in srgb, var(--color-accent) 28%, var(--color-border))",
+                  background: "color-mix(in srgb, var(--color-accent) 9%, var(--color-bg-card))",
                 }}
               >
-                Connecte-toi pour enregistrer plusieurs profils (ex. été / hiver) et les retrouver sur tous tes
-                appareils.
-              </p>
+                <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 8px", color: "var(--color-text)" }}>
+                  Connexion Google recommandée
+                </p>
+                <p style={{ fontSize: 14, color: "var(--color-text-muted)", margin: 0, lineHeight: 1.55 }}>
+                  Profils illimités dans le cloud (été / hiver, plusieurs courses),{' '}
+                  <strong style={{ color: "var(--color-text)" }}>synchronisation sur tous tes appareils</strong> et{' '}
+                  <strong style={{ color: "var(--color-text)" }}>historique sauvegardé sans limite</strong>. Utilise le
+                  bouton vert « Connexion Google » en haut à droite.
+                </p>
+              </div>
             )}
 
             {status === "authenticated" && (
@@ -1065,9 +1075,19 @@ function PlanPageContent() {
               <div style={S.sectionTitle}>
                 <span>💧</span> Hydratation & tolérance
               </div>
+              <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 0, marginBottom: 14, lineHeight: 1.5 }}>
+                Les abréviations du plan nutrition (CHO, GI, etc.) sont expliquées ci-dessous. Passe en revue chaque
+                encart avant de choisir tes réglages.
+              </p>
+              <div style={{ marginBottom: 16 }}>
+                <GlossaryHint term="cho" inlineLabel="Qu’est-ce que « CHO » ?" />
+              </div>
               <div style={S.grid2}>
                 <div>
-                  <label style={S.label}>TAUX DE SUDATION (L/h)</label>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+                    <label style={{ ...S.label, marginBottom: 0 }}>TAUX DE SUDATION (L/h)</label>
+                    <GlossaryHint term="sweat_rate" />
+                  </div>
                   <select
                     style={S.select}
                     value={profile.sweatRate}
@@ -1080,23 +1100,14 @@ function PlanPageContent() {
                     <option value={1.6}>Très élevé (1.6 L/h)</option>
                   </select>
                   <p style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 4 }}>
-                    Effectuez un test sudation pour plus de précision
+                    Un test de sudation (pesée avant/après sortie) permet d’affiner ce réglage.
                   </p>
                 </div>
 
                 <div>
-                  <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6 }}>
-                    <label style={S.label}>TOLÉRANCE GI</label>
-                    <div
-                      title={
-                        "Sensible : Système digestif fragile, max ~45g CHO/h\n" +
-                        "Normal : Tolérance standard, max ~60g CHO/h\n" +
-                        "Robuste : Haute capacité d'absorption, max ~90g CHO/h"
-                      }
-                      style={{ cursor: "help", fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1 }}
-                    >
-                      ⓘ
-                    </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+                    <label style={{ ...S.label, marginBottom: 0 }}>TOLÉRANCE DIGESTIVE (GI)</label>
+                    <GlossaryHint term="gi_tolerance" />
                   </div>
 
                   <select
@@ -1528,7 +1539,10 @@ function PlanPageContent() {
 
               <div style={S.grid3}>
                 <div>
-                  <label style={S.label}>CHO / unité (g)</label>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+                    <label style={{ ...S.label, marginBottom: 0 }}>CHO / unité (g)</label>
+                    <GlossaryHint term="cho" />
+                  </div>
                   <input
                     style={S.input}
                     type="number"
@@ -1721,10 +1735,32 @@ function PlanPageContent() {
               Décris ton événement pour calculer le plan optimal.
             </p>
 
+            <StravaImportPanel
+              weather={event.weather}
+              stravaQuery={searchParams.get("strava")}
+              onApply={(patch) => setEvent((prev) => ({ ...prev, ...patch }))}
+            />
+
             <div style={S.card}>
               <div style={S.sectionTitle}>
                 <span>🏔</span> Détails course
               </div>
+
+              {event.stravaImport && (
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: "var(--color-text-muted)",
+                    marginBottom: 16,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <strong style={{ color: "var(--color-text)" }}>Import Strava :</strong> {event.stravaImport.name}{" "}
+                  ({new Date(event.stravaImport.startDate).toLocaleString("fr-FR", { dateStyle: "short" })})
+                  {event.stravaImport.avgHr != null && ` · FC moy. ${event.stravaImport.avgHr}`}
+                  {event.stravaImport.maxHr != null && ` · FC max ${event.stravaImport.maxHr}`}
+                </p>
+              )}
 
               <div style={S.grid3}>
                 <div>
@@ -1749,7 +1785,7 @@ function PlanPageContent() {
                     type="number"
                     value={event.distance}
                     onChange={(e) => setEvent({ ...event, distance: +e.target.value })}
-                    min={5}
+                    min={1}
                     max={500}
                   />
                 </div>

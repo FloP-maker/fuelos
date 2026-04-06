@@ -35,6 +35,15 @@ export interface WeatherAutoMeta {
   fetchedAt: string;
 }
 
+/** Métadonnées si l’événement a été prérempli depuis une activité Strava. */
+export interface StravaImportMeta {
+  activityId: number;
+  name: string;
+  startDate: string;
+  avgHr?: number;
+  maxHr?: number;
+}
+
 export interface EventDetails {
   sport: string;
   distance: number;        // km
@@ -42,6 +51,9 @@ export interface EventDetails {
   targetTime: number;      // hours
   weather: string;
   elevation: string;
+
+  /** Préremplissage Strava (affichage + traçabilité). */
+  stravaImport?: StravaImportMeta;
   
   // 🆕 NOUVELLES PROPRIÉTÉS - Ravitaillements
   aidStations?: AidStation[];  // Checkpoints avec ravitaillements
