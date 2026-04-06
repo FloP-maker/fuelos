@@ -1309,29 +1309,64 @@ textarea:focus {
     }
   }
 
-  @keyframes fuel-race-timeline-focus-pulse {
+  @keyframes fuel-race-timeline-time-ring {
     0%,
     100% {
-      opacity: 1;
+      box-shadow:
+        0 0 0 0 color-mix(in srgb, var(--color-accent) 55%, transparent),
+        0 0 12px color-mix(in srgb, var(--color-accent) 25%, transparent);
     }
     50% {
-      opacity: 0.78;
+      box-shadow:
+        0 0 0 6px color-mix(in srgb, var(--color-accent) 0%, transparent),
+        0 0 18px color-mix(in srgb, var(--color-accent) 35%, transparent);
     }
   }
 
-  .fuel-race-timeline-time-pulse {
-    animation: fuel-race-timeline-focus-pulse 2.2s ease-in-out infinite;
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 45%, transparent);
+  @keyframes fuel-race-timeline-time-ring-danger {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 0 color-mix(in srgb, var(--color-danger) 50%, transparent),
+        0 0 10px color-mix(in srgb, var(--color-danger) 22%, transparent);
+    }
+    50% {
+      box-shadow:
+        0 0 0 6px color-mix(in srgb, var(--color-danger) 0%, transparent),
+        0 0 16px color-mix(in srgb, var(--color-danger) 30%, transparent);
+    }
   }
 
-  .fuel-race-timeline-time-pulse-danger {
-    animation: fuel-race-timeline-focus-pulse 2.2s ease-in-out infinite;
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-danger) 45%, transparent);
+  .fuel-race-timeline-time-pulse-wrap {
+    display: inline-flex;
+    border-radius: 14px;
+    animation: fuel-race-timeline-time-ring 2s ease-in-out infinite;
+  }
+
+  .fuel-race-timeline-time-pulse-wrap--danger {
+    animation: fuel-race-timeline-time-ring-danger 2s ease-in-out infinite;
+  }
+
+  @keyframes fuel-race-timeline-status-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 70%, transparent);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-accent) 0%, transparent);
+      transform: scale(1.06);
+    }
+  }
+
+  .fuel-race-timeline-status-pulse {
+    animation: fuel-race-timeline-status-pulse 1.8s ease-in-out infinite;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .fuel-race-timeline-time-pulse,
-    .fuel-race-timeline-time-pulse-danger {
+    .fuel-race-timeline-time-pulse-wrap,
+    .fuel-race-timeline-time-pulse-wrap--danger,
+    .fuel-race-timeline-status-pulse {
       animation: none;
     }
   }

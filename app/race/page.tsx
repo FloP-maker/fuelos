@@ -802,29 +802,6 @@ function RaceContent() {
     });
   }, []);
 
-  const pageShellStyle: CSSProperties =
-    raceState.simulationSpeed > 1
-      ? {
-          background:
-            'color-mix(in srgb, var(--color-bg) 82%, rgba(124, 58, 237, 0.2))',
-          transition: 'background 0.35s ease',
-        }
-      : { transition: 'background 0.35s ease' };
-
-  const simulationHeaderBadge =
-    raceState.simulationSpeed > 1 ? (
-      <span
-        style={{
-          ...S.badge,
-          borderColor: 'color-mix(in srgb, #a855f7 40%, var(--color-border))',
-          color: 'color-mix(in srgb, #a855f7 85%, var(--color-text))',
-          fontSize: 10,
-        }}
-      >
-        SIMULATION ×{raceState.simulationSpeed}
-      </span>
-    ) : null;
-
   const prepProgress = useMemo(() => {
     const completed = [
       onboarding.profileDone,
@@ -849,8 +826,8 @@ function RaceContent() {
 
   if (!planLoadResolved) {
     return (
-      <div className="fuel-page" style={pageShellStyle}>
-        <Header sticky extra={simulationHeaderBadge} />
+      <div className="fuel-page">
+        <Header sticky />
         <main className="fuel-main" style={{ ...S.main, paddingTop: 52 }}>
           <SectionBreadcrumb />
           <div style={{ maxWidth: 520, margin: '0 auto', textAlign: 'center', paddingTop: 56 }}>
@@ -891,8 +868,8 @@ function RaceContent() {
     ] as const;
 
     return (
-      <div className="fuel-page" style={pageShellStyle}>
-        <Header sticky extra={simulationHeaderBadge} />
+      <div className="fuel-page">
+        <Header sticky />
 
         <main className="fuel-main" style={{ ...S.main, paddingTop: 52 }}>
           <SectionBreadcrumb />
@@ -1094,8 +1071,8 @@ function RaceContent() {
   const progressPercent = Math.min(100, (elapsedMin / ((event?.targetTime || 1) * 60)) * 100);
 
   return (
-    <div className="fuel-page" style={pageShellStyle}>
-      <Header sticky extra={simulationHeaderBadge} />
+    <div className="fuel-page">
+      <Header sticky />
 
       <main className="fuel-main" style={S.main}>
         <SectionBreadcrumb />
@@ -1105,7 +1082,11 @@ function RaceContent() {
               Mode course
             </div>
             <div style={{ ...S.muted, fontSize: 13 }}>
-              {event ? `${event.sport} · ${event.distance} km · objectif ${event.targetTime} h` : 'Exécution du plan'}
+              {raceState.simulationSpeed > 1
+                ? `Simulation ×${raceState.simulationSpeed} — temps accéléré pour tester (le plan nutritionnel est inchangé)`
+                : event
+                  ? `${event.sport} · ${event.distance} km · objectif ${event.targetTime} h`
+                  : 'Exécution du plan'}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
@@ -1169,30 +1150,6 @@ function RaceContent() {
               }}
             />
           </div>
-
-          {raceState.status !== 'finished' && (
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ ...S.muted, fontSize: 11, fontWeight: 700, marginBottom: 8, letterSpacing: '0.06em' }}>
-                Vitesse (🧪 simulation)
-              </div>
-              <div
-                role="group"
-                aria-label="Vitesse du timer"
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}
-              >
-                {SIMULATION_SPEEDS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => handleSimulationSpeedChange(s)}
-                    style={s === raceState.simulationSpeed ? S.simSpeedBtnActive : S.simSpeedBtn}
-                  >
-                    {s === 1 ? 'Réel' : `×${s}`}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {raceState.status === 'idle' && altPlan && (
             <div style={{ marginBottom: 14 }}>
@@ -1267,6 +1224,72 @@ function RaceContent() {
             </div>
           )}
         </section>
+
+        {raceState.status !== 'finished' && (
+          <section
+            aria-labelledby="fuel-race-simulation-title"
+            style={{
+              ...S.card,
+              padding: 20,
+              marginBottom: 16,
+              border:
+                raceState.simulationSpeed > 1
+                  ? '2px solid color-mix(in srgb, #a855f7 50%, var(--color-border))'
+                  : '1px solid color-mix(in srgb, var(--color-border) 80%, transparent)',
+              background:
+                raceState.simulationSpeed > 1
+                  ? 'color-mix(in srgb, rgba(124, 58, 237, 0.1), var(--color-bg-card))'
+                  : 'color-mix(in srgb, var(--color-bg) 35%, var(--color-bg-card))',
+              boxShadow:
+                raceState.simulationSpeed > 1 ? '0 8px 32px color-mix(in srgb, #a855f7 12%, transparent)' : 'var(--shadow-xs)',
+            }}
+          >
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
+              <h2
+                id="fuel-race-simulation-title"
+                className="font-display"
+                style={{ fontSize: 16, fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}
+              >
+                Simulation du temps
+              </h2>
+              {raceState.simulationSpeed > 1 ? (
+                <span
+                  style={{
+                    ...S.badge,
+                    borderColor: 'color-mix(in srgb, #a855f7 45%, var(--color-border))',
+                    color: 'color-mix(in srgb, #a855f7 90%, var(--color-text))',
+                    fontSize: 11,
+                  }}
+                >
+                  Actif ×{raceState.simulationSpeed}
+                </span>
+              ) : (
+                <span style={{ ...S.muted, fontSize: 11, fontWeight: 700 }}>Hors ligne — chrono réel ci-dessus</span>
+              )}
+            </div>
+            <p style={{ ...S.muted, fontSize: 13, lineHeight: 1.55, margin: '0 0 16px' }}>
+              Indépendant du <strong style={{ color: 'var(--color-text)' }}>mode course réel</strong> : tu accélères
+              seulement le défilement du chronomètre pour répéter un plan sans attendre des heures. Les rappels et la
+              timeline suivent ce temps « fictif » ; tes données de course ne sont pas celles d&apos;une sortie réelle.
+            </p>
+            <div
+              role="group"
+              aria-label="Vitesse de simulation du chronomètre"
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}
+            >
+              {SIMULATION_SPEEDS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => handleSimulationSpeedChange(s)}
+                  style={s === raceState.simulationSpeed ? S.simSpeedBtnActive : S.simSpeedBtn}
+                >
+                  {s === 1 ? 'Temps réel' : `×${s}`}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section style={S.raceBottomDock} aria-label="Suivi et timeline">
           {/* Alert Card */}
@@ -1559,42 +1582,66 @@ function RaceContent() {
                               textDecoration: isSkipped ? 'line-through' : 'none',
                             }}
                           >
-                            <div
-                              className={
-                                isFocusRow
-                                  ? isPast && !isConsumed
-                                    ? 'fuel-race-timeline-time-pulse-danger'
-                                    : 'fuel-race-timeline-time-pulse'
-                                  : undefined
-                              }
-                              style={{
-                                flexShrink: 0,
-                                padding: '7px 11px',
-                                borderRadius: 12,
-                                fontFamily: S.monoTime.fontFamily,
-                                fontSize: 13,
-                                fontWeight: 800,
-                                fontVariantNumeric: 'tabular-nums',
-                                letterSpacing: '-0.02em',
-                                background:
+                            {isFocusRow ? (
+                              <div
+                                className={
                                   isPast && !isConsumed
-                                    ? 'color-mix(in srgb, var(--color-danger) 18%, var(--color-bg-card))'
-                                    : 'color-mix(in srgb, var(--color-accent) 11%, var(--color-bg))',
-                                color:
-                                  isPast && !isConsumed ? 'var(--color-danger)' : 'var(--color-text)',
-                                border:
-                                  isPast && !isConsumed
-                                    ? '1px solid color-mix(in srgb, var(--color-danger) 35%, var(--color-border))'
-                                    : '1px solid color-mix(in srgb, var(--color-accent) 25%, var(--color-border))',
-                              }}
-                              aria-label={
-                                isFocusRow
-                                  ? `Prochaine prise attendue, ${Math.floor(item.timeMin)} minutes`
-                                  : undefined
-                              }
-                            >
-                              {Math.floor(item.timeMin)} min
-                            </div>
+                                    ? 'fuel-race-timeline-time-pulse-wrap fuel-race-timeline-time-pulse-wrap--danger'
+                                    : 'fuel-race-timeline-time-pulse-wrap'
+                                }
+                              >
+                                <div
+                                  style={{
+                                    flexShrink: 0,
+                                    padding: '7px 11px',
+                                    borderRadius: 12,
+                                    fontFamily: S.monoTime.fontFamily,
+                                    fontSize: 13,
+                                    fontWeight: 800,
+                                    fontVariantNumeric: 'tabular-nums',
+                                    letterSpacing: '-0.02em',
+                                    background:
+                                      isPast && !isConsumed
+                                        ? 'color-mix(in srgb, var(--color-danger) 18%, var(--color-bg-card))'
+                                        : 'color-mix(in srgb, var(--color-accent) 11%, var(--color-bg))',
+                                    color:
+                                      isPast && !isConsumed ? 'var(--color-danger)' : 'var(--color-text)',
+                                    border:
+                                      isPast && !isConsumed
+                                        ? '1px solid color-mix(in srgb, var(--color-danger) 35%, var(--color-border))'
+                                        : '1px solid color-mix(in srgb, var(--color-accent) 25%, var(--color-border))',
+                                  }}
+                                  aria-label={`Prochaine prise attendue, ${Math.floor(item.timeMin)} minutes`}
+                                >
+                                  {Math.floor(item.timeMin)} min
+                                </div>
+                              </div>
+                            ) : (
+                              <div
+                                style={{
+                                  flexShrink: 0,
+                                  padding: '7px 11px',
+                                  borderRadius: 12,
+                                  fontFamily: S.monoTime.fontFamily,
+                                  fontSize: 13,
+                                  fontWeight: 800,
+                                  fontVariantNumeric: 'tabular-nums',
+                                  letterSpacing: '-0.02em',
+                                  background:
+                                    isPast && !isConsumed
+                                      ? 'color-mix(in srgb, var(--color-danger) 18%, var(--color-bg-card))'
+                                      : 'color-mix(in srgb, var(--color-accent) 11%, var(--color-bg))',
+                                  color:
+                                    isPast && !isConsumed ? 'var(--color-danger)' : 'var(--color-text)',
+                                  border:
+                                    isPast && !isConsumed
+                                      ? '1px solid color-mix(in srgb, var(--color-danger) 35%, var(--color-border))'
+                                      : '1px solid color-mix(in srgb, var(--color-accent) 25%, var(--color-border))',
+                                }}
+                              >
+                                {Math.floor(item.timeMin)} min
+                              </div>
+                            )}
 
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div
@@ -1665,8 +1712,21 @@ function RaceContent() {
                               }}
                             >
                               <div
+                                className={
+                                  isFocusRow && !isConsumed && !isSkipped && !isCurrent
+                                    ? 'fuel-race-timeline-status-pulse'
+                                    : undefined
+                                }
                                 title={
-                                  isConsumed ? 'Pris' : isSkipped ? 'Passé' : isCurrent ? 'En cours' : 'À venir'
+                                  isConsumed
+                                    ? 'Pris'
+                                    : isSkipped
+                                      ? 'Passé'
+                                      : isCurrent
+                                        ? 'En cours'
+                                        : isFocusRow
+                                          ? 'Prochaine prise'
+                                          : 'À venir'
                                 }
                                 style={{
                                   width: 30,
@@ -1683,12 +1743,23 @@ function RaceContent() {
                                       ? 'color-mix(in srgb, var(--color-danger) 20%, var(--color-bg-card))'
                                       : isCurrent
                                         ? 'var(--color-warning)'
-                                        : 'color-mix(in srgb, var(--color-text-muted) 14%, var(--color-bg))',
-                                  color: isConsumed || isCurrent ? '#000' : 'var(--color-text-muted)',
+                                        : isFocusRow
+                                          ? 'var(--color-accent)'
+                                          : 'color-mix(in srgb, var(--color-text-muted) 14%, var(--color-bg))',
+                                  color:
+                                    isConsumed || isCurrent || isFocusRow ? '#000' : 'var(--color-text-muted)',
                                   border: '1px solid color-mix(in srgb, var(--color-border) 80%, transparent)',
                                 }}
                               >
-                                {isConsumed ? '✓' : isSkipped ? '×' : isCurrent ? '!' : '·'}
+                                {isConsumed
+                                  ? '✓'
+                                  : isSkipped
+                                    ? '×'
+                                    : isCurrent
+                                      ? '!'
+                                      : isFocusRow
+                                        ? '→'
+                                        : '·'}
                               </div>
 
                               {isPast && raceState.status === 'running' && (
