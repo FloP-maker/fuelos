@@ -88,6 +88,36 @@ export function AuthMenu() {
     loadProviders();
   }, [loadProviders]);
 
+  const buildCallbackUrl = useCallback(() => {
+    if (typeof window === 'undefined') return '/';
+    return `${window.location.origin}/plan?step=profile`;
+  }, []);
+
+  const forceProviderRedirect = useCallback(
+    (providerId: string) => {
+      if (typeof window === 'undefined') return;
+      const callbackUrl = encodeURIComponent(buildCallbackUrl());
+      window.location.assign(`/api/auth/signin/${providerId}?callbackUrl=${callbackUrl}`);
+    },
+    [buildCallbackUrl]
+  );
+
+  const handleProviderSignIn = useCallback(
+    async (providerId: string) => {
+      try {
+        const callbackUrl = buildCallbackUrl();
+        const result = await signIn(providerId, { callbackUrl, redirect: true });
+        // Certains navigateurs mobiles renvoient sans redirection effective.
+        if (result && typeof result === 'object' && result.error) {
+          forceProviderRedirect(providerId);
+        }
+      } catch {
+        forceProviderRedirect(providerId);
+      }
+    },
+    [buildCallbackUrl, forceProviderRedirect]
+  );
+
   if (status === 'loading' || providerMap === undefined) {
     return (
       <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }} aria-live="polite">
@@ -177,7 +207,7 @@ export function AuthMenu() {
           className="fuel-header-cta fuel-header-cta--compact max-w-[min(220px,46vw)] truncate shrink-0"
           title="Connexion pour activer la synchronisation cloud (plans, profils, historique)"
           aria-label="Connexion compte utilisateur"
-          onClick={() => void signIn(preferredProviderId)}
+          onClick={() => void handleProviderSignIn(preferredProviderId)}
         >
           Connexion
         </button>

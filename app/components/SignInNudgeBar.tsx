@@ -57,6 +57,24 @@ export function SignInNudgeBar() {
     setDismissed(true);
   };
 
+  const handleGoogleSignIn = async () => {
+    try {
+      const callbackUrl =
+        typeof window === 'undefined'
+          ? '/'
+          : `${window.location.origin}/plan?step=profile`;
+      const result = await signIn('google', { callbackUrl, redirect: true });
+      if (result && typeof result === 'object' && result.error && typeof window !== 'undefined') {
+        window.location.assign(`/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+      }
+    } catch {
+      if (typeof window !== 'undefined') {
+        const callbackUrl = `${window.location.origin}/plan?step=profile`;
+        window.location.assign(`/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+      }
+    }
+  };
+
   return (
     <div
       className="fuel-header-signin-nudge"
@@ -72,7 +90,7 @@ export function SignInNudgeBar() {
         <button
           type="button"
           className="fuel-header-cta fuel-header-cta--compact shrink-0"
-          onClick={() => void signIn('google')}
+          onClick={() => void handleGoogleSignIn()}
         >
           Se connecter avec Google
         </button>
