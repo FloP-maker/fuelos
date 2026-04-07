@@ -1178,6 +1178,7 @@ function RaceContent() {
   );
   const nextItem = nextItemIndex >= 0 ? plan.timeline[nextItemIndex] : null;
   const nextItemMinFromNow = nextItem ? Math.max(0, nextItem.timeMin + timingOffsetMin - elapsedMin) : null;
+  const previousPendingItem = nextItemIndex > 0 ? plan.timeline[nextItemIndex - 1] : null;
 
   const remainingTimeH = plan && event ? Math.max(0.1, event.targetTime - elapsedMin / 60) : 1;
   const adjustedChoPerH =
@@ -1201,6 +1202,21 @@ function RaceContent() {
   }, []);
 
   const progressPercent = Math.min(100, (elapsedMin / ((event?.targetTime || 1) * 60)) * 100);
+  const nextItemScheduledMin = nextItem ? nextItem.timeMin + timingOffsetMin : null;
+  const previousReferenceMin = previousPendingItem ? previousPendingItem.timeMin + timingOffsetMin : 0;
+  const nextWindowDuration = nextItemScheduledMin != null ? Math.max(1, nextItemScheduledMin - previousReferenceMin) : null;
+  const nextWindowProgress =
+    nextItemScheduledMin != null && nextWindowDuration != null
+      ? clamp(((elapsedMin - previousReferenceMin) / nextWindowDuration) * 100, 0, 100)
+      : 0;
+  const deviationAlertLevel: 'ok' | 'warning' | 'danger' =
+    Math.abs(timingOffsetMin) >= 4 ? 'danger' : Math.abs(timingOffsetMin) >= 2 ? 'warning' : 'ok';
+  const deviationLabel =
+    timingOffsetMin > 0.5
+      ? `Retard ${timingOffsetMin.toFixed(1)} min`
+      : timingOffsetMin < -0.5
+        ? `Avance ${Math.abs(timingOffsetMin).toFixed(1)} min`
+        : 'Rythme conforme';
 
   return (
     <div className="fuel-page">
@@ -1298,6 +1314,106 @@ function RaceContent() {
               }}
             />
           </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: -4, marginBottom: 14 }}>
+            <span style={{ ...S.muted, fontSize: 11, fontWeight: 700 }}>Départ</span>
+            <span style={{ ...S.muted, fontSize: 11, fontWeight: 700 }}>{Math.round(progressPercent)}%</span>
+            <span style={{ ...S.muted, fontSize: 11, fontWeight: 700 }}>Arrivée</span>
+          </div>
+
+          {nextItem && raceState.status !== 'finished' && (
+            <div
+              style={{
+                borderRadius: 16,
+                border: '1px solid color-mix(in srgb, var(--color-accent) 35%, var(--color-border))',
+                background:
+                  'linear-gradient(160deg, color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
+                padding: 14,
+                marginBottom: 14,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
+                <span style={{ ...S.muted, fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                  Prochain gel
+                </span>
+                <span
+                  style={{
+                    ...S.badge,
+                    borderColor:
+                      nextItemMinFromNow !== null && nextItemMinFromNow <= 3
+                        ? 'color-mix(in srgb, var(--color-warning) 65%, var(--color-border))'
+                        : 'color-mix(in srgb, var(--color-accent) 35%, var(--color-border))',
+                    color:
+                      nextItemMinFromNow !== null && nextItemMinFromNow <= 3
+                        ? 'var(--color-warning)'
+                        : 'var(--color-accent)',
+                  }}
+                >
+                  {nextItemMinFromNow !== null ? `T-${Math.round(nextItemMinFromNow)} min` : 'en approche'}
+                </span>
+              </div>
+              <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 6 }}>{nextItem.product}</div>
+              <div style={{ ...S.muted, fontSize: 12, marginBottom: 10 }}>
+                {nextItem.cho}g CHO
+                {nextItem.water ? ` · ${nextItem.water}ml` : ''}
+                {nextItem.sodium ? ` · ${nextItem.sodium}mg Na` : ''}
+              </div>
+              <div
+                aria-label="Progression vers la prochaine prise"
+                style={{
+                  height: 8,
+                  borderRadius: 99,
+                  overflow: 'hidden',
+                  background: 'color-mix(in srgb, var(--color-bg) 75%, var(--color-bg-card))',
+                  border: '1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border))',
+                }}
+              >
+                <div
+                  style={{
+                    height: '100%',
+                    width: `${nextWindowProgress}%`,
+                    transition: 'width 1s linear',
+                    background:
+                      nextItemMinFromNow !== null && nextItemMinFromNow <= 3
+                        ? 'linear-gradient(90deg, var(--color-warning) 0%, color-mix(in srgb, var(--color-warning) 65%, var(--color-danger)) 100%)'
+                        : 'linear-gradient(90deg, var(--color-accent) 0%, color-mix(in srgb, var(--color-accent) 70%, #60a5fa) 100%)',
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {raceState.status !== 'finished' && (
+            <div
+              style={{
+                borderRadius: 12,
+                padding: '10px 12px',
+                marginBottom: 14,
+                border:
+                  deviationAlertLevel === 'danger'
+                    ? '1px solid color-mix(in srgb, var(--color-danger) 60%, var(--color-border))'
+                    : deviationAlertLevel === 'warning'
+                      ? '1px solid color-mix(in srgb, var(--color-warning) 55%, var(--color-border))'
+                      : '1px solid color-mix(in srgb, var(--color-accent) 26%, var(--color-border))',
+                background:
+                  deviationAlertLevel === 'danger'
+                    ? 'color-mix(in srgb, var(--color-danger) 13%, var(--color-bg-card))'
+                    : deviationAlertLevel === 'warning'
+                      ? 'color-mix(in srgb, var(--color-warning) 14%, var(--color-bg-card))'
+                      : 'color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card))',
+              }}
+            >
+              <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 2 }}>
+                {deviationAlertLevel === 'danger'
+                  ? 'Alerte déviation'
+                  : deviationAlertLevel === 'warning'
+                    ? 'Déviation modérée'
+                    : 'Déviation'}
+              </div>
+              <div style={{ ...S.muted, fontSize: 12 }}>
+                {deviationLabel} · Prochains rappels recalés automatiquement ({Math.abs(timingOffsetMin).toFixed(1)} min).
+              </div>
+            </div>
+          )}
 
           {raceState.status === 'idle' && altPlan && (
             <div style={{ marginBottom: 14 }}>
