@@ -8,6 +8,7 @@ import type { AthleteProfile, EventDetails, FuelPlan, RaceState } from '../lib/t
 import usePageTitle from '../lib/hooks/usePageTitle';
 import { Header } from '../components/Header';
 import { SectionBreadcrumb } from '../components/SectionBreadcrumb';
+import { Button } from '../components/Button';
 
 const DEBRIEFS_STORAGE_KEY = 'fuelos_debriefs';
 
@@ -435,22 +436,14 @@ export default function LearnPage() {
   const tabButton = (tab: 'debriefs' | 'library', label: string) => {
     const active = activeTab === tab;
     return (
-      <button
+      <Button
         type="button"
         onClick={() => setActiveTab(tab)}
-        style={{
-          padding: '10px 18px',
-          borderRadius: 8,
-          border: '1px solid var(--color-border)',
-          background: active ? 'var(--color-accent)' : 'transparent',
-          color: active ? '#000' : 'var(--color-text)',
-          fontWeight: 600,
-          cursor: 'pointer',
-          fontSize: 14,
-        }}
+        variant={active ? 'primary' : 'secondary'}
+        size="md"
       >
         {label}
-      </button>
+      </Button>
     );
   };
 

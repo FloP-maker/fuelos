@@ -7,6 +7,7 @@ import type { Product } from "../lib/types";
 import usePageTitle from "../lib/hooks/usePageTitle";
 import { Header } from "../components/Header";
 import { SectionBreadcrumb } from "../components/SectionBreadcrumb";
+import { Button } from "../components/Button";
 
 const CUSTOM_PRODUCTS_STORAGE_KEY = "fuelos_custom_products";
 
@@ -418,21 +419,16 @@ export default function ShopPage() {
             )}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginLeft: "auto" }}>
-            <button
-              type="button"
-              onClick={() => setAddProductOpen(true)}
-              style={btnOutlineStyle}
-            >
+            <Button type="button" variant="secondary" size="md" onClick={() => setAddProductOpen(true)}>
               + Ajouter un produit
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={toggleCompareMode}
+              variant={compareMode ? "primary" : "secondary"}
+              size="md"
               style={{
-                ...btnOutlineStyle,
-                border: compareMode ? "1px solid var(--color-accent)" : "1px solid var(--color-border)",
-                background: compareMode ? "rgba(34,197,94,0.12)" : "transparent",
-                color: compareMode ? "var(--color-accent)" : "var(--color-text-muted)",
+                color: compareMode ? "#000" : "var(--color-text)",
               }}
               aria-pressed={compareMode}
               aria-describedby="shop-compare-help"
@@ -445,7 +441,7 @@ export default function ShopPage() {
               }
             >
               Comparer ({compareIds.length})
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -510,9 +506,9 @@ export default function ShopPage() {
         )}
         {canLoadMore && (
           <div ref={loadMoreRef} style={{ display: "flex", justifyContent: "center", marginTop: 18 }}>
-            <button type="button" style={btnOutlineStyle} onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}>
+            <Button type="button" variant="secondary" size="md" onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}>
               Afficher plus ({Math.min(PAGE_SIZE, filtered.length - visibleCount)})
-            </button>
+            </Button>
           </div>
         )}
       </main>
@@ -592,16 +588,17 @@ export default function ShopPage() {
                 ))}
               </datalist>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 16, justifyContent: "flex-end" }}>
-                <button type="button" onClick={() => setAddProductOpen(false)} style={btnOutlineStyle}>
+                <Button type="button" variant="secondary" size="md" onClick={() => setAddProductOpen(false)}>
                   Annuler
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={submitCustomProduct}
-                  style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-accent)", color: "#000", fontWeight: 700, cursor: "pointer", fontSize: 13 }}
+                  variant="primary"
+                  size="md"
                 >
                   Ajouter au catalogue
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -629,22 +626,14 @@ export default function ShopPage() {
           <div style={{ maxWidth: 1100, margin: "0 auto" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
               <div style={{ fontWeight: 700, fontSize: 16 }}>Comparatif ({compareProducts.length} produits)</div>
-              <button
+              <Button
                 type="button"
                 onClick={clearCompareSelection}
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: 8,
-                  border: "1px solid var(--color-border)",
-                  background: "var(--color-bg)",
-                  color: "var(--color-text)",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
+                variant="secondary"
+                size="md"
               >
                 Vider la sélection
-              </button>
+              </Button>
             </div>
             <p className="fuel-compare-table-hint">Fais défiler horizontalement pour voir toutes les colonnes.</p>
             <div className="fuel-compare-table-wrap">

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import ServiceWorkerRegistration from "./ServiceWorkerRegistration";
 import { Providers } from "./providers";
+import { AppFooter } from "./components/AppFooter";
 
 export const metadata: Metadata = {
   title: "FuelOS",
@@ -27,6 +28,7 @@ export default function RootLayout({
         <ServiceWorkerRegistration />
         <Providers>
           {children}
+          <AppFooter />
         </Providers>
       </body>
     </html>

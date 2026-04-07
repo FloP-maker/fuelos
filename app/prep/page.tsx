@@ -6,6 +6,8 @@ import type { AthleteProfile, EventDetails, FuelPlan } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
 import { Header } from '../components/Header';
 import { SectionBreadcrumb } from '../components/SectionBreadcrumb';
+import { ToggleGroup } from '../components/ToggleGroup';
+import { Button } from '../components/Button';
 import {
   type CarbDayKey,
   type CarbLoadWindow,
@@ -602,20 +604,15 @@ export default function PrepPage() {
               }}
             >
               <span style={{ fontWeight: 800, fontSize: 13, marginRight: 4 }}>Carb-loading</span>
-              <button
-                type="button"
-                onClick={() => setCarbViewMode('compact')}
-                style={carbViewMode === 'compact' ? S.pillActive : S.pill}
-              >
-                Résumé
-              </button>
-              <button
-                type="button"
-                onClick={() => setCarbViewMode('full')}
-                style={carbViewMode === 'full' ? S.pillActive : S.pill}
-              >
-                Tout le détail
-              </button>
+              <ToggleGroup
+                ariaLabel="Mode d'affichage du carb loading"
+                value={carbViewMode}
+                onChange={setCarbViewMode}
+                options={[
+                  { value: 'compact', label: 'Résumé' },
+                  { value: 'full', label: 'Tout le détail' },
+                ]}
+              />
               <span style={{ ...S.muted, fontSize: 12, flex: '1 1 220px', minWidth: 0 }}>
                 {carbViewMode === 'compact'
                   ? 'Journées et repas repliés — ouvre ce dont tu as besoin pour limiter le défilement (mobile).'
@@ -630,32 +627,21 @@ export default function PrepPage() {
                 pro.
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
-                <button
-                  type="button"
-                  style={prep.carbWindow === '3' ? S.pillActive : S.pill}
-                  onClick={() =>
+                <ToggleGroup
+                  ariaLabel="Choisir la fenêtre de carb loading"
+                  value={prep.carbWindow}
+                  onChange={(value) =>
                     persist({
                       ...prep,
-                      carbWindow: '3',
-                      carbGPerKg: normalizeCarbGPerKg(prep.carbGPerKg, '3'),
+                      carbWindow: value,
+                      carbGPerKg: normalizeCarbGPerKg(prep.carbGPerKg, value),
                     })
                   }
-                >
-                  3 jours (J−3 → J−1)
-                </button>
-                <button
-                  type="button"
-                  style={prep.carbWindow === '7' ? S.pillActive : S.pill}
-                  onClick={() =>
-                    persist({
-                      ...prep,
-                      carbWindow: '7',
-                      carbGPerKg: normalizeCarbGPerKg(prep.carbGPerKg, '7'),
-                    })
-                  }
-                >
-                  7 jours (J−7 → J−1)
-                </button>
+                  options={[
+                    { value: '3', label: '3 jours (J−3 → J−1)' },
+                    { value: '7', label: '7 jours (J−7 → J−1)' },
+                  ]}
+                />
               </div>
             </div>
 
@@ -802,20 +788,15 @@ export default function PrepPage() {
                       Date pour calcul de saison (fruits / légumes)
                     </span>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-                      <button
-                        type="button"
-                        style={prep.seasonDateMode === 'today' ? S.pillActive : S.pill}
-                        onClick={() => persist({ ...prep, seasonDateMode: 'today' })}
-                      >
-                        Aujourd’hui
-                      </button>
-                      <button
-                        type="button"
-                        style={prep.seasonDateMode === 'custom' ? S.pillActive : S.pill}
-                        onClick={() => persist({ ...prep, seasonDateMode: 'custom' })}
-                      >
-                        Date au choix
-                      </button>
+                      <ToggleGroup
+                        ariaLabel="Choix de la date de saison"
+                        value={prep.seasonDateMode}
+                        onChange={(mode) => persist({ ...prep, seasonDateMode: mode })}
+                        options={[
+                          { value: 'today', label: 'Aujourd’hui' },
+                          { value: 'custom', label: 'Date au choix' },
+                        ]}
+                      />
                       {prep.seasonDateMode === 'custom' && (
                         <input
                           type="date"
@@ -1388,9 +1369,9 @@ export default function PrepPage() {
               textile, frontale/piles selon l'horaire, anti-frottements et mini pharmacie.
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
-              <button type="button" style={S.btnSm} onClick={() => importAidToDropBags()}>
+              <Button type="button" variant="primary" size="sm" onClick={() => importAidToDropBags()}>
                 Importer les CP du plan
-              </button>
+              </Button>
               <button
                 type="button"
                 style={S.btnOutline}
@@ -1640,9 +1621,6 @@ export default function PrepPage() {
           </>
         )}
 
-        <p style={{ ...S.muted, fontSize: 12, marginTop: 8 }}>
-          Informations éducatives — ne remplacent pas un suivi médical ou nutritionnel individualisé.
-        </p>
       </main>
     </div>
   );

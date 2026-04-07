@@ -17,6 +17,7 @@ import type { FuelPlan, AthleteProfile, EventDetails, TimelineItem } from '../li
 import usePageTitle from '../lib/hooks/usePageTitle';
 import { Header } from '../components/Header';
 import { SectionBreadcrumb } from '../components/SectionBreadcrumb';
+import { Button } from '../components/Button';
 
 const ONBOARDING_PROFILE_KEY = 'fuelos_onboarding_profile_done';
 const ONBOARDING_EVENT_KEY = 'fuelos_onboarding_event_done';
@@ -280,12 +281,12 @@ function DestructiveConfirmOverlay({
         </h2>
         <div style={{ marginBottom: 20 }}>{children}</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <button type="button" onClick={onCancel} style={S.btnSecondary}>
+          <Button type="button" variant="secondary" size="lg" onClick={onCancel}>
             Annuler
-          </button>
-          <button type="button" onClick={onConfirm} style={S.btnDanger}>
+          </Button>
+          <Button type="button" variant="danger" size="lg" onClick={onConfirm}>
             {confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -1110,33 +1111,31 @@ function RaceContent() {
                 }}
               >
                 {onboarding.hasPlanInStorage ? (
-                  <button
+                    <Button
                     type="button"
                     onClick={() => {
                       window.location.assign('/race');
                     }}
-                    style={{
-                      ...S.btnPrimary,
-                      boxShadow: '0 8px 28px color-mix(in srgb, var(--color-accent) 35%, transparent)',
-                    }}
+                      variant="primary"
+                      size="lg"
+                      fullWidth
+                      style={{ boxShadow: '0 8px 28px color-mix(in srgb, var(--color-accent) 35%, transparent)' }}
                   >
                     Démarrer le mode course
-                  </button>
+                    </Button>
                 ) : (
                   <>
-                    <button
+                    <Button
                       type="button"
                       disabled
                       aria-disabled="true"
                       title="Mode course indisponible: un plan actif avec timeline est requis."
-                      style={{
-                        ...S.btnPrimary,
-                        opacity: 0.5,
-                        cursor: 'not-allowed',
-                      }}
+                      variant="primary"
+                      size="lg"
+                      fullWidth
                     >
                       Lancer le mode course
-                    </button>
+                    </Button>
                     <p style={{ ...S.muted, fontSize: 12, margin: '10px 0 0', lineHeight: 1.45, textAlign: 'center' }}>
                       Plan actif requis (timeline) pour activer le mode course.
                     </p>
@@ -1337,39 +1336,39 @@ function RaceContent() {
           )}
 
           {raceState.status === 'idle' && (
-            <button type="button" onClick={handleStart} style={S.btnPrimary}>
+            <Button type="button" onClick={handleStart} variant="primary" size="lg" fullWidth>
               Démarrer
-            </button>
+            </Button>
           )}
 
           {(raceState.status === 'running' || raceState.status === 'paused') && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {raceState.status === 'running' ? (
-                  <button type="button" onClick={handlePause} style={S.btnSecondary}>
+                  <Button type="button" onClick={handlePause} variant="secondary" size="lg" fullWidth>
                     Pause
-                  </button>
+                  </Button>
                 ) : (
-                  <button type="button" onClick={handleResume} style={S.btnPrimary}>
+                  <Button type="button" onClick={handleResume} variant="primary" size="lg" fullWidth>
                     Reprendre
-                  </button>
+                  </Button>
                 )}
-                <button type="button" onClick={() => setShowFinishConfirm(true)} style={S.btnDanger}>
+                <Button type="button" onClick={() => setShowFinishConfirm(true)} variant="danger" size="lg" fullWidth>
                   Terminer
-                </button>
+                </Button>
               </div>
-              <button type="button" onClick={() => setShowResetConfirm(true)} style={S.btnSecondary}>
+              <Button type="button" onClick={() => setShowResetConfirm(true)} variant="secondary" size="lg" fullWidth>
                 Réinitialiser
-              </button>
+              </Button>
             </div>
           )}
 
           {raceState.status === 'finished' && (
             <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'stretch' }}>
               <div style={{ textAlign: 'center', fontWeight: 900, color: 'var(--color-accent)' }}>Course terminée</div>
-              <button type="button" onClick={() => setShowResetConfirm(true)} style={S.btnSecondary}>
+              <Button type="button" onClick={() => setShowResetConfirm(true)} variant="secondary" size="lg" fullWidth>
                 Réinitialiser
-              </button>
+              </Button>
             </div>
           )}
         </section>

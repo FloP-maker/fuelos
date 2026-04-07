@@ -41,6 +41,8 @@ import { StravaImportPanel } from "../components/StravaImportPanel";
 import { SectionBreadcrumb } from "../components/SectionBreadcrumb";
 import { ScienceDashboard } from "../components/ScienceDashboard";
 import { GlossaryHint } from "../components/GlossaryHint";
+import { ToggleGroup } from "../components/ToggleGroup";
+import { Button } from "../components/Button";
 
 const CourseMapPanel = dynamic(() => import("../components/CourseMapPanel"), { ssr: false });
 
@@ -940,9 +942,9 @@ function PlanPageContent() {
                         marginBottom: cloudHint ? 12 : 0,
                       }}
                     >
-                      <button type="button" style={S.btnOutline} onClick={() => void saveCloudProfile()}>
+                      <Button type="button" variant="primary" size="md" onClick={() => void saveCloudProfile()}>
                         {selectedCloudProfileId ? "Mettre à jour" : "Créer ce profil"}
-                      </button>
+                      </Button>
                       <button type="button" style={S.btnOutline} onClick={newCloudProfileDraft}>
                         Nouveau brouillon
                       </button>
@@ -1387,73 +1389,31 @@ function PlanPageContent() {
 
               <div>
                 <label style={S.label}>Niveau de sucré</label>
-                <div style={{ display: "flex", gap: 8 }}>
-                  {(["low", "medium", "high"] as const).map((level) => (
-                    <button
-                      key={level}
-                      onClick={() =>
-                        setProfile({
-                          ...profile,
-                          tastePreferences: {
-                            sweetness: level,
-                            flavors: profile.tastePreferences?.flavors || [],
-                          },
-                        })
-                      }
-                      style={{
-                        flex: 1,
-                        padding: "10px 16px",
-                        borderRadius: 8,
-                        border: `2px solid ${
-                          profile.tastePreferences?.sweetness === level
-                            ? "var(--color-accent)"
-                            : "var(--color-border)"
-                        }`,
-                        background:
-                          profile.tastePreferences?.sweetness === level
-                            ? "rgba(34,197,94,0.1)"
-                            : "var(--color-bg-card)",
-                        color:
-                          profile.tastePreferences?.sweetness === level
-                            ? "var(--color-accent)"
-                            : "var(--color-text-muted)",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
-                    >
-                      {level === "low"
-                        ? "🍃 Peu sucré"
-                        : level === "medium"
-                        ? "🍯 Modéré"
-                        : "🍬 Très sucré"}
-                    </button>
-                  ))}
-                </div>
+                <ToggleGroup
+                  ariaLabel="Niveau de sucré préféré"
+                  value={(profile.tastePreferences?.sweetness ?? "medium") as "low" | "medium" | "high"}
+                  onChange={(level) =>
+                    setProfile({
+                      ...profile,
+                      tastePreferences: {
+                        sweetness: level,
+                        flavors: profile.tastePreferences?.flavors || [],
+                      },
+                    })
+                  }
+                  options={[
+                    { value: "low", label: "🍃 Peu sucré" },
+                    { value: "medium", label: "🍯 Modéré" },
+                    { value: "high", label: "🍬 Très sucré" },
+                  ]}
+                />
               </div>
             </div>
 
-            <div style={S.card}>
-              <div style={S.sectionTitle}>
-                <span>🧪</span> Produits personnalisés
-              </div>
-              <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 4, marginBottom: 12 }}>
-                La gestion des produits custom se fait maintenant dans le catalogue pour rester en contexte.
-              </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-                <Link href="/shop" style={{ ...S.btnOutline, textDecoration: "none", display: "inline-flex" }}>
-                  + Ajouter dans Produits
-                </Link>
-                <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-                  {customProducts.length > 0
-                    ? `${customProducts.length} produit${customProducts.length > 1 ? "s" : ""} personnalisé${customProducts.length > 1 ? "s" : ""} actif${customProducts.length > 1 ? "s" : ""}.`
-                    : "Aucun produit personnalisé pour le moment."}
-                </span>
-              </div>
-            </div>
-
-            <button
-              style={S.btn}
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
               onClick={() => {
                 try {
                   localStorage.setItem(ONBOARDING_PROFILE_KEY, "1");
@@ -1464,7 +1424,7 @@ function PlanPageContent() {
               }}
             >
               Continuer → Paramètres course
-            </button>
+            </Button>
           </div>
         )}
 
@@ -2073,17 +2033,19 @@ function PlanPageContent() {
             </div>
 
             <div style={{ display: "flex", gap: 12 }}>
-              <button style={{ ...S.btnOutline, flex: 1 }} onClick={() => navigateToPlanStep(1)}>
+              <Button variant="secondary" size="md" style={{ flex: 1 }} onClick={() => navigateToPlanStep(1)}>
                 ← Profil
-              </button>
-              <button
+              </Button>
+              <Button
                 id="fuelos-plan-calculate"
                 type="button"
-                style={{ ...S.btn, flex: 2 }}
+                variant="primary"
+                size="lg"
+                style={{ flex: 2 }}
                 onClick={handleCalculate}
               >
                 Calculer mon plan →
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -2104,9 +2066,9 @@ function PlanPageContent() {
                 Pour afficher ton plan, configure ta course puis clique sur « Calculer mon plan » à l&apos;étape Course.
                 Tu peux aussi revenir aux paramètres pour ajuster distance, horaires ou parcours.
               </p>
-              <button type="button" style={S.btn} onClick={() => navigateToPlanStep(2)}>
+              <Button type="button" variant="primary" size="lg" fullWidth onClick={() => navigateToPlanStep(2)}>
                 Aller aux paramètres course →
-              </button>
+              </Button>
             </div>
           </div>
         )}
