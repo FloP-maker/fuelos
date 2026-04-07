@@ -210,21 +210,17 @@ export default function Home() {
               marginBottom: 8,
             }}
           >
-            <Link
-              href="/plan?step=profile"
-              className="fuel-btn-pill fuel-btn-pill-accent font-display"
-              style={{ fontWeight: 800, fontSize: 15, padding: '0.65rem 1.35rem' }}
-            >
-              Commencer ici
-            </Link>
             <button
               type="button"
-              className="fuel-btn-pill font-display"
+              className="fuel-btn-pill fuel-btn-pill-accent font-display"
               onClick={() => setShowFirstUse((v) => !v)}
-              style={{ fontWeight: 700, fontSize: 14 }}
+              style={{ fontWeight: 800, fontSize: 15, padding: '0.65rem 1.35rem' }}
             >
               Première utilisation, c&apos;est par ici
             </button>
+            <Link href="/plan?step=profile" className="fuel-btn-pill font-display" style={{ fontWeight: 700, fontSize: 14 }}>
+              Accès direct au plan
+            </Link>
           </div>
         </div>
 
