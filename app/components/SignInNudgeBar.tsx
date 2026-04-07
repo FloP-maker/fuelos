@@ -63,10 +63,11 @@ export function SignInNudgeBar() {
         typeof window === 'undefined'
           ? '/'
           : `${window.location.origin}/plan?step=profile`;
-      const result = await signIn('google', { callbackUrl, redirect: true });
-      if (result && typeof result === 'object' && result.error && typeof window !== 'undefined') {
+      const fallbackTimer = window.setTimeout(() => {
         window.location.assign(`/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`);
-      }
+      }, 1200);
+      await signIn('google', { callbackUrl, redirect: true });
+      window.clearTimeout(fallbackTimer);
     } catch {
       if (typeof window !== 'undefined') {
         const callbackUrl = `${window.location.origin}/plan?step=profile`;

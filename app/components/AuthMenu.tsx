@@ -106,11 +106,13 @@ export function AuthMenu() {
     async (providerId: string) => {
       try {
         const callbackUrl = buildCallbackUrl();
-        const result = await signIn(providerId, { callbackUrl, redirect: true });
-        // Certains navigateurs mobiles renvoient sans redirection effective.
-        if (result && typeof result === 'object' && result.error) {
+        // Avec redirect=true, signIn est typé Promise<void> (pas de résultat exploitable).
+        // Fallback de secours si un navigateur mobile bloque la redirection.
+        const fallbackTimer = window.setTimeout(() => {
           forceProviderRedirect(providerId);
-        }
+        }, 1200);
+        await signIn(providerId, { callbackUrl, redirect: true });
+        window.clearTimeout(fallbackTimer);
       } catch {
         forceProviderRedirect(providerId);
       }
