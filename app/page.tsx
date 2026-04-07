@@ -1,6 +1,6 @@
 'use client';
 
-import type { CSSProperties, JSX } from 'react';
+import { useMemo, useState, type CSSProperties, type JSX } from 'react';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -100,7 +100,59 @@ const FEATURE_CARDS: {
   },
 ];
 
+type OnboardingSport = 'Course à pied' | 'Trail' | 'Cyclisme' | 'Triathlon';
+
+type OnboardingDraft = {
+  sport: OnboardingSport;
+  distance: number;
+  targetTime: number;
+  elevationGain: number;
+  weight: number;
+  sweatRate: number;
+  giTolerance: 'sensitive' | 'normal' | 'robust';
+};
+
+const ONBOARDING_SPORTS: OnboardingSport[] = ['Course à pied', 'Trail', 'Cyclisme', 'Triathlon'];
+
+function sportDefaults(sport: OnboardingSport): Pick<OnboardingDraft, 'distance' | 'targetTime' | 'elevationGain'> {
+  switch (sport) {
+    case 'Course à pied':
+      return { distance: 10, targetTime: 1, elevationGain: 50 };
+    case 'Cyclisme':
+      return { distance: 80, targetTime: 3, elevationGain: 600 };
+    case 'Triathlon':
+      return { distance: 70.3, targetTime: 5.5, elevationGain: 300 };
+    case 'Trail':
+    default:
+      return { distance: 30, targetTime: 4, elevationGain: 1200 };
+  }
+}
+
 export default function Home() {
+  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4>(1);
+  const [onboarding, setOnboarding] = useState<OnboardingDraft>({
+    sport: 'Trail',
+    ...sportDefaults('Trail'),
+    weight: 70,
+    sweatRate: 1,
+    giTolerance: 'normal',
+  });
+
+  const onboardingPlanHref = useMemo(() => {
+    const params = new URLSearchParams({
+      step: 'event',
+      onboarding: '1',
+      sport: onboarding.sport,
+      distance: String(onboarding.distance),
+      targetTime: String(onboarding.targetTime),
+      elevationGain: String(onboarding.elevationGain),
+      weight: String(onboarding.weight),
+      sweatRate: String(onboarding.sweatRate),
+      giTolerance: onboarding.giTolerance,
+    });
+    return `/plan?${params.toString()}`;
+  }, [onboarding]);
+
   return (
     <div className="fuel-page">
       <Header sticky />
@@ -161,6 +213,182 @@ export default function Home() {
             <span style={{ fontSize: 13, color: 'var(--color-text-muted)', maxWidth: 280, lineHeight: 1.45 }}>
               Parcours conseillé : créer ton profil dans le Plan, puis Produits et Mode course.
             </span>
+          </div>
+        </div>
+
+        <div
+          className="fuel-card"
+          style={{
+            ...S.card,
+            marginBottom: 28,
+            borderColor: 'color-mix(in srgb, var(--color-accent) 28%, var(--color-border))',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            <h2 className="font-display" style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>
+              Onboarding guidé
+            </h2>
+            <span style={{ fontSize: 12, color: 'var(--color-text-muted)', fontWeight: 700 }}>ÉTAPE {onboardingStep}/4</span>
+          </div>
+          <p style={{ marginTop: 8, marginBottom: 18, color: 'var(--color-text-muted)', fontSize: 14 }}>
+            2 minutes pour configurer ton premier événement et générer immédiatement ton premier plan.
+          </p>
+
+          {onboardingStep === 1 && (
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 700, display: 'block', marginBottom: 10 }}>Sport pratiqué</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+                {ONBOARDING_SPORTS.map((sport) => {
+                  const selected = onboarding.sport === sport;
+                  return (
+                    <button
+                      key={sport}
+                      type="button"
+                      onClick={() => {
+                        const defaults = sportDefaults(sport);
+                        setOnboarding((prev) => ({ ...prev, sport, ...defaults }));
+                      }}
+                      style={{
+                        borderRadius: 10,
+                        padding: '10px 12px',
+                        border: `1px solid ${selected ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                        background: selected ? 'color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card))' : 'var(--color-bg-card)',
+                        color: selected ? 'var(--color-accent)' : 'var(--color-text)',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {sport}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {onboardingStep === 2 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+              <label style={{ fontSize: 13, fontWeight: 700 }}>
+                Distance (km)
+                <input
+                  type="number"
+                  min={1}
+                  value={onboarding.distance}
+                  onChange={(e) => setOnboarding((prev) => ({ ...prev, distance: Number(e.target.value) }))}
+                  style={{ ...S.card, marginBottom: 0, marginTop: 6, padding: '10px 12px' }}
+                />
+              </label>
+              <label style={{ fontSize: 13, fontWeight: 700 }}>
+                Temps cible (h)
+                <input
+                  type="number"
+                  min={0.5}
+                  step={0.5}
+                  value={onboarding.targetTime}
+                  onChange={(e) => setOnboarding((prev) => ({ ...prev, targetTime: Number(e.target.value) }))}
+                  style={{ ...S.card, marginBottom: 0, marginTop: 6, padding: '10px 12px' }}
+                />
+              </label>
+              <label style={{ fontSize: 13, fontWeight: 700 }}>
+                Dénivelé (m D+)
+                <input
+                  type="number"
+                  min={0}
+                  step={50}
+                  value={onboarding.elevationGain}
+                  onChange={(e) => setOnboarding((prev) => ({ ...prev, elevationGain: Number(e.target.value) }))}
+                  style={{ ...S.card, marginBottom: 0, marginTop: 6, padding: '10px 12px' }}
+                />
+              </label>
+            </div>
+          )}
+
+          {onboardingStep === 3 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+              <label style={{ fontSize: 13, fontWeight: 700 }}>
+                Poids (kg)
+                <input
+                  type="number"
+                  min={35}
+                  max={130}
+                  value={onboarding.weight}
+                  onChange={(e) => setOnboarding((prev) => ({ ...prev, weight: Number(e.target.value) }))}
+                  style={{ ...S.card, marginBottom: 0, marginTop: 6, padding: '10px 12px' }}
+                />
+              </label>
+              <label style={{ fontSize: 13, fontWeight: 700 }}>
+                Transpiration (L/h)
+                <input
+                  type="number"
+                  min={0.4}
+                  max={2.5}
+                  step={0.1}
+                  value={onboarding.sweatRate}
+                  onChange={(e) => setOnboarding((prev) => ({ ...prev, sweatRate: Number(e.target.value) }))}
+                  style={{ ...S.card, marginBottom: 0, marginTop: 6, padding: '10px 12px' }}
+                />
+              </label>
+              <label style={{ fontSize: 13, fontWeight: 700 }}>
+                Tolérance digestive
+                <select
+                  value={onboarding.giTolerance}
+                  onChange={(e) =>
+                    setOnboarding((prev) => ({
+                      ...prev,
+                      giTolerance: e.target.value as OnboardingDraft['giTolerance'],
+                    }))
+                  }
+                  style={{ ...S.card, marginBottom: 0, marginTop: 6, padding: '10px 12px' }}
+                >
+                  <option value="sensitive">Sensible</option>
+                  <option value="normal">Normale</option>
+                  <option value="robust">Robuste</option>
+                </select>
+              </label>
+            </div>
+          )}
+
+          {onboardingStep === 4 && (
+            <div
+              style={{
+                padding: 14,
+                borderRadius: 12,
+                border: '1px solid var(--color-border)',
+                background: 'color-mix(in srgb, var(--color-accent) 5%, var(--color-bg-card))',
+                marginBottom: 6,
+                color: 'var(--color-text-muted)',
+                fontSize: 14,
+                lineHeight: 1.5,
+              }}
+            >
+              {onboarding.sport} · {onboarding.distance} km · {onboarding.targetTime} h · {onboarding.elevationGain} m D+ ·{' '}
+              {onboarding.weight} kg · {onboarding.sweatRate} L/h
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 16, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setOnboardingStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3 | 4) : s))}
+              disabled={onboardingStep === 1}
+              className="fuel-btn-pill"
+              style={{ opacity: onboardingStep === 1 ? 0.45 : 1 }}
+            >
+              Retour
+            </button>
+            {onboardingStep < 4 ? (
+              <button
+                type="button"
+                onClick={() => setOnboardingStep((s) => (s < 4 ? ((s + 1) as 1 | 2 | 3 | 4) : s))}
+                className="fuel-btn-pill fuel-btn-pill-accent font-display"
+              >
+                Étape suivante
+              </button>
+            ) : (
+              <Link href={onboardingPlanHref} className="fuel-btn-pill fuel-btn-pill-accent font-display">
+                Générer mon premier plan
+              </Link>
+            )}
           </div>
         </div>
 

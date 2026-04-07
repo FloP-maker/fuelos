@@ -72,6 +72,20 @@ const PLAN_WIZARD_STEPS: { num: PlanWizardStep; label: string }[] = [
   { num: 3, label: "Plan" },
 ];
 
+function elevationLabelFromGain(elevationGain: number): string {
+  if (elevationGain <= 500) return "Plat (0-500m D+)";
+  if (elevationGain <= 1500) return "Vallonné (500-1500m D+)";
+  if (elevationGain <= 3000) return "Montagneux (1500-3000m D+)";
+  return "Alpin (>3000m D+)";
+}
+
+function weatherFromSweatRate(sweatRate: number): string {
+  if (sweatRate >= 1.5) return "Très chaud (>30°C)";
+  if (sweatRate >= 1.2) return "Chaud (20-30°C)";
+  if (sweatRate <= 0.8) return "Froid (<10°C)";
+  return "Tempéré (10-20°C)";
+}
+
 const S = {
   main: { paddingTop: 36 } as React.CSSProperties,
   card: {
@@ -301,6 +315,7 @@ function PlanPageContent() {
   const [planResult, setPlanResult] = useState<FuelPlanGenerationResult | null>(null);
   /** Incrémenté uniquement à chaque calcul — snapshot « Réinitialiser timeline » côté PlanResult. */
   const [planGenerationId, setPlanGenerationId] = useState(0);
+  const onboardingAppliedRef = useRef(false);
 
   const allProducts = [...PRODUCTS, ...customProducts];
 
@@ -711,48 +726,95 @@ function PlanPageContent() {
     [persistPlanBundle]
   );
 
+  const runPlanCalculation = useCallback(
+    (profileInput: AthleteProfile, eventInput: EventDetails) => {
+      console.log("🔍 Profile GI Tolerance:", profileInput.giTolerance);
+      console.log("🔍 Full Profile:", profileInput);
+
+      const result = calculateFuelPlan(profileInput, eventInput, customProducts);
+
+      console.log("🔍 CHO Strategy:", result.mainPlan.choStrategy);
+      console.log("🔍 CHO per hour:", result.mainPlan.choPerHour);
+
+      setPlanResult(result);
+      setPlanGenerationId((n) => n + 1);
+      const bundle = {
+        fuelPlan: result.mainPlan,
+        altFuelPlan: result.altPlan,
+        altPlanLabel: result.altPlanLabel,
+        altPlanExplanation: result.altPlanExplanation,
+        racePlanVariant: "main" as const,
+        profile: profileInput,
+        event: eventInput,
+      };
+      localStorage.setItem("fuelos_active_plan", JSON.stringify(bundle));
+      void fetch("/api/user/plans", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payload: bundle,
+          title: eventInput.sport ? `${eventInput.sport} — ${eventInput.distance} km` : null,
+          setActive: true,
+        }),
+      }).catch(() => {
+        /* hors ligne ou non connecté */
+      });
+      try {
+        localStorage.setItem(ONBOARDING_PROFILE_KEY, "1");
+        localStorage.setItem(ONBOARDING_EVENT_STEP_KEY, "1");
+        localStorage.setItem(ONBOARDING_EVENT_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+      navigateToPlanStep(3);
+    },
+    [customProducts, navigateToPlanStep]
+  );
+
   function handleCalculate() {
-    console.log("🔍 Profile GI Tolerance:", profile.giTolerance);
-    console.log("🔍 Full Profile:", profile);
-
-    const result = calculateFuelPlan(profile, event, customProducts);
-
-    console.log("🔍 CHO Strategy:", result.mainPlan.choStrategy);
-    console.log("🔍 CHO per hour:", result.mainPlan.choPerHour);
-
-    setPlanResult(result);
-    setPlanGenerationId((n) => n + 1);
-    const bundle = {
-      fuelPlan: result.mainPlan,
-      altFuelPlan: result.altPlan,
-      altPlanLabel: result.altPlanLabel,
-      altPlanExplanation: result.altPlanExplanation,
-      racePlanVariant: "main" as const,
-      profile,
-      event,
-    };
-    localStorage.setItem("fuelos_active_plan", JSON.stringify(bundle));
-    void fetch("/api/user/plans", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        payload: bundle,
-        title: event.sport ? `${event.sport} — ${event.distance} km` : null,
-        setActive: true,
-      }),
-    }).catch(() => {
-      /* hors ligne ou non connecté */
-    });
-    try {
-      localStorage.setItem(ONBOARDING_PROFILE_KEY, "1");
-      localStorage.setItem(ONBOARDING_EVENT_STEP_KEY, "1");
-      localStorage.setItem(ONBOARDING_EVENT_KEY, "1");
-    } catch {
-      /* ignore */
-    }
-    navigateToPlanStep(3);
+    runPlanCalculation(profile, event);
   }
+
+  useEffect(() => {
+    if (onboardingAppliedRef.current || searchParams.get("onboarding") !== "1") return;
+    onboardingAppliedRef.current = true;
+
+    const parsedSport = searchParams.get("sport");
+    const parsedDistance = Number(searchParams.get("distance"));
+    const parsedTargetTime = Number(searchParams.get("targetTime"));
+    const parsedElevationGain = Number(searchParams.get("elevationGain"));
+    const parsedWeight = Number(searchParams.get("weight"));
+    const parsedSweatRate = Number(searchParams.get("sweatRate"));
+    const parsedGi = searchParams.get("giTolerance");
+
+    const nextProfile: AthleteProfile = {
+      ...profile,
+      weight: Number.isFinite(parsedWeight) && parsedWeight > 0 ? parsedWeight : profile.weight,
+      sweatRate: Number.isFinite(parsedSweatRate) && parsedSweatRate > 0 ? parsedSweatRate : profile.sweatRate,
+      giTolerance:
+        parsedGi === "sensitive" || parsedGi === "normal" || parsedGi === "robust"
+          ? parsedGi
+          : profile.giTolerance,
+    };
+
+    const nextEvent: EventDetails = {
+      ...event,
+      sport: parsedSport && SPORTS.includes(parsedSport) ? parsedSport : event.sport,
+      distance: Number.isFinite(parsedDistance) && parsedDistance > 0 ? parsedDistance : event.distance,
+      targetTime: Number.isFinite(parsedTargetTime) && parsedTargetTime > 0 ? parsedTargetTime : event.targetTime,
+      elevationGain:
+        Number.isFinite(parsedElevationGain) && parsedElevationGain >= 0 ? parsedElevationGain : event.elevationGain,
+      elevation: elevationLabelFromGain(
+        Number.isFinite(parsedElevationGain) && parsedElevationGain >= 0 ? parsedElevationGain : event.elevationGain
+      ),
+      weather: weatherFromSweatRate(nextProfile.sweatRate),
+    };
+
+    setProfile(nextProfile);
+    setEvent(nextEvent);
+    runPlanCalculation(nextProfile, nextEvent);
+  }, [searchParams, profile, event, runPlanCalculation]);
 
   const currentStepLabel = PLAN_WIZARD_STEPS.find((step) => step.num === currentStep)?.label ?? "Profil";
 
