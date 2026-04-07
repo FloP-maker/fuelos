@@ -53,6 +53,7 @@ model User {
   customProductList    CustomProductList?
   storedAthleteProfiles StoredAthleteProfile[]
   stravaConnection      StravaConnection?
+  prepState             PrepState?
 }
 
 /// Jetons OAuth Strava (import d’activités) — distinct du compte Google / e-mail.
@@ -133,4 +134,15 @@ model StoredAthleteProfile {
   @@index([userId])
   @@index([userId, isDefault])
   @@map("athlete_profiles")
+}
+
+/// Etat persistant de la page Pré/Post (checklists, drop bags, protocoles).
+model PrepState {
+  id        String   @id @default(cuid())
+  userId    String   @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  state     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("prep_states")
 }

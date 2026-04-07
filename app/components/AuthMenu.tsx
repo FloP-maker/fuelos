@@ -97,21 +97,11 @@ export function AuthMenu() {
   }
 
   if (session?.user) {
-    const label = session.user.name || session.user.email || 'Compte';
     return (
       <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-        <span
-          style={{
-            ...muted,
-            maxWidth: 140,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-          title={session.user.email ?? undefined}
-        >
-          {label}
-        </span>
+        <Link href="/plan?step=profile" className="fuel-header-text-link shrink-0">
+          Profil
+        </Link>
         <button type="button" className="fuel-header-text-btn shrink-0" onClick={() => void signOut()}>
           Déconnexion
         </button>
@@ -170,39 +160,28 @@ export function AuthMenu() {
     );
   }
 
-  /** Google est enregistré comme `oidc`, pas `oauth` — les deux doivent afficher un bouton. */
+  /** Google est enregistré comme `oidc`, pas `oauth` — les deux sont valides ici. */
   const oauthIds = ids.filter((id) => {
     const t = providerMap[id].type;
     return t === 'oauth' || t === 'oidc';
   });
   const emailProviderId = ids.find((id) => providerMap[id].type === 'email');
+  const preferredProviderId =
+    oauthIds.find((id) => id === 'google') ?? oauthIds[0] ?? emailProviderId ?? null;
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-      {oauthIds.map((id) => (
+      {preferredProviderId && (
         <button
-          key={id}
           type="button"
-          className={
-            id === 'google'
-              ? 'fuel-header-cta fuel-header-cta--compact max-w-[min(220px,46vw)] truncate shrink-0'
-              : 'fuel-header-text-btn max-w-[200px] truncate shrink-0'
-          }
-          title={
-            id === 'google'
-              ? 'Synchronisation multi-appareils, profils et historique illimites dans le cloud — se connecter avec Google.'
-              : undefined
-          }
-          aria-label={
-            id === 'google'
-              ? 'Se connecter avec Google : sync multi-appareils et historique cloud'
-              : undefined
-          }
-          onClick={() => void signIn(id)}
+          className="fuel-header-cta fuel-header-cta--compact max-w-[min(220px,46vw)] truncate shrink-0"
+          title="Connexion pour activer la synchronisation cloud (plans, profils, historique)"
+          aria-label="Connexion compte utilisateur"
+          onClick={() => void signIn(preferredProviderId)}
         >
-          {id === 'google' ? 'Se connecter (Google)' : `Se connecter (${providerMap[id].name})`}
+          Connexion
         </button>
-      ))}
+      )}
       {emailProviderId && (
         <form
           className="flex flex-wrap items-center gap-2"

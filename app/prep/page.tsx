@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import type { AthleteProfile, EventDetails, FuelPlan } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
 import { Header } from '../components/Header';
@@ -323,8 +324,10 @@ function newBagId(): string {
 
 export default function PrepPage() {
   usePageTitle('Pré/post course');
+  const { status } = useSession();
   const [bundle, setBundle] = useState<ActiveBundle | null>(null);
   const [prep, setPrep] = useState<PrepPersisted>(() => loadOrInitPrep());
+  const [cloudHydrated, setCloudHydrated] = useState(false);
   const [section, setSection] = useState<'carb' | 'race' | 'drop' | 'post'>('carb');
   const [shopCopiedDayKey, setShopCopiedDayKey] = useState<CarbDayKey | null>(null);
   const [carbViewMode, setCarbViewMode] = useState<'compact' | 'full'>(() =>
@@ -371,6 +374,43 @@ export default function PrepPage() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
+  useEffect(() => {
+    if (status !== 'authenticated') {
+      setCloudHydrated(true);
+      return;
+    }
+
+    let cancelled = false;
+    setCloudHydrated(false);
+
+    void (async () => {
+      try {
+        const res = await fetch('/api/user/prep-state', { credentials: 'include' });
+        if (!res.ok) {
+          if (!cancelled) setCloudHydrated(true);
+          return;
+        }
+        const body = (await res.json()) as { prepState?: PrepPersisted | null };
+        if (!cancelled && body.prepState && typeof body.prepState === 'object') {
+          setPrep(body.prepState);
+          try {
+            localStorage.setItem(PREP_STORAGE_KEY, JSON.stringify(body.prepState));
+          } catch {
+            /* ignore */
+          }
+        }
+      } catch {
+        /* ignore */
+      } finally {
+        if (!cancelled) setCloudHydrated(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
+
   const persist = useCallback((next: PrepPersisted) => {
     setPrep(next);
     try {
@@ -379,6 +419,21 @@ export default function PrepPage() {
       /* ignore */
     }
   }, []);
+
+  useEffect(() => {
+    if (status !== 'authenticated' || !cloudHydrated) return;
+    const t = window.setTimeout(() => {
+      void fetch('/api/user/prep-state', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prepState: prep }),
+      }).catch(() => {
+        /* sync cloud best-effort */
+      });
+    }, 350);
+    return () => window.clearTimeout(t);
+  }, [prep, status, cloudHydrated]);
 
   const bumpMealIdeasForDay = useCallback((dayKey: CarbDayKey) => {
     setPrep((prev) => {

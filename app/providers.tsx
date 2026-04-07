@@ -5,6 +5,7 @@ import type { ThemeProviderProps } from "next-themes";
 import type { ComponentType, PropsWithChildren, ReactNode } from "react";
 import { SessionProvider } from "next-auth/react";
 import { DebriefCloudMigration } from "./components/DebriefCloudMigration";
+import { LocalCloudBootstrap } from "./components/LocalCloudBootstrap";
 
 // Certains setups TypeScript (IDE / versions @types) ne fusionnent pas `children`
 // avec `ThemeProviderProps` pour le JSX. On force un composant typé explicitement.
@@ -16,6 +17,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <SessionProvider basePath="/api/auth">
       <DebriefCloudMigration />
+      <LocalCloudBootstrap />
       <ThemeProvider
         attribute="class"
         defaultTheme="light"
