@@ -218,9 +218,6 @@ export default function Home() {
             >
               Première utilisation, c&apos;est par ici
             </button>
-            <Link href="/plan?step=profile" className="fuel-btn-pill font-display" style={{ fontWeight: 700, fontSize: 14 }}>
-              Accès direct au plan
-            </Link>
           </div>
         </div>
 
