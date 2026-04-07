@@ -1404,4 +1404,70 @@ textarea:focus {
       transition: none;
     }
   }
+
+  .fuel-touch-btn {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .fuel-prep-day-sticky-nav {
+    position: sticky;
+    top: calc(var(--fuel-header-sticky-offset, 52px) + 8px);
+    z-index: 18;
+  }
+
+  .fuel-prep-day-pill {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @media (max-width: 760px) {
+    .fuel-prep-section-nav button,
+    .fuel-prep-day-pill,
+    .fuel-prep-details summary,
+    .fuel-touch-btn {
+      min-height: 46px;
+      font-size: 14px;
+    }
+
+    .fuel-prep-section-nav {
+      position: sticky;
+      top: calc(var(--fuel-header-sticky-offset, 52px) + 8px);
+      z-index: 19;
+      padding: 10px 8px;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg));
+      border: 1px solid var(--color-border);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .fuel-prep-day-sticky-nav {
+      top: calc(var(--fuel-header-sticky-offset, 52px) + 72px);
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .fuel-race-kpis-grid {
+      grid-template-columns: 1fr !important;
+      gap: 10px !important;
+    }
+
+    .fuel-race-timer-card {
+      position: sticky;
+      top: calc(var(--fuel-header-sticky-offset, 52px) + 8px);
+      z-index: 17;
+    }
+
+    .fuel-race-primary-actions button {
+      min-height: 52px !important;
+      font-size: 16px !important;
+    }
+
+    .fuel-race-stats-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
 }

@@ -568,7 +568,7 @@ export default function PrepPage() {
           </div>
         )}
 
-        <nav style={S.navPills} aria-label="Sections Pré/post course">
+        <nav className="fuel-prep-section-nav" style={S.navPills} aria-label="Sections Pré/post course">
           {(
             [
               ['carb', 'Carb loading'],
@@ -645,13 +645,13 @@ export default function PrepPage() {
               </div>
             </div>
 
-            <div style={{ ...S.card, padding: '12px 14px', marginBottom: 16 }}>
+              <div className="fuel-prep-day-sticky-nav" style={{ ...S.card, padding: '12px 14px', marginBottom: 16 }}>
               <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8 }}>Accès rapide par journée</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {carbDaysVisible.map((d) => (
-                  <a key={d.key} href={`#prep-day-${d.key}`} style={S.pill}>
-                    {d.title}
-                  </a>
+                    <a key={d.key} href={`#prep-day-${d.key}`} style={S.pill} className="fuel-prep-day-pill">
+                      {d.title}
+                    </a>
                 ))}
               </div>
             </div>
@@ -736,7 +736,6 @@ export default function PrepPage() {
                 key={`prep-loc-${carbViewMode}`}
                 className="fuel-prep-details"
                 style={{ marginTop: 22, paddingTop: 18, borderTop: '1px solid var(--color-border)' }}
-                {...({ defaultOpen: carbViewMode === 'full' } as { defaultOpen?: boolean })}
               >
                 <summary
                   style={{
@@ -1002,7 +1001,6 @@ export default function PrepPage() {
                       border: '1px solid color-mix(in srgb, #4ade80 35%, var(--color-border))',
                       background: 'color-mix(in srgb, #4ade80 7%, var(--color-bg))',
                     }}
-                    {...({ defaultOpen: carbViewMode === 'full' } as { defaultOpen?: boolean })}
                   >
                     <summary
                       style={{
@@ -1157,7 +1155,6 @@ export default function PrepPage() {
                     padding: '4px 14px 14px',
                     background: 'color-mix(in srgb, var(--color-bg) 96%, transparent)',
                   }}
-                  {...({ defaultOpen: carbViewMode === 'full' } as { defaultOpen?: boolean })}
                 >
                   <summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 15, listStyle: 'none', padding: '10px 0' }}>
                     Checklist {d.title} — {checklistDone}/{checklist.length}
@@ -1475,6 +1472,7 @@ export default function PrepPage() {
                   <button
                     type="button"
                     style={{ ...S.btnOutline, marginTop: 10, color: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
+                    className="fuel-touch-btn"
                     onClick={() =>
                       persist({ ...prep, dropBags: prep.dropBags.filter((r) => r.id !== row.id) })
                     }

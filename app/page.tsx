@@ -100,37 +100,39 @@ const FEATURE_CARDS: {
   },
 ];
 
-type OnboardingSport = 'Course à pied' | 'Trail' | 'Cyclisme' | 'Triathlon';
+type FirstUseSport = 'Course à pied' | 'Trail' | 'Cyclisme' | 'Triathlon';
 
-type OnboardingDraft = {
-  sport: OnboardingSport;
+type FirstUseDraft = {
+  sport: FirstUseSport;
   distance: number;
-  targetTime: number;
+  durationValue: number;
+  durationUnit: 'hours' | 'minutes';
   elevationGain: number;
   weight: number;
   sweatRate: number;
   giTolerance: 'sensitive' | 'normal' | 'robust';
 };
 
-const ONBOARDING_SPORTS: OnboardingSport[] = ['Course à pied', 'Trail', 'Cyclisme', 'Triathlon'];
+const FIRST_USE_SPORTS: FirstUseSport[] = ['Course à pied', 'Trail', 'Cyclisme', 'Triathlon'];
 
-function sportDefaults(sport: OnboardingSport): Pick<OnboardingDraft, 'distance' | 'targetTime' | 'elevationGain'> {
+function sportDefaults(sport: FirstUseSport): Pick<FirstUseDraft, 'distance' | 'durationValue' | 'durationUnit' | 'elevationGain'> {
   switch (sport) {
     case 'Course à pied':
-      return { distance: 10, targetTime: 1, elevationGain: 50 };
+      return { distance: 10, durationValue: 60, durationUnit: 'minutes', elevationGain: 50 };
     case 'Cyclisme':
-      return { distance: 80, targetTime: 3, elevationGain: 600 };
+      return { distance: 80, durationValue: 3, durationUnit: 'hours', elevationGain: 600 };
     case 'Triathlon':
-      return { distance: 70.3, targetTime: 5.5, elevationGain: 300 };
+      return { distance: 70.3, durationValue: 5.5, durationUnit: 'hours', elevationGain: 300 };
     case 'Trail':
     default:
-      return { distance: 30, targetTime: 4, elevationGain: 1200 };
+      return { distance: 30, durationValue: 4, durationUnit: 'hours', elevationGain: 1200 };
   }
 }
 
 export default function Home() {
-  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4>(1);
-  const [onboarding, setOnboarding] = useState<OnboardingDraft>({
+  const [showFirstUse, setShowFirstUse] = useState(false);
+  const [firstUseStep, setFirstUseStep] = useState<1 | 2 | 3 | 4>(1);
+  const [firstUse, setFirstUse] = useState<FirstUseDraft>({
     sport: 'Trail',
     ...sportDefaults('Trail'),
     weight: 70,
@@ -138,20 +140,25 @@ export default function Home() {
     giTolerance: 'normal',
   });
 
-  const onboardingPlanHref = useMemo(() => {
+  const firstUseTargetTimeHours = useMemo(() => {
+    if (firstUse.durationUnit === 'minutes') return firstUse.durationValue / 60;
+    return firstUse.durationValue;
+  }, [firstUse.durationUnit, firstUse.durationValue]);
+
+  const firstUsePlanHref = useMemo(() => {
     const params = new URLSearchParams({
       step: 'event',
       onboarding: '1',
-      sport: onboarding.sport,
-      distance: String(onboarding.distance),
-      targetTime: String(onboarding.targetTime),
-      elevationGain: String(onboarding.elevationGain),
-      weight: String(onboarding.weight),
-      sweatRate: String(onboarding.sweatRate),
-      giTolerance: onboarding.giTolerance,
+      sport: firstUse.sport,
+      distance: String(firstUse.distance),
+      targetTime: String(firstUseTargetTimeHours),
+      elevationGain: String(firstUse.elevationGain),
+      weight: String(firstUse.weight),
+      sweatRate: String(firstUse.sweatRate),
+      giTolerance: firstUse.giTolerance,
     });
     return `/plan?${params.toString()}`;
-  }, [onboarding]);
+  }, [firstUse, firstUseTargetTimeHours]);
 
   return (
     <div className="fuel-page">
@@ -210,43 +217,49 @@ export default function Home() {
             >
               Commencer ici
             </Link>
-            <span style={{ fontSize: 13, color: 'var(--color-text-muted)', maxWidth: 280, lineHeight: 1.45 }}>
-              Parcours conseillé : créer ton profil dans le Plan, puis Produits et Mode course.
-            </span>
+            <button
+              type="button"
+              className="fuel-btn-pill font-display"
+              onClick={() => setShowFirstUse((v) => !v)}
+              style={{ fontWeight: 700, fontSize: 14 }}
+            >
+              Première utilisation, c&apos;est par ici
+            </button>
           </div>
         </div>
 
-        <div
-          className="fuel-card"
-          style={{
-            ...S.card,
-            marginBottom: 28,
-            borderColor: 'color-mix(in srgb, var(--color-accent) 28%, var(--color-border))',
-          }}
-        >
+        {showFirstUse && (
+          <div
+            className="fuel-card"
+            style={{
+              ...S.card,
+              marginBottom: 28,
+              borderColor: 'color-mix(in srgb, var(--color-accent) 28%, var(--color-border))',
+            }}
+          >
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
             <h2 className="font-display" style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>
-              Onboarding guidé
+              Première utilisation guidée
             </h2>
-            <span style={{ fontSize: 12, color: 'var(--color-text-muted)', fontWeight: 700 }}>ÉTAPE {onboardingStep}/4</span>
+            <span style={{ fontSize: 12, color: 'var(--color-text-muted)', fontWeight: 700 }}>ÉTAPE {firstUseStep}/4</span>
           </div>
           <p style={{ marginTop: 8, marginBottom: 18, color: 'var(--color-text-muted)', fontSize: 14 }}>
             2 minutes pour configurer ton premier événement et générer immédiatement ton premier plan.
           </p>
 
-          {onboardingStep === 1 && (
+          {firstUseStep === 1 && (
             <div>
               <label style={{ fontSize: 13, fontWeight: 700, display: 'block', marginBottom: 10 }}>Sport pratiqué</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
-                {ONBOARDING_SPORTS.map((sport) => {
-                  const selected = onboarding.sport === sport;
+                {FIRST_USE_SPORTS.map((sport) => {
+                  const selected = firstUse.sport === sport;
                   return (
                     <button
                       key={sport}
                       type="button"
                       onClick={() => {
                         const defaults = sportDefaults(sport);
-                        setOnboarding((prev) => ({ ...prev, sport, ...defaults }));
+                        setFirstUse((prev) => ({ ...prev, sport, ...defaults }));
                       }}
                       style={{
                         borderRadius: 10,
@@ -266,28 +279,40 @@ export default function Home() {
             </div>
           )}
 
-          {onboardingStep === 2 && (
+          {firstUseStep === 2 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
               <label style={{ fontSize: 13, fontWeight: 700 }}>
                 Distance (km)
                 <input
                   type="number"
                   min={1}
-                  value={onboarding.distance}
-                  onChange={(e) => setOnboarding((prev) => ({ ...prev, distance: Number(e.target.value) }))}
+                  value={firstUse.distance}
+                  onChange={(e) => setFirstUse((prev) => ({ ...prev, distance: Number(e.target.value) }))}
                   style={{ ...S.card, marginBottom: 0, marginTop: 6, padding: '10px 12px' }}
                 />
               </label>
               <label style={{ fontSize: 13, fontWeight: 700 }}>
-                Temps cible (h)
+                Durée
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, marginTop: 6 }}>
                 <input
                   type="number"
-                  min={0.5}
-                  step={0.5}
-                  value={onboarding.targetTime}
-                  onChange={(e) => setOnboarding((prev) => ({ ...prev, targetTime: Number(e.target.value) }))}
-                  style={{ ...S.card, marginBottom: 0, marginTop: 6, padding: '10px 12px' }}
+                  min={firstUse.durationUnit === 'minutes' ? 30 : 0.5}
+                  step={firstUse.durationUnit === 'minutes' ? 5 : 0.5}
+                  value={firstUse.durationValue}
+                  onChange={(e) => setFirstUse((prev) => ({ ...prev, durationValue: Number(e.target.value) }))}
+                  style={{ ...S.card, marginBottom: 0, padding: '10px 12px' }}
                 />
+                <select
+                  value={firstUse.durationUnit}
+                  onChange={(e) =>
+                    setFirstUse((prev) => ({ ...prev, durationUnit: e.target.value as FirstUseDraft['durationUnit'] }))
+                  }
+                  style={{ ...S.card, marginBottom: 0, padding: '10px 12px' }}
+                >
+                  <option value="hours">heures</option>
+                  <option value="minutes">minutes</option>
+                </select>
+                </div>
               </label>
               <label style={{ fontSize: 13, fontWeight: 700 }}>
                 Dénivelé (m D+)
@@ -295,15 +320,15 @@ export default function Home() {
                   type="number"
                   min={0}
                   step={50}
-                  value={onboarding.elevationGain}
-                  onChange={(e) => setOnboarding((prev) => ({ ...prev, elevationGain: Number(e.target.value) }))}
+                  value={firstUse.elevationGain}
+                  onChange={(e) => setFirstUse((prev) => ({ ...prev, elevationGain: Number(e.target.value) }))}
                   style={{ ...S.card, marginBottom: 0, marginTop: 6, padding: '10px 12px' }}
                 />
               </label>
             </div>
           )}
 
-          {onboardingStep === 3 && (
+          {firstUseStep === 3 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
               <label style={{ fontSize: 13, fontWeight: 700 }}>
                 Poids (kg)
@@ -311,8 +336,8 @@ export default function Home() {
                   type="number"
                   min={35}
                   max={130}
-                  value={onboarding.weight}
-                  onChange={(e) => setOnboarding((prev) => ({ ...prev, weight: Number(e.target.value) }))}
+                  value={firstUse.weight}
+                  onChange={(e) => setFirstUse((prev) => ({ ...prev, weight: Number(e.target.value) }))}
                   style={{ ...S.card, marginBottom: 0, marginTop: 6, padding: '10px 12px' }}
                 />
               </label>
@@ -323,19 +348,19 @@ export default function Home() {
                   min={0.4}
                   max={2.5}
                   step={0.1}
-                  value={onboarding.sweatRate}
-                  onChange={(e) => setOnboarding((prev) => ({ ...prev, sweatRate: Number(e.target.value) }))}
+                  value={firstUse.sweatRate}
+                  onChange={(e) => setFirstUse((prev) => ({ ...prev, sweatRate: Number(e.target.value) }))}
                   style={{ ...S.card, marginBottom: 0, marginTop: 6, padding: '10px 12px' }}
                 />
               </label>
               <label style={{ fontSize: 13, fontWeight: 700 }}>
                 Tolérance digestive
                 <select
-                  value={onboarding.giTolerance}
+                  value={firstUse.giTolerance}
                   onChange={(e) =>
-                    setOnboarding((prev) => ({
+                    setFirstUse((prev) => ({
                       ...prev,
-                      giTolerance: e.target.value as OnboardingDraft['giTolerance'],
+                      giTolerance: e.target.value as FirstUseDraft['giTolerance'],
                     }))
                   }
                   style={{ ...S.card, marginBottom: 0, marginTop: 6, padding: '10px 12px' }}
@@ -348,7 +373,7 @@ export default function Home() {
             </div>
           )}
 
-          {onboardingStep === 4 && (
+          {firstUseStep === 4 && (
             <div
               style={{
                 padding: 14,
@@ -361,36 +386,38 @@ export default function Home() {
                 lineHeight: 1.5,
               }}
             >
-              {onboarding.sport} · {onboarding.distance} km · {onboarding.targetTime} h · {onboarding.elevationGain} m D+ ·{' '}
-              {onboarding.weight} kg · {onboarding.sweatRate} L/h
+              {firstUse.sport} · {firstUse.distance} km · {firstUse.durationValue}{' '}
+              {firstUse.durationUnit === 'hours' ? 'h' : 'min'} · {firstUse.elevationGain} m D+ · {firstUse.weight} kg ·{' '}
+              {firstUse.sweatRate} L/h
             </div>
           )}
 
           <div style={{ display: 'flex', gap: 10, marginTop: 16, justifyContent: 'space-between', flexWrap: 'wrap' }}>
             <button
               type="button"
-              onClick={() => setOnboardingStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3 | 4) : s))}
-              disabled={onboardingStep === 1}
+              onClick={() => setFirstUseStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3 | 4) : s))}
+              disabled={firstUseStep === 1}
               className="fuel-btn-pill"
-              style={{ opacity: onboardingStep === 1 ? 0.45 : 1 }}
+              style={{ opacity: firstUseStep === 1 ? 0.45 : 1 }}
             >
               Retour
             </button>
-            {onboardingStep < 4 ? (
+            {firstUseStep < 4 ? (
               <button
                 type="button"
-                onClick={() => setOnboardingStep((s) => (s < 4 ? ((s + 1) as 1 | 2 | 3 | 4) : s))}
+                onClick={() => setFirstUseStep((s) => (s < 4 ? ((s + 1) as 1 | 2 | 3 | 4) : s))}
                 className="fuel-btn-pill fuel-btn-pill-accent font-display"
               >
                 Étape suivante
               </button>
             ) : (
-              <Link href={onboardingPlanHref} className="fuel-btn-pill fuel-btn-pill-accent font-display">
+              <Link href={firstUsePlanHref} className="fuel-btn-pill fuel-btn-pill-accent font-display">
                 Générer mon premier plan
               </Link>
             )}
           </div>
-        </div>
+          </div>
+        )}
 
         <div
           style={{

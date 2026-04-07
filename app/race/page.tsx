@@ -1248,7 +1248,7 @@ function RaceContent() {
         </div>
 
         {/* KPIs */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12, marginBottom: 16 }}>
+        <div className="fuel-race-kpis-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12, marginBottom: 16 }}>
           <div style={S.card}>
             <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Statut</div>
             <div style={{ fontWeight: 900 }}>{raceState.status.toUpperCase()}</div>
@@ -1264,7 +1264,7 @@ function RaceContent() {
         </div>
 
         {/* Timer */}
-        <section style={{ ...S.card, padding: 22, marginBottom: 16 }}>
+        <section className="fuel-race-timer-card" style={{ ...S.card, padding: 22, marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'baseline', marginBottom: 12 }}>
             <div style={{ ...S.muted, fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Timer
@@ -1342,8 +1342,8 @@ function RaceContent() {
           )}
 
           {(raceState.status === 'running' || raceState.status === 'paused') && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="fuel-race-primary-actions" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="fuel-race-primary-actions-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {raceState.status === 'running' ? (
                   <Button type="button" onClick={handlePause} variant="secondary" size="lg" fullWidth>
                     Pause
@@ -1538,7 +1538,7 @@ function RaceContent() {
             >
               Aujourd&apos;hui sur la course
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3 fuel-race-stats-grid">
             <div className="text-center" style={S.raceStatCell}>
               <div className="text-xl font-bold" style={{ color: 'var(--color-accent)' }}>
                 {raceState.choConsumed}g
@@ -1921,6 +1921,7 @@ function RaceContent() {
                                   <button
                                     type="button"
                                     onClick={() => handleConsumed(index)}
+                                    className="fuel-touch-btn"
                                     style={{
                                       padding: '6px 12px',
                                       borderRadius: 10,
@@ -1937,6 +1938,7 @@ function RaceContent() {
                                   <button
                                     type="button"
                                     onClick={() => handleSkipped(index)}
+                                    className="fuel-touch-btn"
                                     style={{
                                       padding: '6px 12px',
                                       borderRadius: 10,
