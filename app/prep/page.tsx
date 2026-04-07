@@ -503,6 +503,7 @@ export default function PrepPage() {
 
   const breakfastDefaultHint =
     'Ex. : flocons d’avoine 70–80 g + banane + miel ; ou pain / confiture + jus ; café si habitude. Adapter au profil digestif.';
+  const hasActivePlan = !!bundle?.fuelPlan;
 
   return (
     <div className="fuel-page">
@@ -524,7 +525,7 @@ export default function PrepPage() {
           alimentent les repères gels / flasques quand disponibles.
         </p>
 
-        {!bundle?.fuelPlan && (
+        {!hasActivePlan && (
           <div
             style={{
               ...S.card,
@@ -537,6 +538,31 @@ export default function PrepPage() {
               Générez un plan dans l’onglet Plan pour afficher automatiquement le nombre de gels prévus et importer les CP du
               parcours dans le builder de sacs.
             </p>
+          </div>
+        )}
+        {!hasActivePlan && (
+          <div
+            role="status"
+            aria-live="polite"
+            style={{
+              position: 'sticky',
+              top: 86,
+              zIndex: 24,
+              marginBottom: 14,
+              padding: '10px 12px',
+              borderRadius: 10,
+              border: '1px solid color-mix(in srgb, #fb923c 45%, var(--color-border))',
+              background: 'color-mix(in srgb, #fb923c 12%, var(--color-bg-card))',
+              fontSize: 13,
+              lineHeight: 1.45,
+              boxShadow: 'var(--shadow-xs)',
+            }}
+          >
+            <strong>Plan actif manquant.</strong> Certaines automations restent limitées (repères gels/flasques, CP vers drop bags).{' '}
+            <Link href="/plan" style={{ color: '#fb923c', fontWeight: 800 }}>
+              Générer un plan
+            </Link>
+            .
           </div>
         )}
 
@@ -630,6 +656,17 @@ export default function PrepPage() {
                 >
                   7 jours (J−7 → J−1)
                 </button>
+              </div>
+            </div>
+
+            <div style={{ ...S.card, padding: '12px 14px', marginBottom: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8 }}>Accès rapide par journée</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {carbDaysVisible.map((d) => (
+                  <a key={d.key} href={`#prep-day-${d.key}`} style={S.pill}>
+                    {d.title}
+                  </a>
+                ))}
               </div>
             </div>
 
@@ -820,7 +857,7 @@ export default function PrepPage() {
                     ))}
                   </ul>
                   <details style={S.detailsRecipe}>
-                    <summary style={S.detailsSummary}>▼ Recette détaillée, quantités & pas à pas</summary>
+                    <summary style={S.detailsSummary}>Recette détaillée, quantités & pas à pas</summary>
                     <div style={{ marginTop: 12 }}>
                       <p style={{ ...S.muted, fontSize: 12, margin: '0 0 10px' }}>{b.choRecap}</p>
                       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Quantités pour ce créneau</div>
@@ -1174,6 +1211,7 @@ export default function PrepPage() {
                 return (
                   <details
                     key={d.key}
+                    id={`prep-day-${d.key}`}
                     className="fuel-prep-details"
                     style={{ ...S.card }}
                     {...({ defaultOpen: false } as { defaultOpen?: boolean })}
@@ -1199,7 +1237,7 @@ export default function PrepPage() {
               }
 
               return (
-                <div key={d.key} style={S.card}>
+                <div id={`prep-day-${d.key}`} key={d.key} style={S.card}>
                   {dayHeaderAndControls}
                   {mealGrid}
                   {shoppingDetails}
@@ -1334,6 +1372,21 @@ export default function PrepPage() {
               Pour chaque point : notez le contenu (vêtements, réserves gels, barres, stick lubrifiant, frontale, etc.). Les CP
               viennent du plan si vous les avez saisis à l’étape « course ».
             </p>
+            <div
+              style={{
+                marginTop: 12,
+                marginBottom: 14,
+                padding: 12,
+                borderRadius: 10,
+                border: '1px solid color-mix(in srgb, #60a5fa 30%, var(--color-border))',
+                background: 'color-mix(in srgb, #60a5fa 8%, var(--color-bg))',
+                fontSize: 13,
+                lineHeight: 1.5,
+              }}
+            >
+              <strong>Repère contenu par sac :</strong> 2-4 gels, 1 apport solide, poudre boisson, sel/électrolytes, couche
+              textile, frontale/piles selon l'horaire, anti-frottements et mini pharmacie.
+            </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
               <button type="button" style={S.btnSm} onClick={() => importAidToDropBags()}>
                 Importer les CP du plan
@@ -1349,6 +1402,27 @@ export default function PrepPage() {
                 }
               >
                 + Sac vide
+              </button>
+              <button
+                type="button"
+                style={S.btnOutline}
+                onClick={() =>
+                  persist({
+                    ...prep,
+                    dropBags: [
+                      ...prep.dropBags,
+                      {
+                        id: newBagId(),
+                        cpLabel: 'Template mi-course',
+                        distanceKm: '',
+                        contents:
+                          '2 gels + 1 barre + 1 flask poudre + 1 paire de chaussettes + anti-frottements + mini pansement',
+                      },
+                    ],
+                  })
+                }
+              >
+                + Template rapide
               </button>
             </div>
             <div style={{ display: 'grid', gap: 16 }}>
@@ -1506,6 +1580,21 @@ export default function PrepPage() {
                 Nutrition de récupération, hydratation et repères temporels. Le ton digestif s’adapte si votre profil indique une
                 sensibilité GI (onglet Plan).
               </p>
+              <div
+                style={{
+                  marginTop: 10,
+                  marginBottom: 14,
+                  padding: 12,
+                  borderRadius: 10,
+                  border: '1px solid color-mix(in srgb, #4ade80 30%, var(--color-border))',
+                  background: 'color-mix(in srgb, #4ade80 8%, var(--color-bg))',
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                }}
+              >
+                <strong>Priorités 0-2h :</strong> réhydrater, relancer glucides + protéines, limiter l'agression digestive, puis
+                seulement diversifier le repas complet.
+              </div>
               <div style={{ display: 'grid', gap: 18, marginTop: 16 }}>
                 {postRaceBlocks.map((block) => (
                   <div
@@ -1527,6 +1616,26 @@ export default function PrepPage() {
                   </div>
                 ))}
               </div>
+              <details
+                className="fuel-prep-details"
+                style={{
+                  marginTop: 16,
+                  borderRadius: 10,
+                  border: '1px solid var(--color-border)',
+                  padding: '10px 12px',
+                  background: 'color-mix(in srgb, var(--color-bg) 95%, transparent)',
+                }}
+              >
+                <summary style={{ cursor: 'pointer', fontWeight: 800, fontSize: 14, listStyle: 'none' }}>
+                  Check express récupération (à valider avant de quitter la zone d'arrivée)
+                </summary>
+                <ul style={{ ...S.muted, margin: '10px 0 0', paddingLeft: 18, fontSize: 13 }}>
+                  <li>Boire progressivement jusqu'à retrouver urine claire/pâle.</li>
+                  <li>Prendre un premier apport glucides + protéines dans les 30-45 min.</li>
+                  <li>Changer les vêtements humides et rester au chaud.</li>
+                  <li>Noter 3 éléments: digestion, énergie, crampes/douleurs, pour le prochain plan.</li>
+                </ul>
+              </details>
             </div>
           </>
         )}

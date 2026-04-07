@@ -139,7 +139,7 @@ export function AuthMenu() {
             justifyContent: 'flex-end',
           }}
         >
-          <span style={{ ...muted, textAlign: 'right' }}>Connexion — chargement impossible</span>
+          <span style={{ ...muted, textAlign: 'right' }}>Se connecter — chargement impossible</span>
           <button type="button" className="fuel-header-text-btn shrink-0" onClick={() => loadProviders()}>
             Réessayer
           </button>
@@ -161,7 +161,7 @@ export function AuthMenu() {
   if (ids.length === 0) {
     return (
       <span style={{ ...muted, maxWidth: 320, textAlign: 'right', lineHeight: 1.45 }}>
-        Connexion indisponible —{' '}
+        Se connecter indisponible —{' '}
         <Link href="/debug/auth" style={{ color: 'var(--color-accent)', fontWeight: 600 }} prefetch={false}>
           diagnostic
         </Link>{' '}
@@ -190,17 +190,17 @@ export function AuthMenu() {
           }
           title={
             id === 'google'
-              ? 'Synchronisation multi-appareils, profils et historique illimités dans le cloud — connexion avec Google.'
+              ? 'Synchronisation multi-appareils, profils et historique illimites dans le cloud — se connecter avec Google.'
               : undefined
           }
           aria-label={
             id === 'google'
-              ? 'Connexion avec Google : sync multi-appareils et historique cloud'
+              ? 'Se connecter avec Google : sync multi-appareils et historique cloud'
               : undefined
           }
           onClick={() => void signIn(id)}
         >
-          {id === 'google' ? 'Connexion Google' : providerMap[id].name}
+          {id === 'google' ? 'Se connecter (Google)' : `Se connecter (${providerMap[id].name})`}
         </button>
       ))}
       {emailProviderId && (
@@ -230,7 +230,7 @@ export function AuthMenu() {
             className="fuel-input-compact w-[168px] max-w-[46vw] sm:w-[180px]"
           />
           <button type="submit" disabled={emailHint === 'sending'} className="fuel-header-text-btn shrink-0">
-            Lien magique
+            Se connecter par e-mail
           </button>
         </form>
       )}

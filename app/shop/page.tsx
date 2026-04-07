@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Search } from "lucide-react";
 import { PRODUCTS } from "../lib/products";
 import { REFERENCE_PRODUCT_BRANDS } from "../lib/referenceProductBrands";
@@ -36,6 +36,7 @@ const CAT_COLORS: Record<string, { bg: string; color: string }> = {
 };
 
 const MAX_COMPARE = 3;
+const PAGE_SIZE = 60;
 
 const TEXTURE_FR: Record<NonNullable<Product["texture"]>, string> = {
   liquid: "Liquide",
@@ -106,6 +107,8 @@ export default function ShopPage() {
   const [compareMode, setCompareMode] = useState(false);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [addProductOpen, setAddProductOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [newCustomProduct, setNewCustomProduct] = useState({
     name: "",
     brand: "",
@@ -204,6 +207,31 @@ export default function ShopPage() {
 
   const showCompareDrawer = compareMode && compareProducts.length >= 2;
   const atCompareLimit = compareIds.length >= MAX_COMPARE;
+  const visibleProducts = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const canLoadMore = visibleCount < filtered.length;
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [category, brand, search, sortBy, dietFilters]);
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || !canLoadMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (!first?.isIntersecting) return;
+        setVisibleCount((n) => Math.min(n + PAGE_SIZE, filtered.length));
+      },
+      {
+        root: null,
+        rootMargin: "240px 0px",
+        threshold: 0.01,
+      }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [canLoadMore, filtered.length]);
 
   const resetNewCustomProductForm = () => {
     setNewCustomProduct({
@@ -416,7 +444,7 @@ export default function ShopPage() {
                     : "Mode comparaison actif — le tableau est disponible sous la liste. Clique à nouveau pour quitter le mode."
               }
             >
-              Comparer
+              Comparer ({compareIds.length})
             </button>
           </div>
         </div>
@@ -463,7 +491,7 @@ export default function ShopPage() {
           </div>
         ) : (
           <div className="fuel-shop-product-grid">
-            {filtered.map(p => (
+            {visibleProducts.map(p => (
               <ProductCard
                 key={p.id}
                 product={p}
@@ -475,8 +503,16 @@ export default function ShopPage() {
                 compareChecked={compareIds.includes(p.id)}
                 compareDisabled={atCompareLimit && !compareIds.includes(p.id)}
                 onCompareToggle={() => toggleProductCompare(p.id)}
+                onBrandClick={() => setBrand(p.brand)}
               />
             ))}
+          </div>
+        )}
+        {canLoadMore && (
+          <div ref={loadMoreRef} style={{ display: "flex", justifyContent: "center", marginTop: 18 }}>
+            <button type="button" style={btnOutlineStyle} onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}>
+              Afficher plus ({Math.min(PAGE_SIZE, filtered.length - visibleCount)})
+            </button>
           </div>
         )}
       </main>
@@ -694,6 +730,7 @@ function ProductCard({
   compareChecked = false,
   compareDisabled = false,
   onCompareToggle,
+  onBrandClick,
 }: {
   product: Product;
   onDelete?: () => void;
@@ -701,6 +738,7 @@ function ProductCard({
   compareChecked?: boolean;
   compareDisabled?: boolean;
   onCompareToggle?: () => void;
+  onBrandClick?: () => void;
 }) {
   const catColor =
     CAT_COLORS[p.category] || { bg: "color-mix(in srgb, var(--color-bg) 88%, transparent)", color: "var(--color-text-muted)" };
@@ -725,7 +763,24 @@ function ProductCard({
             <img src={p.imageUrl} alt={p.name} style={{ width: 28, height: 28, objectFit: "contain", borderRadius: 6, border: "1px solid var(--color-border)", background: "var(--color-bg)", flexShrink: 0 }} />
           ) : null}
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-accent)", letterSpacing: "0.8px", textTransform: "uppercase" }}>{p.brand}</div>
+            <button
+              type="button"
+              onClick={onBrandClick}
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: "var(--color-accent)",
+                letterSpacing: "0.8px",
+                textTransform: "uppercase",
+                border: "none",
+                background: "transparent",
+                padding: 0,
+                cursor: "pointer",
+              }}
+              title={`Filtrer la marque ${p.brand}`}
+            >
+              {p.brand}
+            </button>
             <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>{p.name}</div>
           </div>
         </div>

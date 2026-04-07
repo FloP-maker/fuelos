@@ -92,14 +92,6 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
           </div>
           <div className="fuel-header-right">
             {extra}
-            <Link
-              href="/plan?step=profile"
-              className="fuel-header-text-link"
-              title="Profil athlète — étape 1 du plan"
-            >
-              <span className="sm:hidden">Profil</span>
-              <span className="hidden sm:inline">Profil athlète</span>
-            </Link>
             <AuthMenu />
             <ThemeToggle />
           </div>
@@ -145,13 +137,6 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
                   </Link>
                 );
               })}
-              <Link
-                href="/plan?step=profile"
-                className="fuel-header-nav-panel-link fuel-header-nav-panel-link--secondary"
-                onClick={() => setMobileNavOpen(false)}
-              >
-                Profil athlète
-              </Link>
             </nav>
           </div>
         </>

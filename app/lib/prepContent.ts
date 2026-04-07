@@ -1122,10 +1122,18 @@ function trimIngredientFragment(s: string): string {
 
 function shouldSkipShoppingFragment(s: string): boolean {
   const t = s.toLowerCase();
+  const normalized = t.normalize("NFD").replace(/\p{M}/gu, "");
   if (s.length < 3 || s.length > 85) return true;
   if (/^(demander|éviter|sans excès|sans farine|si coutume|si chaud|si entraînement|si toléré|si besoin|si trouvé|si sensible)/i.test(s))
     return true;
-  if (/^peu de |^algues en petite|^légumes crus en fibres|^demander peu/i.test(t)) return true;
+  if (
+    /^(demander|eviter|sans exces|si coutume|si chaud|si entrainement|si tolere|si besoin|si trouve|si sensible)\b/.test(normalized)
+  ) {
+    return true;
+  }
+  if (/^peu de |^algues en petite|^legumes crus en fibres|^demander peu/i.test(normalized)) return true;
+  if (/\b(eviter|demander|limiter|priviligier)\b/.test(normalized) && /\b(fibres?|crudites?|soir)\b/.test(normalized))
+    return true;
   if (/^protéine$/i.test(s) || /^glucides /i.test(t)) return true;
   if (/^légumes passés/i.test(t)) return true;
   if (/^densité énergétique$/i.test(t)) return true;

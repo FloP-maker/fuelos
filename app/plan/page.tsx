@@ -27,7 +27,6 @@ import {
   weatherCategoryFromTempC,
 } from "../lib/meteo";
 import { PRODUCTS } from "../lib/products";
-import { REFERENCE_PRODUCT_BRANDS } from "../lib/referenceProductBrands";
 import type {
   AthleteProfile,
   EventDetails,
@@ -296,20 +295,6 @@ function PlanPageContent() {
   });
 
   const [customProducts, setCustomProducts] = useState<Product[]>([]);
-  const [newCustomProduct, setNewCustomProduct] = useState({
-    name: "",
-    brand: "",
-    imageUrl: "",
-    category: "gel" as Product["category"],
-    cho_per_unit: 25,
-    water_per_unit: 0,
-    sodium_per_unit: 0,
-    calories_per_unit: 100,
-    price_per_unit: 2,
-    weight_g: 40,
-  });
-
-  const [customProductsExpanded, setCustomProductsExpanded] = useState(false);
 
   const [planResult, setPlanResult] = useState<FuelPlanGenerationResult | null>(null);
   /** Incrémenté uniquement à chaque calcul — snapshot « Réinitialiser timeline » côté PlanResult. */
@@ -413,11 +398,11 @@ function PlanPageContent() {
 
   useEffect(() => {
     const s = searchParams.get("step");
-    if (s === "event") {
+    if (s === "2" || s === "event") {
       setCurrentStep(2);
-    } else if (s === "profile") {
+    } else if (s === "1" || s === "profile") {
       setCurrentStep(1);
-    } else if (s === "plan") {
+    } else if (s === "3" || s === "plan") {
       setCurrentStep(3);
     }
   }, [searchParams]);
@@ -767,10 +752,12 @@ function PlanPageContent() {
     navigateToPlanStep(3);
   }
 
+  const currentStepLabel = PLAN_WIZARD_STEPS.find((step) => step.num === currentStep)?.label ?? "Profil";
+
   return (
     <div className="fuel-page">
       <Header sticky />
-      <div className="fuel-plan-wizard">
+      <div className="fuel-plan-wizard" style={{ position: "sticky", top: 70, zIndex: 25 }}>
         <div className="fuel-plan-wizard-inner">
           <SectionBreadcrumb />
           <nav
@@ -864,6 +851,9 @@ function PlanPageContent() {
             );
           })}
           </nav>
+          <p style={{ marginTop: 10, marginBottom: 0, color: "var(--color-text-muted)", fontSize: 12 }}>
+            Étape {currentStep}/3 — {currentStepLabel}
+          </p>
         </div>
       </div>
 
@@ -1037,7 +1027,7 @@ function PlanPageContent() {
               </div>
               <div style={S.grid3}>
                 <div>
-                  <label style={S.label}>POIDS (kg)</label>
+                  <label style={S.label}>Poids (kg)</label>
                   <input
                     style={S.input}
                     type="number"
@@ -1048,7 +1038,7 @@ function PlanPageContent() {
                   />
                 </div>
                 <div>
-                  <label style={S.label}>ÂGE</label>
+                  <label style={S.label}>Age</label>
                   <input
                     style={S.input}
                     type="number"
@@ -1059,7 +1049,7 @@ function PlanPageContent() {
                   />
                 </div>
                 <div>
-                  <label style={S.label}>GENRE</label>
+                  <label style={S.label}>Genre</label>
                   <select
                     style={S.select}
                     value={profile.gender}
@@ -1086,7 +1076,7 @@ function PlanPageContent() {
               <div style={S.grid2}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
-                    <label style={{ ...S.label, marginBottom: 0 }}>TAUX DE SUDATION (L/h)</label>
+                    <label style={{ ...S.label, marginBottom: 0 }}>Taux de sudation (L/h)</label>
                     <GlossaryHint term="sweat_rate" />
                   </div>
                   <select
@@ -1107,7 +1097,7 @@ function PlanPageContent() {
 
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
-                    <label style={{ ...S.label, marginBottom: 0 }}>TOLÉRANCE DIGESTIVE (GI)</label>
+                    <label style={{ ...S.label, marginBottom: 0 }}>Tolérance digestive (GI)</label>
                     <GlossaryHint term="gi_tolerance" />
                   </div>
 
@@ -1125,6 +1115,10 @@ function PlanPageContent() {
                     <option value="normal">Normal (≤60g CHO/h)</option>
                     <option value="robust">Robuste (≤90g CHO/h)</option>
                   </select>
+                  <p style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 4, lineHeight: 1.45 }}>
+                    Sensible = inconfort digestif plus probable; robuste = capacité plus élevée. Commence bas et ajuste
+                    selon tes retours d'entraînement.
+                  </p>
                 </div>
               </div>
             </div>
@@ -1138,7 +1132,7 @@ function PlanPageContent() {
               </p>
 
               <div style={{ marginBottom: 16 }}>
-                <label style={S.label}>GELS PRÉFÉRÉS</label>
+                <label style={S.label}>Gels préférés</label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                   {profile.preferredProducts?.gels?.map((gelId) => {
                     const product = getProductsByCategoryWithCustom("gel").find((p) => p.id === gelId);
@@ -1265,7 +1259,7 @@ function PlanPageContent() {
               </div>
 
               <div style={{ marginBottom: 16 }}>
-                <label style={S.label}>BOISSONS PRÉFÉRÉES</label>
+                <label style={S.label}>Boissons préférées</label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                   {profile.preferredProducts?.drinks?.map((drinkId) => {
                     const product = getProductsByCategoryWithCustom("drink").find((p) => p.id === drinkId);
@@ -1392,7 +1386,7 @@ function PlanPageContent() {
               </div>
 
               <div>
-                <label style={S.label}>NIVEAU DE SUCRÉ</label>
+                <label style={S.label}>Niveau de sucré</label>
                 <div style={{ display: "flex", gap: 8 }}>
                   {(["low", "medium", "high"] as const).map((level) => (
                     <button
@@ -1440,279 +1434,22 @@ function PlanPageContent() {
             </div>
 
             <div style={S.card}>
-              <button
-                type="button"
-                aria-expanded={customProductsExpanded}
-                onClick={() => setCustomProductsExpanded((v) => !v)}
-                style={{
-                  display: "flex",
-                  width: "100%",
-                  alignItems: "flex-start",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: 0,
-                  textAlign: "left",
-                  font: "inherit",
-                  color: "inherit",
-                }}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={S.sectionTitle}>
-                    <span>🧪</span> Produits custom
-                  </div>
-                  <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 4 }}>
-                    {customProducts.length > 0
-                      ? `${customProducts.length} produit${customProducts.length > 1 ? "s" : ""} personnalisé${customProducts.length > 1 ? "s" : ""} — clique pour gérer.`
-                      : "Optionnel — ajoute tes propres produits pour les sélecteurs."}
-                  </p>
-                </div>
-                <span
-                  aria-hidden
-                  style={{
-                    fontSize: 14,
-                    color: "var(--color-text-muted)",
-                    flexShrink: 0,
-                    marginTop: 4,
-                    fontWeight: 700,
-                  }}
-                >
-                  {customProductsExpanded ? "▼" : "▶"}
+              <div style={S.sectionTitle}>
+                <span>🧪</span> Produits personnalisés
+              </div>
+              <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 4, marginBottom: 12 }}>
+                La gestion des produits custom se fait maintenant dans le catalogue pour rester en contexte.
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+                <Link href="/shop" style={{ ...S.btnOutline, textDecoration: "none", display: "inline-flex" }}>
+                  + Ajouter dans Produits
+                </Link>
+                <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+                  {customProducts.length > 0
+                    ? `${customProducts.length} produit${customProducts.length > 1 ? "s" : ""} personnalisé${customProducts.length > 1 ? "s" : ""} actif${customProducts.length > 1 ? "s" : ""}.`
+                    : "Aucun produit personnalisé pour le moment."}
                 </span>
-              </button>
-
-              {customProductsExpanded && (
-                <>
-                  <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 16, marginTop: 4 }}>
-                    Gel, boisson, barre, chew, real-food ou électrolyte — disponibles dans les sélecteurs.
-                  </p>
-
-              <div style={{ ...S.grid3, marginBottom: 10 }}>
-                <div>
-                  <label style={S.label}>NOM</label>
-                  <input
-                    style={S.input}
-                    value={newCustomProduct.name}
-                    onChange={(e) => setNewCustomProduct({ ...newCustomProduct, name: e.target.value })}
-                    placeholder="Ex: Gel maison"
-                  />
-                </div>
-                <div>
-                  <label style={S.label}>MARQUE</label>
-                  <input
-                    style={S.input}
-                    list="fuelos-reference-brands"
-                    value={newCustomProduct.brand}
-                    onChange={(e) => setNewCustomProduct({ ...newCustomProduct, brand: e.target.value })}
-                    placeholder="Ex: Perso"
-                    autoComplete="off"
-                  />
-                  <datalist id="fuelos-reference-brands">
-                    {REFERENCE_PRODUCT_BRANDS.map((b) => (
-                      <option key={b} value={b} />
-                    ))}
-                  </datalist>
-                </div>
-                <div>
-                  <label style={S.label}>URL PHOTO (optionnel)</label>
-                  <input
-                    style={S.input}
-                    value={newCustomProduct.imageUrl}
-                    onChange={(e) => setNewCustomProduct({ ...newCustomProduct, imageUrl: e.target.value })}
-                    placeholder="https://..."
-                  />
-                </div>
-                <div>
-                  <label style={S.label}>CATÉGORIE</label>
-                  <select
-                    style={S.select}
-                    value={newCustomProduct.category}
-                    onChange={(e) =>
-                      setNewCustomProduct({
-                        ...newCustomProduct,
-                        category: e.target.value as Product["category"],
-                      })
-                    }
-                  >
-                    {["gel", "drink", "bar", "chew", "real-food", "electrolyte"].map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
-
-              <div style={S.grid3}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
-                    <label style={{ ...S.label, marginBottom: 0 }}>CHO / unité (g)</label>
-                    <GlossaryHint term="cho" />
-                  </div>
-                  <input
-                    style={S.input}
-                    type="number"
-                    value={newCustomProduct.cho_per_unit}
-                    onChange={(e) =>
-                      setNewCustomProduct({ ...newCustomProduct, cho_per_unit: +e.target.value })
-                    }
-                    min={0}
-                  />
-                </div>
-                <div>
-                  <label style={S.label}>EAU / unité (ml)</label>
-                  <input
-                    style={S.input}
-                    type="number"
-                    value={newCustomProduct.water_per_unit}
-                    onChange={(e) =>
-                      setNewCustomProduct({ ...newCustomProduct, water_per_unit: +e.target.value })
-                    }
-                    min={0}
-                  />
-                </div>
-                <div>
-                  <label style={S.label}>SODIUM / unité (mg)</label>
-                  <input
-                    style={S.input}
-                    type="number"
-                    value={newCustomProduct.sodium_per_unit}
-                    onChange={(e) =>
-                      setNewCustomProduct({ ...newCustomProduct, sodium_per_unit: +e.target.value })
-                    }
-                    min={0}
-                  />
-                </div>
-                <div>
-                  <label style={S.label}>CALORIES / unité</label>
-                  <input
-                    style={S.input}
-                    type="number"
-                    value={newCustomProduct.calories_per_unit}
-                    onChange={(e) =>
-                      setNewCustomProduct({ ...newCustomProduct, calories_per_unit: +e.target.value })
-                    }
-                    min={0}
-                  />
-                </div>
-                <div>
-                  <label style={S.label}>PRIX / unité (€)</label>
-                  <input
-                    style={S.input}
-                    type="number"
-                    value={newCustomProduct.price_per_unit}
-                    onChange={(e) =>
-                      setNewCustomProduct({ ...newCustomProduct, price_per_unit: +e.target.value })
-                    }
-                    min={0}
-                    step={0.1}
-                  />
-                </div>
-                <div>
-                  <label style={S.label}>POIDS (g)</label>
-                  <input
-                    style={S.input}
-                    type="number"
-                    value={newCustomProduct.weight_g}
-                    onChange={(e) =>
-                      setNewCustomProduct({ ...newCustomProduct, weight_g: +e.target.value })
-                    }
-                    min={0}
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginTop: 12 }}>
-                <button
-                  style={{ ...S.btnOutline, width: "100%" }}
-                  onClick={() => {
-                    if (!newCustomProduct.name.trim()) {
-                      alert("Nom requis");
-                      return;
-                    }
-
-                    if (newCustomProduct.imageUrl.trim() && !isValidHttpUrl(newCustomProduct.imageUrl)) {
-                      alert("URL image invalide. Utilise une URL publique commençant par http:// ou https://");
-                      return;
-                    }
-
-                    const id = `custom-${Date.now()}`;
-                    const product: Product = {
-                      id,
-                      name: newCustomProduct.name.trim(),
-                      brand: newCustomProduct.brand.trim() || "Custom",
-                      imageUrl: newCustomProduct.imageUrl.trim() || undefined,
-                      category: newCustomProduct.category,
-                      cho_per_unit: newCustomProduct.cho_per_unit,
-                      water_per_unit: newCustomProduct.water_per_unit || undefined,
-                      sodium_per_unit: newCustomProduct.sodium_per_unit || undefined,
-                      calories_per_unit: newCustomProduct.calories_per_unit,
-                      price_per_unit: newCustomProduct.price_per_unit,
-                      weight_g: newCustomProduct.weight_g,
-                      allergens: [],
-                      diet_tags: [],
-                      description: "Produit personnalisé",
-                    };
-
-                    setCustomProducts((prev) => [product, ...prev]);
-                    setNewCustomProduct({
-                      name: "",
-                      brand: "",
-                      imageUrl: "",
-                      category: "gel",
-                      cho_per_unit: 25,
-                      water_per_unit: 0,
-                      sodium_per_unit: 0,
-                      calories_per_unit: 100,
-                      price_per_unit: 2,
-                      weight_g: 40,
-                    });
-                  }}
-                >
-                  + Ajouter le produit custom
-                </button>
-              </div>
-
-              {customProducts.length > 0 && (
-                <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
-                  {customProducts.map((item) => (
-                    <div
-                      key={item.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "10px 12px",
-                        borderRadius: 8,
-                        background: "var(--color-bg)",
-                        border: "1px solid var(--color-border)",
-                      }}
-                    >
-                      <div style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 10 }}>
-                        <ProductThumb product={item} alt={`${item.brand} ${item.name}`} />
-                        <div>
-                          <div style={{ fontWeight: 700 }}>
-                            {item.brand} - {item.name}
-                          </div>
-                          <div style={{ color: "var(--color-text-muted)" }}>
-                            {item.category} · {item.cho_per_unit}g CHO
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        style={{ ...S.btnOutline, padding: "6px 10px", fontSize: 12 }}
-                        onClick={() => setCustomProducts((prev) => prev.filter((p) => p.id !== item.id))}
-                      >
-                        Supprimer
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-                </>
-              )}
             </div>
 
             <button

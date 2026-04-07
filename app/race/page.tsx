@@ -948,6 +948,56 @@ function RaceContent() {
               </p>
             </div>
 
+            <div
+              style={{
+                ...S.card,
+                marginBottom: 16,
+                borderColor: 'color-mix(in srgb, var(--color-accent) 28%, var(--color-border))',
+                background:
+                  'linear-gradient(165deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
+              }}
+            >
+              <div style={{ ...S.cardTitle, marginBottom: 8 }}>Aperçu du mode course</div>
+              <p style={{ ...S.muted, fontSize: 12, margin: '0 0 12px', lineHeight: 1.5 }}>
+                Chrono en direct, prochaine prise mise en avant, et actions rapides "Pris / Passé".
+              </p>
+              <div
+                aria-hidden
+                style={{
+                  borderRadius: 12,
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-bg)',
+                  padding: 12,
+                }}
+              >
+                <div style={{ ...S.muted, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Timer</div>
+                <div
+                  style={{
+                    fontFamily: S.monoTime.fontFamily,
+                    fontSize: 32,
+                    fontWeight: 900,
+                    letterSpacing: '-0.03em',
+                    marginTop: 4,
+                  }}
+                >
+                  1:42:18
+                </div>
+                <div
+                  style={{
+                    marginTop: 10,
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    border: '1px solid color-mix(in srgb, var(--color-accent) 35%, var(--color-border))',
+                    background: 'color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card))',
+                  }}
+                >
+                  <div style={{ ...S.muted, fontSize: 11, marginBottom: 4 }}>Prochaine prise</div>
+                  <div style={{ fontWeight: 800, fontSize: 14 }}>Gel 100 + eau</div>
+                  <div style={{ ...S.muted, fontSize: 12, marginTop: 2 }}>dans 3 min • 25g CHO • 150ml</div>
+                </div>
+              </div>
+            </div>
+
             <div style={{ ...S.card, position: 'relative', padding: '22px 20px 22px 28px' }}>
               <div style={S.stepperRail} aria-hidden />
               <div style={{ marginBottom: 22 }}>
@@ -1072,20 +1122,40 @@ function RaceContent() {
                   >
                     Démarrer le mode course
                   </button>
-                ) : nextPrepAction ? (
-                  <Link
-                    href={nextPrepAction.href}
-                    style={{
-                      ...S.btnPrimary,
-                      display: 'block',
-                      textAlign: 'center',
-                      textDecoration: 'none',
-                      boxShadow: '0 8px 28px color-mix(in srgb, var(--color-accent) 35%, transparent)',
-                    }}
-                  >
-                    {nextPrepAction.label} →
-                  </Link>
-                ) : null}
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      disabled
+                      aria-disabled="true"
+                      title="Mode course indisponible: un plan actif avec timeline est requis."
+                      style={{
+                        ...S.btnPrimary,
+                        opacity: 0.5,
+                        cursor: 'not-allowed',
+                      }}
+                    >
+                      Lancer le mode course
+                    </button>
+                    <p style={{ ...S.muted, fontSize: 12, margin: '10px 0 0', lineHeight: 1.45, textAlign: 'center' }}>
+                      Plan actif requis (timeline) pour activer le mode course.
+                    </p>
+                    {nextPrepAction ? (
+                      <Link
+                        href={nextPrepAction.href}
+                        style={{
+                          ...S.btnOutline,
+                          display: 'block',
+                          textAlign: 'center',
+                          textDecoration: 'none',
+                          marginTop: 10,
+                        }}
+                      >
+                        {nextPrepAction.label} →
+                      </Link>
+                    ) : null}
+                  </>
+                )}
                 <p style={{ ...S.muted, fontSize: 11, margin: '14px 0 0', lineHeight: 1.5, textAlign: 'center' }}>
                   Quand tu reviens sur cette page après une étape, l’avancement se met à jour tout seul
                   (retour au navigateur ou changement d’onglet).

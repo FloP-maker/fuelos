@@ -12,6 +12,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { Header } from './components/Header';
+import { PRODUCTS } from './lib/products';
 
 const S = {
   main: { paddingTop: 48 } as CSSProperties,
@@ -72,7 +73,7 @@ const FEATURE_CARDS: {
   {
     icon: ShoppingBag,
     title: 'PRODUITS',
-    desc: '500+ produits (Maurten, SiS, Tailwind, Näak…). Liste de courses auto-générée',
+    desc: `${PRODUCTS.length}+ produits (Maurten, SiS, Tailwind, Näak…). Liste de courses auto-générée`,
     href: '/shop',
     accent: '#4ade80',
   },
@@ -310,7 +311,7 @@ export default function Home() {
           }}
         >
           {[
-            { value: '500+', label: 'Produits catalogés' },
+            { value: `${PRODUCTS.length}+`, label: 'Produits catalogés' },
             { value: '4', label: 'Sports couverts' },
             { value: '∞', label: 'Combinaisons de plans' },
           ].map((stat, i) => (

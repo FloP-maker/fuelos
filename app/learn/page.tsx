@@ -541,6 +541,53 @@ export default function LearnPage() {
                 enregistrer ton débrief nutrition, le suivi digestif et les repères pour la prochaine fois. Tout
                 s&apos;affichera ici automatiquement.
               </p>
+              <div
+                style={{
+                  display: 'grid',
+                  gap: 10,
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                  textAlign: 'left',
+                  margin: '0 auto 20px',
+                  maxWidth: 760,
+                }}
+              >
+                {[
+                  {
+                    title: 'Résumé de course',
+                    desc: 'durée, sport, distance, météo et contexte du jour',
+                    emoji: '🏁',
+                  },
+                  {
+                    title: 'Exécution nutrition',
+                    desc: 'prises suivies vs plan (consommées, passées, compliance)',
+                    emoji: '⚡',
+                  },
+                  {
+                    title: 'Signal digestif (GI)',
+                    desc: "points d'attention et écarts notés pour ajuster la prochaine stratégie",
+                    emoji: '🧪',
+                  },
+                  {
+                    title: 'Pistes d’amélioration',
+                    desc: 'ce qui a marché / moins marché pour préparer la prochaine course',
+                    emoji: '📈',
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.title}
+                    style={{
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 12,
+                      padding: '12px 12px',
+                      background: 'var(--color-bg-card)',
+                    }}
+                  >
+                    <div style={{ fontSize: 18, marginBottom: 6 }}>{item.emoji}</div>
+                    <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{item.title}</div>
+                    <div style={{ color: 'var(--color-text-muted)', fontSize: 12, lineHeight: 1.45 }}>{item.desc}</div>
+                  </div>
+                ))}
+              </div>
               <Link
                 href="/race"
                 style={{
@@ -564,6 +611,9 @@ export default function LearnPage() {
                 Ouvrir le mode course
                 <ArrowRight size={18} strokeWidth={2.25} aria-hidden />
               </Link>
+              <p style={{ margin: '12px 0 0', fontSize: 12, color: 'var(--color-text-muted)' }}>
+                Dès ta première course terminée, un débrief complet est créé ici automatiquement.
+              </p>
               <p style={{ margin: '18px 0 0', fontSize: 13, color: 'var(--color-text-muted)' }}>
                 Astuce : prépare ton plan sur la page <Link href="/plan" style={{ color: 'var(--color-accent)', fontWeight: 600 }}>Plan</Link>{' '}
                 avant de partir.
