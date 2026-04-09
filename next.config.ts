@@ -9,12 +9,6 @@ const nextConfig: NextConfig = {
       { source: "/analysis", destination: "/analyses", permanent: true },
     ];
   },
-  async rewrites() {
-    return [
-      { source: "/produits", destination: "/shop" },
-      { source: "/analyses", destination: "/learn" },
-    ];
-  },
   async headers() {
       return [
             {
