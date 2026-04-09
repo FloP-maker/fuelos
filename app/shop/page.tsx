@@ -1,7 +1,7 @@
 "use client";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Search } from "lucide-react";
-import { PRODUCTS } from "../lib/products";
+import { PRODUCTS, getBrandCatalogOrigin } from "../lib/products";
 import { REFERENCE_PRODUCT_BRANDS } from "../lib/referenceProductBrands";
 import type { Product } from "../lib/types";
 import usePageTitle from "../lib/hooks/usePageTitle";
@@ -732,6 +732,7 @@ function ProductCard({
   const catColor =
     CAT_COLORS[p.category] || { bg: "color-mix(in srgb, var(--color-bg) 88%, transparent)", color: "var(--color-text-muted)" };
   const showImg = p.imageUrl && /^https?:\/\//.test(p.imageUrl);
+  const catalogOrigin = getBrandCatalogOrigin(p.brand);
   return (
     <div className="fuel-product-card" style={{ background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 12, display: "flex", flexDirection: "column", gap: 10 }}>
       {compareMode && (
@@ -752,24 +753,39 @@ function ProductCard({
             <img src={p.imageUrl} alt={p.name} style={{ width: 28, height: 28, objectFit: "contain", borderRadius: 6, border: "1px solid var(--color-border)", background: "var(--color-bg)", flexShrink: 0 }} />
           ) : null}
           <div style={{ minWidth: 0 }}>
-            <button
-              type="button"
-              onClick={onBrandClick}
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "var(--color-accent)",
-                letterSpacing: "0.8px",
-                textTransform: "uppercase",
-                border: "none",
-                background: "transparent",
-                padding: 0,
-                cursor: "pointer",
-              }}
-              title={`Filtrer la marque ${p.brand}`}
-            >
-              {p.brand}
-            </button>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={onBrandClick}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "var(--color-accent)",
+                  letterSpacing: "0.8px",
+                  textTransform: "uppercase",
+                  border: "none",
+                  background: "transparent",
+                  padding: 0,
+                  cursor: "pointer",
+                }}
+                title={`Filtrer la marque ${p.brand}`}
+              >
+                {p.brand}
+              </button>
+              {catalogOrigin && (
+                <span
+                  title={
+                    catalogOrigin === "FR"
+                      ? "Marque listée référence catalogue (France)"
+                      : "Marque listée référence catalogue (Europe & international)"
+                  }
+                  style={{ fontSize: 12, lineHeight: 1, opacity: 0.92 }}
+                  aria-hidden
+                >
+                  {catalogOrigin === "FR" ? "🇫🇷" : "🌍"}
+                </span>
+              )}
+            </span>
             <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>{p.name}</div>
           </div>
         </div>

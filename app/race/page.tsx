@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import {
   useState,
   useEffect,
@@ -14,11 +15,17 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { mergeStoredAthleteProfile } from '../lib/athleteProfileData';
+import { nearestPointOnCourse } from '../lib/courseGeometry';
 import type { FuelPlan, AthleteProfile, EventDetails, TimelineItem } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
 import { Header } from '../components/Header';
 import { SectionBreadcrumb } from '../components/SectionBreadcrumb';
 import { Button } from '../components/Button';
+
+const CourseMapPanel = dynamic(() => import('../components/CourseMapPanel'), { ssr: false });
+
+/** Au-delà de cette distance au tracé GPX, on considère le GPS « hors parcours » pour l’avancée. */
+const RACE_GPS_MAX_DIST_KM = 0.4;
 
 const ONBOARDING_PROFILE_KEY = 'fuelos_onboarding_profile_done';
 const ONBOARDING_EVENT_KEY = 'fuelos_onboarding_event_done';
@@ -386,6 +393,13 @@ function RaceContent() {
   /** Évite d’afficher la checklist avant la fin du chargement cloud / localStorage. */
   const [planLoadResolved, setPlanLoadResolved] = useState(false);
 
+  const [gpsRace, setGpsRace] = useState<{
+    onCourseKm: number | null;
+    raw: { lng: number; lat: number } | null;
+    offCourse: boolean;
+    error: string | null;
+  }>({ onCourseKm: null, raw: null, offCourse: false, error: null });
+
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const alertShownRef = useRef<Set<number>>(new Set());
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -744,7 +758,56 @@ function RaceContent() {
     setTimingOffsetMin(0);
     setShowAlert(false);
     setAlertItem(null);
+    setGpsRace({ onCourseKm: null, raw: null, offCourse: false, error: null });
   }, []);
+
+  useEffect(() => {
+    const geo = event?.courseGeometry;
+    if (!geo || geo.coordinates.length < 2) return;
+    if (raceViewTab !== 'real') return;
+    if (raceState.status !== 'running') return;
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setGpsRace((p) => ({ ...p, error: 'Géolocalisation non disponible sur cet appareil.' }));
+      return;
+    }
+
+    setGpsRace((p) => ({ ...p, error: null }));
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const lng = pos.coords.longitude;
+        const lat = pos.coords.latitude;
+        const snap = nearestPointOnCourse(geo, lng, lat);
+        setGpsRace((prev) => {
+          if (snap.distanceKm <= RACE_GPS_MAX_DIST_KM) {
+            return {
+              onCourseKm: snap.km,
+              raw: { lng, lat },
+              offCourse: false,
+              error: null,
+            };
+          }
+          return {
+            onCourseKm: prev.onCourseKm,
+            raw: { lng, lat },
+            offCourse: true,
+            error: null,
+          };
+        });
+      },
+      (err) => {
+        const msg =
+          err.code === err.PERMISSION_DENIED
+            ? 'Localisation refusée — active le GPS pour l’avancée sur le tracé.'
+            : 'Impossible de lire le GPS.';
+        setGpsRace((p) => ({ ...p, error: msg }));
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 25000 }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [event?.courseGeometry, raceViewTab, raceState.status]);
 
   const handleConsumed = useCallback(
     (itemIndex: number) => {
@@ -1228,6 +1291,61 @@ function RaceContent() {
         ? `Avance ${Math.abs(timingOffsetMin).toFixed(1)} min`
         : 'Rythme conforme';
 
+  const raceCourseMapProps = useMemo(() => {
+    const cg = event?.courseGeometry;
+    if (!cg || !event) {
+      return null;
+    }
+    const trackMaxKm = cg.cumulativeKm[cg.cumulativeKm.length - 1] ?? event.distance;
+    const progressFromElapsed =
+      event.targetTime > 0 && trackMaxKm > 0
+        ? Math.min(trackMaxKm, (elapsedMin / 60 / event.targetTime) * trackMaxKm)
+        : null;
+
+    if (raceState.status === 'idle') {
+      return {
+        progressKm: null as number | null,
+        rawGps: null as { lng: number; lat: number } | null,
+        offCourse: false,
+        footerExtra: null as string | null,
+      };
+    }
+
+    if (raceViewTab === 'simulation') {
+      return {
+        progressKm: progressFromElapsed,
+        rawGps: null,
+        offCourse: false,
+        footerExtra: null,
+      };
+    }
+
+    if (raceState.status === 'running' || raceState.status === 'paused') {
+      return {
+        progressKm: gpsRace.onCourseKm,
+        rawGps: gpsRace.raw,
+        offCourse: gpsRace.offCourse,
+        footerExtra: gpsRace.error,
+      };
+    }
+
+    return {
+      progressKm: progressFromElapsed,
+      rawGps: null,
+      offCourse: false,
+      footerExtra: null,
+    };
+  }, [
+    event,
+    raceState.status,
+    raceViewTab,
+    elapsedMin,
+    gpsRace.onCourseKm,
+    gpsRace.raw,
+    gpsRace.offCourse,
+    gpsRace.error,
+  ]);
+
   return (
     <div className="fuel-page">
       <Header sticky />
@@ -1498,6 +1616,38 @@ function RaceContent() {
             </div>
           )}
         </section>
+
+        {event?.courseGeometry && raceCourseMapProps && (
+          <section style={{ ...S.card, padding: 16, marginBottom: 16 }} aria-label="Parcours GPX">
+            <div
+              style={{
+                ...S.muted,
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: '0.08em',
+                marginBottom: 10,
+                textTransform: 'uppercase',
+              }}
+            >
+              Parcours (GPX)
+            </div>
+            {raceCourseMapProps.footerExtra ? (
+              <p style={{ ...S.muted, fontSize: 12, margin: '0 0 10px', lineHeight: 1.45 }}>
+                {raceCourseMapProps.footerExtra}
+              </p>
+            ) : null}
+            <CourseMapPanel
+              event={event}
+              geometry={event.courseGeometry}
+              timeline={plan.timeline}
+              compact
+              mapHeightPx={260}
+              progressKm={raceCourseMapProps.progressKm}
+              rawGpsLngLat={raceCourseMapProps.rawGps}
+              gpsOffCourse={raceCourseMapProps.offCourse}
+            />
+          </section>
+        )}
 
         {raceState.status !== 'finished' && raceViewTab === 'simulation' && (
           <section

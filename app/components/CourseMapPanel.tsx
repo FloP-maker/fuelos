@@ -8,6 +8,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import {
   elevationAtDistanceKm,
+  lineCoordsUpToKm,
   nearestPointOnCourse,
   positionAtDistanceKm,
 } from "../lib/courseGeometry";
@@ -81,6 +82,16 @@ export type CourseMapPanelProps = {
   selectedFuelOrigIdx?: number | null;
   /** Clic sur la trace ou sur le profil : sélection de la ligne timeline la plus proche en km. */
   onSelectFuelOrigIdx?: (origIdx: number) => void;
+  /** Portion parcourue (km cumulés) — ex. GPS projeté sur le tracé ou progression temps/simulation. */
+  progressKm?: number | null;
+  /** Position GPS brute lorsque le pointage est loin du tracé (affichage complémentaire). */
+  rawGpsLngLat?: { lng: number; lat: number } | null;
+  /** Si true, `rawGpsLngLat` est affiché comme position hors tracé. */
+  gpsOffCourse?: boolean;
+  /** Masque profil d’élévation et allège la légende (ex. mode course). */
+  compact?: boolean;
+  /** Hauteur de la carte en px (défaut 320). */
+  mapHeightPx?: number;
 };
 
 export default function CourseMapPanel({
@@ -89,6 +100,11 @@ export default function CourseMapPanel({
   timeline,
   selectedFuelOrigIdx = null,
   onSelectFuelOrigIdx,
+  progressKm = null,
+  rawGpsLngLat = null,
+  gpsOffCourse = false,
+  compact = false,
+  mapHeightPx = 320,
 }: CourseMapPanelProps) {
   const mapRef = useRef<MapRef>(null);
   const [hoverKm, setHoverKm] = useState<number | null>(null);
@@ -192,6 +208,30 @@ export default function CourseMapPanel({
     [geometry.coordinates]
   );
 
+  const progressLineFeature = useMemo(() => {
+    if (progressKm == null || !(progressKm > 0)) return null;
+    const pts = lineCoordsUpToKm(geometry, progressKm);
+    if (pts.length < 2) {
+      const p = pts[0] ?? geometry.coordinates[0];
+      if (!p) return null;
+      return {
+        type: "Feature" as const,
+        properties: {},
+        geometry: { type: "LineString" as const, coordinates: [p, p] as [number, number][] },
+      } as const;
+    }
+    return {
+      type: "Feature" as const,
+      properties: {},
+      geometry: { type: "LineString" as const, coordinates: pts },
+    } as const;
+  }, [geometry, progressKm]);
+
+  const progressMarkerPos = useMemo((): [number, number] | null => {
+    if (progressKm == null || progressKm < 0) return null;
+    return positionAtDistanceKm(geometry, progressKm);
+  }, [geometry, progressKm]);
+
   const highlightKm = useMemo(() => {
     const hs: number[] = [];
     event.aidStations?.forEach((a) => hs.push(a.distanceKm));
@@ -239,7 +279,7 @@ export default function CourseMapPanel({
         background: "var(--color-bg-card)",
       }}
     >
-      <div style={{ height: 320, width: "100%", position: "relative" }}>
+      <div style={{ height: mapHeightPx, width: "100%", position: "relative" }}>
         <Map
           ref={mapRef}
           mapLib={maplibregl}
@@ -270,12 +310,25 @@ export default function CourseMapPanel({
               id="course-line-layer"
               type="line"
               paint={{
-                "line-color": "#22c55e",
-                "line-width": 4,
-                "line-opacity": 0.9,
+                "line-color": compact ? "#94a3b8" : "#22c55e",
+                "line-width": compact ? 3 : 4,
+                "line-opacity": compact ? 0.45 : 0.9,
               }}
             />
           </Source>
+          {progressLineFeature ? (
+            <Source id="course-progress" type="geojson" data={progressLineFeature}>
+              <Layer
+                id="course-progress-layer"
+                type="line"
+                paint={{
+                  "line-color": "#22c55e",
+                  "line-width": 5,
+                  "line-opacity": 1,
+                }}
+              />
+            </Source>
+          ) : null}
           {markers.map((m) => {
             const fuelSel = m.kind === "fuel" && m.selected;
             const w = m.kind === "aid" ? 22 : fuelSel ? 26 : 18;
@@ -371,8 +424,47 @@ export default function CourseMapPanel({
               />
             </Marker>
           ) : null}
+          {progressMarkerPos ? (
+            <Marker longitude={progressMarkerPos[0]} latitude={progressMarkerPos[1]} anchor="center">
+              <div
+                title={
+                  progressKm != null
+                    ? `Position sur le parcours · ~${(Math.round(progressKm * 10) / 10).toFixed(1)} km`
+                    : ""
+                }
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 99,
+                  background: "var(--color-accent, #22c55e)",
+                  border: "3px solid #fff",
+                  boxShadow: "0 0 0 2px rgba(0,0,0,0.2), 0 2px 10px rgba(0,0,0,0.35)",
+                  transform: "translate(-50%, -50%)",
+                  pointerEvents: "none",
+                }}
+              />
+            </Marker>
+          ) : null}
+          {rawGpsLngLat && gpsOffCourse ? (
+            <Marker longitude={rawGpsLngLat.lng} latitude={rawGpsLngLat.lat} anchor="center">
+              <div
+                title="GPS brut — éloigné du tracé GPX"
+                style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: 99,
+                  background: "rgba(249,115,22,0.4)",
+                  border: "2px solid #f97316",
+                  boxShadow: "0 0 0 2px rgba(255,255,255,0.85)",
+                  transform: "translate(-50%, -50%)",
+                  pointerEvents: "none",
+                }}
+              />
+            </Marker>
+          ) : null}
         </Map>
       </div>
+      {!compact ? (
       <div style={{ padding: "12px 16px 16px", borderTop: "1px solid var(--color-border)" }}>
         <div
           style={{
@@ -515,6 +607,37 @@ export default function CourseMapPanel({
           </span>
         </div>
       </div>
+      ) : (
+        <div
+          style={{
+            padding: "10px 14px 12px",
+            borderTop: "1px solid var(--color-border)",
+            fontSize: 11,
+            color: "var(--color-text-muted)",
+            lineHeight: 1.45,
+          }}
+        >
+          {progressKm != null && progressKm >= 0 ? (
+            <span>
+              <strong style={{ color: "var(--color-text)" }}>~{(Math.round(progressKm * 10) / 10).toFixed(1)} km</strong>
+              {" · "}
+              parcourus sur le tracé
+              {gpsOffCourse ? (
+                <>
+                  {" · "}
+                  <span style={{ color: "#f97316", fontWeight: 700 }}>GPS hors tracé</span>
+                </>
+              ) : null}
+            </span>
+          ) : (
+            <span>
+              {gpsOffCourse && rawGpsLngLat
+                ? "GPS trop loin du tracé — rapproche-toi du parcours pour afficher l’avancée."
+                : "L’avancée sur le tracé apparaît avec le GPS (course réelle) ou le temps écoulé (simulation)."}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

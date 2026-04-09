@@ -63,6 +63,38 @@ export function downsampleCourseGeometry(geo: CourseGeometry, maxPoints: number)
   return { coordinates, elevationM, cumulativeKm };
 }
 
+/**
+ * Points [lng, lat] du tracé du départ jusqu’à `km` (km cumulés), pour dessiner la portion parcourue.
+ */
+export function lineCoordsUpToKm(geo: CourseGeometry, km: number): [number, number][] {
+  const coords = geo.coordinates;
+  const kms = geo.cumulativeKm;
+  if (coords.length < 2 || kms.length < 2) return [];
+
+  const maxKm = kms[kms.length - 1] ?? 0;
+  const target = Math.max(0, Math.min(km, maxKm));
+  const out: [number, number][] = [coords[0]!];
+
+  for (let i = 0; i < kms.length - 1; i++) {
+    const k0 = kms[i]!;
+    const k1 = kms[i + 1]!;
+    const A = coords[i]!;
+    const B = coords[i + 1]!;
+    if (k1 <= target + 1e-9) {
+      out.push(B);
+      continue;
+    }
+    if (target <= k0 + 1e-9) break;
+    if (target < k1) {
+      const t = k1 > k0 ? (target - k0) / (k1 - k0) : 0;
+      out.push([A[0] + t * (B[0] - A[0]), A[1] + t * (B[1] - A[1])]);
+      break;
+    }
+  }
+
+  return out;
+}
+
 /** Position [lng, lat] à une distance donnée le long du parcours (km). */
 export function positionAtDistanceKm(geo: CourseGeometry, km: number): [number, number] {
   const maxKm = geo.cumulativeKm[geo.cumulativeKm.length - 1] ?? 0;

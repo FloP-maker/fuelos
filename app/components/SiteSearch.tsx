@@ -41,7 +41,8 @@ const ENTRIES: SiteSearchEntry[] = [
     href: '/produits',
     title: 'Produits',
     description: 'Catalogue produits et liste de courses',
-    keywords: 'boutique shop maurten sis gels barres acheter',
+    keywords:
+      'boutique shop gels barres électrolytes pastilles sels hydratation overstim apurna nutripure punch power baouw mulebar meltonic fenioux stc eafit eric favre stimium yam aqeelab atlet ta energy authentic andros aptonia ergysport watt nomio victus cooknrun hydratis plasmaide maurten sis high5 precision 226ers amacx gu clif tailwind torq veloforte skratch neversecond styrkr chimpanzee etixx santa madre powerbar sponser naak isostar 3action mx3 spring nuun lmnt osmo liquid iv saltstick pillar',
   },
   {
     href: '/prep',

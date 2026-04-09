@@ -1,6 +1,9 @@
 import type { Product } from "./types";
+import { CATALOG_ELECTROLYTE_EXTENSIONS } from "./catalogElectrolyteExtensions";
 
-export const PRODUCTS: Product[] = [
+export { BRAND_CATALOG_ORIGIN, getBrandCatalogOrigin, type BrandCatalogRegion } from "./catalogElectrolyteExtensions";
+
+const CORE_CATALOG_PRODUCTS: Product[] = [
   // ===== GELS - MAURTEN =====
   { 
     id: "maurten-gel-100", 
@@ -2002,6 +2005,7 @@ export const PRODUCTS: Product[] = [
   },
 ];
 
+export const PRODUCTS: Product[] = [...CORE_CATALOG_PRODUCTS, ...CATALOG_ELECTROLYTE_EXTENSIONS];
 
 // ===== FONCTIONS UTILITAIRES EXISTANTES =====
 
