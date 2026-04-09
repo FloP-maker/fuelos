@@ -454,7 +454,9 @@ export default function LearnPage() {
           if (d?.finishedAt && !byFinished.has(d.finishedAt)) byFinished.set(d.finishedAt, d);
         }
         const merged = [...byFinished.values()].sort(
-          (a, b) => new Date(b.finishedAt).getTime() - new Date(a.finishedAt).getTime()
+          (a, b) =>
+            new Date(b.finishedAt ?? b.savedAt ?? new Date(0).toISOString()).getTime() -
+            new Date(a.finishedAt ?? a.savedAt ?? new Date(0).toISOString()).getTime()
         );
         setDebriefs(merged);
       } catch {
