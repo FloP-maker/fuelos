@@ -82,7 +82,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         ]
       : []),
   ],
-  session: { strategy: "database" },
+  session: {
+    strategy: "database",
+    // Session persistante entre visites (30 jours), prolongée à l'usage.
+    maxAge: 30 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60,
+  },
   trustHost: true,
   callbacks: {
     session({ session, user }) {
