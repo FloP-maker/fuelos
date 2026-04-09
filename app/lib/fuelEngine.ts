@@ -26,6 +26,7 @@ import {
   distanceKmAtRaceTimePaced,
   gradientPercentAtKm,
 } from "./courseGeometry";
+import { annotateTimelineWithGpxIntakeRationale } from "./gpxIntakeRationale";
 
 function clamp(n: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, n));
@@ -207,6 +208,7 @@ export function buildFuelPlan(profile: AthleteProfile, event: EventDetails): Fue
   const productMix = selectProducts(profile, event, choStrategy);
   const timeline = generateTimeline(profile, event, choStrategy, productMix, warnings);
   refineIntakeTimesForCourse(timeline, event, warnings);
+  annotateTimelineWithGpxIntakeRationale(timeline, event);
   appendChoHourGapWarnings(timeline, choStrategy, event, warnings);
   const timelineAdjusted = applySweatSodiumTestToTimeline(timeline, profile, event, warnings);
   const shoppingList = generateShoppingList(timelineAdjusted, event);

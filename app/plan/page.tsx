@@ -3910,9 +3910,11 @@ function PlanResult({
                       <div
                         style={{
                           fontSize: 11,
+                          lineHeight: 1.45,
                           color: item.source === "aid-station" ? "#60a5fa" : "var(--color-accent)",
-                          marginTop: 4,
-                          fontStyle: "italic",
+                          marginTop: 6,
+                          fontStyle: "normal",
+                          maxWidth: "min(100%, 42rem)",
                         }}
                       >
                         {item.alert}
