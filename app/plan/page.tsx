@@ -1602,23 +1602,13 @@ function PlanPageContent() {
             </div>
 
             <div style={S.card}>
-              <div style={S.sectionTitle}>
-                <span>🗺</span> Parcours GPX (optionnel)
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  alignItems: "flex-start",
-                  marginBottom: 10,
-                  padding: "10px 12px",
-                  borderRadius: 10,
-                  border: "1px solid color-mix(in srgb, var(--color-accent) 28%, var(--color-border))",
-                  background: "color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card))",
-                }}
-              >
+              <div style={{ ...S.sectionTitle, display: "flex", alignItems: "center", gap: 8 }}>
+                <span>🗺</span>
+                <span>Parcours GPX (optionnel)</span>
                 <span
-                  aria-hidden
+                  role="img"
+                  aria-label="Information GPX"
+                  title="Le GPX débloque la carte des ravitaillements (prises visualisées au fil du parcours). Il active aussi le recalcul automatique des prises selon montée/descente et timing réel."
                   style={{
                     width: 18,
                     height: 18,
@@ -1631,17 +1621,12 @@ function PlanPageContent() {
                     color: "var(--color-accent)",
                     border: "1px solid color-mix(in srgb, var(--color-accent) 45%, var(--color-border))",
                     background: "var(--color-bg-card)",
+                    cursor: "help",
                     flexShrink: 0,
                   }}
                 >
                   i
                 </span>
-                <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.45 }}>
-                  Le GPX débloque la <strong style={{ color: "var(--color-text)" }}>carte des ravitaillements</strong>{" "}
-                  (prises visualisées au fil du parcours).<br />
-                  Il active aussi le <strong style={{ color: "var(--color-text)" }}>recalcul automatique</strong> des
-                  prises selon montée/descente et timing réel.
-                </p>
               </div>
               <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 12 }}>
                 Importe un fichier GPX : distance, D+ et carte sont mis à jour automatiquement. Les points de
