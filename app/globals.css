@@ -662,6 +662,18 @@ textarea:focus {
     background: var(--color-bg);
   }
 
+  .fuel-gpx-tooltip {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  .fuel-gpx-tooltip-wrap:hover > .fuel-gpx-tooltip,
+  .fuel-gpx-tooltip-wrap:focus-within > .fuel-gpx-tooltip {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
   /* Catalogue : barre de recherche sticky sous le header */
   .fuel-shop-toolbar {
     position: sticky;

@@ -1606,26 +1606,63 @@ function PlanPageContent() {
                 <span>🗺</span>
                 <span>Parcours GPX (optionnel)</span>
                 <span
-                  role="img"
-                  aria-label="Information GPX"
-                  title="Le GPX débloque la carte des ravitaillements (prises visualisées au fil du parcours). Il active aussi le recalcul automatique des prises selon montée/descente et timing réel."
+                  className="fuel-gpx-tooltip-wrap"
                   style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 999,
+                    position: "relative",
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 12,
-                    fontWeight: 800,
-                    color: "var(--color-accent)",
-                    border: "1px solid color-mix(in srgb, var(--color-accent) 45%, var(--color-border))",
-                    background: "var(--color-bg-card)",
-                    cursor: "help",
-                    flexShrink: 0,
                   }}
                 >
-                  i
+                  <span
+                    tabIndex={0}
+                    aria-label="Informations GPX"
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: 999,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 12,
+                      fontWeight: 800,
+                      color: "var(--color-accent)",
+                      border: "1px solid color-mix(in srgb, var(--color-accent) 45%, var(--color-border))",
+                      background: "var(--color-bg-card)",
+                      cursor: "help",
+                      flexShrink: 0,
+                    }}
+                  >
+                    i
+                  </span>
+                  <span
+                    role="tooltip"
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 8px)",
+                      right: 0,
+                      width: "min(360px, 82vw)",
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: "1px solid color-mix(in srgb, var(--color-accent) 28%, var(--color-border))",
+                      background: "var(--color-bg-card)",
+                      color: "var(--color-text-muted)",
+                      fontSize: 12,
+                      lineHeight: 1.45,
+                      boxShadow: "var(--shadow-sm)",
+                      opacity: 0,
+                      pointerEvents: "none",
+                      transform: "translateY(-4px)",
+                      transition: "opacity 140ms ease, transform 140ms ease",
+                      zIndex: 8,
+                    }}
+                    className="fuel-gpx-tooltip"
+                  >
+                    Le GPX débloque la <strong style={{ color: "var(--color-text)" }}>carte des ravitaillements</strong>{" "}
+                    (prises visualisées au fil du parcours).<br />
+                    Il active aussi le <strong style={{ color: "var(--color-text)" }}>recalcul automatique</strong> des
+                    prises selon montée/descente et timing réel.
+                  </span>
                 </span>
               </div>
               <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 12 }}>
