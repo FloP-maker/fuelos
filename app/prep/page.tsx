@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import { mergeStoredAthleteProfile } from '../lib/athleteProfileData';
 import type { AthleteProfile, EventDetails, FuelPlan } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
 import { Header } from '../components/Header';
@@ -454,7 +455,10 @@ export default function PrepPage() {
     setIdeasFreshNonce({ key: dayKey, nonce: Date.now() });
   }, []);
 
-  const profile = bundle?.profile ?? null;
+  const profile = useMemo(() => {
+    if (!bundle?.profile) return null;
+    return mergeStoredAthleteProfile(bundle.profile);
+  }, [bundle]);
   const event = bundle?.event ?? null;
   const plan = bundle?.fuelPlan ?? null;
 

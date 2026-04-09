@@ -163,6 +163,41 @@ function buildWeatherAltExplanation(
   ].join("\n");
 }
 
+/** Ajuste le sodium des prises selon sudation (L/h) × concentration mesurée (mg/L), avec plafond réaliste. */
+function applySweatSodiumTestToTimeline(
+  timeline: TimelineItem[],
+  profile: AthleteProfile,
+  event: EventDetails,
+  warnings: string[]
+): TimelineItem[] {
+  const mgPerL = profile.sweatSodiumMgPerL;
+  if (mgPerL == null || !Number.isFinite(mgPerL) || mgPerL < 200 || mgPerL > 4500) {
+    return timeline;
+  }
+  const sr = profile.sweatRate;
+  const grossLossMgPerH = sr * mgPerL;
+  const targetMgPerH = clamp(grossLossMgPerH * 0.2, 200, Math.min(920, grossLossMgPerH * 0.45));
+
+  const tmp = timeline.map((it) => ({ ...it }));
+  const pre = calculateTotals(tmp, event.targetTime, undefined);
+  if (pre.avgSodiumPerHour <= 0) {
+    warnings.push(
+      `🧂 Test de sueur (${Math.round(mgPerL)} mg/L) : le plan catalogue est pauvre en sodium — ajoute pastilles / boissons électrolytes si besoin.`
+    );
+    return timeline;
+  }
+  const factor = clamp(targetMgPerH / pre.avgSodiumPerHour, 0.62, 1.48);
+  if (Math.abs(factor - 1) < 0.04) return timeline;
+  for (const it of tmp) {
+    const s = it.sodium ?? 0;
+    if (s > 0) it.sodium = Math.max(0, Math.round(s * factor));
+  }
+  warnings.push(
+    `🧂 Sodium des prises ajusté (×${factor.toFixed(2)}) d’après ${sr} L/h de sudation et ~${Math.round(mgPerL)} mg/L dans la sueur (modèle de remplacement partiel).`
+  );
+  return tmp;
+}
+
 // ============ FONCTION PRINCIPALE ============
 
 export function buildFuelPlan(profile: AthleteProfile, event: EventDetails): FuelPlan {
@@ -173,8 +208,9 @@ export function buildFuelPlan(profile: AthleteProfile, event: EventDetails): Fue
   const timeline = generateTimeline(profile, event, choStrategy, productMix, warnings);
   refineIntakeTimesForCourse(timeline, event, warnings);
   appendChoHourGapWarnings(timeline, choStrategy, event, warnings);
-  const shoppingList = generateShoppingList(timeline, event);
-  const totals = calculateTotals(timeline, event.targetTime, warnings);
+  const timelineAdjusted = applySweatSodiumTestToTimeline(timeline, profile, event, warnings);
+  const shoppingList = generateShoppingList(timelineAdjusted, event);
+  const totals = calculateTotals(timelineAdjusted, event.targetTime, warnings);
   const estimatedCost = calculatePlanCost(shoppingList);
 
   if (profile.giTolerance === "sensitive" && totals.avgChoPerHour < 40) {
@@ -189,7 +225,7 @@ export function buildFuelPlan(profile: AthleteProfile, event: EventDetails): Fue
     waterPerHour: totals.avgWaterPerHour,
     sodiumPerHour: totals.avgSodiumPerHour,
     totalCalories: totals.totalCalories,
-    timeline,
+    timeline: timelineAdjusted,
     shoppingList,
     warnings,
     choStrategy,
@@ -323,10 +359,35 @@ function determineChoStrategy(
 
   const ri = computeRelativeIntensity(profile, event);
   const terrainScale = clamp(0.92 + 0.35 * (ri - 0.58), 0.85, 1.15);
+  const seasonMul =
+    profile.seasonGoal === "finisher" ? 0.94 : profile.seasonGoal === "podium" ? 1.07 : 1;
+  const beginnerMul = profile.experienceLevel === "beginner" ? 0.96 : 1;
+
   for (const ph of phases) {
-    ph.choPerHour = Math.round(ph.choPerHour * terrainScale);
+    ph.choPerHour = Math.round(ph.choPerHour * terrainScale * seasonMul * beginnerMul);
     ph.choPerHour = Math.min(ph.choPerHour, maxCHO);
   }
+
+  if (profile.vo2maxMlMinKg != null && Number.isFinite(profile.vo2maxMlMinKg) && profile.vo2maxMlMinKg > 28) {
+    warnings.push(
+      "📊 VO2max pris en compte pour affiner l’intensité relative (science) et les cibles CHO — croise avec ton ressenti terrain."
+    );
+  } else if (profile.ftpWatts != null && Number.isFinite(profile.ftpWatts) && profile.ftpWatts > 40) {
+    warnings.push(
+      "📊 FTP pris en compte pour affiner l’intensité relative (science) et les cibles CHO — croise avec ton ressenti terrain."
+    );
+  }
+
+  if (profile.seasonGoal === "finisher") {
+    warnings.push(
+      "🎯 Objectif « finisher » : cibles CHO un peu plus prudentes qu’en logique pure performance."
+    );
+  } else if (profile.seasonGoal === "podium") {
+    warnings.push(
+      "🎯 Objectif très exigeant : cibles CHO légèrement haussées (sans dépasser ton plafond digestif)."
+    );
+  }
+
   if (terrainScale >= 1.07) {
     warnings.push(
       "⛰ Intensité relative élevée (allure + dénivelé) : cibles CHO par phase légèrement majorées vs un profil plus plat."

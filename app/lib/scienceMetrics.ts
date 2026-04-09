@@ -74,6 +74,17 @@ export function computeRelativeIntensity(profile: AthleteProfile, event: EventDe
   return intensityContext(profile, event).relativeIntensity;
 }
 
+/** Estime une intensité relative 0.35–1 à partir du VO2max (ml/min/kg). */
+function relativeIntensityFromVo2max(vo2: number): number {
+  return clamp(0.36 + (vo2 - 38) / 52, 0.35, 1);
+}
+
+/** Estime une intensité relative à partir du FTP (W) et du poids (kg). */
+function relativeIntensityFromFtp(ftpW: number, weightKg: number): number {
+  const wkg = ftpW / Math.max(45, weightKg);
+  return clamp(0.38 + (wkg - 2.4) / 3.8, 0.35, 1);
+}
+
 function intensityContext(profile: AthleteProfile, event: EventDetails) {
   const durationMin = Math.max(15, event.targetTime * 60);
   const speedKmh = event.distance / Math.max(0.1, event.targetTime);
@@ -82,7 +93,18 @@ function intensityContext(profile: AthleteProfile, event: EventDetails) {
   const sportFactor =
     event.sport.toLowerCase().includes("cycl") || event.sport.toLowerCase().includes("vélo") ? 0.92 : 1;
   const refSpeed = 11;
-  const relativeIntensity = clamp((speedKmh / refSpeed) * sportFactor + elevBoost, 0.32, 1);
+  let relativeIntensity = clamp((speedKmh / refSpeed) * sportFactor + elevBoost, 0.32, 1);
+
+  const vo2 = profile.vo2maxMlMinKg;
+  const ftp = profile.ftpWatts;
+  if (vo2 != null && Number.isFinite(vo2) && vo2 > 28 && vo2 < 96) {
+    const riLab = relativeIntensityFromVo2max(vo2);
+    relativeIntensity = clamp(0.42 * relativeIntensity + 0.58 * riLab, 0.32, 1);
+  } else if (ftp != null && Number.isFinite(ftp) && ftp > 40 && ftp < 651) {
+    const riLab = relativeIntensityFromFtp(ftp, profile.weight);
+    relativeIntensity = clamp(0.42 * relativeIntensity + 0.58 * riLab, 0.32, 1);
+  }
+
   const initialGlycogenG = clamp(10 * profile.weight + 40, 320, 620);
   const baseOxGPerHour = profile.weight * (0.35 + 1.25 * relativeIntensity);
   return { durationMin, relativeIntensity, initialGlycogenG, baseOxGPerHour };

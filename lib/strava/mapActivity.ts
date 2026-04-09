@@ -1,4 +1,4 @@
-import type { EventDetails, StravaImportMeta } from "@/app/lib/types";
+import type { EventDetails, PrimaryDiscipline, StravaImportMeta } from "@/app/lib/types";
 
 /** Réponse normalisée côté API (liste ou détail). */
 export type StravaActivityPayload = {
@@ -25,6 +25,44 @@ export function elevationGainToTerrainCategory(gainM: number): string {
   if (gainM <= 1500) return ELEVATION_LABELS[1];
   if (gainM <= 3000) return ELEVATION_LABELS[2];
   return ELEVATION_LABELS[3];
+}
+
+/** Infère la discipline FuelOS à partir des activités Strava récentes (types dominants). */
+export function inferPrimaryDisciplineFromStravaActivities(
+  activities: { type: string; distance: number; total_elevation_gain: number }[]
+): PrimaryDiscipline | null {
+  if (!activities.length) return null;
+  const counts = new Map<string, number>();
+  for (const a of activities) {
+    const t = (a.type || "").toLowerCase();
+    counts.set(t, (counts.get(t) ?? 0) + 1);
+  }
+  const dominant = [...counts.entries()].sort((x, y) => y[1] - x[1])[0]?.[0] ?? "";
+
+  if (
+    dominant === "ride" ||
+    dominant === "virtualride" ||
+    dominant === "ebikeride" ||
+    dominant === "emountainbikeride"
+  ) {
+    return "cycling";
+  }
+  if (dominant === "trailrun" || dominant === "hike" || dominant === "walk") return "trail";
+  if (dominant === "swim") return "triathlon";
+  if (dominant === "run" || dominant === "virtualrun") {
+    const runs = activities.filter((x) => {
+      const t = x.type.toLowerCase();
+      return t === "run" || t === "virtualrun";
+    });
+    const avgElev = runs.length
+      ? runs.reduce((s, r) => s + (r.total_elevation_gain || 0), 0) / runs.length
+      : 0;
+    return avgElev > 350 ? "trail" : "road";
+  }
+  if (activities.some((a) => a.type.toLowerCase() === "swim") && activities.some((a) => /run|ride/i.test(a.type))) {
+    return "triathlon";
+  }
+  return "other";
 }
 
 export function stravaTypeToSport(type: string, elevationGainM: number): string {

@@ -5,7 +5,8 @@ import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "rea
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { athleteProfileFromJson } from "../lib/athleteProfileData";
+import { athleteProfileFromJson, mergeStoredAthleteProfile } from "../lib/athleteProfileData";
+import { computeAthleteProfileCompletionPercent } from "../lib/athleteProfileCompletion";
 import useLocalStorage from "../lib/hooks/useLocalStorage";
 import usePageTitle from "../lib/hooks/usePageTitle";
 import { calculateFuelPlan } from "../lib/fuelCalculator";
@@ -30,9 +31,12 @@ import { PRODUCTS } from "../lib/products";
 import type {
   AthleteProfile,
   EventDetails,
+  ExperienceLevel,
   FuelPlan,
   FuelPlanGenerationResult,
+  PrimaryDiscipline,
   Product,
+  SeasonGoal,
   TimelineItem,
 } from "../lib/types";
 import { GripVertical, RotateCcw, Trash2 } from "lucide-react";
@@ -43,6 +47,8 @@ import { ScienceDashboard } from "../components/ScienceDashboard";
 import { GlossaryHint } from "../components/GlossaryHint";
 import { ToggleGroup } from "../components/ToggleGroup";
 import { Button } from "../components/Button";
+import { ProfileGuidedWizard } from "../components/ProfileGuidedWizard";
+import { ProfileStravaPanel } from "../components/ProfileStravaPanel";
 
 const CourseMapPanel = dynamic(() => import("../components/CourseMapPanel"), { ssr: false });
 
@@ -261,24 +267,23 @@ function PlanPageContent() {
   const skipInitialScrollRef = useRef(true);
   const [showProductSelector, setShowProductSelector] = useState<"gels" | "drinks" | "bars" | null>(null);
 
-  const [profile, setProfile] = useState<AthleteProfile>({
-    weight: athleteProfile?.weight || 70,
-    age: athleteProfile?.age || 35,
-    gender: athleteProfile?.gender || "M",
-    sweatRate: athleteProfile?.sweatRate || 1.0,
-    giTolerance: athleteProfile?.giTolerance || "normal",
-    allergies: athleteProfile?.allergies || [],
-    avoidProducts: athleteProfile?.avoidProducts || [],
-    preferredProducts: athleteProfile?.preferredProducts || {
-      gels: [],
-      drinks: [],
-      bars: [],
-    },
-    tastePreferences: athleteProfile?.tastePreferences || {
-      sweetness: "medium",
-      flavors: [],
-    },
+  const [profile, setProfile] = useState<AthleteProfile>(() =>
+    mergeStoredAthleteProfile(athleteProfile ?? undefined)
+  );
+
+  const [profileAdvancedOpen, setProfileAdvancedOpen] = useState(() => {
+    const e = athleteProfile?.experienceLevel;
+    return e === "advanced" || e === "elite";
   });
+
+  useEffect(() => {
+    const e = profile.experienceLevel;
+    if (e === "beginner" || e === "intermediate") setProfileAdvancedOpen(false);
+    else if (e === "advanced" || e === "elite") setProfileAdvancedOpen(true);
+  }, [profile.experienceLevel]);
+
+  const profileCompletionPct = useMemo(() => computeAthleteProfileCompletionPercent(profile), [profile]);
+  const profileIsBeginner = profile.experienceLevel === "beginner";
 
   const [cloudProfiles, setCloudProfiles] = useState<CloudAthleteProfileRow[]>([]);
   const [cloudProfilesLoading, setCloudProfilesLoading] = useState(false);
@@ -818,6 +823,11 @@ function PlanPageContent() {
 
   const currentStepLabel = PLAN_WIZARD_STEPS.find((step) => step.num === currentStep)?.label ?? "Profil";
 
+  const showBeginnerWizard =
+    currentStep === 1 &&
+    profile.experienceLevel === "beginner" &&
+    !profile.profileGuidedOnboardingDone;
+
   return (
     <div className="fuel-page">
       <Header sticky />
@@ -930,8 +940,10 @@ function PlanPageContent() {
             >
               Ton profil athlète
             </h1>
-            <p style={{ color: "var(--color-text-muted)", marginBottom: 32, fontSize: 14 }}>
-              Ces données permettent de personnaliser tes besoins nutritionnels.
+            <p style={{ color: "var(--color-text-muted)", marginBottom: 16, fontSize: 14 }}>
+              Ces données permettent de personnaliser tes besoins nutritionnels. Le{' '}
+              <strong style={{ color: "var(--color-text)" }}>niveau d’expérience</strong> choisi en premier adapte l’interface
+              (rappels pédagogiques ou réglages avancés).
             </p>
 
             {status === "unauthenticated" && (
@@ -1037,7 +1049,91 @@ function PlanPageContent() {
               </div>
             )}
 
-            {(athleteProfile || status === "authenticated") && (
+            {showBeginnerWizard && (
+              <>
+                <ProfileGuidedWizard
+                  profile={profile}
+                  setProfile={setProfile}
+                  onSkipToFullForm={() =>
+                    setProfile((p) => ({ ...p, profileGuidedOnboardingDone: true }))
+                  }
+                />
+                <div style={{ marginTop: 20 }}>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    onClick={() => {
+                      try {
+                        localStorage.setItem(ONBOARDING_PROFILE_KEY, "1");
+                      } catch {
+                        /* ignore */
+                      }
+                      navigateToPlanStep(2);
+                    }}
+                  >
+                    Continuer → Paramètres course
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {!showBeginnerWizard && (
+              <>
+                <div
+                  style={{
+                    ...S.card,
+                    marginBottom: 24,
+                    padding: "16px 20px",
+                  }}
+                  aria-label="Complétion du profil"
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      marginBottom: 8,
+                    }}
+                  >
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text)" }}>
+                      Complétion du profil
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "var(--color-accent)" }}>
+                      {profileCompletionPct}%
+                    </span>
+                  </div>
+                  <div
+                    role="progressbar"
+                    aria-valuenow={profileCompletionPct}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    style={{
+                      height: 8,
+                      borderRadius: 999,
+                      background: "color-mix(in srgb, var(--color-border) 55%, transparent)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${profileCompletionPct}%`,
+                        borderRadius: 999,
+                        background:
+                          "linear-gradient(90deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 70%, white))",
+                        transition: "width 0.25s ease-out",
+                      }}
+                    />
+                  </div>
+                  <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "10px 0 0", lineHeight: 1.5 }}>
+                    Les champs obligatoires structurent ton plan ; les options avancées (FTP, sodium dans la sueur, notes
+                    terrain…) affinent le suivi sur la durée.
+                  </p>
+                </div>
+
+                {(athleteProfile || status === "authenticated") && (
               <div
                 style={{
                   padding: "12px 16px",
@@ -1087,7 +1183,88 @@ function PlanPageContent() {
 
             <div style={S.card}>
               <div style={S.sectionTitle}>
-                <span>🏃</span> Données physiques
+                <span>🧭</span> Parcours & objectifs
+              </div>
+              <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 0, marginBottom: 16, lineHeight: 1.5 }}>
+                Niveau, discipline et objectif influencent l’interface, les cibles CHO (ambition de saison) et, avec FTP /
+                VO2max, l’estimation d’intensité pour le plan.
+              </p>
+              <div style={S.grid3}>
+                <div>
+                  <label style={S.label}>Niveau d’expérience</label>
+                  <select
+                    style={S.select}
+                    value={profile.experienceLevel}
+                    onChange={(e) => {
+                      const v = e.target.value as ExperienceLevel;
+                      setProfile((p) => ({
+                        ...p,
+                        experienceLevel: v,
+                        ...(v === "beginner" ? { profileGuidedOnboardingDone: false } : {}),
+                      }));
+                    }}
+                  >
+                    <option value="beginner">Débutant</option>
+                    <option value="intermediate">Intermédiaire</option>
+                    <option value="advanced">Confirmé</option>
+                    <option value="elite">Élite</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={S.label}>Discipline principale</label>
+                  <select
+                    style={S.select}
+                    value={profile.primaryDiscipline}
+                    onChange={(e) =>
+                      setProfile({ ...profile, primaryDiscipline: e.target.value as PrimaryDiscipline })
+                    }
+                  >
+                    <option value="trail">Trail</option>
+                    <option value="road">Route</option>
+                    <option value="ultra">Ultra</option>
+                    <option value="triathlon">Triathlon</option>
+                    <option value="cycling">Vélo</option>
+                    <option value="other">Autre</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={S.label}>Objectif de saison</label>
+                  <select
+                    style={S.select}
+                    value={profile.seasonGoal}
+                    onChange={(e) => setProfile({ ...profile, seasonGoal: e.target.value as SeasonGoal })}
+                  >
+                    <option value="finisher">Finisher — aller au bout</option>
+                    <option value="performance">Performance — chrono / progression</option>
+                    <option value="podium">Très haut niveau — exigence maximale</option>
+                  </select>
+                </div>
+              </div>
+              {profile.experienceLevel === "beginner" && profile.profileGuidedOnboardingDone && (
+                <p style={{ marginTop: 14, marginBottom: 0 }}>
+                  <button
+                    type="button"
+                    onClick={() => setProfile({ ...profile, profileGuidedOnboardingDone: false })}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "var(--color-accent)",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    Relancer l’assistant débutant (4 questions)
+                  </button>
+                </p>
+              )}
+            </div>
+
+            <div style={S.card}>
+              <div style={S.sectionTitle}>
+                <span>🏃</span> Données physiques <span style={{ fontWeight: 500, opacity: 0.85 }}>(obligatoires)</span>
               </div>
               <div style={S.grid3}>
                 <div>
@@ -1128,15 +1305,25 @@ function PlanPageContent() {
 
             <div style={S.card}>
               <div style={S.sectionTitle}>
-                <span>💧</span> Hydratation & tolérance
+                <span>💧</span> {profileIsBeginner ? "Eau & confort digestif" : "Hydratation & tolérance"}
               </div>
-              <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 0, marginBottom: 14, lineHeight: 1.5 }}>
-                Les abréviations du plan nutrition (CHO, GI, etc.) sont expliquées ci-dessous. Passe en revue chaque
-                encart avant de choisir tes réglages.
-              </p>
-              <div style={{ marginBottom: 16 }}>
-                <GlossaryHint term="cho" inlineLabel="Qu’est-ce que « CHO » ?" />
-              </div>
+              {profileIsBeginner ? (
+                <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 0, marginBottom: 14, lineHeight: 1.5 }}>
+                  Deux réglages simples pour sécuriser ton plan : combien tu transpires à l’effort, et comment ton estomac
+                  supporte l’alimentation en course. Tu peux commencer avec les valeurs par défaut et ajuster après
+                  quelques sorties.
+                </p>
+              ) : (
+                <>
+                  <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 0, marginBottom: 14, lineHeight: 1.5 }}>
+                    Les abréviations du plan nutrition (CHO, GI, etc.) sont expliquées ci-dessous. Passe en revue chaque
+                    encart avant de choisir tes réglages.
+                  </p>
+                  <div style={{ marginBottom: 16 }}>
+                    <GlossaryHint term="cho" inlineLabel="Qu’est-ce que « CHO » ?" />
+                  </div>
+                </>
+              )}
               <div style={S.grid2}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
@@ -1161,7 +1348,9 @@ function PlanPageContent() {
 
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
-                    <label style={{ ...S.label, marginBottom: 0 }}>Tolérance digestive (GI)</label>
+                    <label style={{ ...S.label, marginBottom: 0 }}>
+                      {profileIsBeginner ? "Confort digestif en effort" : "Tolérance digestive (GI)"}
+                    </label>
                     <GlossaryHint term="gi_tolerance" />
                   </div>
 
@@ -1175,17 +1364,186 @@ function PlanPageContent() {
                       })
                     }
                   >
-                    <option value="sensitive">Sensible (≤45g CHO/h)</option>
-                    <option value="normal">Normal (≤60g CHO/h)</option>
-                    <option value="robust">Robuste (≤90g CHO/h)</option>
+                    {profileIsBeginner ? (
+                      <>
+                        <option value="sensitive">Plutôt sensible (estomac fragile)</option>
+                        <option value="normal">Équilibré</option>
+                        <option value="robust">Très à l’aise avec l’alimentation en course</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="sensitive">Sensible (≤45g CHO/h)</option>
+                        <option value="normal">Normal (≤60g CHO/h)</option>
+                        <option value="robust">Robuste (≤90g CHO/h)</option>
+                      </>
+                    )}
                   </select>
                   <p style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 4, lineHeight: 1.45 }}>
-                    Sensible = inconfort digestif plus probable; robuste = capacité plus élevée. Commence bas et ajuste
-                    selon tes retours d'entraînement.
+                    {profileIsBeginner
+                      ? "En cas de doute, reste sur « équilibré » : le plan restera prudent."
+                      : "Sensible = inconfort digestif plus probable; robuste = capacité plus élevée. Commence bas et ajuste selon tes retours d'entraînement."}
                   </p>
                 </div>
               </div>
+              {profileIsBeginner && profile.primaryDiscipline === "trail" && (
+                <div style={{ marginTop: 14 }}>
+                  <button
+                    type="button"
+                    style={S.btnOutline}
+                    onClick={() => setProfile({ ...profile, giTolerance: "normal", sweatRate: 0.8 })}
+                  >
+                    Suggestion prudente trail débutant : sudation modérée & digestion équilibrée
+                  </button>
+                </div>
+              )}
             </div>
+
+            <details
+              open={profileAdvancedOpen}
+              onToggle={(e) => setProfileAdvancedOpen((e.currentTarget as HTMLDetailsElement).open)}
+              style={{ ...S.card, marginBottom: 20 }}
+            >
+              <summary
+                style={{
+                  cursor: "pointer",
+                  fontWeight: 800,
+                  fontSize: 17,
+                  listStyle: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  fontFamily: "var(--font-display, inherit)",
+                }}
+              >
+                <span aria-hidden>⚙️</span>
+                Paramètres avancés & suivi
+                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--color-text-muted)" }}>
+                  (optionnel — FTP, sodium, notes…)
+                </span>
+              </summary>
+              <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 12, marginBottom: 18, lineHeight: 1.5 }}>
+                FTP / VO2max affinent l’intensité relative (science + cibles CHO). Le sodium dans la sueur (mg/L) recale
+                les apports Na⁺ du plan. Garmin reste à brancher ; Strava peut préremplir poids et discipline ci-dessous.
+              </p>
+              {profileIsBeginner && (
+                <div style={{ marginBottom: 18 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, margin: "0 0 8px", color: "var(--color-text)" }}>
+                    Vocabulaire du plan (plus tard, avec calme)
+                  </p>
+                  <GlossaryHint term="cho" inlineLabel="Qu’est-ce que « CHO » ?" />
+                </div>
+              )}
+              <div style={S.grid2}>
+                <div>
+                  <label style={S.label}>FTP estimé (W) — optionnel</label>
+                  <input
+                    style={S.input}
+                    type="number"
+                    inputMode="numeric"
+                    min={50}
+                    max={650}
+                    placeholder="Ex. 240"
+                    value={profile.ftpWatts ?? ""}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "") {
+                        const next = { ...profile };
+                        delete next.ftpWatts;
+                        setProfile(next);
+                      } else {
+                        setProfile({ ...profile, ftpWatts: +v });
+                      }
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={S.label}>VO2max estimé (ml/min/kg) — optionnel</label>
+                  <input
+                    style={S.input}
+                    type="number"
+                    inputMode="decimal"
+                    min={20}
+                    max={95}
+                    step={0.1}
+                    placeholder="Ex. 52"
+                    value={profile.vo2maxMlMinKg ?? ""}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "") {
+                        const next = { ...profile };
+                        delete next.vo2maxMlMinKg;
+                        setProfile(next);
+                      } else {
+                        setProfile({ ...profile, vo2maxMlMinKg: +v });
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+              <div style={S.grid2}>
+                <div>
+                  <label style={S.label}>Sodium dans la sueur (mg/L) — optionnel</label>
+                  <input
+                    style={S.input}
+                    type="number"
+                    inputMode="numeric"
+                    min={200}
+                    max={4000}
+                    placeholder="Ex. 900 (test type Precision Hydration)"
+                    value={profile.sweatSodiumMgPerL ?? ""}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "") {
+                        const next = { ...profile };
+                        delete next.sweatSodiumMgPerL;
+                        setProfile(next);
+                      } else {
+                        setProfile({ ...profile, sweatSodiumMgPerL: +v });
+                      }
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={S.label}>Poids de course cible (kg) — optionnel</label>
+                  <input
+                    style={S.input}
+                    type="number"
+                    inputMode="decimal"
+                    min={40}
+                    max={120}
+                    step={0.1}
+                    placeholder="Si différent du poids courant"
+                    value={profile.raceWeightKg ?? ""}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "") {
+                        const next = { ...profile };
+                        delete next.raceWeightKg;
+                        setProfile(next);
+                      } else {
+                        setProfile({ ...profile, raceWeightKg: +v });
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={S.label}>Historique / notes de tolérance (optionnel)</label>
+                <textarea
+                  style={{ ...S.input, minHeight: 88, resize: "vertical" as const }}
+                  placeholder="Ex. crampes après 3h, nausées avec certains gels…"
+                  maxLength={4000}
+                  value={profile.toleranceHistory ?? ""}
+                  onChange={(e) =>
+                    setProfile({
+                      ...profile,
+                      toleranceHistory: e.target.value === "" ? undefined : e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <ProfileStravaPanel setProfile={setProfile} />
+            </details>
 
             <div style={S.card}>
               <div style={S.sectionTitle}>
@@ -1487,6 +1845,8 @@ function PlanPageContent() {
             >
               Continuer → Paramètres course
             </Button>
+              </>
+            )}
           </div>
         )}
 

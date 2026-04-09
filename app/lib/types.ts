@@ -1,12 +1,39 @@
 // ============ CORE TYPES ============
 
+/** Pilote l’UX profil (guidé vs avancé) — stocké avec le profil. */
+export type ExperienceLevel = "beginner" | "intermediate" | "advanced" | "elite";
+
+/** Discipline principale — influence copy et futurs réglages moteur. */
+export type PrimaryDiscipline = "trail" | "road" | "ultra" | "triathlon" | "cycling" | "other";
+
+/** Ambition de saison — pour contextualiser le plan (logique future). */
+export type SeasonGoal = "finisher" | "performance" | "podium";
+
 export interface AthleteProfile {
+  experienceLevel: ExperienceLevel;
+  primaryDiscipline: PrimaryDiscipline;
+  seasonGoal: SeasonGoal;
+
   weight: number;          // kg
   age: number;
   gender: "M" | "F";
   sweatRate: number;       // L/h
   giTolerance: "sensitive" | "normal" | "robust";
   allergies: string[];     // e.g. ["gluten", "dairy"]
+
+  /** FTP estimé (W) — optionnel, profils expérimentés. */
+  ftpWatts?: number;
+  /** VO2max estimé (ml/min/kg) — optionnel. */
+  vo2maxMlMinKg?: number;
+  /** Sodium dans la sueur (mg/L), ex. test Precision Hydration. */
+  sweatSodiumMgPerL?: number;
+  /** Retours terrain (crampes, nausées…) — texte libre. */
+  toleranceHistory?: string;
+  /** Poids « jour de course » cible (kg), si différent du poids courant. */
+  raceWeightKg?: number;
+
+  /** Après l’assistant débutant 4 questions, affiche le formulaire profil complet. */
+  profileGuidedOnboardingDone?: boolean;
   
   // 🆕 NOUVELLES PROPRIÉTÉS - Préférences
   preferredProducts?: {

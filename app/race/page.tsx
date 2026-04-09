@@ -13,6 +13,7 @@ import {
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { mergeStoredAthleteProfile } from '../lib/athleteProfileData';
 import type { FuelPlan, AthleteProfile, EventDetails, TimelineItem } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
 import { Header } from '../components/Header';
@@ -491,7 +492,7 @@ function RaceContent() {
       setAltPlan(loadedAlt);
       setAltPlanLabel(data.altPlanLabel ?? null);
       setRacePlanVariant(variant);
-      setProfile(data.profile);
+      setProfile(mergeStoredAthleteProfile(data.profile));
       setEvent(data.event);
     };
 
