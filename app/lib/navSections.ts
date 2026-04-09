@@ -2,7 +2,6 @@ export type HeaderActivePage = 'home' | 'plan' | 'shop' | 'race' | 'learn' | 'pr
 
 /** Ordre principal du header — aligné sur le parcours type (plan → exécution → apprentissage). */
 export const NAV_SECTIONS: { href: string; label: string; page: HeaderActivePage }[] = [
-  { href: '/', label: 'Accueil', page: 'home' },
   { href: '/plan', label: 'Plan', page: 'plan' },
   { href: '/produits', label: 'Produits', page: 'shop' },
   { href: '/prep', label: 'Pré / post', page: 'prep' },
@@ -24,5 +23,6 @@ export function pathnameToHeaderPage(pathname: string | null): HeaderActivePage 
 export function sectionLabelForPathname(pathname: string | null): string | undefined {
   const page = pathnameToHeaderPage(pathname);
   if (!page) return undefined;
+  if (page === 'home') return 'Accueil';
   return NAV_SECTIONS.find((s) => s.page === page)?.label;
 }

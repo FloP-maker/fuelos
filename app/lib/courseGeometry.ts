@@ -69,13 +69,14 @@ export function downsampleCourseGeometry(geo: CourseGeometry, maxPoints: number)
 export function lineCoordsUpToKm(geo: CourseGeometry, km: number): [number, number][] {
   const coords = geo.coordinates;
   const kms = geo.cumulativeKm;
-  if (coords.length < 2 || kms.length < 2) return [];
+  const n = Math.min(coords.length, kms.length);
+  if (n < 2) return [];
 
-  const maxKm = kms[kms.length - 1] ?? 0;
+  const maxKm = kms[n - 1] ?? 0;
   const target = Math.max(0, Math.min(km, maxKm));
   const out: [number, number][] = [coords[0]!];
 
-  for (let i = 0; i < kms.length - 1; i++) {
+  for (let i = 0; i < n - 1; i++) {
     const k0 = kms[i]!;
     const k1 = kms[i + 1]!;
     const A = coords[i]!;

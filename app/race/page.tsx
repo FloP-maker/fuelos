@@ -796,7 +796,7 @@ function RaceContent() {
       },
       (err) => {
         const msg =
-          err.code === err.PERMISSION_DENIED
+          err.code === 1
             ? 'Localisation refusée — active le GPS pour l’avancée sur le tracé.'
             : 'Impossible de lire le GPS.';
         setGpsRace((p) => ({ ...p, error: msg }));
@@ -960,6 +960,71 @@ function RaceContent() {
     }
     return null;
   }, [onboarding.profileDone, onboarding.eventStepDone, onboarding.hasPlanInStorage]);
+
+  const raceCourseMapProps = useMemo(() => {
+    if (!plan || !event) return null;
+    const cg = event.courseGeometry;
+    if (
+      !cg ||
+      !Array.isArray(cg.coordinates) ||
+      cg.coordinates.length < 2 ||
+      !Array.isArray(cg.cumulativeKm) ||
+      cg.cumulativeKm.length < 2 ||
+      cg.cumulativeKm.length !== cg.coordinates.length
+    ) {
+      return null;
+    }
+    const elapsedMinHook = raceState.elapsedMs / 60000;
+    const trackMaxKm = cg.cumulativeKm[cg.cumulativeKm.length - 1] ?? event.distance;
+    const progressFromElapsed =
+      event.targetTime > 0 && trackMaxKm > 0
+        ? Math.min(trackMaxKm, (elapsedMinHook / 60 / event.targetTime) * trackMaxKm)
+        : null;
+
+    if (raceState.status === 'idle') {
+      return {
+        progressKm: null as number | null,
+        rawGps: null as { lng: number; lat: number } | null,
+        offCourse: false,
+        footerExtra: null as string | null,
+      };
+    }
+
+    if (raceViewTab === 'simulation') {
+      return {
+        progressKm: progressFromElapsed,
+        rawGps: null,
+        offCourse: false,
+        footerExtra: null,
+      };
+    }
+
+    if (raceState.status === 'running' || raceState.status === 'paused') {
+      return {
+        progressKm: gpsRace.onCourseKm,
+        rawGps: gpsRace.raw,
+        offCourse: gpsRace.offCourse,
+        footerExtra: gpsRace.error,
+      };
+    }
+
+    return {
+      progressKm: progressFromElapsed,
+      rawGps: null,
+      offCourse: false,
+      footerExtra: null,
+    };
+  }, [
+    plan,
+    event,
+    raceState.status,
+    raceState.elapsedMs,
+    raceViewTab,
+    gpsRace.onCourseKm,
+    gpsRace.raw,
+    gpsRace.offCourse,
+    gpsRace.error,
+  ]);
 
   if (!planLoadResolved) {
     return (
@@ -1290,61 +1355,6 @@ function RaceContent() {
       : timingOffsetMin < -0.5
         ? `Avance ${Math.abs(timingOffsetMin).toFixed(1)} min`
         : 'Rythme conforme';
-
-  const raceCourseMapProps = useMemo(() => {
-    const cg = event?.courseGeometry;
-    if (!cg || !event) {
-      return null;
-    }
-    const trackMaxKm = cg.cumulativeKm[cg.cumulativeKm.length - 1] ?? event.distance;
-    const progressFromElapsed =
-      event.targetTime > 0 && trackMaxKm > 0
-        ? Math.min(trackMaxKm, (elapsedMin / 60 / event.targetTime) * trackMaxKm)
-        : null;
-
-    if (raceState.status === 'idle') {
-      return {
-        progressKm: null as number | null,
-        rawGps: null as { lng: number; lat: number } | null,
-        offCourse: false,
-        footerExtra: null as string | null,
-      };
-    }
-
-    if (raceViewTab === 'simulation') {
-      return {
-        progressKm: progressFromElapsed,
-        rawGps: null,
-        offCourse: false,
-        footerExtra: null,
-      };
-    }
-
-    if (raceState.status === 'running' || raceState.status === 'paused') {
-      return {
-        progressKm: gpsRace.onCourseKm,
-        rawGps: gpsRace.raw,
-        offCourse: gpsRace.offCourse,
-        footerExtra: gpsRace.error,
-      };
-    }
-
-    return {
-      progressKm: progressFromElapsed,
-      rawGps: null,
-      offCourse: false,
-      footerExtra: null,
-    };
-  }, [
-    event,
-    raceState.status,
-    raceViewTab,
-    elapsedMin,
-    gpsRace.onCourseKm,
-    gpsRace.raw,
-    gpsRace.offCourse,
-    gpsRace.error,
-  ]);
 
   return (
     <div className="fuel-page">
