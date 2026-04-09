@@ -130,7 +130,7 @@ export function AuthMenu() {
 
   if (session?.user) {
     return (
-      <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+      <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1.5 sm:gap-x-5">
         <Link href="/plan?step=profile" className="fuel-header-text-link shrink-0">
           Profil
         </Link>
