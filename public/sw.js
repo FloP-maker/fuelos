@@ -1,6 +1,6 @@
 // FuelOS Service Worker — Race Day: Offline + Push Notifications
-const CACHE_NAME = 'fuelos-v3';
-const STATIC_ASSETS = ['/', '/plan', '/race', '/shop', '/learn', '/manifest.json'];
+const CACHE_NAME = 'fuelos-v4';
+const STATIC_ASSETS = ['/', '/plan', '/race', '/prep', '/produits', '/analyses', '/manifest.json'];
 
 // ============ INSTALL ============
 self.addEventListener('install', (event) => {
@@ -29,6 +29,22 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
   // Ne pas mettre en cache les API (auth, debriefs, etc.) — risque de réponses invalides pour le client.
   if (url.pathname.startsWith('/api/')) return;
+
+  // Pour les navigations de page, preferer le reseau pour eviter les bundles obsoletes.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/')))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
@@ -145,4 +161,4 @@ self.addEventListener('notificationclose', (event) => {
   console.log('[SW] Notification fermée:', event.notification.tag);
 });
 
-console.log('[SW] FuelOS Service Worker v2 chargé ✅');
+console.log('[SW] FuelOS Service Worker v4 charge ✅');
