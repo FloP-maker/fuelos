@@ -301,6 +301,7 @@ interface RaceState {
   elapsedMs: number;
   currentItemIndex: number;
   consumedItems: number[];
+  deviations: string[];
   skippedItems: number[];
   choConsumed: number;
   waterConsumed: number;
@@ -315,6 +316,7 @@ const INITIAL_RACE_STATE: RaceState = {
   elapsedMs: 0,
   currentItemIndex: 0,
   consumedItems: [],
+  deviations: [],
   skippedItems: [],
   choConsumed: 0,
   waterConsumed: 0,
@@ -559,12 +561,19 @@ function RaceContent() {
   const appendDebrief = useCallback(
     (finishedState: RaceState) => {
       try {
+        const finishedAt = new Date().toISOString();
+        const safeRaceState = {
+          ...finishedState,
+          consumedItems: finishedState.consumedItems ?? [],
+          deviations: finishedState.deviations ?? [],
+          elapsedMs: finishedState.elapsedMs ?? 0,
+        };
         const debrief = {
           plan,
           profile,
           event,
-          raceState: finishedState,
-          finishedAt: new Date().toISOString(),
+          raceState: safeRaceState,
+          finishedAt,
         };
         const existing = JSON.parse(localStorage.getItem('fuelos_debriefs') || '[]');
         existing.unshift(debrief);

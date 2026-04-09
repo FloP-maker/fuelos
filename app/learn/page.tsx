@@ -16,8 +16,15 @@ type StoredDebrief = {
   plan: FuelPlan | null;
   profile: AthleteProfile | null;
   event: EventDetails | null;
-  raceState: RaceState;
-  finishedAt: string;
+  raceState?: Partial<RaceState> | null;
+  finishedAt?: string;
+  savedAt?: string;
+};
+
+const DEFAULT_RACE_STATE: Pick<RaceState, 'consumedItems' | 'deviations' | 'elapsedMs'> = {
+  consumedItems: [],
+  deviations: [],
+  elapsedMs: 0,
 };
 
 type LearnItem = {
@@ -244,7 +251,12 @@ function formatElapsed(ms: number) {
 }
 
 function DebriefCard({ debrief, rank }: { debrief: StoredDebrief; rank: number }) {
-  const { event, plan, raceState, finishedAt } = debrief;
+  const { event, plan } = debrief;
+  const raceState = {
+    ...DEFAULT_RACE_STATE,
+    ...(debrief.raceState ?? {}),
+  };
+  const finishedAt = debrief.finishedAt ?? debrief.savedAt ?? new Date(0).toISOString();
   const title =
     event != null
       ? `${event.sport} · ${event.distance} km`
@@ -252,8 +264,8 @@ function DebriefCard({ debrief, rank }: { debrief: StoredDebrief; rank: number }
         ? `Course · plan ${plan.choPerHour} g CHO/h`
         : `Course ${rank}`;
   const timelineLen = plan?.timeline?.length ?? 0;
-  const consumed = raceState.consumedItems?.length ?? 0;
-  const deviations = raceState.deviations ?? [];
+  const consumed = raceState?.consumedItems?.length ?? 0;
+  const deviations = raceState?.deviations ?? [];
 
   return (
     <details
@@ -271,7 +283,7 @@ function DebriefCard({ debrief, rank }: { debrief: StoredDebrief; rank: number }
         </div>
         <h3 style={{ margin: '0 0 8px', fontSize: 17 }}>{title}</h3>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 13, color: 'var(--color-text-muted)' }}>
-          <span>Temps chronomètre : {formatElapsed(raceState.elapsedMs)}</span>
+          <span>Temps chronomètre : {formatElapsed(raceState?.elapsedMs ?? 0)}</span>
           {timelineLen > 0 && (
             <span>
               Prises notées : {consumed} / {timelineLen}
@@ -390,7 +402,15 @@ export default function LearnPage() {
       try {
         const raw = localStorage.getItem(DEBRIEFS_STORAGE_KEY);
         const parsed = raw ? (JSON.parse(raw) as StoredDebrief[]) : [];
-        return Array.isArray(parsed) ? parsed : [];
+        if (!Array.isArray(parsed)) return [];
+        return parsed.map((d) => ({
+          ...d,
+          raceState: {
+            ...DEFAULT_RACE_STATE,
+            ...(d?.raceState ?? {}),
+          },
+          finishedAt: d?.finishedAt ?? d?.savedAt ?? new Date(0).toISOString(),
+        }));
       } catch {
         return [];
       }
@@ -413,8 +433,18 @@ export default function LearnPage() {
           debriefs?: { payload: unknown; finishedAt: string }[];
         };
         const fromCloud: StoredDebrief[] = (j.debriefs ?? []).map((row) => {
-          const p = row.payload as StoredDebrief;
-          return { ...p, finishedAt: row.finishedAt };
+          const p =
+            row.payload && typeof row.payload === 'object'
+              ? (row.payload as StoredDebrief)
+              : ({} as StoredDebrief);
+          return {
+            ...p,
+            raceState: {
+              ...DEFAULT_RACE_STATE,
+              ...(p?.raceState ?? {}),
+            },
+            finishedAt: row.finishedAt ?? p?.finishedAt ?? p?.savedAt ?? new Date(0).toISOString(),
+          };
         });
         const byFinished = new Map<string, StoredDebrief>();
         for (const d of local) {
