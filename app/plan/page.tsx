@@ -1605,6 +1605,44 @@ function PlanPageContent() {
               <div style={S.sectionTitle}>
                 <span>🗺</span> Parcours GPX (optionnel)
               </div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "flex-start",
+                  marginBottom: 10,
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  border: "1px solid color-mix(in srgb, var(--color-accent) 28%, var(--color-border))",
+                  background: "color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card))",
+                }}
+              >
+                <span
+                  aria-hidden
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 999,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 12,
+                    fontWeight: 800,
+                    color: "var(--color-accent)",
+                    border: "1px solid color-mix(in srgb, var(--color-accent) 45%, var(--color-border))",
+                    background: "var(--color-bg-card)",
+                    flexShrink: 0,
+                  }}
+                >
+                  i
+                </span>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.45 }}>
+                  Le GPX débloque la <strong style={{ color: "var(--color-text)" }}>carte des ravitaillements</strong>{" "}
+                  (prises visualisées au fil du parcours).<br />
+                  Il active aussi le <strong style={{ color: "var(--color-text)" }}>recalcul automatique</strong> des
+                  prises selon montée/descente et timing réel.
+                </p>
+              </div>
               <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 12 }}>
                 Importe un fichier GPX : distance, D+ et carte sont mis à jour automatiquement. Les points de
                 ravitaillement et le plan calorie seront affichés sur la carte.
@@ -1682,7 +1720,7 @@ function PlanPageContent() {
                   <input
                     style={S.input}
                     type="text"
-                    placeholder="Ex : Chamonix, UTMB..."
+                    placeholder="Ex: Chamonix (UTMB), Annecy, Nice..."
                     value={event.placeName ?? ""}
                     onChange={(e) => setEvent({ ...event, placeName: e.target.value })}
                   />
