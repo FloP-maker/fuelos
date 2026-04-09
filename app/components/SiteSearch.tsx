@@ -38,7 +38,7 @@ const ENTRIES: SiteSearchEntry[] = [
     keywords: 'course trail ultra météo dénivelé',
   },
   {
-    href: '/shop',
+    href: '/produits',
     title: 'Produits',
     description: 'Catalogue produits et liste de courses',
     keywords: 'boutique shop maurten sis gels barres acheter',
@@ -56,7 +56,7 @@ const ENTRIES: SiteSearchEntry[] = [
     keywords: 'course race timer jour j simulation',
   },
   {
-    href: '/learn',
+    href: '/analyses',
     title: 'Analyses',
     description: 'Débrief, suivi GI et apprentissage',
     keywords: 'apprendre analyse learn retour débrief',

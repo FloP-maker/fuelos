@@ -3,10 +3,16 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   async redirects() {
     return [
-      { source: "/produits", destination: "/shop", permanent: true },
-      { source: "/analyses", destination: "/learn", permanent: true },
-      { source: "/products", destination: "/shop", permanent: true },
-      { source: "/analysis", destination: "/learn", permanent: true },
+      { source: "/shop", destination: "/produits", permanent: true },
+      { source: "/learn", destination: "/analyses", permanent: true },
+      { source: "/products", destination: "/produits", permanent: true },
+      { source: "/analysis", destination: "/analyses", permanent: true },
+    ];
+  },
+  async rewrites() {
+    return [
+      { source: "/produits", destination: "/shop" },
+      { source: "/analyses", destination: "/learn" },
     ];
   },
   async headers() {

@@ -74,7 +74,7 @@ const FEATURE_CARDS: {
     icon: ShoppingBag,
     title: 'PRODUITS',
     desc: `${PRODUCTS.length}+ produits (Maurten, SiS, Tailwind, Näak…). Liste de courses auto-générée`,
-    href: '/shop',
+    href: '/produits',
     accent: '#4ade80',
   },
   {
@@ -95,7 +95,7 @@ const FEATURE_CARDS: {
     icon: BookOpen,
     title: 'ANALYSES',
     desc: 'Débrief post-course, suivi GI, apprentissage entre les événements',
-    href: '/learn',
+    href: '/analyses',
     accent: '#c084fc',
   },
 ];
