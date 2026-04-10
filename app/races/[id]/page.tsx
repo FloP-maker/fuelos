@@ -55,7 +55,23 @@ export default function RaceDetailPage() {
         <Link href="/races" className="mb-6 inline-block text-sm font-semibold text-[#16a34a] hover:underline">
           ← Mes courses
         </Link>
-        <h1 className="font-display text-2xl font-bold text-[var(--color-text)]">{race.name}</h1>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <h1 className="font-display text-2xl font-bold text-[var(--color-text)]">{race.name}</h1>
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <Link
+              href="/plan"
+              className="font-semibold text-[var(--color-text-muted)] underline-offset-4 hover:text-[var(--color-text)] hover:underline"
+            >
+              Modifier
+            </Link>
+            <Link
+              href={`/races/${race.id}/export`}
+              className="font-semibold text-[var(--color-text-muted)] underline-offset-4 hover:text-[var(--color-text)] hover:underline"
+            >
+              📄 Exporter la fiche
+            </Link>
+          </div>
+        </div>
         <p className="mt-2 text-[var(--color-text-muted)]">
           {race.date} · {race.sport} · {race.distance} km
         </p>
