@@ -1,3 +1,5 @@
+import type { AthleteRaceMemory } from "@/types/race";
+
 // ============ CORE TYPES ============
 
 /** Pilote l’UX profil (guidé vs avancé) — stocké avec le profil. */
@@ -59,6 +61,9 @@ export interface AthleteProfile {
     sweetness: "low" | "medium" | "high";
     flavors: string[];     // ["citrus", "neutral", "fruity", "salty"]
   };
+
+  /** Agrégats issus des courses sauvegardées (mémoire nutritionnelle). */
+  raceMemory?: AthleteRaceMemory;
 }
 
 /** Parcours issu d’un GPX (coords MapLibre / GeoJSON : [lng, lat]) */

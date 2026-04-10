@@ -1,4 +1,4 @@
-export type HeaderActivePage = 'home' | 'plan' | 'shop' | 'races' | 'race' | 'learn' | 'prep';
+export type HeaderActivePage = 'home' | 'plan' | 'shop' | 'races' | 'race' | 'learn' | 'prep' | 'history';
 
 /** Ordre principal du header — aligné sur le parcours type (plan → exécution → apprentissage). */
 export const NAV_SECTIONS: { href: string; label: string; page: HeaderActivePage }[] = [
@@ -7,6 +7,7 @@ export const NAV_SECTIONS: { href: string; label: string; page: HeaderActivePage
   { href: '/races', label: 'Mes courses', page: 'races' },
   { href: '/prep', label: 'Pré / post', page: 'prep' },
   { href: '/race', label: 'Mode course', page: 'race' },
+  { href: '/history', label: 'Mémoire', page: 'history' },
   { href: '/analyses', label: 'Analyses', page: 'learn' },
 ];
 
@@ -18,6 +19,7 @@ export function pathnameToHeaderPage(pathname: string | null): HeaderActivePage 
   if (pathname.startsWith('/races')) return 'races';
   if (pathname.startsWith('/race')) return 'race';
   if (pathname.startsWith('/prep')) return 'prep';
+  if (pathname.startsWith('/history')) return 'history';
   if (pathname.startsWith('/learn') || pathname.startsWith('/analyses')) return 'learn';
   return undefined;
 }

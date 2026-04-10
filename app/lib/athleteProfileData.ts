@@ -4,6 +4,7 @@ import type {
   PrimaryDiscipline,
   SeasonGoal,
 } from "@/app/lib/types";
+import type { AthleteRaceMemory, GISymptomType, RaceWeatherCondition } from "@/types/race";
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
@@ -63,6 +64,70 @@ function parsePrimaryDiscipline(v: unknown): PrimaryDiscipline | undefined {
 function parseSeasonGoal(v: unknown): SeasonGoal | undefined {
   if (v === "finisher" || v === "performance" || v === "podium") return v;
   return undefined;
+}
+
+const GI_TYPES: GISymptomType[] = [
+  "nausées",
+  "crampes",
+  "ballonnements",
+  "vomissements",
+  "diarrhée",
+  "reflux",
+  "aucun",
+];
+
+function parseGiTendencies(raw: unknown): AthleteRaceMemory["giTendencies"] {
+  if (!isRecord(raw)) return undefined;
+  const out: NonNullable<AthleteRaceMemory["giTendencies"]> = {};
+  for (const k of Object.keys(raw)) {
+    if (!GI_TYPES.includes(k as GISymptomType)) continue;
+    const n = Number(raw[k]);
+    if (!Number.isFinite(n) || n < 0) continue;
+    out[k as GISymptomType] = n;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+function parseConditionPerformanceMap(
+  raw: unknown
+): AthleteRaceMemory["conditionPerformanceMap"] {
+  if (!isRecord(raw)) return undefined;
+  const conds: RaceWeatherCondition[] = [
+    "soleil",
+    "nuageux",
+    "pluie",
+    "chaleur",
+    "froid",
+  ];
+  const out: NonNullable<AthleteRaceMemory["conditionPerformanceMap"]> = {};
+  for (const key of conds) {
+    const v = raw[key];
+    if (!isRecord(v)) continue;
+    const count = Number(v.count);
+    const avgNutritionScore = Number(v.avgNutritionScore);
+    if (!Number.isFinite(count) || count < 0) continue;
+    if (!Number.isFinite(avgNutritionScore)) continue;
+    out[key] = { count: Math.floor(count), avgNutritionScore };
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+function parseRaceMemory(raw: unknown): AthleteProfile["raceMemory"] {
+  if (!isRecord(raw)) return undefined;
+  const avgCho = Number(raw.avgChoTolerance);
+  const avgNa = Number(raw.avgSodiumNeed);
+  const avgComp = Number(raw.avgIntakeComplianceRate);
+  const out: AthleteRaceMemory = {};
+  if (Number.isFinite(avgCho) && avgCho >= 0) out.avgChoTolerance = avgCho;
+  if (Number.isFinite(avgNa) && avgNa >= 0) out.avgSodiumNeed = avgNa;
+  const gt = parseGiTendencies(raw.giTendencies);
+  if (gt) out.giTendencies = gt;
+  if (Number.isFinite(avgComp) && avgComp >= 0 && avgComp <= 2) {
+    out.avgIntakeComplianceRate = avgComp;
+  }
+  const cm = parseConditionPerformanceMap(raw.conditionPerformanceMap);
+  if (cm) out.conditionPerformanceMap = cm;
+  return Object.keys(out).length ? out : undefined;
 }
 
 function parseOptionalPositiveNumber(v: unknown, max: number): number | undefined {
@@ -174,6 +239,8 @@ export function mergeStoredAthleteProfile(stored: Partial<AthleteProfile> | null
   if (stored.profileGuidedOnboardingDone === true) out.profileGuidedOnboardingDone = true;
   const li = parseLearnedInsights(stored.learnedInsights);
   if (li) out.learnedInsights = li;
+  const rm = parseRaceMemory(stored.raceMemory);
+  if (rm) out.raceMemory = rm;
   return out;
 }
 
@@ -265,6 +332,9 @@ export function athleteProfileFromJson(raw: unknown): AthleteProfile | null {
 
   const learnedInsights = parseLearnedInsights(raw.learnedInsights);
   if (learnedInsights) out.learnedInsights = learnedInsights;
+
+  const raceMemory = parseRaceMemory(raw.raceMemory);
+  if (raceMemory) out.raceMemory = raceMemory;
 
   return out;
 }

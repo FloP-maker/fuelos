@@ -54,6 +54,7 @@ model User {
   storedAthleteProfiles StoredAthleteProfile[]
   stravaConnection      StravaConnection?
   prepState             PrepState?
+  raceEvents            RaceEvent[]
 }
 
 /// Jetons OAuth Strava (import d’activités) — distinct du compte Google / e-mail.
@@ -118,6 +119,24 @@ model CustomProductList {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("custom_product_lists")
+}
+
+/// Course complétée — mémoire nutritionnelle (payload JSON aligné sur `@/types/race` `RaceEvent`).
+model RaceEvent {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Date de la course (tri / filtres).
+  raceDate  DateTime @map("race_date")
+  /// Score nutritionnel 0–100 (copie pour listes rapides).
+  nutritionScore Int   @map("nutrition_score")
+  /// Document complet sérialisé (inclut id, dates ISO string, nested objects).
+  payload   Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, raceDate(sort: Desc)])
+  @@map("race_events")
 }
 
 /// Profils athlète persistés (plusieurs par utilisateur : ex. été / hiver). `data` = payload AthleteProfile (JSON).
