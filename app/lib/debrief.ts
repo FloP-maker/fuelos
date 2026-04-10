@@ -1,6 +1,18 @@
 'use client';
 
-import type { AthleteProfile, EventDetails, FuelPlan, RaceState } from './types';
+import type { AthleteProfile, EventDetails, FuelPlan, RaceState, TimelineItem } from './types';
+
+/** Snapshot du plan nutritionnel tel que stocké au moment du débrief (fuelos_active_plan ou plan courant). */
+export type DebriefPlanSnapshot = {
+  choPerHour: number;
+  waterPerHour: number;
+  sodiumPerHour: number;
+  totalPlanCHO: number;
+  timelineCount: number;
+  sport?: string;
+  distance?: number;
+  targetTime?: number;
+};
 
 export type PlanFollowed = 'yes' | 'partial' | 'no';
 export type EnergyLevel = 'good' | 'ok' | 'bad';
@@ -24,6 +36,9 @@ export type StoredDebrief = {
   energyLevel?: EnergyLevel | null;
   notes?: string;
   compliance?: number;
+  planSnapshot?: DebriefPlanSnapshot | null;
+  /** CHO réel estimé (g/h) : prises enregistrées ou approximation compliance × CHO planifié. */
+  actualChoPerHour?: number | null;
 };
 
 export const DEFAULT_RACE_STATE: Pick<RaceState, 'consumedItems' | 'deviations' | 'elapsedMs'> = {
@@ -66,6 +81,62 @@ export function computeCompliance(debrief: StoredDebrief): number {
   const consumed = debrief.raceState?.consumedItems?.length ?? 0;
   if (timelineLen <= 0) return 0;
   return Math.round((consumed / timelineLen) * 100);
+}
+
+export function buildDebriefPlanSnapshot(
+  fuelPlan: FuelPlan,
+  event: EventDetails | null | undefined
+): DebriefPlanSnapshot {
+  const timeline = fuelPlan.timeline ?? [];
+  return {
+    choPerHour: fuelPlan.choPerHour,
+    waterPerHour: fuelPlan.waterPerHour,
+    sodiumPerHour: fuelPlan.sodiumPerHour,
+    totalPlanCHO: timeline.reduce((sum, t) => sum + (t.cho || 0), 0),
+    timelineCount: timeline.length,
+    sport: event?.sport,
+    distance: event?.distance,
+    targetTime: event?.targetTime,
+  };
+}
+
+/**
+ * Bundle tel que sérialisé dans localStorage["fuelos_active_plan"] (voir plan/page).
+ */
+export function activeFuelPlanFromStoredBundle(bundle: unknown): {
+  fuelPlan: FuelPlan;
+  event: EventDetails | null;
+} | null {
+  if (!bundle || typeof bundle !== 'object') return null;
+  const b = bundle as {
+    fuelPlan?: FuelPlan;
+    altFuelPlan?: FuelPlan;
+    racePlanVariant?: string;
+    event?: EventDetails | null;
+  };
+  const plan =
+    b.racePlanVariant === 'alt' && b.altFuelPlan != null ? b.altFuelPlan : b.fuelPlan;
+  if (!plan || !Array.isArray(plan.timeline)) return null;
+  return { fuelPlan: plan, event: b.event ?? null };
+}
+
+export function computeDebriefActualChoPerHour(args: {
+  planSnapshot: DebriefPlanSnapshot | null | undefined;
+  compliance: number;
+  consumedItemIndices: number[];
+  timeline: TimelineItem[] | undefined;
+  elapsedMs: number;
+}): number {
+  const { planSnapshot, compliance, consumedItemIndices, timeline, elapsedMs } = args;
+  const hours = elapsedMs / 3600000;
+  if (consumedItemIndices.length > 0 && hours > 0) {
+    const totalCho = consumedItemIndices.reduce((s, idx) => s + (timeline?.[idx]?.cho ?? 0), 0);
+    return Math.round(totalCho / hours);
+  }
+  if (planSnapshot != null) {
+    return Math.round(planSnapshot.choPerHour * (compliance / 100));
+  }
+  return 0;
 }
 
 export function computeChoPerHour(debrief: StoredDebrief): number {

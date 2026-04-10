@@ -49,6 +49,7 @@ import { ToggleGroup } from "../components/ToggleGroup";
 import { Button } from "../components/Button";
 import { ProfileGuidedWizard } from "../components/ProfileGuidedWizard";
 import { ProfileStravaPanel } from "../components/ProfileStravaPanel";
+import { QuickStartWizard } from "../components/QuickStartWizard";
 
 const CourseMapPanel = dynamic(() => import("../components/CourseMapPanel"), { ssr: false });
 
@@ -254,7 +255,7 @@ function ProductThumb({
   );
 }
 
-function PlanPageContent() {
+function PlanPageMainContent() {
   usePageTitle("Plan");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -4130,6 +4131,59 @@ function PlanResult({
       )}
     </div>
   );
+}
+
+function PlanPageContent() {
+  const router = useRouter();
+  const [gate, setGate] = useState<"loading" | "wizard" | "main">("loading");
+
+  useEffect(() => {
+    try {
+      const skipped = localStorage.getItem("fuelos_quickstart_skipped") === "1";
+      const isNew =
+        !skipped &&
+        localStorage.getItem(ONBOARDING_PROFILE_KEY) === null &&
+        localStorage.getItem("athlete-profile") === null;
+      queueMicrotask(() => setGate(isNew ? "wizard" : "main"));
+    } catch {
+      queueMicrotask(() => setGate("main"));
+    }
+  }, []);
+
+  if (gate === "loading") {
+    return (
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 9999,
+          background: "#fff",
+        }}
+        aria-busy
+      />
+    );
+  }
+
+  if (gate === "wizard") {
+    return (
+      <QuickStartWizard
+        onSkip={() => {
+          try {
+            localStorage.setItem("fuelos_quickstart_skipped", "1");
+          } catch {
+            /* ignore */
+          }
+          setGate("main");
+        }}
+        onComplete={() => {
+          setGate("main");
+          router.replace("/plan?step=plan");
+        }}
+      />
+    );
+  }
+
+  return <PlanPageMainContent />;
 }
 
 export default function PlanPage() {

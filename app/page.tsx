@@ -1,12 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { CSSProperties, JSX } from 'react';
+import { useEffect, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { BookOpen, ChefHat, Crosshair, ShoppingBag, UserRound, Zap } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { Header } from './components/Header';
 import { LandingAuthPanel } from './components/LandingAuthPanel';
+import { QuickStartWizard } from './components/QuickStartWizard';
 import { PRODUCTS } from './lib/products';
 
 const S = {
@@ -93,9 +96,56 @@ const FEATURE_CARDS: {
 ];
 
 export default function Home() {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const isConnected = Boolean(session?.user);
   const showLandingAuth = status !== 'loading' && !isConnected;
+  const [quickGate, setQuickGate] = useState<'pending' | 'wizard' | 'normal'>('pending');
+
+  useEffect(() => {
+    try {
+      const skipped = localStorage.getItem('fuelos_quickstart_skipped') === '1';
+      const isNew =
+        !skipped &&
+        localStorage.getItem('fuelos_onboarding_profile_done') === null &&
+        localStorage.getItem('athlete-profile') === null;
+      queueMicrotask(() => setQuickGate(isNew ? 'wizard' : 'normal'));
+    } catch {
+      queueMicrotask(() => setQuickGate('normal'));
+    }
+  }, []);
+
+  if (quickGate === 'pending') {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9999,
+          background: '#fff',
+        }}
+        aria-busy
+      />
+    );
+  }
+
+  if (quickGate === 'wizard') {
+    return (
+      <QuickStartWizard
+        onSkip={() => {
+          try {
+            localStorage.setItem('fuelos_quickstart_skipped', '1');
+          } catch {
+            /* ignore */
+          }
+          setQuickGate('normal');
+        }}
+        onComplete={() => {
+          router.replace('/plan?step=plan');
+        }}
+      />
+    );
+  }
 
   return (
     <div className="fuel-page">

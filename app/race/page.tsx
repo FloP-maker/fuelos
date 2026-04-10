@@ -23,9 +23,12 @@ import { SectionBreadcrumb } from '../components/SectionBreadcrumb';
 import { Button } from '../components/Button';
 import { DebriefForm } from '../components/DebriefForm';
 import {
+  activeFuelPlanFromStoredBundle,
   buildAutoInsight,
+  buildDebriefPlanSnapshot,
   computeChoPerHour,
   computeCompliance,
+  computeDebriefActualChoPerHour,
   DEFAULT_DEBRIEF_FEEDBACK,
   insightTone,
   normalizeDebrief,
@@ -375,6 +378,9 @@ function RaceContent() {
   const searchParams = useSearchParams();
 
   const [raceState, setRaceState] = useState<RaceState>(INITIAL_RACE_STATE);
+  /** Dernière course commitée en mémoire — évite appendDebrief avec un état obsolète (tick / batch React). */
+  const raceStateRef = useRef<RaceState>(INITIAL_RACE_STATE);
+  raceStateRef.current = raceState;
   const [raceViewTab, setRaceViewTab] = useState<'real' | 'simulation'>('real');
 
   const [mainPlan, setMainPlan] = useState<FuelPlan | null>(null);
@@ -598,9 +604,29 @@ function RaceContent() {
     (finishedState: RaceState) => {
       try {
         const finishedAt = new Date().toISOString();
+        const live = raceStateRef.current;
+        const consumedItems = Array.from(
+          new Set([...(finishedState.consumedItems ?? []), ...(live.consumedItems ?? [])])
+        ).sort((a, b) => a - b);
+        const skippedItems = Array.from(
+          new Set([...(finishedState.skippedItems ?? []), ...(live.skippedItems ?? [])])
+        ).sort((a, b) => a - b);
+        const choConsumedFromPlan = plan
+          ? consumedItems.reduce((s, idx) => s + (plan.timeline[idx]?.cho ?? 0), 0)
+          : Math.max(finishedState.choConsumed ?? 0, live.choConsumed ?? 0);
+        const waterConsumedFromPlan = plan
+          ? consumedItems.reduce((s, idx) => s + (plan.timeline[idx]?.water ?? 0), 0)
+          : Math.max(finishedState.waterConsumed ?? 0, live.waterConsumed ?? 0);
+        const sodiumConsumedFromPlan = plan
+          ? consumedItems.reduce((s, idx) => s + (plan.timeline[idx]?.sodium ?? 0), 0)
+          : Math.max(finishedState.sodiumConsumed ?? 0, live.sodiumConsumed ?? 0);
         const safeRaceState = {
           ...finishedState,
-          consumedItems: finishedState.consumedItems ?? [],
+          consumedItems,
+          skippedItems,
+          choConsumed: choConsumedFromPlan,
+          waterConsumed: waterConsumedFromPlan,
+          sodiumConsumed: sodiumConsumedFromPlan,
           deviations: finishedState.deviations ?? [],
           elapsedMs: finishedState.elapsedMs ?? 0,
         };
@@ -615,6 +641,35 @@ function RaceContent() {
           notes: '',
         });
         debrief.compliance = computeCompliance(debrief);
+
+        let planSnapshot = null;
+        try {
+          const raw = localStorage.getItem('fuelos_active_plan');
+          if (raw) {
+            const parsed = JSON.parse(raw) as unknown;
+            const fromStore = activeFuelPlanFromStoredBundle(parsed);
+            if (fromStore) {
+              planSnapshot = buildDebriefPlanSnapshot(fromStore.fuelPlan, fromStore.event);
+            }
+          }
+        } catch {
+          /* ignore */
+        }
+        if (!planSnapshot && plan) {
+          planSnapshot = buildDebriefPlanSnapshot(plan, event);
+        }
+        debrief.planSnapshot = planSnapshot;
+        /**
+         * CHO réel/h : somme des CHO des prises (indices + timeline courante) / temps écoulé ;
+         * si aucune prise enregistrée, approximation via compliance (voir spec produit).
+         */
+        debrief.actualChoPerHour = computeDebriefActualChoPerHour({
+          planSnapshot,
+          compliance: debrief.compliance ?? 0,
+          consumedItemIndices: consumedItems,
+          timeline: plan?.timeline,
+          elapsedMs: safeRaceState.elapsedMs,
+        });
         const existing = JSON.parse(localStorage.getItem('fuelos_debriefs') || '[]') as StoredDebrief[];
         existing.unshift(debrief);
         localStorage.setItem('fuelos_debriefs', JSON.stringify(existing.slice(0, 10)));
