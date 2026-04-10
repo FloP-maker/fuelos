@@ -183,13 +183,9 @@ export default function Home() {
                   Générer un plan en 2 minutes
                 </Link>
               </div>
-              {showLandingAuth ? (
+              {showLandingAuth && (
                 <div style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.55, marginTop: 4 }}>
                   Déjà un compte ? Utilise le panneau à droite (Google / Apple / e-mail).
-                </div>
-              ) : (
-                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.55, marginTop: 4 }}>
-                  Connecté: accès direct à ton espace, sans écran de connexion.
                 </div>
               )}
             </div>

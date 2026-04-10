@@ -55,3 +55,38 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ debrief: row });
 }
+
+export async function PATCH(req: Request) {
+  const gate = await requireUserId();
+  if (!gate.ok) return gate.res;
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const rec = body as { id?: string; payload?: unknown };
+  if (!rec.id || typeof rec.id !== "string") {
+    return NextResponse.json({ error: "id (string) is required" }, { status: 400 });
+  }
+  if (rec.payload === undefined || typeof rec.payload !== "object") {
+    return NextResponse.json({ error: "payload (object) is required" }, { status: 400 });
+  }
+
+  const row = await prisma.raceDebrief.findFirst({
+    where: { id: rec.id, userId: gate.userId },
+    select: { id: true },
+  });
+  if (!row) {
+    return NextResponse.json({ error: "Debrief not found" }, { status: 404 });
+  }
+
+  const updated = await prisma.raceDebrief.update({
+    where: { id: rec.id },
+    data: { payload: rec.payload as object },
+  });
+
+  return NextResponse.json({ debrief: updated });
+}

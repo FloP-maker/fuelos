@@ -13,18 +13,34 @@ import { Button } from '../components/Button';
 const DEBRIEFS_STORAGE_KEY = 'fuelos_debriefs';
 
 type StoredDebrief = {
+  cloudId?: string;
   plan: FuelPlan | null;
   profile: AthleteProfile | null;
   event: EventDetails | null;
   raceState?: Partial<RaceState> | null;
   finishedAt?: string;
   savedAt?: string;
+  feedback?: DebriefFeedback | null;
+};
+
+type PlanFollowed = 'yes' | 'partial' | 'no';
+
+type DebriefFeedback = {
+  stomachScore: number | null;
+  planFollowed: PlanFollowed | null;
+  note: string;
 };
 
 const DEFAULT_RACE_STATE: Pick<RaceState, 'consumedItems' | 'deviations' | 'elapsedMs'> = {
   consumedItems: [],
   deviations: [],
   elapsedMs: 0,
+};
+
+const DEFAULT_DEBRIEF_FEEDBACK: DebriefFeedback = {
+  stomachScore: null,
+  planFollowed: null,
+  note: '',
 };
 
 type LearnItem = {
@@ -250,7 +266,32 @@ function formatElapsed(ms: number) {
   return `${h} h ${m} min`;
 }
 
-function DebriefCard({ debrief, rank }: { debrief: StoredDebrief; rank: number }) {
+function normalizeDebrief(input: StoredDebrief): StoredDebrief {
+  return {
+    ...input,
+    raceState: {
+      ...DEFAULT_RACE_STATE,
+      ...(input?.raceState ?? {}),
+    },
+    finishedAt: input?.finishedAt ?? input?.savedAt ?? new Date(0).toISOString(),
+    feedback: {
+      ...DEFAULT_DEBRIEF_FEEDBACK,
+      ...(input?.feedback ?? {}),
+    },
+  };
+}
+
+function DebriefCard({
+  debrief,
+  rank,
+  onSaveFeedback,
+  isSaving,
+}: {
+  debrief: StoredDebrief;
+  rank: number;
+  onSaveFeedback: (feedback: DebriefFeedback) => Promise<void>;
+  isSaving: boolean;
+}) {
   const { event, plan } = debrief;
   const raceState = {
     ...DEFAULT_RACE_STATE,
@@ -266,6 +307,13 @@ function DebriefCard({ debrief, rank }: { debrief: StoredDebrief; rank: number }
   const timelineLen = plan?.timeline?.length ?? 0;
   const consumed = raceState?.consumedItems?.length ?? 0;
   const deviations = raceState?.deviations ?? [];
+  const [stomachScore, setStomachScore] = useState<number | null>(debrief.feedback?.stomachScore ?? null);
+  const [planFollowed, setPlanFollowed] = useState<PlanFollowed | null>(
+    debrief.feedback?.planFollowed ?? null
+  );
+  const [note, setNote] = useState(debrief.feedback?.note ?? '');
+
+  const canSave = stomachScore !== null && planFollowed !== null && !isSaving;
 
   return (
     <details
@@ -323,6 +371,105 @@ function DebriefCard({ debrief, rank }: { debrief: StoredDebrief; rank: number }
             </ul>
           </div>
         )}
+        <div style={{ marginTop: 14, borderTop: '1px solid var(--color-border)', paddingTop: 14 }}>
+          <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: 14 }}>Débrief express post-course</p>
+          <div style={{ display: 'grid', gap: 12 }}>
+            <label style={{ display: 'grid', gap: 6 }}>
+              <span style={{ fontSize: 13 }}>Comment était ton estomac ?</span>
+              <select
+                value={stomachScore ?? ''}
+                onChange={(e) =>
+                  setStomachScore(e.target.value ? Number(e.target.value) : null)
+                }
+                style={{
+                  padding: '9px 10px',
+                  borderRadius: 8,
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-bg)',
+                  color: 'var(--color-text)',
+                }}
+              >
+                <option value="">Choisir une note</option>
+                <option value="1">1 - Très inconfortable</option>
+                <option value="2">2</option>
+                <option value="3">3 - Moyen</option>
+                <option value="4">4</option>
+                <option value="5">5 - Très bien</option>
+              </select>
+            </label>
+
+            <fieldset style={{ border: 0, margin: 0, padding: 0 }}>
+              <legend style={{ fontSize: 13, marginBottom: 6 }}>As-tu respecté le plan ?</legend>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {[
+                  ['yes', 'Oui'],
+                  ['partial', 'Partiellement'],
+                  ['no', 'Non'],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setPlanFollowed(value as PlanFollowed)}
+                    style={{
+                      padding: '7px 10px',
+                      borderRadius: 999,
+                      border:
+                        planFollowed === value
+                          ? '1px solid color-mix(in srgb, var(--color-accent) 55%, var(--color-border))'
+                          : '1px solid var(--color-border)',
+                      background:
+                        planFollowed === value
+                          ? 'color-mix(in srgb, var(--color-accent) 15%, var(--color-bg-card))'
+                          : 'var(--color-bg-card)',
+                      color: 'var(--color-text)',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <label style={{ display: 'grid', gap: 6 }}>
+              <span style={{ fontSize: 13 }}>Note libre (optionnel)</span>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Ex: gel ok, boisson trop sucrée au km 20..."
+                rows={3}
+                style={{
+                  padding: '9px 10px',
+                  borderRadius: 8,
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-bg)',
+                  color: 'var(--color-text)',
+                  resize: 'vertical',
+                }}
+              />
+            </label>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                disabled={!canSave}
+                onClick={() =>
+                  onSaveFeedback({
+                    stomachScore,
+                    planFollowed,
+                    note: note.trim(),
+                  })
+                }
+              >
+                {isSaving ? 'Sauvegarde…' : 'Enregistrer le débrief'}
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </details>
   );
@@ -395,7 +542,16 @@ export default function LearnPage() {
   const { status } = useSession();
   const [activeTab, setActiveTab] = useState<'debriefs' | 'library'>('debriefs');
   const [debriefs, setDebriefs] = useState<StoredDebrief[]>([]);
+  const [savingDebriefKey, setSavingDebriefKey] = useState<string | null>(null);
   const firstItem = keyNumbers[0];
+
+  const persistDebriefsLocal = (nextDebriefs: StoredDebrief[]) => {
+    try {
+      localStorage.setItem(DEBRIEFS_STORAGE_KEY, JSON.stringify(nextDebriefs.slice(0, 10)));
+    } catch {
+      // localStorage best effort
+    }
+  };
 
   useEffect(() => {
     const loadLocal = (): StoredDebrief[] => {
@@ -403,14 +559,7 @@ export default function LearnPage() {
         const raw = localStorage.getItem(DEBRIEFS_STORAGE_KEY);
         const parsed = raw ? (JSON.parse(raw) as StoredDebrief[]) : [];
         if (!Array.isArray(parsed)) return [];
-        return parsed.map((d) => ({
-          ...d,
-          raceState: {
-            ...DEFAULT_RACE_STATE,
-            ...(d?.raceState ?? {}),
-          },
-          finishedAt: d?.finishedAt ?? d?.savedAt ?? new Date(0).toISOString(),
-        }));
+        return parsed.map((d) => normalizeDebrief(d));
       } catch {
         return [];
       }
@@ -430,28 +579,31 @@ export default function LearnPage() {
           return;
         }
         const j = (await r.json()) as {
-          debriefs?: { payload: unknown; finishedAt: string }[];
+          debriefs?: { id: string; payload: unknown; finishedAt: string }[];
         };
         const fromCloud: StoredDebrief[] = (j.debriefs ?? []).map((row) => {
           const p =
             row.payload && typeof row.payload === 'object'
               ? (row.payload as StoredDebrief)
               : ({} as StoredDebrief);
-          return {
+          return normalizeDebrief({
             ...p,
-            raceState: {
-              ...DEFAULT_RACE_STATE,
-              ...(p?.raceState ?? {}),
-            },
+            cloudId: row.id,
             finishedAt: row.finishedAt ?? p?.finishedAt ?? p?.savedAt ?? new Date(0).toISOString(),
-          };
+          });
         });
         const byFinished = new Map<string, StoredDebrief>();
         for (const d of local) {
           if (d?.finishedAt) byFinished.set(d.finishedAt, d);
         }
         for (const d of fromCloud) {
-          if (d?.finishedAt && !byFinished.has(d.finishedAt)) byFinished.set(d.finishedAt, d);
+          if (!d?.finishedAt) continue;
+          const existing = byFinished.get(d.finishedAt);
+          if (!existing) {
+            byFinished.set(d.finishedAt, d);
+            continue;
+          }
+          byFinished.set(d.finishedAt, normalizeDebrief({ ...d, ...existing, cloudId: d.cloudId }));
         }
         const merged = [...byFinished.values()].sort(
           (a, b) =>
@@ -477,6 +629,40 @@ export default function LearnPage() {
         {label}
       </Button>
     );
+  };
+
+  const handleSaveFeedback = async (debrief: StoredDebrief, feedback: DebriefFeedback) => {
+    const debriefKey = debrief.finishedAt ?? debrief.savedAt ?? '';
+    if (!debriefKey) return;
+    setSavingDebriefKey(debriefKey);
+    try {
+      const nextDebriefs = debriefs.map((item) =>
+        (item.finishedAt ?? item.savedAt ?? '') === debriefKey
+          ? normalizeDebrief({ ...item, feedback })
+          : item
+      );
+      setDebriefs(nextDebriefs);
+      persistDebriefsLocal(nextDebriefs);
+
+      if (status === 'authenticated' && debrief.cloudId) {
+        const updatedPayload = nextDebriefs.find(
+          (item) => (item.finishedAt ?? item.savedAt ?? '') === debriefKey
+        );
+        if (updatedPayload) {
+          await fetch('/api/user/debriefs', {
+            method: 'PATCH',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: debrief.cloudId,
+              payload: updatedPayload,
+            }),
+          });
+        }
+      }
+    } finally {
+      setSavingDebriefKey(null);
+    }
   };
 
   return (
@@ -524,8 +710,9 @@ export default function LearnPage() {
         <section style={{ marginTop: 24 }}>
           <h2 style={{ marginBottom: 10 }}>Courses passées</h2>
           <p style={{ marginTop: 0, color: 'var(--color-text-muted)', marginBottom: 18 }}>
-            Chaque fin de course enregistre un débrief (10 derniers sur cet appareil ; compte Google pour
-            l’historique cloud plus long).
+            Chaque fin de course enregistre un débrief avec un questionnaire express pour construire ta
+            mémoire nutritionnelle (10 derniers sur cet appareil ; compte Google pour l’historique cloud
+            plus long).
           </p>
           {debriefs.length === 0 ? (
             <div
@@ -647,7 +834,13 @@ export default function LearnPage() {
           ) : (
             <div style={{ display: 'grid', gap: 12 }}>
               {debriefs.map((debrief, i) => (
-                <DebriefCard key={`${debrief.finishedAt}-${i}`} debrief={debrief} rank={i + 1} />
+                <DebriefCard
+                  key={`${debrief.finishedAt}-${debrief.feedback?.stomachScore ?? 'x'}-${debrief.feedback?.planFollowed ?? 'x'}-${debrief.feedback?.note?.length ?? 0}-${i}`}
+                  debrief={debrief}
+                  rank={i + 1}
+                  onSaveFeedback={(feedback) => handleSaveFeedback(debrief, feedback)}
+                  isSaving={savingDebriefKey === (debrief.finishedAt ?? debrief.savedAt ?? '')}
+                />
               ))}
             </div>
           )}

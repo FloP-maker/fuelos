@@ -318,6 +318,30 @@ interface RaceState {
   simulationSpeed: SimulationSpeed;
 }
 
+type DebriefPlanFollowed = 'yes' | 'partial' | 'no';
+
+type DebriefFeedback = {
+  stomachScore: number | null;
+  planFollowed: DebriefPlanFollowed | null;
+  note: string;
+};
+
+type StoredDebrief = {
+  cloudId?: string;
+  plan: FuelPlan | null;
+  profile: AthleteProfile | null;
+  event: EventDetails | null;
+  raceState?: Partial<RaceState> | null;
+  finishedAt?: string;
+  feedback?: DebriefFeedback | null;
+};
+
+const DEFAULT_DEBRIEF_FEEDBACK: DebriefFeedback = {
+  stomachScore: null,
+  planFollowed: null,
+  note: '',
+};
+
 const INITIAL_RACE_STATE: RaceState = {
   status: 'idle',
   startTime: null,
@@ -392,6 +416,15 @@ function RaceContent() {
   const [completedAtMinByItem, setCompletedAtMinByItem] = useState<Record<number, number>>({});
   /** Évite d’afficher la checklist avant la fin du chargement cloud / localStorage. */
   const [planLoadResolved, setPlanLoadResolved] = useState(false);
+  const [latestDebriefMeta, setLatestDebriefMeta] = useState<{
+    finishedAt: string;
+    cloudId: string | null;
+  } | null>(null);
+  const [debriefStomachScore, setDebriefStomachScore] = useState<number | null>(null);
+  const [debriefPlanFollowed, setDebriefPlanFollowed] = useState<DebriefPlanFollowed | null>(null);
+  const [debriefNote, setDebriefNote] = useState('');
+  const [debriefSaved, setDebriefSaved] = useState(false);
+  const [isSavingDebriefFeedback, setIsSavingDebriefFeedback] = useState(false);
 
   const [gpsRace, setGpsRace] = useState<{
     onCourseKm: number | null;
@@ -589,10 +622,16 @@ function RaceContent() {
           event,
           raceState: safeRaceState,
           finishedAt,
+          feedback: DEFAULT_DEBRIEF_FEEDBACK,
         };
-        const existing = JSON.parse(localStorage.getItem('fuelos_debriefs') || '[]');
+        const existing = JSON.parse(localStorage.getItem('fuelos_debriefs') || '[]') as StoredDebrief[];
         existing.unshift(debrief);
         localStorage.setItem('fuelos_debriefs', JSON.stringify(existing.slice(0, 10)));
+        setLatestDebriefMeta({ finishedAt, cloudId: null });
+        setDebriefStomachScore(null);
+        setDebriefPlanFollowed(null);
+        setDebriefNote('');
+        setDebriefSaved(false);
         void fetch('/api/user/debriefs', {
           method: 'POST',
           credentials: 'include',
@@ -601,9 +640,18 @@ function RaceContent() {
             payload: debrief,
             finishedAt: debrief.finishedAt,
           }),
-        }).catch(() => {
-          /* sync cloud optionnelle */
-        });
+        })
+          .then(async (res) => {
+            if (!res.ok) return;
+            const json = (await res.json()) as { debrief?: { id?: string } };
+            const cloudId = json?.debrief?.id;
+            if (cloudId) {
+              setLatestDebriefMeta({ finishedAt, cloudId });
+            }
+          })
+          .catch(() => {
+            /* sync cloud optionnelle */
+          });
       } catch (e) {
         console.error('Debrief save error:', e);
       }
@@ -759,6 +807,12 @@ function RaceContent() {
     setShowAlert(false);
     setAlertItem(null);
     setGpsRace({ onCourseKm: null, raw: null, offCourse: false, error: null });
+    setLatestDebriefMeta(null);
+    setDebriefStomachScore(null);
+    setDebriefPlanFollowed(null);
+    setDebriefNote('');
+    setDebriefSaved(false);
+    setIsSavingDebriefFeedback(false);
   }, []);
 
   useEffect(() => {
@@ -922,6 +976,42 @@ function RaceContent() {
     },
     [handleSimulationSpeedChange]
   );
+
+  const savePostRaceFeedback = useCallback(async () => {
+    if (!latestDebriefMeta) return;
+    if (debriefStomachScore === null || debriefPlanFollowed === null) return;
+    setIsSavingDebriefFeedback(true);
+    try {
+      const existing = JSON.parse(localStorage.getItem('fuelos_debriefs') || '[]') as StoredDebrief[];
+      const nextFeedback: DebriefFeedback = {
+        stomachScore: debriefStomachScore,
+        planFollowed: debriefPlanFollowed,
+        note: debriefNote.trim(),
+      };
+      const updated = existing.map((item) =>
+        item?.finishedAt === latestDebriefMeta.finishedAt ? { ...item, feedback: nextFeedback } : item
+      );
+      localStorage.setItem('fuelos_debriefs', JSON.stringify(updated.slice(0, 10)));
+      setDebriefSaved(true);
+
+      if (latestDebriefMeta.cloudId) {
+        const payload = updated.find((item) => item?.finishedAt === latestDebriefMeta.finishedAt);
+        if (payload) {
+          await fetch('/api/user/debriefs', {
+            method: 'PATCH',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: latestDebriefMeta.cloudId,
+              payload,
+            }),
+          });
+        }
+      }
+    } finally {
+      setIsSavingDebriefFeedback(false);
+    }
+  }, [latestDebriefMeta, debriefStomachScore, debriefPlanFollowed, debriefNote]);
 
   const raceModeSubtitle = useMemo(() => {
     if (raceState.status === 'finished') {
@@ -1614,12 +1704,129 @@ function RaceContent() {
               <Button type="button" onClick={() => setShowResetConfirm(true)} variant="secondary" size="lg" fullWidth>
                 Réinitialiser
               </Button>
+              <Link href="/analyses" style={{ textDecoration: 'none' }}>
+                <Button type="button" variant="primary" size="lg" fullWidth>
+                  Voir mon analyse
+                </Button>
+              </Link>
             </div>
           )}
 
           {raceState.status === 'finished' && (
             <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'stretch' }}>
               <div style={{ textAlign: 'center', fontWeight: 900, color: 'var(--color-accent)' }}>Course terminée</div>
+              <div
+                style={{
+                  border: '1px solid color-mix(in srgb, var(--color-accent) 30%, var(--color-border))',
+                  borderRadius: 12,
+                  background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card))',
+                  padding: 12,
+                  display: 'grid',
+                  gap: 10,
+                }}
+              >
+                <div style={{ fontWeight: 800, fontSize: 14 }}>Débrief express (30 sec)</div>
+                <label style={{ display: 'grid', gap: 6 }}>
+                  <span style={{ fontSize: 13 }}>Comment était ton estomac ?</span>
+                  <select
+                    value={debriefStomachScore ?? ''}
+                    onChange={(e) => {
+                      setDebriefStomachScore(e.target.value ? Number(e.target.value) : null);
+                      setDebriefSaved(false);
+                    }}
+                    style={{
+                      padding: '9px 10px',
+                      borderRadius: 8,
+                      border: '1px solid var(--color-border)',
+                      background: 'var(--color-bg)',
+                      color: 'var(--color-text)',
+                    }}
+                  >
+                    <option value="">Choisir une note</option>
+                    <option value="1">1 - Très inconfortable</option>
+                    <option value="2">2</option>
+                    <option value="3">3 - Moyen</option>
+                    <option value="4">4</option>
+                    <option value="5">5 - Très bien</option>
+                  </select>
+                </label>
+                <fieldset style={{ border: 0, margin: 0, padding: 0 }}>
+                  <legend style={{ fontSize: 13, marginBottom: 6 }}>As-tu respecté le plan ?</legend>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {[
+                      ['yes', 'Oui'],
+                      ['partial', 'Partiellement'],
+                      ['no', 'Non'],
+                    ].map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => {
+                          setDebriefPlanFollowed(value as DebriefPlanFollowed);
+                          setDebriefSaved(false);
+                        }}
+                        style={{
+                          padding: '7px 10px',
+                          borderRadius: 999,
+                          border:
+                            debriefPlanFollowed === value
+                              ? '1px solid color-mix(in srgb, var(--color-accent) 55%, var(--color-border))'
+                              : '1px solid var(--color-border)',
+                          background:
+                            debriefPlanFollowed === value
+                              ? 'color-mix(in srgb, var(--color-accent) 15%, var(--color-bg-card))'
+                              : 'var(--color-bg-card)',
+                          color: 'var(--color-text)',
+                          cursor: 'pointer',
+                          fontSize: 13,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                <label style={{ display: 'grid', gap: 6 }}>
+                  <span style={{ fontSize: 13 }}>Note libre (optionnel)</span>
+                  <textarea
+                    value={debriefNote}
+                    onChange={(e) => {
+                      setDebriefNote(e.target.value);
+                      setDebriefSaved(false);
+                    }}
+                    rows={3}
+                    placeholder="Ex: ravito solide trop tardif, gel ok..."
+                    style={{
+                      padding: '9px 10px',
+                      borderRadius: 8,
+                      border: '1px solid var(--color-border)',
+                      background: 'var(--color-bg)',
+                      color: 'var(--color-text)',
+                      resize: 'vertical',
+                    }}
+                  />
+                </label>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  disabled={
+                    isSavingDebriefFeedback ||
+                    debriefStomachScore === null ||
+                    debriefPlanFollowed === null ||
+                    !latestDebriefMeta
+                  }
+                  onClick={savePostRaceFeedback}
+                  fullWidth
+                >
+                  {isSavingDebriefFeedback
+                    ? 'Sauvegarde…'
+                    : debriefSaved
+                      ? 'Débrief enregistré'
+                      : 'Enregistrer le débrief'}
+                </Button>
+              </div>
               <Button type="button" onClick={() => setShowResetConfirm(true)} variant="secondary" size="lg" fullWidth>
                 Réinitialiser
               </Button>
