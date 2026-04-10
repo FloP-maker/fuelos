@@ -4,6 +4,7 @@ import "./globals.css";
 import ServiceWorkerRegistration from "./ServiceWorkerRegistration";
 import { Providers } from "./providers";
 import { AppFooter } from "./components/AppFooter";
+import { CookieConsent } from "./components/CookieConsent";
 
 export const metadata: Metadata = {
   title: "FuelOS",
@@ -28,6 +29,7 @@ export default function RootLayout({
         <ServiceWorkerRegistration />
         <Providers>
           {children}
+          <CookieConsent />
           <AppFooter />
         </Providers>
       </body>
