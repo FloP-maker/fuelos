@@ -18,11 +18,13 @@ export type HeaderProps = {
   /** Overrides automatic detection from `usePathname()`. */
   activePage?: HeaderActivePage;
   sticky?: boolean;
+  /** Version plus haute pour pages marketing / connexion. */
+  tall?: boolean;
   /** Optional slot for contextual badges (e.g. race simulation). */
   extra?: ReactNode;
 };
 
-export function Header({ activePage: activePageProp, sticky, extra }: HeaderProps) {
+export function Header({ activePage: activePageProp, sticky, tall, extra }: HeaderProps) {
   const pathname = usePathname();
   const resolvedActive = activePageProp ?? pathnameToHeaderPage(pathname);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -47,7 +49,7 @@ export function Header({ activePage: activePageProp, sticky, extra }: HeaderProp
 
   return (
     <header className={[sticky ? 'fuel-header-shell fuel-header-shell--sticky' : 'fuel-header-shell'].join(' ')}>
-      <div className="fuel-header-inner">
+      <div className={['fuel-header-inner', tall ? 'fuel-header-inner--tall' : ''].join(' ').trim()}>
         <div className="fuel-header-left">
           <Link
             href="/"

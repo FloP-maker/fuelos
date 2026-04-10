@@ -2,8 +2,11 @@
 
 import Link from 'next/link';
 import type { CSSProperties, JSX } from 'react';
+import { useEffect } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { BookOpen, ChefHat, Crosshair, ShoppingBag, UserRound, Zap } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Header } from './components/Header';
 import { LandingAuthPanel } from './components/LandingAuthPanel';
 import { PRODUCTS } from './lib/products';
@@ -92,9 +95,24 @@ const FEATURE_CARDS: {
 ];
 
 export default function Home() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const isConnected = Boolean(session?.user);
+  const showLandingAuth = status !== 'loading' && !isConnected;
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace('/plan?step=profile');
+    }
+  }, [router, status]);
+
+  if (status === 'authenticated') {
+    return null;
+  }
+
   return (
     <div className="fuel-page">
-      <Header sticky />
+      <Header sticky tall={showLandingAuth} />
       <main className="fuel-main" style={S.main}>
         <section
           style={{
@@ -178,14 +196,22 @@ export default function Home() {
                   Générer un plan en 2 minutes
                 </Link>
               </div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.55, marginTop: 4 }}>
-                Déjà un compte ? Utilise le panneau à droite (Google / Apple / e-mail).
-              </div>
+              {showLandingAuth ? (
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.55, marginTop: 4 }}>
+                  Déjà un compte ? Utilise le panneau à droite (Google / Apple / e-mail).
+                </div>
+              ) : (
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.55, marginTop: 4 }}>
+                  Connecté: accès direct à ton espace, sans écran de connexion.
+                </div>
+              )}
             </div>
 
-            <div style={{ display: 'grid', gap: 12 }}>
-              <LandingAuthPanel />
-            </div>
+            {showLandingAuth && (
+              <div style={{ display: 'grid', gap: 12 }}>
+                <LandingAuthPanel />
+              </div>
+            )}
           </div>
         </section>
 
@@ -252,71 +278,73 @@ export default function Home() {
           })}
         </div>
 
-        <section style={{ marginBottom: 48 }}>
-          <h2 className="font-display" style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: 8 }}>
-            Comment ça marche
-          </h2>
-          <p style={{ fontSize: 15, color: 'var(--color-text-muted)', marginBottom: 26, maxWidth: 520, lineHeight: 1.55 }}>
-            Trois étapes pour passer du profil à l&apos;exécution sur la ligne de départ.
-          </p>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(228px, 1fr))',
-              gap: 18,
-            }}
-          >
-            {HOW_IT_WORKS_STEPS.map((item, i) => (
-              <div
-                key={item.title}
-                className="fuel-card"
-                style={{
-                  ...S.card,
-                  marginBottom: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  borderColor: 'color-mix(in srgb, var(--color-accent) 20%, var(--color-border))',
-                }}
-              >
+        {!showLandingAuth && (
+          <section style={{ marginBottom: 48 }}>
+            <h2 className="font-display" style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: 8 }}>
+              Comment ça marche
+            </h2>
+            <p style={{ fontSize: 15, color: 'var(--color-text-muted)', marginBottom: 26, maxWidth: 520, lineHeight: 1.55 }}>
+              Trois étapes pour passer du profil à l&apos;exécution sur la ligne de départ.
+            </p>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(228px, 1fr))',
+                gap: 18,
+              }}
+            >
+              {HOW_IT_WORKS_STEPS.map((item, i) => (
                 <div
+                  key={item.title}
+                  className="fuel-card"
                   style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: 16,
-                    background: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-card))',
-                    color: 'var(--color-accent)',
+                    ...S.card,
+                    marginBottom: 0,
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: 16,
-                    boxShadow: 'var(--shadow-xs)',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    borderColor: 'color-mix(in srgb, var(--color-accent) 20%, var(--color-border))',
                   }}
                 >
-                  {item.icon({})}
+                  <div
+                    style={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: 16,
+                      background: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-card))',
+                      color: 'var(--color-accent)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: 16,
+                      boxShadow: 'var(--shadow-xs)',
+                    }}
+                  >
+                    {item.icon({})}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 900,
+                      fontFamily: 'var(--font-display)',
+                      letterSpacing: '0.08em',
+                      color: 'var(--color-text-muted)',
+                      marginBottom: 6,
+                    }}
+                  >
+                    ÉTAPE {i + 1}
+                  </div>
+                  <h3 className="font-display" style={{ fontWeight: 900, fontSize: 17, margin: '0 0 8px', lineHeight: 1.3 }}>
+                    {item.title}
+                  </h3>
+                  <p style={{ fontSize: 14, color: 'var(--color-text-muted)', lineHeight: 1.55, margin: 0 }}>
+                    {item.desc}
+                  </p>
                 </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 900,
-                    fontFamily: 'var(--font-display)',
-                    letterSpacing: '0.08em',
-                    color: 'var(--color-text-muted)',
-                    marginBottom: 6,
-                  }}
-                >
-                  ÉTAPE {i + 1}
-                </div>
-                <h3 className="font-display" style={{ fontWeight: 900, fontSize: 17, margin: '0 0 8px', lineHeight: 1.3 }}>
-                  {item.title}
-                </h3>
-                <p style={{ fontSize: 14, color: 'var(--color-text-muted)', lineHeight: 1.55, margin: 0 }}>
-                  {item.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        )}
 
         <div
           className="fuel-card"

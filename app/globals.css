@@ -205,6 +205,12 @@ textarea:focus {
     --fuel-header-sticky-offset: 52px;
   }
 
+  .fuel-header-inner--tall {
+    min-height: 64px;
+    padding-block: 6px;
+    --fuel-header-sticky-offset: 64px;
+  }
+
   @media (min-width: 900px) {
     .fuel-header-inner {
       padding-inline: clamp(20px, 4vw, 36px);
