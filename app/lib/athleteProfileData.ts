@@ -5,6 +5,7 @@ import type {
   SeasonGoal,
 } from "@/app/lib/types";
 import type { AthleteRaceMemory, GISymptomType, RaceWeatherCondition } from "@/types/race";
+import type { NutritionPatterns } from "@/types/race-session";
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
@@ -110,6 +111,46 @@ function parseConditionPerformanceMap(
     out[key] = { count: Math.floor(count), avgNutritionScore };
   }
   return Object.keys(out).length ? out : undefined;
+}
+
+function parseNutritionPatterns(raw: unknown): NutritionPatterns | undefined {
+  if (!isRecord(raw)) return undefined;
+  const dzRaw = raw.dropZones;
+  const dropZones: NutritionPatterns["dropZones"] = [];
+  if (Array.isArray(dzRaw)) {
+    for (const z of dzRaw) {
+      if (!isRecord(z)) continue;
+      const kmStart = Number(z.kmStart);
+      const kmEnd = Number(z.kmEnd);
+      const skipRatePercent = Number(z.skipRatePercent);
+      const occurrenceCount = Number(z.occurrenceCount);
+      const likelyCause = typeof z.likelyCause === "string" ? z.likelyCause : "";
+      if (![kmStart, kmEnd, skipRatePercent, occurrenceCount].every((n) => Number.isFinite(n))) continue;
+      dropZones.push({ kmStart, kmEnd, skipRatePercent, occurrenceCount, likelyCause });
+    }
+  }
+  const worstIntakeType = typeof raw.worstIntakeType === "string" ? raw.worstIntakeType : "";
+  const avgDelayMin = Number(raw.avgDelayMin);
+  const vomitCorrelations = Array.isArray(raw.vomitCorrelations)
+    ? raw.vomitCorrelations.filter((x): x is string => typeof x === "string")
+    : [];
+  const bestConditions = typeof raw.bestConditions === "string" ? raw.bestConditions : "";
+  const lastUpdatedAtRaw = raw.lastUpdatedAt;
+  const lastUpdatedAt =
+    typeof lastUpdatedAtRaw === "string"
+      ? new Date(lastUpdatedAtRaw)
+      : lastUpdatedAtRaw instanceof Date
+        ? lastUpdatedAtRaw
+        : new Date();
+  if (!Number.isFinite(lastUpdatedAt.getTime())) return undefined;
+  return {
+    dropZones,
+    worstIntakeType,
+    avgDelayMin: Number.isFinite(avgDelayMin) ? avgDelayMin : 0,
+    vomitCorrelations,
+    bestConditions,
+    lastUpdatedAt,
+  };
 }
 
 function parseRaceMemory(raw: unknown): AthleteProfile["raceMemory"] {
@@ -241,6 +282,8 @@ export function mergeStoredAthleteProfile(stored: Partial<AthleteProfile> | null
   if (li) out.learnedInsights = li;
   const rm = parseRaceMemory(stored.raceMemory);
   if (rm) out.raceMemory = rm;
+  const patterns = parseNutritionPatterns(stored.patterns);
+  if (patterns) out.patterns = patterns;
   return out;
 }
 
@@ -335,6 +378,9 @@ export function athleteProfileFromJson(raw: unknown): AthleteProfile | null {
 
   const raceMemory = parseRaceMemory(raw.raceMemory);
   if (raceMemory) out.raceMemory = raceMemory;
+
+  const patterns = parseNutritionPatterns(raw.patterns);
+  if (patterns) out.patterns = patterns;
 
   return out;
 }

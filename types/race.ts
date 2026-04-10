@@ -1,5 +1,7 @@
 /** Mémoire nutritionnelle — course complétée et enrichissement du profil. */
 
+import type { PlannedIntake as LivePlannedIntake } from "@/types/race-session";
+
 export type RaceSport = "trail" | "marathon" | "triathlon" | "cyclisme" | "autre";
 
 export type RaceWeatherCondition =
@@ -75,6 +77,9 @@ export interface RaceEvent {
 
   nutritionScore: number;
   insights: string[];
+
+  /** Prises suivies en mode course (rapport Prévu vs Réel). */
+  intakeTimeline?: LivePlannedIntake[];
 }
 
 /** Champs appris du terrain (pers. dans `AthleteProfile.raceMemory`). */

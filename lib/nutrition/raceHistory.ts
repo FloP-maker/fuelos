@@ -5,6 +5,12 @@ import type {
   RaceEvent,
   RaceWeatherCondition,
 } from "@/types/race";
+import type {
+  ActualIntake,
+  IntakeStatus,
+  IntakeType,
+  PlannedIntake,
+} from "@/types/race-session";
 
 /** Sous-scores 0–100 (avant pondération affichée en %). */
 export type NutritionScoreBreakdown = {
@@ -259,6 +265,132 @@ const WEATHER_SET = new Set<RaceEvent["weather"]["conditions"]>([
   "froid",
 ]);
 
+const INTAKE_STATUS_SET = new Set<IntakeStatus>([
+  "pending",
+  "taken",
+  "skipped",
+  "modified",
+  "vomited",
+  "delayed",
+]);
+
+const INTAKE_TYPE_SET = new Set<IntakeType>([
+  "gel",
+  "barre",
+  "boisson",
+  "eau",
+  "solide",
+  "electrolyte",
+  "autre",
+]);
+
+const GI_REACTION_SET = new Set<ActualIntake["giReaction"]>([
+  "none",
+  "mild",
+  "moderate",
+  "severe",
+]);
+
+function parseActualIntake(raw: unknown): ActualIntake | null {
+  if (!raw || typeof raw !== "object") return null;
+  const x = raw as Record<string, unknown>;
+  const takenAtMin = Number(x.takenAtMin);
+  const takenAtKm = Number(x.takenAtKm);
+  const choG = Number(x.choG);
+  const sodiumMg = Number(x.sodiumMg);
+  const fluidMl = Number(x.fluidMl);
+  const note = typeof x.note === "string" ? x.note : "";
+  const giReaction = x.giReaction;
+  const prod = x.product;
+  if (!prod || typeof prod !== "object") return null;
+  const p = prod as Record<string, unknown>;
+  if (typeof p.productId !== "string" || typeof p.name !== "string") return null;
+  const quantity = Number(p.quantity);
+  const takenAtKmP = Number(p.takenAtKm);
+  if (![takenAtMin, takenAtKm, choG, sodiumMg, fluidMl, quantity, takenAtKmP].every((n) => Number.isFinite(n))) {
+    return null;
+  }
+  if (!GI_REACTION_SET.has(giReaction as ActualIntake["giReaction"])) return null;
+  return {
+    takenAtMin,
+    takenAtKm,
+    choG,
+    sodiumMg,
+    fluidMl,
+    note,
+    giReaction: giReaction as ActualIntake["giReaction"],
+    product: {
+      productId: p.productId,
+      name: p.name,
+      quantity,
+      takenAtKm: takenAtKmP,
+    },
+  };
+}
+
+function parseIntakeTimeline(raw: unknown): PlannedIntake[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: PlannedIntake[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const x = item as Record<string, unknown>;
+    const id = x.id;
+    const raceEventId = x.raceEventId;
+    const scheduledAtMin = Number(x.scheduledAtMin);
+    const scheduledAtKm = Number(x.scheduledAtKm);
+    const choG = Number(x.choG);
+    const sodiumMg = Number(x.sodiumMg);
+    const fluidMl = Number(x.fluidMl);
+    const status = x.status;
+    const intakeType = x.intakeType;
+    const product = x.product;
+    if (typeof id !== "string" || typeof raceEventId !== "string") continue;
+    if (!INTAKE_STATUS_SET.has(status as IntakeStatus)) continue;
+    if (!INTAKE_TYPE_SET.has(intakeType as IntakeType)) continue;
+    if (!product || typeof product !== "object") continue;
+    const p = product as Record<string, unknown>;
+    if (typeof p.productId !== "string" || typeof p.name !== "string") continue;
+    const quantity = Number(p.quantity);
+    const takenAtKmP = Number(p.takenAtKm);
+    if (
+      ![scheduledAtMin, scheduledAtKm, choG, sodiumMg, fluidMl, quantity, takenAtKmP].every((n) =>
+        Number.isFinite(n)
+      )
+    ) {
+      continue;
+    }
+    const actualRaw = x.actualIntake;
+    const actualIntake =
+      actualRaw === null || actualRaw === undefined ? null : parseActualIntake(actualRaw);
+    if (actualRaw != null && actualIntake === null) continue;
+    const timelineIndexRaw = x.timelineIndex;
+    const timelineIndex =
+      timelineIndexRaw === undefined ? undefined : Number(timelineIndexRaw);
+    if (timelineIndex !== undefined && !Number.isFinite(timelineIndex)) continue;
+
+    out.push({
+      id,
+      raceEventId,
+      scheduledAtMin,
+      scheduledAtKm,
+      choG,
+      sodiumMg,
+      fluidMl,
+      intakeType: intakeType as IntakeType,
+      status: status as IntakeStatus,
+      product: {
+        productId: p.productId,
+        name: p.name,
+        quantity,
+        takenAtKm: takenAtKmP,
+      },
+      actualIntake,
+      ...(timelineIndex !== undefined ? { timelineIndex: Math.floor(timelineIndex) } : {}),
+    });
+  }
+  return out.length > 0 ? out : undefined;
+}
+
 /**
  * Accepte un JSON client (dates en string ISO) et produit un {@link RaceEvent} normalisé.
  * Retourne null si la charge utile est incohérente.
@@ -411,6 +543,8 @@ export function raceEventFromJson(raw: unknown): RaceEvent | null {
     ? insightsRaw.filter((x): x is string => typeof x === "string")
     : [];
 
+  const intakeTimeline = parseIntakeTimeline(o.intakeTimeline);
+
   return {
     id,
     userId,
@@ -444,5 +578,6 @@ export function raceEventFromJson(raw: unknown): RaceEvent | null {
     },
     nutritionScore: Number.isFinite(nutritionScore) ? Math.round(nutritionScore) : 0,
     insights,
+    ...(intakeTimeline ? { intakeTimeline } : {}),
   };
 }

@@ -64,6 +64,9 @@ export interface AthleteProfile {
 
   /** Agrégats issus des courses sauvegardées (mémoire nutritionnelle). */
   raceMemory?: AthleteRaceMemory;
+
+  /** Patterns multi-courses (détection après ≥3 courses avec suivi détaillé). */
+  patterns?: import("@/types/race-session").NutritionPatterns;
 }
 
 /** Parcours issu d’un GPX (coords MapLibre / GeoJSON : [lng, lat]) */

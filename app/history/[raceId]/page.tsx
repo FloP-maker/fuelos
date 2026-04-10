@@ -115,6 +115,16 @@ export default function HistoryRaceDetailPage() {
             <section className="mb-8">
               <h2 className="mb-3 font-display text-lg font-extrabold">Nutrition prévu vs réel</h2>
               <NutritionComparisonTable race={race} />
+              {(race.intakeTimeline?.length ?? 0) > 0 ? (
+                <div className="mt-4">
+                  <Link
+                    href={`/history/${raceId}/report`}
+                    className="inline-flex rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-2 text-[13px] font-bold text-[var(--color-accent)] hover:underline"
+                  >
+                    Rapport Prévu / Réel (prises)
+                  </Link>
+                </div>
+              ) : null}
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 <CompareBar label="CHO/h" planned={race.plannedNutrition.choPerHour} actual={race.actualNutrition.choPerHour} max={120} unit="g" />
                 <CompareBar

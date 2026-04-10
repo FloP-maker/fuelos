@@ -24,6 +24,7 @@ import {
   NutritionProfileCard,
   NutritionProfileSkeleton,
 } from '../components/insights/NutritionProfileCard';
+import { NutritionPatternsSection } from '../components/insights/NutritionPatternsSection';
 
 const DEBRIEFS_STORAGE_KEY = 'fuelos_debriefs';
 
@@ -656,6 +657,7 @@ export default function LearnPage() {
           ) : nutritionProfile && nutritionProfile.debriefCount >= 1 ? (
             <NutritionProfileCard profile={nutritionProfile} />
           ) : null}
+          <NutritionPatternsSection />
           {debriefs.length === 0 ? (
             <div
               style={{

@@ -1,6 +1,7 @@
 'use client';
 
 import type { AthleteProfile, EventDetails, FuelPlan, RaceState, TimelineItem } from './types';
+import type { PlannedIntake } from '@/types/race-session';
 
 /** Snapshot du plan nutritionnel tel que stocké au moment du débrief (fuelos_active_plan ou plan courant). */
 export type DebriefPlanSnapshot = {
@@ -39,6 +40,8 @@ export type StoredDebrief = {
   planSnapshot?: DebriefPlanSnapshot | null;
   /** CHO réel estimé (g/h) : prises enregistrées ou approximation compliance × CHO planifié. */
   actualChoPerHour?: number | null;
+  /** Suivi prise par prise (mode course enrichi). */
+  intakeTimeline?: PlannedIntake[] | null;
 };
 
 export const DEFAULT_RACE_STATE: Pick<RaceState, 'consumedItems' | 'deviations' | 'elapsedMs'> = {

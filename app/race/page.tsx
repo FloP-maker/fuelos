@@ -10,10 +10,15 @@ import {
   useId,
   type CSSProperties,
   type ReactNode,
+  type Dispatch,
 } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Suspense } from 'react';
+import { RaceProvider, useRaceLiveOptional, type RaceAction } from '../contexts/RaceContext';
+import { RaceLiveIntakesPanel } from '../components/race/RaceLiveIntakesPanel';
+import type { PlannedIntake } from '@/types/race-session';
 import { mergeStoredAthleteProfile } from '../lib/athleteProfileData';
 import { nearestPointOnCourse } from '../lib/courseGeometry';
 import type { FuelPlan, AthleteProfile, EventDetails, TimelineItem } from '../lib/types';
@@ -427,6 +432,15 @@ function RaceContent() {
     error: string | null;
   }>({ onCourseKm: null, raw: null, offCourse: false, error: null });
 
+  const { data: authSession } = useSession();
+  const raceLiveOpt = useRaceLiveOptional();
+  const liveIntakesRef = useRef<PlannedIntake[] | undefined>(undefined);
+  liveIntakesRef.current = raceLiveOpt?.session?.intakes;
+  const raceDispatchRef = useRef<Dispatch<RaceAction> | null>(null);
+  raceDispatchRef.current = raceLiveOpt?.dispatch ?? null;
+  const gpsRaceRef = useRef(gpsRace);
+  gpsRaceRef.current = gpsRace;
+
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const alertShownRef = useRef<Set<number>>(new Set());
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -630,6 +644,7 @@ function RaceContent() {
           deviations: finishedState.deviations ?? [],
           elapsedMs: finishedState.elapsedMs ?? 0,
         };
+        const timelineIntakes = liveIntakesRef.current;
         const debrief: StoredDebrief = normalizeDebrief({
           plan,
           profile,
@@ -639,6 +654,7 @@ function RaceContent() {
           feedback: DEFAULT_DEBRIEF_FEEDBACK,
           energyLevel: null,
           notes: '',
+          ...(timelineIntakes && timelineIntakes.length > 0 ? { intakeTimeline: timelineIntakes } : {}),
         });
         debrief.compliance = computeCompliance(debrief);
 
@@ -806,14 +822,23 @@ function RaceContent() {
     ensureAudioContext();
     const granted = await requestNotificationPermission();
     setNotifEnabled(granted);
+    if (plan && event && raceDispatchRef.current) {
+      raceDispatchRef.current({
+        type: 'INIT_SESSION',
+        plan,
+        event,
+        userId: authSession?.user?.id ?? 'local-user',
+      });
+    }
     setRaceState((prev) => ({
       ...prev,
       status: 'running',
       startTime: prev.simulationSpeed === 1 ? Date.now() - prev.elapsedMs : null,
     }));
-  }, [ensureAudioContext]);
+  }, [ensureAudioContext, plan, event, authSession?.user?.id]);
 
   const handlePause = useCallback(() => {
+    raceDispatchRef.current?.({ type: 'SET_STATUS', status: 'paused' });
     setRaceState((prev) => {
       if (prev.simulationSpeed > 1) {
         return { ...prev, status: 'paused', startTime: null };
@@ -824,6 +849,7 @@ function RaceContent() {
   }, []);
 
   const handleResume = useCallback(() => {
+    raceDispatchRef.current?.({ type: 'SET_STATUS', status: 'active' });
     setRaceState((prev) => ({
       ...prev,
       status: 'running',
@@ -833,6 +859,7 @@ function RaceContent() {
 
   const handleFinish = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
+    raceDispatchRef.current?.({ type: 'SET_STATUS', status: 'finished' });
     setRaceState((prev) => {
       const next = { ...prev, status: 'finished' as const, startTime: null };
       appendDebrief(next);
@@ -842,6 +869,7 @@ function RaceContent() {
 
   const handleReset = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
+    raceDispatchRef.current?.({ type: 'RESET' });
     alertShownRef.current = new Set();
     setRaceState({ ...INITIAL_RACE_STATE });
     setRaceViewTab('real');
@@ -905,10 +933,52 @@ function RaceContent() {
     };
   }, [event?.courseGeometry, raceViewTab, raceState.status]);
 
+  useEffect(() => {
+    if (raceState.status !== 'running' && raceState.status !== 'paused') return;
+    const min = raceState.elapsedMs / 60000;
+    const km = gpsRace.onCourseKm ?? 0;
+    raceDispatchRef.current?.({ type: 'TICK', currentMin: min, currentKm: km });
+  }, [raceState.elapsedMs, raceState.status, gpsRace.onCourseKm]);
+
+  useEffect(() => {
+    const on = () => raceDispatchRef.current?.({ type: 'SET_ONLINE', online: true });
+    const off = () => raceDispatchRef.current?.({ type: 'SET_ONLINE', online: false });
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => {
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
+    };
+  }, []);
+
   const handleConsumed = useCallback(
     (itemIndex: number) => {
       if (!plan) return;
       const item = plan.timeline[itemIndex];
+      const live = raceLiveOpt?.session?.intakes?.find((i) => i.timelineIndex === itemIndex);
+      const elapsedMin = raceStateRef.current.elapsedMs / 60000;
+      const km = gpsRaceRef.current.onCourseKm ?? 0;
+      if (live?.id) {
+        raceDispatchRef.current?.({
+          type: 'INTAKE_ACTION',
+          payload: {
+            intakeId: live.id,
+            action: 'taken',
+            currentMin: elapsedMin,
+            currentKm: km,
+            actualIntake: {
+              takenAtMin: elapsedMin,
+              takenAtKm: km,
+              product: { ...live.product },
+              choG: live.choG,
+              sodiumMg: live.sodiumMg,
+              fluidMl: live.fluidMl,
+              note: '',
+              giReaction: 'none',
+            },
+          },
+        });
+      }
 
       setRaceState((prev) => ({
         ...prev,
@@ -923,13 +993,27 @@ function RaceContent() {
       setChoDeficit((prev) => Math.max(0, prev - (item.cho || 0)));
       playSoundCue('confirm');
     },
-    [plan, raceState.elapsedMs, playSoundCue]
+    [plan, raceState.elapsedMs, playSoundCue, raceLiveOpt?.session?.intakes]
   );
 
   const handleSkipped = useCallback(
     (itemIndex: number) => {
       if (!plan) return;
       const item = plan.timeline[itemIndex];
+      const live = raceLiveOpt?.session?.intakes?.find((i) => i.timelineIndex === itemIndex);
+      const elapsedMin = raceStateRef.current.elapsedMs / 60000;
+      const km = gpsRaceRef.current.onCourseKm ?? 0;
+      if (live?.id) {
+        raceDispatchRef.current?.({
+          type: 'INTAKE_ACTION',
+          payload: {
+            intakeId: live.id,
+            action: 'skipped',
+            currentMin: elapsedMin,
+            currentKm: km,
+          },
+        });
+      }
 
       setRaceState((prev) => ({
         ...prev,
@@ -940,7 +1024,7 @@ function RaceContent() {
       setChoDeficit((prev) => prev + (item.cho || 0));
       setShowAlert(false);
     },
-    [plan, raceState.elapsedMs]
+    [plan, raceState.elapsedMs, raceLiveOpt?.session?.intakes]
   );
 
   useEffect(() => {
@@ -1894,6 +1978,10 @@ function RaceContent() {
           </section>
         )}
 
+        {plan && (raceState.status === 'running' || raceState.status === 'paused') ? (
+          <RaceLiveIntakesPanel />
+        ) : null}
+
         <section style={S.raceBottomDock} aria-label="Suivi et timeline">
           {/* Alert Card */}
           {showAlert && alertItem && raceState.status === 'running' && (
@@ -2606,22 +2694,24 @@ function RaceContent() {
 export default function RacePage() {
   usePageTitle('Mode course');
   return (
-    <Suspense
-      fallback={
-        <div
-          className="min-h-screen flex items-center justify-center"
-          style={{
-            background: 'var(--color-bg)',
-            color: 'var(--color-text)',
-          }}
-        >
-          <div className="text-2xl" style={{ color: "var(--color-text)" }}>
-            ⚡ Chargement...
+    <RaceProvider>
+      <Suspense
+        fallback={
+          <div
+            className="min-h-screen flex items-center justify-center"
+            style={{
+              background: 'var(--color-bg)',
+              color: 'var(--color-text)',
+            }}
+          >
+            <div className="text-2xl" style={{ color: 'var(--color-text)' }}>
+              ⚡ Chargement...
+            </div>
           </div>
-        </div>
-      }
-    >
-      <RaceContent />
-    </Suspense>
+        }
+      >
+        <RaceContent />
+      </Suspense>
+    </RaceProvider>
   );
 }

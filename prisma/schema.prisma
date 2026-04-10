@@ -46,15 +46,16 @@ model User {
   emailVerified DateTime? @map("email_verified")
   image         String?
 
-  accounts             Account[]
-  sessions             Session[]
-  planSnapshots        PlanSnapshot[]
-  raceDebriefs         RaceDebrief[]
-  customProductList    CustomProductList?
+  accounts              Account[]
+  sessions              Session[]
+  planSnapshots         PlanSnapshot[]
+  raceDebriefs          RaceDebrief[]
+  customProductList     CustomProductList?
   storedAthleteProfiles StoredAthleteProfile[]
   stravaConnection      StravaConnection?
   prepState             PrepState?
   raceEvents            RaceEvent[]
+  raceSessions          RaceSession[]
 }
 
 /// Jetons OAuth Strava (import d’activités) — distinct du compte Google / e-mail.
@@ -123,20 +124,103 @@ model CustomProductList {
 
 /// Course complétée — mémoire nutritionnelle (payload JSON aligné sur `@/types/race` `RaceEvent`).
 model RaceEvent {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  userId         String   @map("user_id")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Date de la course (tri / filtres).
-  raceDate  DateTime @map("race_date")
+  raceDate       DateTime @map("race_date")
   /// Score nutritionnel 0–100 (copie pour listes rapides).
-  nutritionScore Int   @map("nutrition_score")
+  nutritionScore Int      @map("nutrition_score")
   /// Document complet sérialisé (inclut id, dates ISO string, nested objects).
-  payload   Json
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  payload        Json
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  raceSessions   RaceSession[]
+  plannedIntakes PlannedIntake[]
 
   @@index([userId, raceDate(sort: Desc)])
   @@map("race_events")
+}
+
+/// Session « mode course » temps réel (sync optionnelle cloud).
+model RaceSession {
+  id          String            @id @default(cuid())
+  userId      String            @map("user_id")
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  raceEventId String?           @map("race_event_id")
+  raceEvent   RaceEvent?        @relation(fields: [raceEventId], references: [id], onDelete: SetNull)
+  startedAt   DateTime          @map("started_at")
+  status      RaceSessionStatus
+  currentKm   Float             @default(0) @map("current_km")
+  currentMin  Int               @default(0) @map("current_min")
+  liveStats   Json              @map("live_stats")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  plannedIntakes PlannedIntake[]
+  intakeActions  IntakeAction[]
+
+  @@index([userId])
+  @@index([raceEventId])
+  @@map("race_sessions")
+}
+
+enum RaceSessionStatus {
+  active
+  paused
+  finished
+}
+
+/// Prises planifiées suivies en live (une ligne par prise).
+model PlannedIntake {
+  id             String              @id @default(cuid())
+  raceSessionId  String              @map("race_session_id")
+  raceSession    RaceSession         @relation(fields: [raceSessionId], references: [id], onDelete: Cascade)
+  raceEventId    String?             @map("race_event_id")
+  raceEvent      RaceEvent?          @relation(fields: [raceEventId], references: [id], onDelete: SetNull)
+  sortIndex      Int                 @default(0) @map("sort_index")
+  scheduledAtMin Int                 @map("scheduled_at_min")
+  scheduledAtKm  Float               @map("scheduled_at_km")
+  product        Json
+  choG           Float               @map("cho_g")
+  sodiumMg       Float               @map("sodium_mg")
+  fluidMl        Float               @map("fluid_ml")
+  intakeType     String              @map("intake_type")
+  status         PlannedIntakeStatus @default(pending)
+  actualIntake   Json?               @map("actual_intake")
+
+  intakeActions IntakeAction[]
+
+  @@index([raceSessionId])
+  @@index([raceEventId])
+  @@map("planned_intakes")
+}
+
+enum PlannedIntakeStatus {
+  pending
+  taken
+  skipped
+  modified
+  vomited
+  delayed
+}
+
+/// File d’actions offline / avant sync (debounced côté client).
+model IntakeAction {
+  id              String         @id @default(cuid())
+  raceSessionId   String         @map("race_session_id")
+  raceSession     RaceSession    @relation(fields: [raceSessionId], references: [id], onDelete: Cascade)
+  plannedIntakeId String?        @map("planned_intake_id")
+  plannedIntake   PlannedIntake? @relation(fields: [plannedIntakeId], references: [id], onDelete: SetNull)
+  action          String         @map("action")
+  actualIntake    Json?          @map("actual_intake")
+  clientTimestamp DateTime       @map("client_timestamp")
+  synced          Boolean        @default(false)
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  @@index([raceSessionId, synced])
+  @@map("intake_actions")
 }
 
 /// Profils athlète persistés (plusieurs par utilisateur : ex. été / hiver). `data` = payload AthleteProfile (JSON).
