@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { AuthMenu } from './AuthMenu';
-import { SignInNudgeBar } from './SignInNudgeBar';
 import { FuelLogo } from './FuelLogo';
 import { SiteSearch } from './SiteSearch';
 import { NAV_SECTIONS, pathnameToHeaderPage, type HeaderActivePage } from '../lib/navSections';
@@ -143,7 +142,6 @@ export function Header({ activePage: activePageProp, sticky, tall, extra }: Head
           </div>
         </>
       )}
-      <SignInNudgeBar />
     </header>
   );
 }

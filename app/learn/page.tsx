@@ -4,44 +4,23 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Flag, ArrowRight } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import type { AthleteProfile, EventDetails, FuelPlan, RaceState } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
 import { Header } from '../components/Header';
 import { SectionBreadcrumb } from '../components/SectionBreadcrumb';
 import { Button } from '../components/Button';
+import { DebriefForm } from '../components/DebriefForm';
+import {
+  buildAutoInsight,
+  computeCompliance,
+  insightTone,
+  isDebriefCompleted,
+  normalizeDebrief,
+  stomachEmoji,
+  type EnergyLevel,
+  type StoredDebrief,
+} from '../lib/debrief';
 
 const DEBRIEFS_STORAGE_KEY = 'fuelos_debriefs';
-
-type StoredDebrief = {
-  cloudId?: string;
-  plan: FuelPlan | null;
-  profile: AthleteProfile | null;
-  event: EventDetails | null;
-  raceState?: Partial<RaceState> | null;
-  finishedAt?: string;
-  savedAt?: string;
-  feedback?: DebriefFeedback | null;
-};
-
-type PlanFollowed = 'yes' | 'partial' | 'no';
-
-type DebriefFeedback = {
-  stomachScore: number | null;
-  planFollowed: PlanFollowed | null;
-  note: string;
-};
-
-const DEFAULT_RACE_STATE: Pick<RaceState, 'consumedItems' | 'deviations' | 'elapsedMs'> = {
-  consumedItems: [],
-  deviations: [],
-  elapsedMs: 0,
-};
-
-const DEFAULT_DEBRIEF_FEEDBACK: DebriefFeedback = {
-  stomachScore: null,
-  planFollowed: null,
-  note: '',
-};
 
 type LearnItem = {
   id: string;
@@ -266,37 +245,23 @@ function formatElapsed(ms: number) {
   return `${h} h ${m} min`;
 }
 
-function normalizeDebrief(input: StoredDebrief): StoredDebrief {
-  return {
-    ...input,
-    raceState: {
-      ...DEFAULT_RACE_STATE,
-      ...(input?.raceState ?? {}),
-    },
-    finishedAt: input?.finishedAt ?? input?.savedAt ?? new Date(0).toISOString(),
-    feedback: {
-      ...DEFAULT_DEBRIEF_FEEDBACK,
-      ...(input?.feedback ?? {}),
-    },
-  };
-}
-
 function DebriefCard({
   debrief,
   rank,
-  onSaveFeedback,
+  onSaveDebrief,
   isSaving,
 }: {
   debrief: StoredDebrief;
   rank: number;
-  onSaveFeedback: (feedback: DebriefFeedback) => Promise<void>;
+  onSaveDebrief: (payload: {
+    feedback: StoredDebrief['feedback'];
+    energyLevel: EnergyLevel;
+    notes: string;
+  }) => Promise<void>;
   isSaving: boolean;
 }) {
   const { event, plan } = debrief;
-  const raceState = {
-    ...DEFAULT_RACE_STATE,
-    ...(debrief.raceState ?? {}),
-  };
+  const raceState = debrief.raceState ?? { consumedItems: [], deviations: [], elapsedMs: 0 };
   const finishedAt = debrief.finishedAt ?? debrief.savedAt ?? new Date(0).toISOString();
   const title =
     event != null
@@ -307,13 +272,10 @@ function DebriefCard({
   const timelineLen = plan?.timeline?.length ?? 0;
   const consumed = raceState?.consumedItems?.length ?? 0;
   const deviations = raceState?.deviations ?? [];
-  const [stomachScore, setStomachScore] = useState<number | null>(debrief.feedback?.stomachScore ?? null);
-  const [planFollowed, setPlanFollowed] = useState<PlanFollowed | null>(
-    debrief.feedback?.planFollowed ?? null
-  );
-  const [note, setNote] = useState(debrief.feedback?.note ?? '');
-
-  const canSave = stomachScore !== null && planFollowed !== null && !isSaving;
+  const [editing, setEditing] = useState(!isDebriefCompleted(debrief));
+  const compliance = debrief.compliance ?? computeCompliance(debrief);
+  const insight = debrief.feedback?.autoInsight ?? '';
+  const insightIsGood = insightTone(insight) === 'good';
 
   return (
     <details
@@ -373,102 +335,57 @@ function DebriefCard({
         )}
         <div style={{ marginTop: 14, borderTop: '1px solid var(--color-border)', paddingTop: 14 }}>
           <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: 14 }}>Débrief express post-course</p>
-          <div style={{ display: 'grid', gap: 12 }}>
-            <label style={{ display: 'grid', gap: 6 }}>
-              <span style={{ fontSize: 13 }}>Comment était ton estomac ?</span>
-              <select
-                value={stomachScore ?? ''}
-                onChange={(e) =>
-                  setStomachScore(e.target.value ? Number(e.target.value) : null)
-                }
-                style={{
-                  padding: '9px 10px',
-                  borderRadius: 8,
-                  border: '1px solid var(--color-border)',
-                  background: 'var(--color-bg)',
-                  color: 'var(--color-text)',
-                }}
-              >
-                <option value="">Choisir une note</option>
-                <option value="1">1 - Très inconfortable</option>
-                <option value="2">2</option>
-                <option value="3">3 - Moyen</option>
-                <option value="4">4</option>
-                <option value="5">5 - Très bien</option>
-              </select>
-            </label>
-
-            <fieldset style={{ border: 0, margin: 0, padding: 0 }}>
-              <legend style={{ fontSize: 13, marginBottom: 6 }}>As-tu respecté le plan ?</legend>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {[
-                  ['yes', 'Oui'],
-                  ['partial', 'Partiellement'],
-                  ['no', 'Non'],
-                ].map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setPlanFollowed(value as PlanFollowed)}
-                    style={{
-                      padding: '7px 10px',
-                      borderRadius: 999,
-                      border:
-                        planFollowed === value
-                          ? '1px solid color-mix(in srgb, var(--color-accent) 55%, var(--color-border))'
-                          : '1px solid var(--color-border)',
-                      background:
-                        planFollowed === value
-                          ? 'color-mix(in srgb, var(--color-accent) 15%, var(--color-bg-card))'
-                          : 'var(--color-bg-card)',
-                      color: 'var(--color-text)',
-                      cursor: 'pointer',
-                      fontSize: 13,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
+          {isDebriefCompleted(debrief) && !editing ? (
+            <div style={{ display: 'grid', gap: 10 }}>
+              <div style={{ fontSize: 14 }}>
+                {stomachEmoji(debrief.feedback?.stomachScore ?? null)} Estomac · {debrief.feedback?.stomachScore}/5
               </div>
-            </fieldset>
-
-            <label style={{ display: 'grid', gap: 6 }}>
-              <span style={{ fontSize: 13 }}>Note libre (optionnel)</span>
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Ex: gel ok, boisson trop sucrée au km 20..."
-                rows={3}
-                style={{
-                  padding: '9px 10px',
-                  borderRadius: 8,
-                  border: '1px solid var(--color-border)',
-                  background: 'var(--color-bg)',
-                  color: 'var(--color-text)',
-                  resize: 'vertical',
-                }}
-              />
-            </label>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                disabled={!canSave}
-                onClick={() =>
-                  onSaveFeedback({
-                    stomachScore,
-                    planFollowed,
-                    note: note.trim(),
-                  })
-                }
-              >
-                {isSaving ? 'Sauvegarde…' : 'Enregistrer le débrief'}
-              </Button>
+              <div style={{ fontSize: 14 }}>
+                Plan · {debrief.feedback?.planFollowed === 'yes' ? 'Oui ✓' : debrief.feedback?.planFollowed === 'partial' ? 'En partie' : 'Non ✗'}
+              </div>
+              <div style={{ fontSize: 14 }}>
+                Énergie · {debrief.energyLevel === 'good' ? '🔋 Bon' : debrief.energyLevel === 'ok' ? '⚡ Moyen' : '🪫 Vide'}
+              </div>
+              {debrief.notes ? (
+                <div style={{ fontSize: 14, color: 'var(--color-text-muted)' }}>Note · {debrief.notes}</div>
+              ) : null}
+              {insight ? (
+                <div
+                  style={{
+                    borderRadius: 10,
+                    padding: '10px 12px',
+                    border: insightIsGood ? '1px solid #16a34a' : '1px solid #ea580c',
+                    background: insightIsGood
+                      ? 'color-mix(in srgb, #16a34a 10%, var(--color-bg-card))'
+                      : 'color-mix(in srgb, #ea580c 10%, var(--color-bg-card))',
+                    fontSize: 13,
+                  }}
+                >
+                  {insight}
+                </div>
+              ) : null}
+              <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>Compliance: {compliance}%</div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Button type="button" variant="secondary" size="sm" onClick={() => setEditing(true)}>
+                  Modifier
+                </Button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <DebriefForm
+              debrief={debrief}
+              mode="inline"
+              isSaving={isSaving}
+              onSave={async (payload) => {
+                await onSaveDebrief({
+                  feedback: payload.feedback,
+                  energyLevel: payload.energyLevel,
+                  notes: payload.notes,
+                });
+                setEditing(false);
+              }}
+            />
+          )}
         </div>
       </div>
     </details>
@@ -631,16 +548,28 @@ export default function LearnPage() {
     );
   };
 
-  const handleSaveFeedback = async (debrief: StoredDebrief, feedback: DebriefFeedback) => {
+  const handleSaveDebrief = async (
+    debrief: StoredDebrief,
+    payload: { feedback: StoredDebrief['feedback']; energyLevel: EnergyLevel; notes: string }
+  ) => {
     const debriefKey = debrief.finishedAt ?? debrief.savedAt ?? '';
     if (!debriefKey) return;
     setSavingDebriefKey(debriefKey);
     try {
       const nextDebriefs = debriefs.map((item) =>
         (item.finishedAt ?? item.savedAt ?? '') === debriefKey
-          ? normalizeDebrief({ ...item, feedback })
+          ? normalizeDebrief({
+              ...item,
+              feedback: payload.feedback ?? item.feedback,
+              energyLevel: payload.energyLevel,
+              notes: payload.notes,
+            })
           : item
       );
+      const updatedDebrief = nextDebriefs.find((item) => (item.finishedAt ?? item.savedAt ?? '') === debriefKey);
+      if (updatedDebrief?.feedback) {
+        updatedDebrief.feedback.autoInsight = buildAutoInsight(updatedDebrief);
+      }
       setDebriefs(nextDebriefs);
       persistDebriefsLocal(nextDebriefs);
 
@@ -664,6 +593,21 @@ export default function LearnPage() {
       setSavingDebriefKey(null);
     }
   };
+
+  const debriefsWithFeedback = debriefs.filter((d) => d.feedback?.stomachScore != null);
+  const avgStomach =
+    debriefsWithFeedback.length > 0
+      ? debriefsWithFeedback.reduce((sum, d) => sum + (d.feedback?.stomachScore ?? 0), 0) /
+        debriefsWithFeedback.length
+      : null;
+  const avgCompliance =
+    debriefs.length > 0
+      ? Math.round(debriefs.reduce((sum, d) => sum + (d.compliance ?? computeCompliance(d)), 0) / debriefs.length)
+      : 0;
+  const lowGiCount = debriefs.filter((d) => (d.feedback?.stomachScore ?? 99) <= 2).length;
+  const allHighGi =
+    debriefs.length > 0 &&
+    debriefs.every((d) => (d.feedback?.stomachScore ?? 0) >= 4);
 
   return (
     <div className="fuel-page">
@@ -714,6 +658,42 @@ export default function LearnPage() {
             mémoire nutritionnelle (10 derniers sur cet appareil ; compte Google pour l’historique cloud
             plus long).
           </p>
+          {debriefs.length >= 2 && (
+            <div
+              style={{
+                border: '1px solid var(--color-border)',
+                borderRadius: 12,
+                padding: 14,
+                background: 'var(--color-bg-card)',
+                marginBottom: 16,
+                display: 'grid',
+                gap: 8,
+              }}
+            >
+              <div style={{ fontWeight: 800 }}>📊 Tes tendances</div>
+              <div style={{ fontSize: 14 }}>
+                Estomac moyen: {avgStomach != null ? `${stomachEmoji(Math.round(avgStomach))} ${avgStomach.toFixed(1)}/5` : '—'}
+              </div>
+              <div
+                style={{
+                  fontSize: 14,
+                  color: avgCompliance > 75 ? '#16a34a' : avgCompliance >= 50 ? '#ea580c' : 'var(--color-danger)',
+                }}
+              >
+                Compliance moyenne: {avgCompliance}%
+              </div>
+              {lowGiCount >= 2 ? (
+                <div style={{ fontSize: 13, color: '#ea580c' }}>
+                  Inconforts digestifs récurrents — pense à réduire le CHO/h ou changer de produits
+                </div>
+              ) : null}
+              {allHighGi ? (
+                <div style={{ fontSize: 13, color: '#16a34a' }}>
+                  Excellente tolérance GI sur tes dernières courses 🎉
+                </div>
+              ) : null}
+            </div>
+          )}
           {debriefs.length === 0 ? (
             <div
               style={{
@@ -835,10 +815,10 @@ export default function LearnPage() {
             <div style={{ display: 'grid', gap: 12 }}>
               {debriefs.map((debrief, i) => (
                 <DebriefCard
-                  key={`${debrief.finishedAt}-${debrief.feedback?.stomachScore ?? 'x'}-${debrief.feedback?.planFollowed ?? 'x'}-${debrief.feedback?.note?.length ?? 0}-${i}`}
+                  key={`${debrief.finishedAt}-${debrief.feedback?.stomachScore ?? 'x'}-${debrief.feedback?.planFollowed ?? 'x'}-${debrief.energyLevel ?? 'x'}-${(debrief.notes ?? '').length}-${i}`}
                   debrief={debrief}
                   rank={i + 1}
-                  onSaveFeedback={(feedback) => handleSaveFeedback(debrief, feedback)}
+                  onSaveDebrief={(payload) => handleSaveDebrief(debrief, payload)}
                   isSaving={savingDebriefKey === (debrief.finishedAt ?? debrief.savedAt ?? '')}
                 />
               ))}
