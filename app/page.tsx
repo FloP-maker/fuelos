@@ -2,11 +2,9 @@
 
 import Link from 'next/link';
 import type { CSSProperties, JSX } from 'react';
-import { useEffect } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { BookOpen, ChefHat, Crosshair, ShoppingBag, UserRound, Zap } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { Header } from './components/Header';
 import { LandingAuthPanel } from './components/LandingAuthPanel';
 import { PRODUCTS } from './lib/products';
@@ -95,20 +93,9 @@ const FEATURE_CARDS: {
 ];
 
 export default function Home() {
-  const router = useRouter();
   const { data: session, status } = useSession();
   const isConnected = Boolean(session?.user);
   const showLandingAuth = status !== 'loading' && !isConnected;
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      router.replace('/plan?step=profile');
-    }
-  }, [router, status]);
-
-  if (status === 'authenticated') {
-    return null;
-  }
 
   return (
     <div className="fuel-page">
