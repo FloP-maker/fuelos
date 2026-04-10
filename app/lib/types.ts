@@ -34,6 +34,18 @@ export interface AthleteProfile {
 
   /** Après l’assistant débutant 4 questions, affiche le formulaire profil complet. */
   profileGuidedOnboardingDone?: boolean;
+
+  /** Insights agrégés (profil nutrition appris, sync cloud). */
+  learnedInsights?: {
+    id: string;
+    type: "warning" | "positive" | "suggestion";
+    title: string;
+    body: string;
+    actionLabel?: string;
+    actionHref?: string;
+    generatedAt: string;
+    basedOnDebriefs: number;
+  }[];
   
   // 🆕 NOUVELLES PROPRIÉTÉS - Préférences
   preferredProducts?: {

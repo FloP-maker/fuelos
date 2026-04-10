@@ -9,6 +9,38 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
 
+function parseLearnedInsights(raw: unknown): AthleteProfile["learnedInsights"] {
+  if (!Array.isArray(raw)) return undefined;
+  const out: NonNullable<AthleteProfile["learnedInsights"]> = [];
+  for (const item of raw) {
+    if (!isRecord(item)) continue;
+    const id = item.id;
+    const type = item.type;
+    const title = item.title;
+    const body = item.body;
+    const generatedAt = item.generatedAt;
+    const basedOnDebriefs = item.basedOnDebriefs;
+    if (typeof id !== "string" || typeof title !== "string" || typeof body !== "string") continue;
+    if (type !== "warning" && type !== "positive" && type !== "suggestion") continue;
+    if (typeof generatedAt !== "string") continue;
+    if (typeof basedOnDebriefs !== "number" || !Number.isFinite(basedOnDebriefs)) continue;
+    const actionLabel = item.actionLabel;
+    const actionHref = item.actionHref;
+    out.push({
+      id,
+      type,
+      title,
+      body,
+      generatedAt,
+      basedOnDebriefs: Math.max(0, Math.floor(basedOnDebriefs)),
+      ...(typeof actionLabel === "string" && actionLabel ? { actionLabel } : {}),
+      ...(typeof actionHref === "string" && actionHref ? { actionHref } : {}),
+    });
+    if (out.length >= 20) break;
+  }
+  return out.length > 0 ? out : undefined;
+}
+
 function parseExperienceLevel(v: unknown): ExperienceLevel | undefined {
   if (v === "beginner" || v === "intermediate" || v === "advanced" || v === "elite") return v;
   return undefined;
@@ -140,6 +172,8 @@ export function mergeStoredAthleteProfile(stored: Partial<AthleteProfile> | null
   if (raceWeightKg !== undefined) out.raceWeightKg = raceWeightKg;
   if (toleranceHistory !== undefined && toleranceHistory.length > 0) out.toleranceHistory = toleranceHistory;
   if (stored.profileGuidedOnboardingDone === true) out.profileGuidedOnboardingDone = true;
+  const li = parseLearnedInsights(stored.learnedInsights);
+  if (li) out.learnedInsights = li;
   return out;
 }
 
@@ -228,6 +262,9 @@ export function athleteProfileFromJson(raw: unknown): AthleteProfile | null {
   if (raw.profileGuidedOnboardingDone === true) {
     out.profileGuidedOnboardingDone = true;
   }
+
+  const learnedInsights = parseLearnedInsights(raw.learnedInsights);
+  if (learnedInsights) out.learnedInsights = learnedInsights;
 
   return out;
 }

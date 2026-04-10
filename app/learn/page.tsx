@@ -19,6 +19,11 @@ import {
   type EnergyLevel,
   type StoredDebrief,
 } from '../lib/debrief';
+import { useNutritionProfile } from '@/hooks/useNutritionProfile';
+import {
+  NutritionProfileCard,
+  NutritionProfileSkeleton,
+} from '../components/insights/NutritionProfileCard';
 
 const DEBRIEFS_STORAGE_KEY = 'fuelos_debriefs';
 
@@ -457,6 +462,8 @@ function DebriefsEmptyIllustration() {
 export default function LearnPage() {
   usePageTitle('Analyses');
   const { status } = useSession();
+  const { profile: nutritionProfile, isComputing: isNutritionProfileComputing, refresh: refreshNutritionProfile } =
+    useNutritionProfile();
   const [activeTab, setActiveTab] = useState<'debriefs' | 'library'>('debriefs');
   const [debriefs, setDebriefs] = useState<StoredDebrief[]>([]);
   const [savingDebriefKey, setSavingDebriefKey] = useState<string | null>(null);
@@ -589,25 +596,11 @@ export default function LearnPage() {
           });
         }
       }
+      refreshNutritionProfile();
     } finally {
       setSavingDebriefKey(null);
     }
   };
-
-  const debriefsWithFeedback = debriefs.filter((d) => d.feedback?.stomachScore != null);
-  const avgStomach =
-    debriefsWithFeedback.length > 0
-      ? debriefsWithFeedback.reduce((sum, d) => sum + (d.feedback?.stomachScore ?? 0), 0) /
-        debriefsWithFeedback.length
-      : null;
-  const avgCompliance =
-    debriefs.length > 0
-      ? Math.round(debriefs.reduce((sum, d) => sum + (d.compliance ?? computeCompliance(d)), 0) / debriefs.length)
-      : 0;
-  const lowGiCount = debriefs.filter((d) => (d.feedback?.stomachScore ?? 99) <= 2).length;
-  const allHighGi =
-    debriefs.length > 0 &&
-    debriefs.every((d) => (d.feedback?.stomachScore ?? 0) >= 4);
 
   return (
     <div className="fuel-page">
@@ -658,42 +651,11 @@ export default function LearnPage() {
             mémoire nutritionnelle (10 derniers sur cet appareil ; compte Google pour l’historique cloud
             plus long).
           </p>
-          {debriefs.length >= 2 && (
-            <div
-              style={{
-                border: '1px solid var(--color-border)',
-                borderRadius: 12,
-                padding: 14,
-                background: 'var(--color-bg-card)',
-                marginBottom: 16,
-                display: 'grid',
-                gap: 8,
-              }}
-            >
-              <div style={{ fontWeight: 800 }}>📊 Tes tendances</div>
-              <div style={{ fontSize: 14 }}>
-                Estomac moyen: {avgStomach != null ? `${stomachEmoji(Math.round(avgStomach))} ${avgStomach.toFixed(1)}/5` : '—'}
-              </div>
-              <div
-                style={{
-                  fontSize: 14,
-                  color: avgCompliance > 75 ? '#16a34a' : avgCompliance >= 50 ? '#ea580c' : 'var(--color-danger)',
-                }}
-              >
-                Compliance moyenne: {avgCompliance}%
-              </div>
-              {lowGiCount >= 2 ? (
-                <div style={{ fontSize: 13, color: '#ea580c' }}>
-                  Inconforts digestifs récurrents — pense à réduire le CHO/h ou changer de produits
-                </div>
-              ) : null}
-              {allHighGi ? (
-                <div style={{ fontSize: 13, color: '#16a34a' }}>
-                  Excellente tolérance GI sur tes dernières courses 🎉
-                </div>
-              ) : null}
-            </div>
-          )}
+          {isNutritionProfileComputing ? (
+            <NutritionProfileSkeleton />
+          ) : nutritionProfile && nutritionProfile.debriefCount >= 1 ? (
+            <NutritionProfileCard profile={nutritionProfile} />
+          ) : null}
           {debriefs.length === 0 ? (
             <div
               style={{

@@ -183,19 +183,28 @@ export function DebriefForm({
         size={mode === 'modal' ? 'lg' : 'md'}
         fullWidth={mode === 'modal'}
         disabled={!canSave}
-        onClick={() => {
+        onClick={async () => {
           if (!stomachScore || !planFollowed || !energyLevel) return;
-          void onSave({
-            feedback: {
-              ...debrief.feedback,
-              stomachScore,
-              planFollowed,
-              planDeviationReason: planDeviationReason.trim(),
-              autoInsight: debrief.feedback?.autoInsight ?? '',
-            },
-            energyLevel,
-            notes: notes.trim(),
-          });
+          try {
+            await Promise.resolve(
+              onSave({
+                feedback: {
+                  ...debrief.feedback,
+                  stomachScore,
+                  planFollowed,
+                  planDeviationReason: planDeviationReason.trim(),
+                  autoInsight: debrief.feedback?.autoInsight ?? '',
+                },
+                energyLevel,
+                notes: notes.trim(),
+              })
+            );
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('fuelos:debrief-saved'));
+            }
+          } catch {
+            /* sauvegarde gérée par le parent */
+          }
         }}
       >
         {isSaving ? 'Sauvegarde…' : 'Enregistrer mon débrief →'}
