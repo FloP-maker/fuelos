@@ -7,22 +7,13 @@ import { signProviderOAuthState } from "@/lib/integrations/oauthState";
 export async function GET() {
   const gate = await requireUserId();
   if (!gate.ok) return gate.res;
-
-  let clientId = "";
-  try {
-    clientId = ensureEnv("STRAVA_CLIENT_ID");
-  } catch {
-    return NextResponse.json({ error: "Strava non configuré" }, { status: 503 });
-  }
-
-  const state = signProviderOAuthState(gate.userId, "strava");
-  const redirectUri = `${appUrl()}/api/integrations/strava/callback`;
-  const url = new URL("https://www.strava.com/oauth/authorize");
+  const clientId = ensureEnv("WAHOO_CLIENT_ID");
+  const state = signProviderOAuthState(gate.userId, "wahoo");
+  const url = new URL("https://api.wahooligan.com/oauth/authorize");
   url.searchParams.set("client_id", clientId);
-  url.searchParams.set("redirect_uri", redirectUri);
   url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", "activity:read_all");
+  url.searchParams.set("scope", "workouts_read");
+  url.searchParams.set("redirect_uri", `${appUrl()}/api/integrations/wahoo/callback`);
   url.searchParams.set("state", state);
-
   return NextResponse.redirect(url.toString());
 }
