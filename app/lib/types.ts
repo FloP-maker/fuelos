@@ -29,6 +29,14 @@ export interface AthleteProfile {
   vo2maxMlMinKg?: number;
   /** Sodium dans la sueur (mg/L), ex. test Precision Hydration. */
   sweatSodiumMgPerL?: number;
+  /** Filtre catalogue (`diet_tags` des produits), ex. vegan, gluten-free. */
+  nutritionDietTags?: string[];
+  /** Exclut les produits caféinés du mix recommandé. */
+  preferCaffeineFree?: boolean;
+  /** VMA (km/h) — affinage intensité course si FTP / VO2max absents. */
+  runnerVmaKmh?: number;
+  /** Allure seuil (min/km), ex. 4.5 = 4:30 / km. */
+  runnerThresholdPaceMinPerKm?: number;
   /** Retours terrain (crampes, nausées…) — texte libre. */
   toleranceHistory?: string;
   /** Poids « jour de course » cible (kg), si différent du poids courant. */

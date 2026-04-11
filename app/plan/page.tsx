@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react";
 import { athleteProfileFromJson, mergeStoredAthleteProfile } from "../lib/athleteProfileData";
 import { computeAthleteProfileCompletionPercent } from "../lib/athleteProfileCompletion";
 import useLocalStorage from "../lib/hooks/useLocalStorage";
+import { useProfile } from "@/hooks/useProfile";
 import usePageTitle from "../lib/hooks/usePageTitle";
 import { calculateFuelPlan } from "../lib/fuelCalculator";
 import {
@@ -271,6 +272,8 @@ function PlanPageMainContent() {
   const [profile, setProfile] = useState<AthleteProfile>(() =>
     mergeStoredAthleteProfile(athleteProfile ?? undefined)
   );
+  const { mergeAthleteProfile } = useProfile();
+  const profileForEngine = useMemo(() => mergeAthleteProfile(profile), [mergeAthleteProfile, profile]);
 
   const [profileAdvancedOpen, setProfileAdvancedOpen] = useState(() => {
     const e = athleteProfile?.experienceLevel;
@@ -712,7 +715,7 @@ function PlanPageMainContent() {
         altPlanLabel: next.altPlanLabel,
         altPlanExplanation: next.altPlanExplanation,
         racePlanVariant,
-        profile,
+        profile: mergeAthleteProfile(profile),
         event,
       };
       try {
@@ -721,7 +724,7 @@ function PlanPageMainContent() {
         /* ignore */
       }
     },
-    [profile, event]
+    [profile, event, mergeAthleteProfile]
   );
 
   const handleEditorPlanUpdate = useCallback(
@@ -734,10 +737,11 @@ function PlanPageMainContent() {
 
   const runPlanCalculation = useCallback(
     (profileInput: AthleteProfile, eventInput: EventDetails) => {
-      console.log("🔍 Profile GI Tolerance:", profileInput.giTolerance);
-      console.log("🔍 Full Profile:", profileInput);
+      const profileForCalc = mergeAthleteProfile(profileInput);
+      console.log("🔍 Profile GI Tolerance:", profileForCalc.giTolerance);
+      console.log("🔍 Full Profile:", profileForCalc);
 
-      const result = calculateFuelPlan(profileInput, eventInput, customProducts);
+      const result = calculateFuelPlan(profileForCalc, eventInput, customProducts);
 
       console.log("🔍 CHO Strategy:", result.mainPlan.choStrategy);
       console.log("🔍 CHO per hour:", result.mainPlan.choPerHour);
@@ -750,7 +754,7 @@ function PlanPageMainContent() {
         altPlanLabel: result.altPlanLabel,
         altPlanExplanation: result.altPlanExplanation,
         racePlanVariant: "main" as const,
-        profile: profileInput,
+        profile: profileForCalc,
         event: eventInput,
       };
       localStorage.setItem("fuelos_active_plan", JSON.stringify(bundle));
@@ -775,7 +779,7 @@ function PlanPageMainContent() {
       }
       navigateToPlanStep(3);
     },
-    [customProducts, navigateToPlanStep]
+    [customProducts, navigateToPlanStep, mergeAthleteProfile]
   );
 
   function handleCalculate() {
@@ -2560,7 +2564,7 @@ function PlanPageMainContent() {
           <div id="plan-step-3" style={{ scrollMarginTop: 24 }}>
             <PlanResult
               planResult={planResult}
-              profile={profile}
+              profile={profileForEngine}
               event={event}
               onBack={() => navigateToPlanStep(2)}
               customProducts={customProducts}

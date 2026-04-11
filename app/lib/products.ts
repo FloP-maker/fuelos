@@ -2303,6 +2303,8 @@ export function getRecommendedProductMix(
     avoidProducts?: string[];
     varietyLevel?: "low" | "medium" | "high"; // Niveau de variété souhaité
     allergens?: string[];
+    dietTags?: string[];
+    caffeinePreference?: "none" | "optional" | "required";
   }
 ): {
   gels: Product[];
@@ -2324,6 +2326,8 @@ export function getRecommendedProductMix(
       preferredBrands: preferences.preferredBrands,
       avoidProducts: preferences.avoidProducts,
       allergens: preferences.allergens,
+      dietTags: preferences.dietTags,
+      caffeinePreference: preferences.caffeinePreference,
     };
 
     gels = getProductsByPreferences("gel", filterOptions);

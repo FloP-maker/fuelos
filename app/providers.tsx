@@ -6,6 +6,7 @@ import type { ComponentType, PropsWithChildren, ReactNode } from "react";
 import { SessionProvider } from "next-auth/react";
 import { DebriefCloudMigration } from "./components/DebriefCloudMigration";
 import { LocalCloudBootstrap } from "./components/LocalCloudBootstrap";
+import { ProfileProvider } from "@/hooks/useProfile";
 
 // Certains setups TypeScript (IDE / versions @types) ne fusionnent pas `children`
 // avec `ThemeProviderProps` pour le JSX. On force un composant typé explicitement.
@@ -24,7 +25,7 @@ export function Providers({ children }: { children: ReactNode }) {
         enableSystem
         disableTransitionOnChange={false}
       >
-        {children}
+        <ProfileProvider>{children}</ProfileProvider>
       </ThemeProvider>
     </SessionProvider>
   );

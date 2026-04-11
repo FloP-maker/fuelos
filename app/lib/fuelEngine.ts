@@ -378,6 +378,22 @@ function determineChoStrategy(
     warnings.push(
       "📊 FTP pris en compte pour affiner l’intensité relative (science) et les cibles CHO — croise avec ton ressenti terrain."
     );
+  } else if (
+    profile.runnerVmaKmh != null &&
+    Number.isFinite(profile.runnerVmaKmh) &&
+    profile.runnerVmaKmh > 8
+  ) {
+    warnings.push(
+      "📊 VMA prise en compte pour affiner l’intensité relative (course) — croise avec ton ressenti terrain."
+    );
+  } else if (
+    profile.runnerThresholdPaceMinPerKm != null &&
+    Number.isFinite(profile.runnerThresholdPaceMinPerKm) &&
+    profile.runnerThresholdPaceMinPerKm >= 2.6
+  ) {
+    warnings.push(
+      "📊 Allure seuil prise en compte pour affiner l’intensité relative (course) — croise avec ton ressenti terrain."
+    );
   }
 
   if (profile.seasonGoal === "finisher") {
@@ -426,6 +442,8 @@ function selectProducts(
       avoidProducts: profile.avoidProducts,
       varietyLevel: event.targetTime > 6 ? "high" : "medium",
       allergens: profile.allergies,
+      dietTags: profile.nutritionDietTags,
+      caffeinePreference: profile.preferCaffeineFree ? "none" : undefined,
     }
   );
 

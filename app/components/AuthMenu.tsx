@@ -90,7 +90,7 @@ export function AuthMenu() {
 
   const buildCallbackUrl = useCallback(() => {
     if (typeof window === 'undefined') return '/';
-    return `${window.location.origin}/plan?step=profile`;
+    return `${window.location.origin}/profil`;
   }, []);
 
   const forceProviderRedirect = useCallback(
@@ -131,7 +131,7 @@ export function AuthMenu() {
   if (session?.user) {
     return (
       <div className="flex flex-wrap items-center justify-end gap-x-7 gap-y-2 sm:gap-x-9 md:gap-x-10">
-        <Link href="/plan?step=profile" className="fuel-header-text-link shrink-0">
+        <Link href="/profil" className="fuel-header-text-link shrink-0">
           Profil
         </Link>
         <button type="button" className="fuel-header-text-btn shrink-0" onClick={() => void signOut()}>

@@ -276,6 +276,21 @@ export function mergeStoredAthleteProfile(stored: Partial<AthleteProfile> | null
   if (vo2maxMlMinKg !== undefined) out.vo2maxMlMinKg = vo2maxMlMinKg;
   if (sweatSodiumMgPerL !== undefined) out.sweatSodiumMgPerL = sweatSodiumMgPerL;
   if (raceWeightKg !== undefined) out.raceWeightKg = raceWeightKg;
+  const runnerVmaKmh = parseOptionalPositiveNumber(stored.runnerVmaKmh, 30);
+  if (runnerVmaKmh !== undefined) out.runnerVmaKmh = runnerVmaKmh;
+  const runnerThresholdPaceMinPerKm = parseOptionalPositiveNumber(
+    stored.runnerThresholdPaceMinPerKm,
+    20
+  );
+  if (runnerThresholdPaceMinPerKm !== undefined) {
+    out.runnerThresholdPaceMinPerKm = runnerThresholdPaceMinPerKm;
+  }
+  const ndt = stored.nutritionDietTags;
+  if (Array.isArray(ndt)) {
+    const tags = ndt.filter((x): x is string => typeof x === "string").slice(0, 12);
+    if (tags.length) out.nutritionDietTags = tags;
+  }
+  if (stored.preferCaffeineFree === true) out.preferCaffeineFree = true;
   if (toleranceHistory !== undefined && toleranceHistory.length > 0) out.toleranceHistory = toleranceHistory;
   if (stored.profileGuidedOnboardingDone === true) out.profileGuidedOnboardingDone = true;
   const li = parseLearnedInsights(stored.learnedInsights);
@@ -366,6 +381,16 @@ export function athleteProfileFromJson(raw: unknown): AthleteProfile | null {
   if (vo2maxMlMinKg !== undefined) out.vo2maxMlMinKg = vo2maxMlMinKg;
   if (sweatSodiumMgPerL !== undefined) out.sweatSodiumMgPerL = sweatSodiumMgPerL;
   if (raceWeightKg !== undefined) out.raceWeightKg = raceWeightKg;
+  const runnerVmaKmhJ = parseOptionalPositiveNumber(raw.runnerVmaKmh, 30);
+  if (runnerVmaKmhJ !== undefined) out.runnerVmaKmh = runnerVmaKmhJ;
+  const runnerPaceJ = parseOptionalPositiveNumber(raw.runnerThresholdPaceMinPerKm, 20);
+  if (runnerPaceJ !== undefined) out.runnerThresholdPaceMinPerKm = runnerPaceJ;
+  const ndtRaw = raw.nutritionDietTags;
+  if (Array.isArray(ndtRaw)) {
+    const tags = ndtRaw.filter((x): x is string => typeof x === "string").slice(0, 12);
+    if (tags.length) out.nutritionDietTags = tags;
+  }
+  if (raw.preferCaffeineFree === true) out.preferCaffeineFree = true;
   if (typeof raw.toleranceHistory === "string") {
     out.toleranceHistory = raw.toleranceHistory.slice(0, 4000);
   }

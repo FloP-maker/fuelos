@@ -103,6 +103,19 @@ function intensityContext(profile: AthleteProfile, event: EventDetails) {
   } else if (ftp != null && Number.isFinite(ftp) && ftp > 40 && ftp < 651) {
     const riLab = relativeIntensityFromFtp(ftp, profile.weight);
     relativeIntensity = clamp(0.42 * relativeIntensity + 0.58 * riLab, 0.32, 1);
+  } else {
+    const vma = profile.runnerVmaKmh;
+    if (vma != null && Number.isFinite(vma) && vma > 8 && vma < 26) {
+      const riLab = clamp(0.34 + (vma - 12) / 18, 0.35, 1);
+      relativeIntensity = clamp(0.42 * relativeIntensity + 0.58 * riLab, 0.32, 1);
+    } else {
+      const pace = profile.runnerThresholdPaceMinPerKm;
+      if (pace != null && Number.isFinite(pace) && pace >= 2.6 && pace < 12) {
+        const speedKmh = 60 / pace;
+        const riLab = clamp(0.34 + (speedKmh - 10) / 14, 0.35, 1);
+        relativeIntensity = clamp(0.42 * relativeIntensity + 0.58 * riLab, 0.32, 1);
+      }
+    }
   }
 
   const initialGlycogenG = clamp(10 * profile.weight + 40, 320, 620);

@@ -20,6 +20,7 @@ import { RaceProvider, useRaceLiveOptional, type RaceAction } from '../contexts/
 import { RaceLiveIntakesPanel } from '../components/race/RaceLiveIntakesPanel';
 import type { PlannedIntake } from '@/types/race-session';
 import { mergeStoredAthleteProfile } from '../lib/athleteProfileData';
+import { useProfile } from '@/hooks/useProfile';
 import { nearestPointOnCourse } from '../lib/courseGeometry';
 import type { FuelPlan, AthleteProfile, EventDetails, TimelineItem } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
@@ -381,6 +382,7 @@ async function requestNotificationPermission(): Promise<boolean> {
 
 function RaceContent() {
   const searchParams = useSearchParams();
+  const { mergeAthleteProfile } = useProfile();
 
   const [raceState, setRaceState] = useState<RaceState>(INITIAL_RACE_STATE);
   /** Dernière course commitée en mémoire — évite appendDebrief avec un état obsolète (tick / batch React). */
@@ -547,7 +549,7 @@ function RaceContent() {
       setAltPlan(loadedAlt);
       setAltPlanLabel(data.altPlanLabel ?? null);
       setRacePlanVariant(variant);
-      setProfile(mergeStoredAthleteProfile(data.profile));
+      setProfile(mergeAthleteProfile(mergeStoredAthleteProfile(data.profile)));
       setEvent(data.event);
     };
 
@@ -581,7 +583,7 @@ function RaceContent() {
         setPlanLoadResolved(true);
       }
     })();
-  }, [searchParams]);
+  }, [searchParams, mergeAthleteProfile]);
 
   const persistRacePlanVariant = useCallback((variant: 'main' | 'alt') => {
     try {
@@ -1198,7 +1200,7 @@ function RaceContent() {
 
   const nextPrepAction = useMemo(() => {
     if (!onboarding.profileDone) {
-      return { href: '/plan?step=profile', label: 'Compléter le profil' };
+      return { href: '/profil', label: 'Compléter le profil' };
     }
     if (!onboarding.eventStepDone) {
       return { href: '/plan?step=event', label: 'Configurer la course' };
@@ -1296,7 +1298,7 @@ function RaceContent() {
         title: 'Profil athlète',
         desc: 'Poids, transpiration, tolérance digestive…',
         done: onboarding.profileDone,
-        href: '/plan?step=profile',
+        href: '/profil',
         cta: 'Ouvrir',
       },
       {

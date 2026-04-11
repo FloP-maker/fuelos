@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'r
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { mergeStoredAthleteProfile } from '../lib/athleteProfileData';
+import { useProfile } from '@/hooks/useProfile';
 import type { AthleteProfile, EventDetails, FuelPlan } from '../lib/types';
 import usePageTitle from '../lib/hooks/usePageTitle';
 import { Header } from '../components/Header';
@@ -325,6 +326,7 @@ function newBagId(): string {
 
 export default function PrepPage() {
   usePageTitle('Pré/post course');
+  const { mergeAthleteProfile } = useProfile();
   const { status } = useSession();
   const [bundle, setBundle] = useState<ActiveBundle | null>(null);
   const [prep, setPrep] = useState<PrepPersisted>(() => loadOrInitPrep());
@@ -457,8 +459,8 @@ export default function PrepPage() {
 
   const profile = useMemo(() => {
     if (!bundle?.profile) return null;
-    return mergeStoredAthleteProfile(bundle.profile);
-  }, [bundle]);
+    return mergeAthleteProfile(mergeStoredAthleteProfile(bundle.profile));
+  }, [bundle, mergeAthleteProfile]);
   const event = bundle?.event ?? null;
   const plan = bundle?.fuelPlan ?? null;
 

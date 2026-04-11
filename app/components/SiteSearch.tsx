@@ -26,7 +26,7 @@ const ENTRIES: SiteSearchEntry[] = [
     keywords: 'plan fuel calcul glucides eau sel endurance',
   },
   {
-    href: '/plan?step=profile',
+    href: '/profil',
     title: 'Profil athlète (plan)',
     description: 'Poids, transpiration, tolérance digestive',
     keywords: 'profil athlète poids gi transpiration',

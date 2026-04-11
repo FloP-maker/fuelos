@@ -62,7 +62,7 @@ export function SignInNudgeBar() {
       const callbackUrl =
         typeof window === 'undefined'
           ? '/'
-          : `${window.location.origin}/plan?step=profile`;
+          : `${window.location.origin}/profil`;
       const fallbackTimer = window.setTimeout(() => {
         window.location.assign(`/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`);
       }, 1200);
@@ -70,7 +70,7 @@ export function SignInNudgeBar() {
       window.clearTimeout(fallbackTimer);
     } catch {
       if (typeof window !== 'undefined') {
-        const callbackUrl = `${window.location.origin}/plan?step=profile`;
+        const callbackUrl = `${window.location.origin}/profil`;
         window.location.assign(`/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`);
       }
     }
