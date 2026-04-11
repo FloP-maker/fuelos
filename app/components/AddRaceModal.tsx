@@ -102,15 +102,15 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-[1] w-full max-w-lg rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-xl"
+        className="relative z-[1] w-full max-w-lg rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-6 shadow-[var(--shadow-xs)] ring-1 ring-[var(--color-border-subtle)]"
         onClick={(ev) => ev.stopPropagation()}
       >
-        <h2 id={titleId} className="mb-4 text-lg font-bold">
+        <h2 id={titleId} className="mb-4 text-lg font-semibold text-[var(--color-text)]">
           Nouvelle course
         </h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label htmlFor="race-name" className="mb-1 block text-sm font-medium">
+            <label htmlFor="race-name" className="mb-1 block text-sm font-medium text-[var(--color-text)]">
               Nom de la course
             </label>
             <input
@@ -121,12 +121,12 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex. UTMB, Trail des Crêtes 2026…"
               required
-              className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-base outline-none focus:border-[#16a34a] focus:ring-1 focus:ring-[#16a34a]"
+              className="w-full rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/40 px-3 py-2 text-base text-[var(--color-text)] outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-[color-mix(in_srgb,var(--color-accent)_35%,var(--color-border))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-accent)_22%,transparent)]"
             />
           </div>
 
           <div>
-            <label htmlFor="race-date" className="mb-1 block text-sm font-medium">
+            <label htmlFor="race-date" className="mb-1 block text-sm font-medium text-[var(--color-text)]">
               Date
             </label>
             <input
@@ -136,12 +136,12 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
-              className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-base outline-none focus:border-[#16a34a] focus:ring-1 focus:ring-[#16a34a]"
+              className="w-full rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/40 px-3 py-2 text-base text-[var(--color-text)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-accent)_35%,var(--color-border))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-accent)_22%,transparent)]"
             />
           </div>
 
           <div>
-            <label htmlFor="race-time" className="mb-1 block text-sm font-medium">
+            <label htmlFor="race-time" className="mb-1 block text-sm font-medium text-[var(--color-text)]">
               Heure de départ (optionnel)
             </label>
             <input
@@ -149,12 +149,12 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
               type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-base outline-none focus:border-[#16a34a] focus:ring-1 focus:ring-[#16a34a]"
+              className="w-full rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/40 px-3 py-2 text-base text-[var(--color-text)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-accent)_35%,var(--color-border))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-accent)_22%,transparent)]"
             />
           </div>
 
           <div>
-            <span className="mb-2 block text-sm font-medium">Discipline</span>
+            <span className="mb-2 block text-sm font-medium text-[var(--color-text)]">Discipline</span>
             <div className="flex flex-wrap gap-2">
               {DISCIPLINES.map((disc) => {
                 const active = sport === disc;
@@ -164,10 +164,10 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
                     type="button"
                     onClick={() => setSport(disc)}
                     className={[
-                      'rounded-full border px-3 py-1.5 text-sm font-semibold transition',
+                      'rounded-xl border px-3 py-1.5 text-sm font-medium transition',
                       active
-                        ? 'border-[#16a34a] bg-[#f0fdf4] text-[#15803d]'
-                        : 'border-[#e5e7eb] bg-white text-[#6b7280] hover:border-[#bbf7d0]',
+                        ? 'border-[color-mix(in_srgb,var(--color-accent)_45%,var(--color-border))] bg-[var(--color-accent-muted)] text-[var(--color-text)]'
+                        : 'border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/35 text-[var(--color-text-muted)] hover:border-[var(--color-border)] hover:text-[var(--color-text)]',
                     ].join(' ')}
                   >
                     {disc}
@@ -177,14 +177,14 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
             </div>
           </div>
 
-          <fieldset className="rounded-xl border border-[#e5e7eb] bg-[#fafafa] p-4">
-            <legend className="px-1 text-sm font-bold text-[#374151]">Périodes nutrition (calendrier)</legend>
-            <p className="mb-3 text-xs text-[#6b7280]">
+          <fieldset className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/25 p-4">
+            <legend className="px-1 text-sm font-semibold text-[var(--color-text)]">Périodes nutrition (calendrier)</legend>
+            <p className="mb-3 text-xs text-[var(--color-text-muted)]">
               Bandeaux sur le calendrier : charge avant la course (J−n…J−1), récupération après (J+1…J+n). Mets 0
               pour désactiver une période.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block text-sm font-medium text-[#374151]">
+              <label className="block text-sm font-medium text-[var(--color-text)]">
                 Jours de charge avant le J
                 <input
                   type="number"
@@ -192,10 +192,10 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
                   max={21}
                   value={chargeDays}
                   onChange={(e) => setChargeDays(Math.max(0, Math.min(21, Number(e.target.value) || 0)))}
-                  className="mt-1 w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-base outline-none focus:border-[#16a34a]"
+                  className="mt-1 w-full rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] px-3 py-2 text-base text-[var(--color-text)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-accent)_35%,var(--color-border))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-accent)_22%,transparent)]"
                 />
               </label>
-              <label className="block text-sm font-medium text-[#374151]">
+              <label className="block text-sm font-medium text-[var(--color-text)]">
                 Jours de récup après le J
                 <input
                   type="number"
@@ -203,27 +203,27 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
                   max={21}
                   value={recoveryDays}
                   onChange={(e) => setRecoveryDays(Math.max(0, Math.min(21, Number(e.target.value) || 0)))}
-                  className="mt-1 w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-base outline-none focus:border-[#16a34a]"
+                  className="mt-1 w-full rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] px-3 py-2 text-base text-[var(--color-text)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-accent)_35%,var(--color-border))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-accent)_22%,transparent)]"
                 />
               </label>
-              <label className="block text-sm font-medium text-[#374151] sm:col-span-2">
+              <label className="block text-sm font-medium text-[var(--color-text)] sm:col-span-2">
                 Libellé charge (optionnel)
                 <input
                   type="text"
                   value={chargeLabel}
                   onChange={(e) => setChargeLabel(e.target.value)}
                   placeholder="Ex. Charge CHO"
-                  className="mt-1 w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-base outline-none focus:border-[#16a34a]"
+                  className="mt-1 w-full rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] px-3 py-2 text-base text-[var(--color-text)] outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-[color-mix(in_srgb,var(--color-accent)_35%,var(--color-border))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-accent)_22%,transparent)]"
                 />
               </label>
-              <label className="block text-sm font-medium text-[#374151] sm:col-span-2">
+              <label className="block text-sm font-medium text-[var(--color-text)] sm:col-span-2">
                 Libellé récup (optionnel)
                 <input
                   type="text"
                   value={recoveryLabel}
                   onChange={(e) => setRecoveryLabel(e.target.value)}
                   placeholder="Ex. Récup post-course"
-                  className="mt-1 w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-base outline-none focus:border-[#16a34a]"
+                  className="mt-1 w-full rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] px-3 py-2 text-base text-[var(--color-text)] outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-[color-mix(in_srgb,var(--color-accent)_35%,var(--color-border))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-accent)_22%,transparent)]"
                 />
               </label>
             </div>
@@ -233,13 +233,13 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-[#e5e7eb] px-4 py-2 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb]"
+              className="rounded-xl border border-[var(--color-border-subtle)] px-4 py-2 text-sm font-medium text-[var(--color-text)] transition hover:bg-[var(--color-bg-elevated)]/50"
             >
               Annuler
             </button>
             <button
               type="submit"
-              className="rounded-lg bg-[#16a34a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#15803d]"
+              className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-black transition hover:opacity-92"
             >
               Enregistrer
             </button>

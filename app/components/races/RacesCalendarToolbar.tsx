@@ -34,8 +34,8 @@ export function RacesCalendarToolbar({
   isThisMonthView,
 }: RacesCalendarToolbarProps) {
   return (
-    <div className="flex flex-col gap-4 border-b border-[var(--color-border)] bg-[var(--color-bg-elevated)]/35 px-4 py-4 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-3 md:px-5">
-      <div className="inline-flex w-full max-w-md rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] p-1 shadow-sm md:w-auto">
+    <div className="flex flex-col gap-4 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] px-4 py-3.5 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-3 md:px-5">
+      <div className="inline-flex w-full max-w-md rounded-xl bg-[var(--color-bg-elevated)]/50 p-1 ring-1 ring-[var(--color-border-subtle)] md:w-auto">
         {(
           [
             ["upcoming", "À venir"],
@@ -48,9 +48,9 @@ export function RacesCalendarToolbar({
             type="button"
             onClick={() => onViewFilter(id)}
             className={[
-              "flex-1 rounded-full px-3 py-2 text-center text-xs font-bold transition md:flex-none md:px-4 md:text-sm",
+              "flex-1 rounded-lg px-3 py-2 text-center text-xs font-semibold transition md:flex-none md:px-4 md:text-sm",
               viewFilter === id
-                ? "bg-[var(--color-accent)] text-black shadow-sm"
+                ? "bg-[var(--color-accent-muted)] text-[var(--color-text)] ring-1 ring-[color-mix(in_srgb,var(--color-accent)_28%,var(--color-border-subtle))]"
                 : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
             ].join(" ")}
           >
@@ -63,7 +63,7 @@ export function RacesCalendarToolbar({
         <button
           type="button"
           onClick={onPrevMonth}
-          className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] p-2 text-[var(--color-text)] shadow-sm hover:bg-[var(--color-bg-card-hover)]"
+          className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/50 p-2 text-[var(--color-text)] transition hover:bg-[var(--color-bg-elevated)]"
           aria-label="Mois précédent"
         >
           <ChevronLeft size={18} strokeWidth={2.25} />
@@ -74,7 +74,7 @@ export function RacesCalendarToolbar({
         <button
           type="button"
           onClick={onNextMonth}
-          className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] p-2 text-[var(--color-text)] shadow-sm hover:bg-[var(--color-bg-card-hover)]"
+          className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/50 p-2 text-[var(--color-text)] transition hover:bg-[var(--color-bg-elevated)]"
           aria-label="Mois suivant"
         >
           <ChevronRight size={18} strokeWidth={2.25} />
@@ -83,7 +83,7 @@ export function RacesCalendarToolbar({
           <button
             type="button"
             onClick={onThisMonth}
-            className="rounded-full border border-[var(--color-border)] bg-[var(--color-accent-muted)] px-3 py-1.5 text-xs font-bold text-[var(--color-text)] hover:opacity-95"
+            className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/60 px-3 py-1.5 text-xs font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-bg-elevated)]"
           >
             Mois actuel
           </button>
@@ -96,7 +96,7 @@ export function RacesCalendarToolbar({
           <select
             value={sportFilter}
             onChange={(e) => onSportFilter(e.target.value)}
-            className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2 text-xs font-bold text-[var(--color-text)] shadow-sm outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+            className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/50 px-3 py-2 text-xs font-semibold text-[var(--color-text)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-accent)_35%,var(--color-border))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-accent)_22%,transparent)]"
           >
             <option value="all">Tous les sports</option>
             {sportsOptions.map((s) => (
@@ -111,7 +111,7 @@ export function RacesCalendarToolbar({
           <select
             value={String(rangeMonths)}
             onChange={(e) => onRangeMonths(Number(e.target.value) as 1 | 3 | 6)}
-            className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2 text-xs font-bold text-[var(--color-text)] shadow-sm outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+            className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/50 px-3 py-2 text-xs font-semibold text-[var(--color-text)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-accent)_35%,var(--color-border))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-accent)_22%,transparent)]"
           >
             <option value="1">1 mois</option>
             <option value="3">3 mois</option>

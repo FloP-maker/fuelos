@@ -54,9 +54,9 @@ export function addDaysIso(iso: string, delta: number): string {
 }
 
 const CHARGE_CLASS =
-  "border border-amber-500/35 bg-gradient-to-r from-amber-500/18 to-orange-400/15 text-amber-950 dark:text-amber-100";
+  "border border-[color-mix(in_srgb,var(--color-accent)_28%,transparent)] bg-[color-mix(in_srgb,var(--color-accent)_12%,var(--color-bg-elevated))] text-[var(--color-text)]";
 const RECOVERY_CLASS =
-  "border border-stone-600/30 bg-gradient-to-r from-stone-600/20 to-amber-900/18 text-stone-900 dark:text-stone-100";
+  "border border-[var(--color-border-subtle)] bg-[color-mix(in_srgb,var(--color-text-muted)_8%,var(--color-bg-elevated))] text-[var(--color-text-muted)]";
 
 function chargeDays(r: RaceEntry): number {
   const v = r.nutritionChargeDaysBefore;

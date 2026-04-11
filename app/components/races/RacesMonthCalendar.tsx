@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import type { RaceEntry } from "@/lib/types/race";
 import { RacesCalendarToolbar, type RacesCalendarViewFilter } from "./RacesCalendarToolbar";
-import { raceSportChip } from "@/lib/raceCalendarUi";
+import { raceSportVisual } from "@/lib/raceCalendarUi";
 import { buildSixWeekGrid, layoutBandsInWeek, nutritionBandsFromRaces } from "@/lib/raceNutritionBands";
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"] as const;
@@ -105,20 +105,19 @@ export function RacesMonthCalendar({
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 sm:p-3">
-        <div className="mb-2 flex gap-2">
-          <div className="grid min-w-0 flex-1 grid-cols-7 gap-1 sm:gap-1.5">
+        <div className="mb-3 flex gap-2 sm:gap-3">
+          <div className="grid min-w-0 flex-1 grid-cols-7 gap-px rounded-xl bg-[var(--color-border-subtle)] p-px ring-1 ring-[var(--color-border-subtle)]">
             {WEEKDAYS.map((wd) => (
               <div
                 key={wd}
-                className="flex h-9 items-center justify-center rounded-lg bg-[var(--color-bg-elevated)] text-[10px] font-bold uppercase tracking-wide text-[var(--color-text-muted)] sm:text-[11px]"
+                className="flex h-8 items-center justify-center bg-[var(--color-bg-card)] text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-muted)] first:rounded-ss-lg last:rounded-se-lg sm:h-9 sm:text-[11px]"
               >
                 {wd}
               </div>
             ))}
           </div>
-          <div className="flex w-[4.25rem] shrink-0 flex-col items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)]/60 px-1 py-2 text-center shadow-sm sm:w-[5rem]">
-            <span className="text-[9px] font-bold uppercase leading-tight text-[var(--color-text-muted)]">Σ</span>
-            <span className="text-[9px] font-semibold text-[var(--color-text-muted)]">km</span>
+          <div className="flex w-[3.75rem] shrink-0 flex-col items-center justify-center rounded-xl bg-[var(--color-bg-elevated)]/50 px-1 py-2 text-center ring-1 ring-[var(--color-border-subtle)] sm:w-[4.5rem]">
+            <span className="text-[9px] font-medium uppercase tracking-wide text-[var(--color-text-muted)]">Σ km</span>
           </div>
         </div>
 
@@ -130,9 +129,9 @@ export function RacesMonthCalendar({
           const bandRows = maxLane >= 0 ? maxLane + 1 : 0;
 
           return (
-            <div key={ri} className="mb-2 flex flex-col gap-1 last:mb-0">
+            <div key={ri} className="mb-3 flex flex-col gap-1.5 last:mb-0">
               {placed.length > 0 ? (
-                <div className="flex gap-2">
+                <div className="flex gap-2 sm:gap-3">
                   <div
                     className="relative min-w-0 flex-1 gap-1"
                     style={{
@@ -148,7 +147,7 @@ export function RacesMonthCalendar({
                         href={`/races/${p.band.raceId}`}
                         title={`${p.band.label} — ${p.band.raceName}`}
                         className={[
-                          "flex min-h-[17px] items-center overflow-hidden rounded-md px-1.5 py-0.5 text-[9px] font-bold leading-tight shadow-sm transition hover:brightness-105 sm:text-[10px]",
+                          "flex min-h-[17px] items-center overflow-hidden rounded-md px-1.5 py-0.5 text-[9px] font-semibold leading-tight transition hover:opacity-90 sm:text-[10px]",
                           p.band.barClass,
                         ].join(" ")}
                         style={{
@@ -160,14 +159,11 @@ export function RacesMonthCalendar({
                       </Link>
                     ))}
                   </div>
-                  <div
-                    className="w-[4.25rem] shrink-0 sm:w-[5rem]"
-                    aria-hidden
-                  />
+                  <div className="w-[3.75rem] shrink-0 sm:w-[4.5rem]" aria-hidden />
                 </div>
               ) : null}
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 sm:gap-3">
                 <div className="grid min-w-0 flex-1 grid-cols-7 gap-1 sm:gap-1.5">
                   {rowCells.map((cell, ci) => {
                     const idx = ri * 7 + ci;
@@ -182,21 +178,22 @@ export function RacesMonthCalendar({
                         type="button"
                         onClick={() => onSelectDate(isSelected ? null : key)}
                         className={[
-                          "flex min-h-[92px] flex-col rounded-xl border p-1.5 text-left shadow-sm transition sm:min-h-[104px] sm:p-2 md:min-h-[118px]",
+                          "flex min-h-[92px] flex-col rounded-xl p-1.5 text-left transition sm:min-h-[104px] sm:p-2 md:min-h-[118px]",
                           inMonth
-                            ? "border-[var(--color-border)] bg-[var(--color-bg-elevated)]/50"
-                            : "border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/25",
-                          pastDay && inMonth ? "opacity-[0.88]" : "",
-                          !inMonth ? "opacity-70" : "",
+                            ? "bg-[var(--color-bg-elevated)]/35 ring-1 ring-inset ring-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)]/55"
+                            : "bg-transparent opacity-[0.62] ring-1 ring-inset ring-transparent",
+                          pastDay && inMonth ? "opacity-[0.92]" : "",
                           isToday
-                            ? "ring-2 ring-[var(--color-accent)] ring-offset-2 ring-offset-[var(--color-bg-card)]"
-                            : "hover:border-[color-mix(in_srgb,var(--color-accent)_45%,var(--color-border))]",
-                          isSelected && inMonth ? "bg-[var(--color-accent-muted)]" : "",
+                            ? "ring-2 ring-[var(--color-accent)] ring-offset-0 ring-offset-transparent"
+                            : "",
+                          isSelected && inMonth
+                            ? "bg-[var(--color-accent-muted)] ring-[color-mix(in_srgb,var(--color-accent)_40%,var(--color-border-subtle))]"
+                            : "",
                         ].join(" ")}
                       >
                         <span
                           className={[
-                            "text-xs font-bold tabular-nums sm:text-sm",
+                            "text-xs font-semibold tabular-nums sm:text-sm",
                             isToday ? "text-[var(--color-accent)]" : "text-[var(--color-text)]",
                             !inMonth ? "text-[var(--color-text-muted)]" : "",
                           ].join(" ")}
@@ -206,21 +203,19 @@ export function RacesMonthCalendar({
                         {list.length > 0 ? (
                           <ul className="mt-1 flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
                             {list.slice(0, 4).map((r) => {
-                              const chip = raceSportChip(r.sport);
+                              const { Icon, pillClass } = raceSportVisual(r.sport);
                               return (
                                 <li key={r.id} className="min-w-0">
                                   <Link
                                     href={`/races/${r.id}`}
                                     onClick={(e) => e.stopPropagation()}
                                     className={[
-                                      "flex items-center gap-1 truncate rounded-lg px-1.5 py-1 text-[9px] font-bold leading-tight shadow-sm transition hover:brightness-95 sm:text-[10px]",
-                                      chip.pillClass,
+                                      "flex items-center gap-1 truncate rounded-md px-1.5 py-1 text-[9px] font-medium leading-tight transition hover:opacity-90 sm:text-[10px]",
+                                      pillClass,
                                       pastDay && inMonth ? "opacity-90" : "",
                                     ].join(" ")}
                                   >
-                                    <span className="shrink-0" aria-hidden>
-                                      {chip.icon}
-                                    </span>
+                                    <Icon className="size-3 shrink-0 opacity-80" strokeWidth={2} aria-hidden />
                                     <span className="truncate">{r.name}</span>
                                   </Link>
                                 </li>
@@ -240,9 +235,9 @@ export function RacesMonthCalendar({
                   })}
                 </div>
 
-                <div className="flex w-[4.25rem] shrink-0 flex-col items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)]/60 px-1.5 py-2 text-center shadow-sm sm:w-[5rem]">
-                  <span className="text-[9px] font-bold text-[var(--color-text-muted)]">Sem.</span>
-                  <span className="mt-1 font-display text-sm font-bold tabular-nums text-[var(--color-text)]">
+                <div className="flex w-[3.75rem] shrink-0 flex-col items-center justify-center rounded-xl bg-[var(--color-bg-elevated)]/50 px-1.5 py-2 text-center ring-1 ring-[var(--color-border-subtle)] sm:w-[4.5rem]">
+                  <span className="text-[9px] font-medium text-[var(--color-text-muted)]">Sem.</span>
+                  <span className="mt-1 font-display text-sm font-semibold tabular-nums text-[var(--color-text)]">
                     {weekKmForKeys(weekKeys, racesByDate) || "—"}
                   </span>
                   <span className="text-[9px] text-[var(--color-text-muted)]">km</span>

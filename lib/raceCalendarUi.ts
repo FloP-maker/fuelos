@@ -1,46 +1,52 @@
-/** Style visuel des pastilles « type Nolio » selon le sport (texte libre). */
+import type { LucideIcon } from "lucide-react";
+import { Bike, Footprints, Flag, Mountain, Waves } from "lucide-react";
 
-export type RaceSportChip = {
-  icon: string;
-  /** Classes Tailwind pour la pastille */
+export type RaceSportVisual = {
+  Icon: LucideIcon;
+  /** Pastille discrète (fond + texte) */
   pillClass: string;
 };
 
-export function raceSportChip(sport: string): RaceSportChip {
+/** Repère visuel par discipline — icônes Lucide, tons doux. */
+export function raceSportVisual(sport: string): RaceSportVisual {
   const s = sport.toLowerCase();
   if (s.includes("ultra") || (s.includes("trail") && s.includes("ultra"))) {
     return {
-      icon: "⛰",
+      Icon: Mountain,
       pillClass:
-        "border border-emerald-500/25 bg-emerald-500/12 text-emerald-800 dark:text-emerald-200",
+        "bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)] text-[var(--color-text)] ring-1 ring-[color-mix(in_srgb,var(--color-accent)_22%,transparent)]",
     };
   }
   if (s.includes("trail")) {
     return {
-      icon: "🥾",
-      pillClass: "border border-emerald-600/20 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100",
+      Icon: Mountain,
+      pillClass:
+        "bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)] text-[var(--color-text)] ring-1 ring-[var(--color-border-subtle)]",
     };
   }
   if (s.includes("tri")) {
     return {
-      icon: "🔷",
-      pillClass: "border border-violet-500/25 bg-violet-500/12 text-violet-900 dark:text-violet-100",
+      Icon: Waves,
+      pillClass:
+        "bg-[color-mix(in_srgb,#8b5cf6_12%,transparent)] text-[var(--color-text)] ring-1 ring-[color-mix(in_srgb,#8b5cf6_20%,transparent)] dark:bg-[color-mix(in_srgb,#a78bfa_10%,transparent)]",
     };
   }
   if (s.includes("vélo") || s.includes("velo") || s.includes("cycl") || s.includes("vtt")) {
     return {
-      icon: "🚴",
-      pillClass: "border border-blue-500/25 bg-blue-500/12 text-blue-900 dark:text-blue-100",
+      Icon: Bike,
+      pillClass:
+        "bg-[color-mix(in_srgb,#3b82f6_10%,transparent)] text-[var(--color-text)] ring-1 ring-[color-mix(in_srgb,#3b82f6_18%,transparent)] dark:bg-[color-mix(in_srgb,#60a5fa_8%,transparent)]",
     };
   }
   if (s.includes("route") || s.includes("marathon") || s.includes("running") || s.includes("course")) {
     return {
-      icon: "🏃",
-      pillClass: "border border-sky-500/25 bg-sky-500/12 text-sky-900 dark:text-sky-100",
+      Icon: Footprints,
+      pillClass:
+        "bg-[color-mix(in_srgb,#0ea5e9_10%,transparent)] text-[var(--color-text)] ring-1 ring-[color-mix(in_srgb,#0ea5e9_18%,transparent)] dark:bg-[color-mix(in_srgb,#38bdf8_8%,transparent)]",
     };
   }
   return {
-    icon: "🏁",
-    pillClass: "border border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-text)]",
+    Icon: Flag,
+    pillClass: "bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] ring-1 ring-[var(--color-border-subtle)]",
   };
 }

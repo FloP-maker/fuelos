@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Search } from "lucide-react";
 import type { RaceEntry } from "@/lib/types/race";
 import { getRaceCountdownLabel } from "@/lib/races";
-import { raceSportChip } from "@/lib/raceCalendarUi";
+import { raceSportVisual } from "@/lib/raceCalendarUi";
 
 function formatShortDate(iso: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
@@ -46,23 +46,30 @@ function RaceRow({
   active: boolean;
   onPick: () => void;
 }) {
-  const chip = raceSportChip(r.sport);
+  const { Icon, pillClass } = raceSportVisual(r.sport);
   return (
     <Link
       href={`/races/${r.id}`}
       onClick={onPick}
       className={[
-        "flex items-start gap-2 rounded-xl border px-2.5 py-2 text-left transition",
+        "flex items-start gap-2.5 rounded-xl px-2.5 py-2 text-left ring-1 transition",
         active
-          ? "border-[var(--color-accent)] bg-[var(--color-accent-muted)] shadow-sm"
-          : "border-[var(--color-border)] bg-[var(--color-bg-card)] hover:border-[color-mix(in_srgb,var(--color-accent)_35%,var(--color-border))]",
+          ? "bg-[var(--color-accent-muted)] ring-[color-mix(in_srgb,var(--color-accent)_45%,var(--color-border-subtle))]"
+          : "bg-[var(--color-bg-elevated)]/30 ring-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)]/50 hover:ring-[var(--color-border)]",
       ].join(" ")}
     >
-      <span className="mt-0.5 text-sm" aria-hidden>
-        {chip.icon}
+      <span
+        className={[
+          "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg",
+          pillClass,
+          "ring-0",
+        ].join(" ")}
+        aria-hidden
+      >
+        <Icon className="size-4 opacity-90" strokeWidth={2} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-xs font-bold text-[var(--color-text)]">{r.name}</span>
+        <span className="block truncate text-xs font-semibold text-[var(--color-text)]">{r.name}</span>
         <span className="mt-0.5 block text-[10px] text-[var(--color-text-muted)]">
           {getRaceCountdownLabel(r)}
         </span>
@@ -112,15 +119,16 @@ export function RacesSidebar({
 
   return (
     <div className="flex h-full min-h-0 flex-col border-b border-[var(--color-border)] lg:border-b-0 lg:border-e">
-      <div className="border-b border-[var(--color-border)] px-4 py-4">
-        <h1 className="font-display text-lg font-bold tracking-tight text-[var(--color-text)]">Mes courses</h1>
-        <p className="mt-1 text-xs text-[var(--color-text-muted)]">Calendrier & saison</p>
+      <div className="border-b border-[var(--color-border-subtle)] px-4 py-4">
+        <h1 className="font-display text-lg font-semibold tracking-tight text-[var(--color-text)]">Mes courses</h1>
+        <p className="mt-1 text-xs text-[var(--color-text-muted)]">Calendrier et saison</p>
         <button
           type="button"
           onClick={onAddRace}
-          className="mt-4 w-full rounded-full bg-[var(--color-accent)] py-2.5 text-sm font-bold text-black shadow-sm hover:opacity-95"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] py-2.5 text-sm font-semibold text-black transition hover:opacity-92"
         >
-          + Nouvelle course
+          <Plus className="size-4" strokeWidth={2.25} aria-hidden />
+          Nouvelle course
         </button>
       </div>
 
@@ -135,13 +143,13 @@ export function RacesSidebar({
             value={searchQuery}
             onChange={(e) => onSearchQuery(e.target.value)}
             placeholder="Rechercher…"
-            className="w-full rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] py-2.5 pl-10 pr-3 text-sm text-[var(--color-text)] shadow-sm outline-none placeholder:text-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-accent)]"
+            className="w-full rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/40 py-2.5 pl-10 pr-3 text-sm text-[var(--color-text)] outline-none ring-0 transition placeholder:text-[var(--color-text-muted)] focus:border-[color-mix(in_srgb,var(--color-accent)_35%,var(--color-border))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-accent)_25%,transparent)]"
           />
         </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-4">
-        <div className="rounded-xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-accent)_6%,var(--color-bg-card))] px-3 py-2.5 text-[11px] leading-snug text-[var(--color-text-muted)]">
+        <div className="rounded-xl bg-[var(--color-bg-elevated)]/40 px-3 py-2.5 text-[11px] leading-snug text-[var(--color-text-muted)] ring-1 ring-[var(--color-border-subtle)]">
           Les filtres <strong className="text-[var(--color-text)]">À venir / Passées / Tout</strong> s’appliquent aux cases
           du calendrier. Les <strong className="text-[var(--color-text)]">bandeaux</strong> charge / récup (définis sur
           chaque course) restent visibles selon sport et recherche. La liste respecte l’horizon (1 à 6 mois).
