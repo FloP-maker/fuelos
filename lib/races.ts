@@ -240,3 +240,23 @@ export function partitionRacesByUpcoming(races: RaceEntry[]): {
   const past = races.filter((r) => r.date < todayStr).sort(sortByDateDesc);
   return { upcoming, past };
 }
+
+/** Regroupe les courses par jour (`YYYY-MM-DD`), triées par heure de départ puis nom. */
+export function groupRacesByDate(races: RaceEntry[]): Map<string, RaceEntry[]> {
+  const m = new Map<string, RaceEntry[]>();
+  for (const r of races) {
+    if (typeof r.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(r.date)) continue;
+    const list = m.get(r.date);
+    if (list) list.push(r);
+    else m.set(r.date, [r]);
+  }
+  for (const list of m.values()) {
+    list.sort((a, b) => {
+      const ta = a.startTime ?? "";
+      const tb = b.startTime ?? "";
+      if (ta !== tb) return ta.localeCompare(tb);
+      return a.name.localeCompare(b.name, "fr");
+    });
+  }
+  return m;
+}
