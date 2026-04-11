@@ -107,6 +107,9 @@ export default function RacesPage() {
     });
   }, [races, matchesSearchSport, viewFilter, todayStr]);
 
+  /** Bandeaux nutrition : toutes les courses (sport + recherche), indépendamment du segmenté calendrier. */
+  const bandSourceRaces = useMemo(() => races.filter(matchesSearchSport), [races, matchesSearchSport]);
+
   const racesByDate = useMemo(() => groupRacesByDate(filteredForCalendar), [filteredForCalendar]);
 
   const onPrevMonth = useCallback(() => {
@@ -169,6 +172,7 @@ export default function RacesPage() {
               onNextMonth={onNextMonth}
               onThisMonth={onThisMonth}
               racesByDate={racesByDate}
+              bandSourceRaces={bandSourceRaces}
               selectedDate={selectedDate}
               onSelectDate={setSelectedDate}
               viewFilter={viewFilter}

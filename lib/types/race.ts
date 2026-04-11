@@ -17,6 +17,18 @@ export interface RaceEntry {
   websiteUrl?: string;
   notes?: string;
 
+  /**
+   * Charge nutritionnelle avant le jour J : du J−n au J−1 (inclus).
+   * `undefined` → valeur par défaut (voir lib/raceNutritionBands). `0` → désactivé.
+   */
+  nutritionChargeDaysBefore?: number;
+  /** Récupération après la course : du J+1 au J+n (inclus). `undefined` → défaut. `0` → désactivé. */
+  nutritionRecoveryDaysAfter?: number;
+  /** Texte court sur le bandeau « charge » (ex. « Charge CHO »). */
+  nutritionChargeLabel?: string;
+  /** Texte court sur le bandeau « récup ». */
+  nutritionRecoveryLabel?: string;
+
   /** Phase / compte à rebours : dériver via `getRacePhase` (date + heure de départ + débrief), jamais persister. */
 
   // Plan lié

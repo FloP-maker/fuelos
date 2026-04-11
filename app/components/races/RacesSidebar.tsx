@@ -142,8 +142,9 @@ export function RacesSidebar({
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-4">
         <div className="rounded-xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-accent)_6%,var(--color-bg-card))] px-3 py-2.5 text-[11px] leading-snug text-[var(--color-text-muted)]">
-          Astuce : les filtres <strong className="text-[var(--color-text)]">À venir / Passées / Tout</strong> s’appliquent
-          au calendrier. La liste ci-dessous respecte la vue « liste » (1 à 6 mois).
+          Les filtres <strong className="text-[var(--color-text)]">À venir / Passées / Tout</strong> s’appliquent aux cases
+          du calendrier. Les <strong className="text-[var(--color-text)]">bandeaux</strong> charge / récup (définis sur
+          chaque course) restent visibles selon sport et recherche. La liste respecte l’horizon (1 à 6 mois).
         </div>
 
         <div className="mt-3">

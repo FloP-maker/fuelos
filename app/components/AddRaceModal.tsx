@@ -28,6 +28,12 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
   const [date, setDate] = useState(todayYmd());
   const [startTime, setStartTime] = useState('');
   const [sport, setSport] = useState<string>('Trail');
+  /** 0 = désactivé ; défaut visuel 5 jours avant le J. */
+  const [chargeDays, setChargeDays] = useState(5);
+  /** 0 = désactivé ; défaut 4 jours après le J (J+1…J+4). */
+  const [recoveryDays, setRecoveryDays] = useState(4);
+  const [chargeLabel, setChargeLabel] = useState('');
+  const [recoveryLabel, setRecoveryLabel] = useState('');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -67,11 +73,19 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
       startTime: startTime.trim() || undefined,
       sport,
       distance: 0,
+      nutritionChargeDaysBefore: chargeDays,
+      nutritionRecoveryDaysAfter: recoveryDays,
+      nutritionChargeLabel: chargeLabel.trim() || undefined,
+      nutritionRecoveryLabel: recoveryLabel.trim() || undefined,
     });
     setName('');
     setDate(todayYmd());
     setStartTime('');
     setSport('Trail');
+    setChargeDays(5);
+    setRecoveryDays(4);
+    setChargeLabel('');
+    setRecoveryLabel('');
     onSaved?.();
     onClose();
   };
@@ -162,6 +176,58 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
               })}
             </div>
           </div>
+
+          <fieldset className="rounded-xl border border-[#e5e7eb] bg-[#fafafa] p-4">
+            <legend className="px-1 text-sm font-bold text-[#374151]">Périodes nutrition (calendrier)</legend>
+            <p className="mb-3 text-xs text-[#6b7280]">
+              Bandeaux sur le calendrier : charge avant la course (J−n…J−1), récupération après (J+1…J+n). Mets 0
+              pour désactiver une période.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-[#374151]">
+                Jours de charge avant le J
+                <input
+                  type="number"
+                  min={0}
+                  max={21}
+                  value={chargeDays}
+                  onChange={(e) => setChargeDays(Math.max(0, Math.min(21, Number(e.target.value) || 0)))}
+                  className="mt-1 w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-base outline-none focus:border-[#16a34a]"
+                />
+              </label>
+              <label className="block text-sm font-medium text-[#374151]">
+                Jours de récup après le J
+                <input
+                  type="number"
+                  min={0}
+                  max={21}
+                  value={recoveryDays}
+                  onChange={(e) => setRecoveryDays(Math.max(0, Math.min(21, Number(e.target.value) || 0)))}
+                  className="mt-1 w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-base outline-none focus:border-[#16a34a]"
+                />
+              </label>
+              <label className="block text-sm font-medium text-[#374151] sm:col-span-2">
+                Libellé charge (optionnel)
+                <input
+                  type="text"
+                  value={chargeLabel}
+                  onChange={(e) => setChargeLabel(e.target.value)}
+                  placeholder="Ex. Charge CHO"
+                  className="mt-1 w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-base outline-none focus:border-[#16a34a]"
+                />
+              </label>
+              <label className="block text-sm font-medium text-[#374151] sm:col-span-2">
+                Libellé récup (optionnel)
+                <input
+                  type="text"
+                  value={recoveryLabel}
+                  onChange={(e) => setRecoveryLabel(e.target.value)}
+                  placeholder="Ex. Récup post-course"
+                  className="mt-1 w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-base outline-none focus:border-[#16a34a]"
+                />
+              </label>
+            </div>
+          </fieldset>
 
           <div className="mt-2 flex justify-end gap-2">
             <button
