@@ -5,19 +5,41 @@ import usePageTitle from "../lib/hooks/usePageTitle";
 import { Header } from "../components/Header";
 import { AddRaceModal } from "../components/AddRaceModal";
 import { RacesMonthCalendar } from "../components/races/RacesMonthCalendar";
-import { RacesUpcomingTimeline } from "../components/races/RacesUpcomingTimeline";
+import { RacesSidebar } from "../components/races/RacesSidebar";
+import type { RacesCalendarViewFilter } from "../components/races/RacesCalendarToolbar";
 import { groupRacesByDate, loadRaces, partitionRacesByUpcoming } from "@/lib/races";
 import type { RaceEntry } from "@/lib/types/race";
+
+function todayIso(): string {
+  const t = new Date();
+  const y = t.getFullYear();
+  const m = String(t.getMonth() + 1).padStart(2, "0");
+  const d = String(t.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function norm(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
 
 export default function RacesPage() {
   usePageTitle("Mes courses");
   const [races, setRaces] = useState<RaceEntry[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewFilter, setViewFilter] = useState<RacesCalendarViewFilter>("upcoming");
+  const [sportFilter, setSportFilter] = useState("all");
+  const [rangeMonths, setRangeMonths] = useState<1 | 3 | 6>(3);
   const [view, setView] = useState(() => {
     const t = new Date();
     return { year: t.getFullYear(), month: t.getMonth() };
   });
+
+  const todayStr = useMemo(() => todayIso(), []);
 
   const refresh = useCallback(() => {
     setRaces(loadRaces());
@@ -40,9 +62,52 @@ export default function RacesPage() {
     };
   }, [refresh]);
 
-  const { upcoming, past } = useMemo(() => partitionRacesByUpcoming(races), [races]);
-  const racesByDate = useMemo(() => groupRacesByDate(races), [races]);
-  const empty = races.length === 0;
+  const { upcoming: upcomingAll, past: pastAll } = useMemo(
+    () => partitionRacesByUpcoming(races),
+    [races]
+  );
+
+  const sportsOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of races) {
+      if (r.sport?.trim()) set.add(r.sport.trim());
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, "fr"));
+  }, [races]);
+
+  const q = norm(searchQuery.trim());
+
+  const matchesSearchSport = useCallback(
+    (r: RaceEntry) => {
+      if (sportFilter !== "all" && r.sport !== sportFilter) return false;
+      if (!q) return true;
+      return (
+        norm(r.name).includes(q) ||
+        norm(r.sport).includes(q) ||
+        norm(r.location ?? "").includes(q)
+      );
+    },
+    [sportFilter, q]
+  );
+
+  const sidebarUpcoming = useMemo(() => {
+    return upcomingAll.filter(matchesSearchSport);
+  }, [upcomingAll, matchesSearchSport]);
+
+  const sidebarPast = useMemo(() => {
+    return pastAll.filter(matchesSearchSport);
+  }, [pastAll, matchesSearchSport]);
+
+  const filteredForCalendar = useMemo(() => {
+    return races.filter((r) => {
+      if (!matchesSearchSport(r)) return false;
+      if (viewFilter === "upcoming" && r.date < todayStr) return false;
+      if (viewFilter === "past" && r.date >= todayStr) return false;
+      return true;
+    });
+  }, [races, matchesSearchSport, viewFilter, todayStr]);
+
+  const racesByDate = useMemo(() => groupRacesByDate(filteredForCalendar), [filteredForCalendar]);
 
   const onPrevMonth = useCallback(() => {
     setView((v) => {
@@ -79,89 +144,43 @@ export default function RacesPage() {
   return (
     <>
       <Header />
-      <main className="fuel-main mx-auto flex w-full max-w-[1440px] flex-col px-4 py-6 md:px-6 md:py-8">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--color-text)] md:text-3xl">
-              Mes courses
-            </h1>
-            <p className="mt-2 text-sm text-[var(--color-text-muted)] md:text-base">
-              Calendrier de saison et prochains événements.
-            </p>
+      <main className="fuel-main mx-auto w-full max-w-[1600px] px-3 py-5 md:px-5 md:py-6">
+        <div
+          className="flex min-h-[min(82vh,860px)] flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--shadow-sm)] lg:flex-row"
+        >
+          <aside className="w-full shrink-0 lg:w-[300px] lg:max-w-[320px]">
+            <RacesSidebar
+              upcoming={sidebarUpcoming}
+              past={sidebarPast}
+              selectedDate={selectedDate}
+              onFocusDate={onFocusDate}
+              onAddRace={() => setAddOpen(true)}
+              searchQuery={searchQuery}
+              onSearchQuery={setSearchQuery}
+              listRangeMonths={rangeMonths}
+            />
+          </aside>
+
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col border-t border-[var(--color-border)] lg:border-l lg:border-t-0">
+            <RacesMonthCalendar
+              viewYear={view.year}
+              viewMonth={view.month}
+              onPrevMonth={onPrevMonth}
+              onNextMonth={onNextMonth}
+              onThisMonth={onThisMonth}
+              racesByDate={racesByDate}
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+              viewFilter={viewFilter}
+              onViewFilter={setViewFilter}
+              sportFilter={sportFilter}
+              onSportFilter={setSportFilter}
+              sportsOptions={sportsOptions}
+              rangeMonths={rangeMonths}
+              onRangeMonths={setRangeMonths}
+            />
           </div>
-          <button
-            type="button"
-            onClick={() => setAddOpen(true)}
-            className="shrink-0 self-start rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-sm font-bold text-black hover:opacity-95"
-          >
-            + Ajouter une course
-          </button>
         </div>
-
-        {empty ? (
-          <div className="flex min-h-[min(70vh,640px)] flex-1 flex-col gap-6 lg:flex-row">
-            <aside className="w-full shrink-0 lg:order-first lg:w-[300px] xl:w-[320px]">
-              <RacesUpcomingTimeline upcoming={[]} selectedDate={null} onFocusDate={onFocusDate} />
-            </aside>
-            <div className="flex min-h-[min(50vh,520px)] min-w-0 flex-1 flex-col">
-              <RacesMonthCalendar
-                viewYear={view.year}
-                viewMonth={view.month}
-                onPrevMonth={onPrevMonth}
-                onNextMonth={onNextMonth}
-                onThisMonth={onThisMonth}
-                racesByDate={racesByDate}
-                selectedDate={selectedDate}
-                onSelectDate={setSelectedDate}
-              />
-              <div className="fuel-card mt-4 border-dashed p-6 text-center">
-                <p className="text-sm text-[var(--color-text-muted)]">
-                  Aucune course enregistrée. Clique sur « Ajouter une course » pour créer ton premier événement.
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="flex min-h-[min(72vh,760px)] flex-1 flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-8">
-            <aside className="w-full shrink-0 lg:order-first lg:w-[300px] xl:w-[320px]">
-              <RacesUpcomingTimeline
-                upcoming={upcoming}
-                selectedDate={selectedDate}
-                onFocusDate={onFocusDate}
-              />
-              {past.length > 0 ? (
-                <div className="fuel-card mt-4 hidden p-4 lg:block">
-                  <h3 className="text-xs font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
-                    Passées
-                  </h3>
-                  <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-                    {past.length} course{past.length > 1 ? "s" : ""} — accès via le calendrier (mois
-                    précédents) ou la fiche course.
-                  </p>
-                </div>
-              ) : null}
-            </aside>
-
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-              <RacesMonthCalendar
-                viewYear={view.year}
-                viewMonth={view.month}
-                onPrevMonth={onPrevMonth}
-                onNextMonth={onNextMonth}
-                onThisMonth={onThisMonth}
-                racesByDate={racesByDate}
-                selectedDate={selectedDate}
-                onSelectDate={setSelectedDate}
-              />
-              {past.length > 0 ? (
-                <p className="mt-3 text-center text-xs text-[var(--color-text-muted)] lg:hidden">
-                  {past.length} course{past.length > 1 ? "s" : ""} passée{past.length > 1 ? "s" : ""} — change de
-                  mois sur le calendrier pour les retrouver.
-                </p>
-              ) : null}
-            </div>
-          </div>
-        )}
       </main>
 
       <AddRaceModal open={addOpen} onClose={() => setAddOpen(false)} onSaved={refresh} />

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { RaceEntry } from "@/lib/types/race";
+import { RacesCalendarToolbar, type RacesCalendarViewFilter } from "./RacesCalendarToolbar";
+import { raceSportChip } from "@/lib/raceCalendarUi";
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"] as const;
 
@@ -20,6 +21,17 @@ function todayKey(): string {
   return dateKey(t.getFullYear(), t.getMonth(), t.getDate());
 }
 
+function weekKmForKeys(keys: (string | null)[], racesByDate: Map<string, RaceEntry[]>): number {
+  let km = 0;
+  for (const k of keys) {
+    if (!k) continue;
+    for (const r of racesByDate.get(k) ?? []) {
+      if (typeof r.distance === "number" && r.distance > 0) km += r.distance;
+    }
+  }
+  return Math.round(km * 10) / 10;
+}
+
 export type RacesMonthCalendarProps = {
   viewYear: number;
   viewMonth: number;
@@ -29,6 +41,13 @@ export type RacesMonthCalendarProps = {
   racesByDate: Map<string, RaceEntry[]>;
   selectedDate: string | null;
   onSelectDate: (iso: string | null) => void;
+  viewFilter: RacesCalendarViewFilter;
+  onViewFilter: (v: RacesCalendarViewFilter) => void;
+  sportFilter: string;
+  onSportFilter: (sport: string) => void;
+  sportsOptions: string[];
+  rangeMonths: 1 | 3 | 6;
+  onRangeMonths: (n: 1 | 3 | 6) => void;
 };
 
 export function RacesMonthCalendar({
@@ -40,6 +59,13 @@ export function RacesMonthCalendar({
   racesByDate,
   selectedDate,
   onSelectDate,
+  viewFilter,
+  onViewFilter,
+  sportFilter,
+  onSportFilter,
+  sportsOptions,
+  rangeMonths,
+  onRangeMonths,
 }: RacesMonthCalendarProps) {
   const title = useMemo(
     () =>
@@ -65,117 +91,135 @@ export function RacesMonthCalendar({
     return out;
   }, [viewYear, viewMonth]);
 
+  const rowCount = cells.length / 7;
+
   const today = todayKey();
   const isPastDay = (k: string) => k < today;
   const isThisMonthView =
     new Date().getFullYear() === viewYear && new Date().getMonth() === viewMonth;
 
   return (
-    <div className="fuel-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <div className="flex flex-col gap-4 border-b border-[var(--color-border)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div className="flex items-center gap-1 sm:gap-2">
-          <button
-            type="button"
-            onClick={onPrevMonth}
-            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-[var(--color-text)] hover:bg-[var(--color-bg-card-hover)]"
-            aria-label="Mois précédent"
-          >
-            <ChevronLeft size={20} strokeWidth={2.25} />
-          </button>
-          <button
-            type="button"
-            onClick={onNextMonth}
-            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-[var(--color-text)] hover:bg-[var(--color-bg-card-hover)]"
-            aria-label="Mois suivant"
-          >
-            <ChevronRight size={20} strokeWidth={2.25} />
-          </button>
-          <h2 className="font-display ml-2 min-w-0 flex-1 text-center text-lg font-bold capitalize tracking-tight text-[var(--color-text)] sm:ml-4 sm:text-left sm:text-xl">
-            {title}
-          </h2>
-        </div>
-        {!isThisMonthView ? (
-          <button
-            type="button"
-            onClick={onThisMonth}
-            className="shrink-0 self-start rounded-lg border border-[var(--color-border)] bg-[var(--color-accent-muted)] px-3 py-2 text-xs font-bold text-[var(--color-text)] hover:opacity-95 sm:self-center"
-          >
-            Aujourd&apos;hui
-          </button>
-        ) : (
-          <span className="hidden text-xs font-semibold text-[var(--color-text-muted)] sm:block">
-            Mois en cours
-          </span>
-        )}
-      </div>
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--color-bg-card)]">
+      <RacesCalendarToolbar
+        viewFilter={viewFilter}
+        onViewFilter={onViewFilter}
+        sportFilter={sportFilter}
+        onSportFilter={onSportFilter}
+        sportsOptions={sportsOptions}
+        rangeMonths={rangeMonths}
+        onRangeMonths={onRangeMonths}
+        monthTitle={title}
+        onPrevMonth={onPrevMonth}
+        onNextMonth={onNextMonth}
+        onThisMonth={onThisMonth}
+        isThisMonthView={isThisMonthView}
+      />
 
-      <div className="grid flex-1 auto-rows-fr grid-cols-7 gap-px bg-[var(--color-border-subtle)] p-px sm:p-1">
-        {WEEKDAYS.map((wd) => (
-          <div
-            key={wd}
-            className="flex items-center justify-center bg-[var(--color-bg-card)] py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-muted)] sm:text-xs"
-          >
-            {wd}
-          </div>
-        ))}
-        {cells.map((cell, idx) => {
-          if (!cell) {
-            return (
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 sm:p-3">
+        <div className="mb-2 flex gap-2">
+          <div className="grid min-w-0 flex-1 grid-cols-7 gap-1 sm:gap-1.5">
+            {WEEKDAYS.map((wd) => (
               <div
-                key={`e-${idx}`}
-                className="min-h-[72px] bg-[var(--color-bg-elevated)]/50 sm:min-h-[88px] md:min-h-[100px]"
-              />
-            );
-          }
-          const { day, key } = cell;
-          const list = racesByDate.get(key) ?? [];
-          const isToday = key === today;
-          const isSelected = key === selectedDate;
-          const pastDay = isPastDay(key);
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onSelectDate(isSelected ? null : key)}
-              className={[
-                "group flex min-h-[72px] flex-col border border-transparent bg-[var(--color-bg-card)] p-1.5 text-left transition sm:min-h-[88px] sm:p-2 md:min-h-[100px]",
-                pastDay ? "opacity-[0.92]" : "",
-                isToday ? "ring-2 ring-[var(--color-accent)] ring-offset-2 ring-offset-[var(--color-bg-card)]" : "",
-                isSelected ? "border-[var(--color-accent)] bg-[var(--color-accent-muted)]" : "hover:bg-[var(--color-bg-card-hover)]",
-              ].join(" ")}
-            >
-              <span
-                className={[
-                  "text-sm font-bold tabular-nums sm:text-base",
-                  isToday ? "text-[var(--color-accent)]" : "text-[var(--color-text)]",
-                ].join(" ")}
+                key={wd}
+                className="flex h-9 items-center justify-center rounded-lg bg-[var(--color-bg-elevated)] text-[10px] font-bold uppercase tracking-wide text-[var(--color-text-muted)] sm:text-[11px]"
               >
-                {day}
-              </span>
-              {list.length > 0 ? (
-                <ul className="mt-1 flex min-h-0 flex-1 flex-col gap-0.5 overflow-hidden">
-                  {list.slice(0, 3).map((r) => (
-                    <li key={r.id} className="min-w-0">
-                      <Link
-                        href={`/races/${r.id}`}
-                        onClick={(e) => e.stopPropagation()}
+                {wd}
+              </div>
+            ))}
+          </div>
+          <div className="flex w-[4.25rem] shrink-0 flex-col items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)]/60 px-1 py-2 text-center shadow-sm sm:w-[5rem]">
+            <span className="text-[9px] font-bold uppercase leading-tight text-[var(--color-text-muted)]">Σ</span>
+            <span className="text-[9px] font-semibold text-[var(--color-text-muted)]">km</span>
+          </div>
+        </div>
+
+        {Array.from({ length: rowCount }, (_, ri) => {
+          const keys = cells.slice(ri * 7, ri * 7 + 7).map((c) => (c ? c.key : null));
+          return (
+            <div key={ri} className="mb-2 flex gap-2 last:mb-0">
+              <div className="grid min-w-0 flex-1 grid-cols-7 gap-1 sm:gap-1.5">
+                {cells.slice(ri * 7, ri * 7 + 7).map((cell, ci) => {
+                  const idx = ri * 7 + ci;
+                  if (!cell) {
+                    return (
+                      <div
+                        key={`e-${idx}`}
+                        className="min-h-[92px] rounded-xl bg-[var(--color-bg-elevated)]/40 sm:min-h-[104px] md:min-h-[118px]"
+                      />
+                    );
+                  }
+                  const { day, key } = cell;
+                  const list = racesByDate.get(key) ?? [];
+                  const isToday = key === today;
+                  const isSelected = key === selectedDate;
+                  const pastDay = isPastDay(key);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => onSelectDate(isSelected ? null : key)}
+                      className={[
+                        "flex min-h-[92px] flex-col rounded-xl border bg-[var(--color-bg-elevated)]/50 p-1.5 text-left shadow-sm transition sm:min-h-[104px] sm:p-2 md:min-h-[118px]",
+                        pastDay ? "opacity-[0.88]" : "",
+                        isToday
+                          ? "border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/35"
+                          : "border-[var(--color-border)] hover:border-[color-mix(in_srgb,var(--color-accent)_45%,var(--color-border))]",
+                        isSelected ? "bg-[var(--color-accent-muted)]" : "",
+                      ].join(" ")}
+                    >
+                      <span
                         className={[
-                          "block truncate rounded px-0.5 text-[10px] font-semibold leading-tight underline-offset-2 hover:bg-[var(--color-bg-elevated)] hover:underline sm:text-[11px]",
-                          pastDay ? "text-[var(--color-text-muted)]" : "text-[var(--color-text)]",
+                          "text-xs font-bold tabular-nums sm:text-sm",
+                          isToday ? "text-[var(--color-accent)]" : "text-[var(--color-text)]",
                         ].join(" ")}
                       >
-                        {r.name}
-                      </Link>
-                    </li>
-                  ))}
-                  {list.length > 3 ? (
-                    <li className="text-[10px] font-medium text-[var(--color-text-muted)]">+{list.length - 3}</li>
-                  ) : null}
-                </ul>
-              ) : (
-                <span className="mt-auto text-[10px] text-transparent sm:text-xs">.</span>
-              )}
-            </button>
+                        {day}
+                      </span>
+                      {list.length > 0 ? (
+                        <ul className="mt-1 flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
+                          {list.slice(0, 4).map((r) => {
+                            const chip = raceSportChip(r.sport);
+                            return (
+                              <li key={r.id} className="min-w-0">
+                                <Link
+                                  href={`/races/${r.id}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={[
+                                    "flex items-center gap-1 truncate rounded-lg px-1.5 py-1 text-[9px] font-bold leading-tight shadow-sm transition hover:brightness-95 sm:text-[10px]",
+                                    chip.pillClass,
+                                    pastDay ? "opacity-90" : "",
+                                  ].join(" ")}
+                                >
+                                  <span className="shrink-0" aria-hidden>
+                                    {chip.icon}
+                                  </span>
+                                  <span className="truncate">{r.name}</span>
+                                </Link>
+                              </li>
+                            );
+                          })}
+                          {list.length > 4 ? (
+                            <li className="text-[9px] font-semibold text-[var(--color-text-muted)]">
+                              +{list.length - 4}
+                            </li>
+                          ) : null}
+                        </ul>
+                      ) : (
+                        <span className="mt-auto text-[9px] text-transparent">.</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex w-[4.25rem] shrink-0 flex-col items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)]/60 px-1.5 py-2 text-center shadow-sm sm:w-[5rem]">
+                <span className="text-[9px] font-bold text-[var(--color-text-muted)]">Sem.</span>
+                <span className="mt-1 font-display text-sm font-bold tabular-nums text-[var(--color-text)]">
+                  {weekKmForKeys(keys, racesByDate) || "—"}
+                </span>
+                <span className="text-[9px] text-[var(--color-text-muted)]">km</span>
+              </div>
+            </div>
           );
         })}
       </div>
