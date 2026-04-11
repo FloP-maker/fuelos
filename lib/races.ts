@@ -53,6 +53,27 @@ export function getDaysUntilRace(race: RaceEntry): number {
   return Math.round((raceDayStart - todayStart) / 86_400_000);
 }
 
+const MS_PER_DAY = 86_400_000;
+
+/**
+ * Progression 0 → 1 vers le jour J : temps écoulé entre l’ajout de la course (`createdAt`)
+ * et la date de l’événement. Repli : fenêtre de 150 jours avant la course si `createdAt` est absent ou trop tardif.
+ * Utilisé pour une barre type « milestone » (Strava / Garmin).
+ */
+export function getRaceApproachProgress(race: RaceEntry): number {
+  const parts = parseRaceDateParts(race.date);
+  if (!parts) return 0;
+  const [y, mo, d] = parts;
+  const endMs = new Date(y, mo - 1, d, 12, 0, 0, 0).getTime();
+  const createdMs = Date.parse(race.createdAt);
+  const fallbackStart = endMs - 150 * MS_PER_DAY;
+  const startMs =
+    Number.isFinite(createdMs) && createdMs < endMs ? createdMs : fallbackStart;
+  const span = Math.max(MS_PER_DAY, endMs - startMs);
+  const raw = (Date.now() - startMs) / span;
+  return Math.max(0, Math.min(1, raw));
+}
+
 export function getRacePhase(race: RaceEntry): RacePhase {
   if (race.debriefSnapshot != null && typeof race.debriefSnapshot === "object") {
     return "done";

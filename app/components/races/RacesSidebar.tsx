@@ -120,8 +120,9 @@ export function RacesSidebar({
   return (
     <div className="flex h-full min-h-0 flex-col border-b border-[var(--color-border)] lg:border-b-0 lg:border-e">
       <div className="border-b border-[var(--color-border-subtle)] px-4 py-4">
-        <h1 className="font-display text-lg font-semibold tracking-tight text-[var(--color-text)]">Mes courses</h1>
-        <p className="mt-1 text-xs text-[var(--color-text-muted)]">Calendrier et saison</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+          Calendrier
+        </p>
         <button
           type="button"
           onClick={onAddRace}

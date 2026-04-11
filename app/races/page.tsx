@@ -5,6 +5,7 @@ import usePageTitle from "../lib/hooks/usePageTitle";
 import { Header } from "../components/Header";
 import { AddRaceModal } from "../components/AddRaceModal";
 import { RacesMonthCalendar } from "../components/races/RacesMonthCalendar";
+import { RacesPageHero } from "../components/races/RacesPageHero";
 import { RacesSidebar } from "../components/races/RacesSidebar";
 import type { RacesCalendarViewFilter } from "../components/races/RacesCalendarToolbar";
 import { groupRacesByDate, loadRaces, partitionRacesByUpcoming } from "@/lib/races";
@@ -133,6 +134,8 @@ export default function RacesPage() {
     setView({ year: t.getFullYear(), month: t.getMonth() });
   }, []);
 
+  const nextMilestoneRace = useMemo(() => upcomingAll[0] ?? null, [upcomingAll]);
+
   const onFocusDate = useCallback((iso: string) => {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
     if (!m) return;
@@ -148,6 +151,7 @@ export default function RacesPage() {
     <>
       <Header />
       <main className="fuel-main mx-auto w-full max-w-[1600px] px-3 py-5 md:px-5 md:py-6">
+        <RacesPageHero nextRace={nextMilestoneRace} onAddRace={() => setAddOpen(true)} />
         <div
           className="flex min-h-[min(82vh,860px)] flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--shadow-sm)] lg:flex-row"
         >
