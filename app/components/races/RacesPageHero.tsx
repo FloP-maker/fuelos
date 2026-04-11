@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Mountain } from "lucide-react";
+import { ChevronRight, Mountain, Plus } from "lucide-react";
 import type { RaceEntry } from "@/lib/types/race";
 import { getDaysUntilRace, getRaceApproachProgress } from "@/lib/races";
 import { raceSportVisual } from "@/lib/raceCalendarUi";
@@ -19,10 +19,9 @@ export function RacesPageHero({ nextRace, onAddRace }: RacesPageHeroProps) {
 
   return (
     <section
-      className="relative mb-5 overflow-hidden rounded-2xl border border-white/10 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.45)] md:mb-6"
+      className="relative overflow-hidden rounded-2xl border border-white/10 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.45)]"
       aria-labelledby="races-hero-title"
     >
-      {/* Fond montagne / trail : dégradés + silhouette */}
       <div
         className="absolute inset-0 bg-[linear-gradient(145deg,#0b1220_0%,#152238_42%,#0d3d4d_78%,#0a2e28_100%)]"
         aria-hidden
@@ -46,24 +45,34 @@ export function RacesPageHero({ nextRace, onAddRace }: RacesPageHeroProps) {
       </svg>
       <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-transparent" aria-hidden />
 
-      <div className="relative px-4 py-8 sm:px-8 sm:py-10 md:px-10 md:py-12">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
+      <div className="relative px-4 pb-8 pt-5 sm:px-7 sm:pb-10 sm:pt-6 md:px-9 md:pb-11 md:pt-7">
+        <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+          <div className="min-w-0 max-w-2xl pr-2">
             <h1
               id="races-hero-title"
-              className="flex flex-wrap items-center gap-2 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-[2.35rem]"
+              className="flex flex-wrap items-center gap-2 text-2xl font-semibold leading-tight tracking-tight text-white sm:text-3xl md:text-[1.85rem]"
             >
-              <span className="select-none" aria-hidden>
+              <span className="select-none text-[1.35em] leading-none" aria-hidden>
                 🏔️
               </span>
               Mes courses
             </h1>
-            <p className="mt-2 max-w-lg text-sm leading-relaxed text-zinc-300 sm:text-base">
-              Prochain objectif, charge et récup : tout se lit d’un coup d’œil comme sur Strava ou Garmin Connect.
+            <p className="mt-2 max-w-lg text-sm leading-relaxed text-zinc-300/95 sm:text-[0.9375rem]">
+              Prochain objectif, charge et récup : lecture rapide, comme un jalon en tête de tableau de bord.
             </p>
           </div>
+          <button
+            type="button"
+            onClick={onAddRace}
+            className="inline-flex h-10 max-h-10 shrink-0 items-center justify-center gap-1.5 self-start rounded-full bg-emerald-950 px-4 text-sm font-semibold text-emerald-50 shadow-sm ring-1 ring-emerald-800/80 transition hover:bg-emerald-900 hover:ring-emerald-700/60 sm:self-auto"
+          >
+            <Plus className="size-4 shrink-0 opacity-95" strokeWidth={2.5} aria-hidden />
+            Nouvelle course
+          </button>
+        </div>
 
-          <div className="w-full max-w-xl lg:shrink-0 lg:pb-0.5">
+        <div className="flex flex-col gap-6 lg:flex-row lg:justify-end">
+          <div className="w-full max-w-xl lg:ml-auto lg:shrink-0">
             {nextRace && days != null && SportIcon ? (
               <div className="rounded-xl border border-white/10 bg-white/[0.07] p-4 backdrop-blur-sm sm:p-5">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
@@ -142,15 +151,8 @@ export function RacesPageHero({ nextRace, onAddRace }: RacesPageHeroProps) {
                   <div>
                     <p className="text-lg font-bold text-white">Aucune course à venir</p>
                     <p className="mt-1 text-sm leading-relaxed text-zinc-300">
-                      Ajoute ton prochain objectif pour afficher le compte à rebours ici.
+                      Utilise le bouton « Nouvelle course » ci-dessus pour ajouter ton prochain objectif.
                     </p>
-                    <button
-                      type="button"
-                      onClick={onAddRace}
-                      className="mt-4 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-zinc-100"
-                    >
-                      Ajouter une course
-                    </button>
                   </div>
                 </div>
               </div>

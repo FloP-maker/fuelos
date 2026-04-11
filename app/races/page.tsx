@@ -150,10 +150,10 @@ export default function RacesPage() {
   return (
     <>
       <Header />
-      <main className="fuel-main mx-auto w-full max-w-[1600px] px-3 py-5 md:px-5 md:py-6">
+      <main className="fuel-main races-page space-y-6 md:space-y-8">
         <RacesPageHero nextRace={nextMilestoneRace} onAddRace={() => setAddOpen(true)} />
         <div
-          className="flex min-h-[min(82vh,860px)] flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-[var(--shadow-sm)] lg:flex-row"
+          className="flex min-h-[min(82vh,860px)] flex-col overflow-hidden rounded-2xl border border-[#e5e7eb] bg-[var(--color-bg-card)] shadow-[var(--shadow-sm)] dark:border-[var(--color-border-subtle)] dark:shadow-[0_12px_40px_-18px_rgba(0,0,0,0.65)] lg:flex-row"
         >
           <aside className="w-full shrink-0 lg:w-[300px] lg:max-w-[320px]">
             <RacesSidebar
@@ -161,7 +161,6 @@ export default function RacesPage() {
               past={sidebarPast}
               selectedDate={selectedDate}
               onFocusDate={onFocusDate}
-              onAddRace={() => setAddOpen(true)}
               searchQuery={searchQuery}
               onSearchQuery={setSearchQuery}
               listRangeMonths={rangeMonths}

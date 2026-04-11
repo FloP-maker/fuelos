@@ -19,6 +19,9 @@ export type RacesCalendarToolbarProps = {
   isThisMonthView: boolean;
 };
 
+const pillNav =
+  "inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-[#f3f4f6] text-[#111827] transition hover:bg-[#e5e7eb] active:scale-[0.98] dark:bg-[var(--color-bg-elevated)] dark:text-[var(--color-text)] dark:ring-1 dark:ring-white/[0.06] dark:hover:bg-[var(--color-bg-card-hover)]";
+
 export function RacesCalendarToolbar({
   viewFilter,
   onViewFilter,
@@ -34,8 +37,8 @@ export function RacesCalendarToolbar({
   isThisMonthView,
 }: RacesCalendarToolbarProps) {
   return (
-    <div className="flex flex-col gap-4 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] px-4 py-3.5 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-3 md:px-5">
-      <div className="inline-flex w-full max-w-md rounded-xl bg-[var(--color-bg-elevated)]/50 p-1 ring-1 ring-[var(--color-border-subtle)] md:w-auto">
+    <div className="flex flex-col gap-4 border-b border-[#e5e7eb] bg-[var(--color-bg-card)] px-4 py-4 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-3 md:px-5 dark:border-[var(--color-border-subtle)]">
+      <div className="inline-flex w-full max-w-md rounded-full bg-[#f3f4f6] p-1 dark:bg-[var(--color-bg-elevated)] md:w-auto">
         {(
           [
             ["upcoming", "À venir"],
@@ -48,10 +51,10 @@ export function RacesCalendarToolbar({
             type="button"
             onClick={() => onViewFilter(id)}
             className={[
-              "flex-1 rounded-lg px-3 py-2 text-center text-xs font-semibold transition md:flex-none md:px-4 md:text-sm",
+              "flex-1 rounded-full px-3 py-2 text-center text-xs font-semibold transition duration-200 ease-out md:flex-none md:px-4 md:text-sm",
               viewFilter === id
-                ? "bg-[var(--color-accent-muted)] text-[var(--color-text)] ring-1 ring-[color-mix(in_srgb,var(--color-accent)_28%,var(--color-border-subtle))]"
-                : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
+                ? "bg-white text-[#111827] shadow-[0_1px_3px_rgba(15,23,42,0.12)] dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text)] dark:shadow-[var(--shadow-xs)] dark:ring-1 dark:ring-white/[0.06]"
+                : "text-[#6b7280] hover:text-[#111827] dark:text-[var(--color-text-muted)] dark:hover:text-[var(--color-text)]",
             ].join(" ")}
           >
             {label}
@@ -59,31 +62,21 @@ export function RacesCalendarToolbar({
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3">
-        <button
-          type="button"
-          onClick={onPrevMonth}
-          className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/50 p-2 text-[var(--color-text)] transition hover:bg-[var(--color-bg-elevated)]"
-          aria-label="Mois précédent"
-        >
+      <div className="flex flex-wrap items-center justify-center gap-2 md:gap-2.5">
+        <button type="button" onClick={onPrevMonth} className={pillNav} aria-label="Mois précédent">
           <ChevronLeft size={18} strokeWidth={2.25} />
         </button>
-        <h2 className="font-display min-w-[10rem] text-center text-base font-bold capitalize tracking-tight text-[var(--color-text)] md:text-lg">
+        <h2 className="min-w-[10rem] text-center text-base font-semibold capitalize tracking-tight text-[#111827] dark:text-[var(--color-text)] md:text-lg">
           {monthTitle}
         </h2>
-        <button
-          type="button"
-          onClick={onNextMonth}
-          className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/50 p-2 text-[var(--color-text)] transition hover:bg-[var(--color-bg-elevated)]"
-          aria-label="Mois suivant"
-        >
+        <button type="button" onClick={onNextMonth} className={pillNav} aria-label="Mois suivant">
           <ChevronRight size={18} strokeWidth={2.25} />
         </button>
         {!isThisMonthView ? (
           <button
             type="button"
             onClick={onThisMonth}
-            className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/60 px-3 py-1.5 text-xs font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-bg-elevated)]"
+            className="rounded-full bg-[#f3f4f6] px-3.5 py-2 text-xs font-semibold text-[#111827] transition hover:bg-[#e5e7eb] dark:bg-[var(--color-bg-elevated)] dark:text-[var(--color-text)] dark:ring-1 dark:ring-white/[0.06] dark:hover:bg-[var(--color-bg-card-hover)]"
           >
             Mois actuel
           </button>
@@ -91,12 +84,12 @@ export function RacesCalendarToolbar({
       </div>
 
       <div className="flex flex-wrap items-center gap-2 md:gap-3">
-        <label className="flex items-center gap-2 text-xs font-semibold text-[var(--color-text-muted)]">
+        <label className="flex items-center gap-2 text-xs font-medium text-[#6b7280] dark:text-[var(--color-text-muted)]">
           <span className="hidden sm:inline">Sport</span>
           <select
             value={sportFilter}
             onChange={(e) => onSportFilter(e.target.value)}
-            className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/50 px-3 py-2 text-xs font-semibold text-[var(--color-text)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-accent)_35%,var(--color-border))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-accent)_22%,transparent)]"
+            className="rounded-full border-0 bg-[#f3f4f6] px-3 py-2 text-xs font-semibold text-[#111827] outline-none ring-0 transition focus:ring-2 focus:ring-[color-mix(in_srgb,#16a34a_28%,transparent)] dark:bg-[var(--color-bg-elevated)] dark:text-[var(--color-text)] dark:ring-1 dark:ring-white/[0.05] dark:focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)]"
           >
             <option value="all">Tous les sports</option>
             {sportsOptions.map((s) => (
@@ -106,12 +99,12 @@ export function RacesCalendarToolbar({
             ))}
           </select>
         </label>
-        <label className="flex items-center gap-2 text-xs font-semibold text-[var(--color-text-muted)]">
+        <label className="flex items-center gap-2 text-xs font-medium text-[#6b7280] dark:text-[var(--color-text-muted)]">
           <span className="hidden sm:inline">Vue liste</span>
           <select
             value={String(rangeMonths)}
             onChange={(e) => onRangeMonths(Number(e.target.value) as 1 | 3 | 6)}
-            className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/50 px-3 py-2 text-xs font-semibold text-[var(--color-text)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-accent)_35%,var(--color-border))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-accent)_22%,transparent)]"
+            className="rounded-full border-0 bg-[#f3f4f6] px-3 py-2 text-xs font-semibold text-[#111827] outline-none transition focus:ring-2 focus:ring-[color-mix(in_srgb,#16a34a_28%,transparent)] dark:bg-[var(--color-bg-elevated)] dark:text-[var(--color-text)] dark:ring-1 dark:ring-white/[0.05] dark:focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)]"
           >
             <option value="1">1 mois</option>
             <option value="3">3 mois</option>
