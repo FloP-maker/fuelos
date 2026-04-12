@@ -379,13 +379,17 @@ textarea:focus {
     flex: 1 1 auto;
     flex-direction: row;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: flex-start;
     box-sizing: border-box;
     min-height: 0;
     width: 100%;
     max-width: 1400px;
     margin-inline: auto;
-    padding: 0.65rem clamp(1rem, 3vw, 1.5rem) 0.75rem;
+    /* Titre en haut à gauche : air sous encoche + ne pas coller aux bords du viewport */
+    padding-top: max(14px, calc(10px + env(safe-area-inset-top, 0px)));
+    padding-right: clamp(1.25rem, 4vw, 2.25rem);
+    padding-bottom: 12px;
+    padding-left: clamp(1.25rem, 4vw, 2.25rem);
   }
 
   .races-page-hero__left {
@@ -437,7 +441,7 @@ textarea:focus {
 
   .races-page-hero__cta {
     align-self: flex-start;
-    margin-top: 0.45rem;
+    margin-top: 0;
     margin-bottom: 0;
     display: inline-flex;
     align-items: center;
@@ -492,7 +496,7 @@ textarea:focus {
     opacity: 0.38;
   }
 
-  /* Prochain objectif : sous le hero, sans chevauchement (air géré par .races-layout) */
+  /* Prochain objectif : sous le hero (air hero → carte via padding-top .races-layout) */
   .races-page .races-next-milestone {
     position: relative;
     z-index: 20;
@@ -651,7 +655,7 @@ textarea:focus {
     align-items: start;
     max-width: 1400px;
     margin: 0 auto;
-    padding: 44px 24px clamp(48px, 8vw, 64px);
+    padding: 64px 24px clamp(48px, 8vw, 64px);
   }
 
   .races-layout__main {
@@ -690,7 +694,7 @@ textarea:focus {
   @media (max-width: 767px) {
     .races-layout {
       grid-template-columns: 1fr;
-      padding: 44px 16px clamp(48px, 10vw, 64px);
+      padding: 56px 16px clamp(48px, 10vw, 64px);
     }
   }
 
