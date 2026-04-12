@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import type { RaceEntry } from "@/lib/types/race";
 import { getDaysUntilRace } from "@/lib/races";
@@ -225,22 +225,6 @@ export function RacesSidebar({
     });
   }, [past, searchQuery]);
 
-  const accordionBtnStyle: CSSProperties = {
-    display: "flex",
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "space-between",
-    background: "#f7f9f6",
-    borderRadius: 12,
-    padding: "0.75rem 1rem",
-    fontWeight: 600,
-    color: "#1a1a1a",
-    border: "none",
-    cursor: "pointer",
-    textAlign: "left",
-    fontSize: "0.875rem",
-  };
-
   return (
     <div className="flex flex-col">
       <div className="border-b border-[var(--fuel-card-border)] px-4 py-4">
@@ -270,7 +254,11 @@ export function RacesSidebar({
         <RacesListHelp />
 
         <div className="overflow-hidden rounded-2xl border border-[var(--fuel-card-border)] bg-[var(--fuel-card-surface)] shadow-[var(--fuel-card-shadow)]">
-          <button type="button" onClick={() => setOpenUp((o) => !o)} style={accordionBtnStyle} className="transition hover:brightness-[0.98]">
+          <button
+            type="button"
+            onClick={() => setOpenUp((o) => !o)}
+            className="flex w-full cursor-pointer items-center justify-between rounded-[10px] border-0 bg-[#f7f9f6] px-4 py-[0.65rem] text-left text-sm font-semibold text-[#1a1a1a] transition hover:brightness-[0.98]"
+          >
             <span>À venir ({upcomingFiltered.length})</span>
             {openUp ? <ChevronDown className="size-4 shrink-0 opacity-70" /> : <ChevronRight className="size-4 shrink-0 opacity-70" />}
           </button>
@@ -294,7 +282,11 @@ export function RacesSidebar({
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-[var(--fuel-card-border)] bg-[var(--fuel-card-surface)] shadow-[var(--fuel-card-shadow)]">
-          <button type="button" onClick={() => setOpenPast((o) => !o)} style={accordionBtnStyle} className="transition hover:brightness-[0.98]">
+          <button
+            type="button"
+            onClick={() => setOpenPast((o) => !o)}
+            className="flex w-full cursor-pointer items-center justify-between rounded-[10px] border-0 bg-[#f7f9f6] px-4 py-[0.65rem] text-left text-sm font-semibold text-[#1a1a1a] transition hover:brightness-[0.98]"
+          >
             <span>Passées ({pastFiltered.length})</span>
             {openPast ? <ChevronDown className="size-4 shrink-0 opacity-70" /> : <ChevronRight className="size-4 shrink-0 opacity-70" />}
           </button>

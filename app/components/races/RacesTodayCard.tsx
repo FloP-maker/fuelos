@@ -63,7 +63,7 @@ const rootStyle: CSSProperties = {
   borderLeft: "4px solid #2d6a4f",
   borderRadius: "0 12px 12px 0",
   padding: "1rem 1.25rem",
-  margin: "0 1.5rem 1.5rem",
+  margin: 0,
 };
 
 const labelStyle: CSSProperties = {

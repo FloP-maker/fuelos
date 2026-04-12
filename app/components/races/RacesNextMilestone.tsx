@@ -32,8 +32,8 @@ const cardOuter: CSSProperties = {
   background: "white",
   borderRadius: 16,
   boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-  padding: "1.5rem",
-  margin: "1.5rem",
+  padding: "24px",
+  margin: 0,
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
@@ -80,6 +80,7 @@ const jBadgeStyle: CSSProperties = {
   textAlign: "center",
   lineHeight: 1,
   flexShrink: 0,
+  minWidth: 80,
 };
 
 const emptyCardOuter: CSSProperties = {
@@ -92,7 +93,7 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
   const days = nextRace ? getDaysUntilRace(nextRace) : null;
 
   return (
-    <div className="relative z-[1] sm:mt-1">
+    <div className="relative z-[1]">
       {nextRace && days != null ? (
         <div style={cardOuter}>
           <div style={{ minWidth: 0, flex: 1 }}>
