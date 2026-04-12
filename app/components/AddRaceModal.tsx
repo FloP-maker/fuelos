@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { createPortal } from 'react-dom';
 import { addRace } from '@/lib/races';
 import type { RaceEntry } from '@/lib/types/race';
@@ -33,11 +33,8 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
   const [chargeDays, setChargeDays] = useState(5);
   /** 0 = désactivé ; défaut 4 jours après le J (J+1…J+4). */
   const [recoveryDays, setRecoveryDays] = useState(4);
-  const [chargeLabel, setChargeLabel] = useState('');
-  const [recoveryLabel, setRecoveryLabel] = useState('');
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  const [chargeLabel, setChargeLabel] = useState("");
+  const [recoveryLabel, setRecoveryLabel] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -59,7 +56,7 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
     };
   }, [open, onClose]);
 
-  if (!open || !mounted) return null;
+  if (!open) return null;
 
   const minDate = todayYmd();
 

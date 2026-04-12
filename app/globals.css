@@ -341,9 +341,10 @@ textarea:focus {
     }
   }
 
-  /* Hero Mes courses : full bleed, sans border-radius */
+  /* Hero Mes courses : full bleed, sans border-radius (z-index au-dessus du flux pour les clics) */
   .races-page-hero {
     position: relative;
+    z-index: 25;
     display: flex;
     flex-direction: column;
     min-height: 150px;
@@ -377,11 +378,11 @@ textarea:focus {
     z-index: 4;
     isolation: isolate;
     pointer-events: auto;
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    column-gap: 1rem;
     flex: 1 1 auto;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-start;
     box-sizing: border-box;
     min-height: 0;
     width: 100%;
@@ -504,7 +505,7 @@ textarea:focus {
   /* Prochain objectif : sous le hero (air hero → carte via padding-top .races-layout) */
   .races-page .races-next-milestone {
     position: relative;
-    z-index: 20;
+    z-index: 1;
     margin-top: 0;
     margin-left: 1.5rem;
     margin-right: 1.5rem;
@@ -515,11 +516,249 @@ textarea:focus {
     position: relative;
     overflow: hidden;
     box-sizing: border-box;
+    display: flex;
+    align-items: stretch;
+    gap: 20px;
     padding: 16px;
     border-radius: 16px;
     border: 1px solid rgba(0, 0, 0, 0.06);
     background-color: #f4f7f4;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
+  }
+
+  @media (min-width: 768px) {
+    .races-page .races-next-milestone-card {
+      gap: 24px;
+    }
+  }
+
+  .races-page .races-next-milestone-card--empty {
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .races-page .races-next-milestone-card__main {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 0%;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .races-page .races-next-milestone-card__stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .races-page .races-next-milestone-card__title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .races-page .races-next-milestone-card__progress-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .races-page .races-next-milestone-card__ring {
+    position: relative;
+    display: flex;
+    flex-shrink: 0;
+    flex-direction: column;
+    width: 118px;
+    height: 118px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .races-page .races-next-milestone-card__ring svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    color: rgba(0, 0, 0, 0.08);
+  }
+
+  html.dark .races-page .races-next-milestone-card__ring svg {
+    color: rgba(255, 255, 255, 0.1);
+  }
+
+  .races-page .races-next-milestone-card__ring-inner {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .races-page .races-next-milestone-card--empty .races-next-milestone-card__main {
+    gap: 12px;
+  }
+
+  .races-page .races-next-milestone-card__empty-icon {
+    display: flex;
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: #e8ede9;
+    color: #1a1a1a;
+  }
+
+  html.dark .races-page .races-next-milestone-card__empty-icon {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-text);
+  }
+
+  .races-page .races-next-milestone-card__title-icon {
+    margin-top: 2px;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    color: #2d6a4f;
+  }
+
+  html.dark .races-page .races-next-milestone-card__title-icon {
+    color: var(--color-primary-light);
+  }
+
+  .races-page .races-next-milestone-card__title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1.3;
+    letter-spacing: -0.025em;
+    color: #1a1a1a;
+  }
+
+  html.dark .races-page .races-next-milestone-card__title {
+    color: var(--color-text);
+  }
+
+  @media (min-width: 768px) {
+    .races-page .races-next-milestone-card__title {
+      font-size: 1.5rem;
+    }
+  }
+
+  .races-page .races-next-milestone-card__prep-caption {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.55;
+    color: #5a6a5a;
+  }
+
+  html.dark .races-page .races-next-milestone-card__prep-caption {
+    color: var(--color-text-muted);
+  }
+
+  @media (min-width: 768px) {
+    .races-page .races-next-milestone-card__prep-caption {
+      font-size: 12px;
+    }
+  }
+
+  .races-page .races-next-milestone-card__prep-track {
+    height: 6px;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: #dfe6df;
+  }
+
+  html.dark .races-page .races-next-milestone-card__prep-track {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .races-page .races-next-milestone-card__prep-fill {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 300ms ease-out;
+  }
+
+  .races-page .races-next-milestone-card__reco {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--color-text-secondary);
+  }
+
+  .races-page .races-next-milestone-card__link {
+    display: inline-block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  html.dark .races-page .races-next-milestone-card__link {
+    color: var(--color-primary-light);
+  }
+
+  .races-page .races-next-milestone-card__ring-days {
+    font-size: 2rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    letter-spacing: -0.025em;
+    color: #1a1a1a;
+  }
+
+  html.dark .races-page .races-next-milestone-card__ring-days {
+    color: var(--color-text);
+  }
+
+  .races-page .races-next-milestone-card__ring-unit {
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-text-secondary);
+  }
+
+  html.dark .races-page .races-next-milestone-card__ring-unit {
+    color: var(--color-text-muted);
+  }
+
+  .races-page .races-next-milestone-card__empty-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1.3;
+    color: #1a1a1a;
+  }
+
+  html.dark .races-page .races-next-milestone-card__empty-title {
+    color: var(--color-text);
+  }
+
+  @media (min-width: 768px) {
+    .races-page .races-next-milestone-card__empty-title {
+      font-size: 1.5rem;
+    }
+  }
+
+  .races-page .races-next-milestone-card__empty-copy {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: #5a6a5a;
+  }
+
+  html.dark .races-page .races-next-milestone-card__empty-copy {
+    color: var(--color-text-muted);
+  }
+
+  .races-page .races-next-milestone-card__empty-icon svg {
+    width: 28px;
+    height: 28px;
   }
 
   .races-page .races-next-milestone-card::after {
@@ -628,14 +867,192 @@ textarea:focus {
     }
   }
 
+  .races-page .races-today-card {
+    box-sizing: border-box;
+    border-radius: 16px;
+    padding: 16px;
+    background: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-subtle));
+  }
+
+  html.dark .races-page .races-today-card {
+    background: color-mix(in srgb, var(--color-bg-card) 88%, var(--color-bg));
+  }
+
+  .races-page .races-today-card__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .races-page .races-today-card__mic-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
   /* Micro-cartes Aujourd’hui : même rayon (16px) que Prochain objectif + relief */
   .races-page .races-today-card__mic {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1 1 auto;
+    min-width: min(100%, 220px);
+    min-height: 118px;
     border-radius: 16px;
     /* Pas de overflow:hidden : avec le rayon, ça coupait icônes / texte aux coins */
     overflow: visible;
     box-sizing: border-box;
-    padding: 15px 17px 16px 17px;
+    padding: 12px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+  }
+
+  .races-page .races-today-card__mic--1 {
+    border: 1px solid rgba(220, 38, 38, 0.22);
+    background: #fff1f0;
+  }
+
+  html.dark .races-page .races-today-card__mic--1 {
+    border-color: rgba(239, 68, 68, 0.28);
+    background: rgba(127, 29, 29, 0.25);
+  }
+
+  .races-page .races-today-card__mic--2 {
+    border: 1px solid rgba(245, 158, 11, 0.22);
+    background: #fffbeb;
+  }
+
+  html.dark .races-page .races-today-card__mic--2 {
+    border-color: rgba(245, 158, 11, 0.28);
+    background: rgba(120, 53, 15, 0.2);
+  }
+
+  .races-page .races-today-card__mic--3 {
+    border: 1px solid rgba(59, 130, 246, 0.22);
+    background: #eff6ff;
+  }
+
+  html.dark .races-page .races-today-card__mic--3 {
+    border-color: rgba(56, 189, 248, 0.28);
+    background: rgba(12, 74, 110, 0.25);
+  }
+
+  .races-page .races-today-card__mic-head {
+    display: flex;
+    min-height: 22px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .races-page .races-today-card__mic-title-group {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .races-page .races-today-card__mic-badge-wrap {
+    display: inline-flex;
+    min-height: 22px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .races-page .races-today-card__mic-spacer {
+    min-width: 2.5rem;
+  }
+
+  .races-page .races-today-card__mic-badge {
+    display: inline-flex;
+    border-radius: 6px;
+    padding: 2px 6px;
+    background: rgba(220, 38, 38, 0.1);
+    font-size: 10px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: rgba(153, 27, 27, 0.9);
+  }
+
+  html.dark .races-page .races-today-card__mic-badge {
+    background: rgba(239, 68, 68, 0.15);
+    color: rgb(254, 202, 202);
+  }
+
+  .races-page .races-today-card__mic-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  .races-page .races-today-card__mic--1 .races-today-card__mic-icon {
+    color: rgba(220, 38, 38, 0.9);
+  }
+
+  html.dark .races-page .races-today-card__mic--1 .races-today-card__mic-icon {
+    color: rgb(248, 113, 113);
+  }
+
+  .races-page .races-today-card__mic--2 .races-today-card__mic-icon {
+    color: rgba(217, 119, 6, 0.9);
+  }
+
+  html.dark .races-page .races-today-card__mic--2 .races-today-card__mic-icon {
+    color: rgb(251, 191, 36);
+  }
+
+  .races-page .races-today-card__mic--3 .races-today-card__mic-icon {
+    color: rgba(2, 132, 199, 0.9);
+  }
+
+  html.dark .races-page .races-today-card__mic--3 .races-today-card__mic-icon {
+    color: rgb(56, 189, 248);
+  }
+
+  .races-page .races-today-card__mic-label {
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .races-page .races-today-card__mic--1 .races-today-card__mic-label {
+    color: rgba(127, 29, 29, 0.8);
+  }
+
+  html.dark .races-page .races-today-card__mic--1 .races-today-card__mic-label {
+    color: rgba(254, 202, 202, 0.9);
+  }
+
+  .races-page .races-today-card__mic--2 .races-today-card__mic-label {
+    color: rgba(120, 53, 15, 0.8);
+  }
+
+  html.dark .races-page .races-today-card__mic--2 .races-today-card__mic-label {
+    color: rgba(253, 230, 138, 0.9);
+  }
+
+  .races-page .races-today-card__mic--3 .races-today-card__mic-label {
+    color: rgba(30, 58, 138, 0.8);
+  }
+
+  html.dark .races-page .races-today-card__mic--3 .races-today-card__mic-label {
+    color: rgba(186, 230, 253, 0.9);
+  }
+
+  .races-page .races-today-card__mic-body {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.55;
+    color: #1a1a1a;
+  }
+
+  html.dark .races-page .races-today-card__mic-body {
+    color: var(--color-text);
   }
 
   .races-page .races-today-card__mic:hover {
@@ -657,8 +1074,10 @@ textarea:focus {
     }
   }
 
-  /* Grille Mes courses */
+  /* Grille Mes courses (sous le hero : empilement explicite pour ne pas capter les clics du bandeau) */
   .races-layout {
+    position: relative;
+    z-index: 0;
     display: grid;
     grid-template-columns: 1fr 400px;
     gap: 24px;

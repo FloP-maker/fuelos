@@ -70,14 +70,10 @@ function PrepCountdownRing({
 
   return (
     <div
-      className="relative flex size-[118px] shrink-0 flex-col items-center justify-center"
+      className="races-next-milestone-card__ring"
       aria-label={`${displayDays} jours avant la course, environ ${Math.round(p * 100)} % de la période de préparation écoulée`}
     >
-      <svg
-        className="absolute inset-0 size-full -rotate-90 text-[rgba(0,0,0,0.08)] dark:text-white/10"
-        viewBox="0 0 120 120"
-        aria-hidden
-      >
+      <svg viewBox="0 0 120 120" aria-hidden>
         <circle cx="60" cy="60" r={RING_R} fill="none" stroke="currentColor" strokeWidth="5" />
         <circle
           cx="60"
@@ -94,13 +90,9 @@ function PrepCountdownRing({
           }}
         />
       </svg>
-      <div className="relative z-10 flex flex-col items-center">
-        <span className="text-[2rem] font-extrabold tabular-nums leading-none tracking-tight text-[#1a1a1a] dark:text-[var(--color-text)]">
-          {displayDays}
-        </span>
-        <span className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-secondary)] dark:text-[var(--color-text-muted)]">
-          jours
-        </span>
+      <div className="races-next-milestone-card__ring-inner">
+        <span className="races-next-milestone-card__ring-days">{displayDays}</span>
+        <span className="races-next-milestone-card__ring-unit">jours</span>
       </div>
     </div>
   );
@@ -114,30 +106,24 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
   const barFill = accentForDaysLeft(daysRem);
 
   return (
-    <div className="races-next-milestone relative">
+    <div className="races-next-milestone">
       {nextRace && days != null ? (
-        <div className="races-next-milestone-card flex items-stretch gap-5 md:gap-6">
-          <div className="flex min-w-0 flex-1 flex-col gap-4">
-            <div className="flex flex-col gap-2">
+        <div className="races-next-milestone-card">
+          <div className="races-next-milestone-card__main">
+            <div className="races-next-milestone-card__stack">
               <div className="races-section-eyebrow">Prochain objectif</div>
-              <div className="flex items-start gap-2.5">
-                <Mountain
-                  className="mt-0.5 size-6 shrink-0 text-[#2d6a4f] dark:text-[var(--color-primary-light)]"
-                  strokeWidth={2.25}
-                  aria-hidden
-                />
-                <div className="text-xl font-extrabold leading-snug tracking-tight text-[#1a1a1a] dark:text-[var(--color-text)] md:text-2xl">
-                  {nextRace.name}
-                </div>
+              <div className="races-next-milestone-card__title-row">
+                <Mountain className="races-next-milestone-card__title-icon" strokeWidth={2.25} aria-hidden />
+                <div className="races-next-milestone-card__title">{nextRace.name}</div>
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <p className="text-[11px] font-medium leading-relaxed text-[#5a6a5a] dark:text-[var(--color-text-muted)] md:text-xs">
+            <div className="races-next-milestone-card__progress-block">
+              <p className="races-next-milestone-card__prep-caption">
                 Progression préparation · {daysRem}j restants sur ~{windowDays}j
               </p>
               <div
-                className="h-1.5 w-full overflow-hidden rounded-full bg-[#dfe6df] dark:bg-white/10"
+                className="races-next-milestone-card__prep-track"
                 role="progressbar"
                 aria-valuenow={Math.round(approach * 100)}
                 aria-valuemin={0}
@@ -145,7 +131,7 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
                 aria-label="Progression préparation"
               >
                 <div
-                  className="h-full rounded-full transition-[width] duration-300 ease-out"
+                  className="races-next-milestone-card__prep-fill"
                   style={{
                     width: `${Math.round(approach * 100)}%`,
                     backgroundColor: barFill,
@@ -154,11 +140,8 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
               </div>
             </div>
 
-            <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">{heroNutritionRecommendation(days)}</p>
-            <Link
-              href={`/races/${nextRace.id}`}
-              className="inline-block text-sm font-semibold leading-snug text-[var(--color-primary)] no-underline dark:text-[var(--color-primary-light)]"
-            >
+            <p className="races-next-milestone-card__reco">{heroNutritionRecommendation(days)}</p>
+            <Link href={`/races/${nextRace.id}`} className="races-next-milestone-card__link">
               Voir mon plan nutritionnel →
             </Link>
           </div>
@@ -166,18 +149,13 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
           <PrepCountdownRing daysRemaining={days} progress={approach} />
         </div>
       ) : (
-        <div className="races-next-milestone-card flex items-start justify-start gap-4">
-          <span
-            className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-[#e8ede9] text-[#1a1a1a] dark:bg-white/10 dark:text-[var(--color-text)]"
-            aria-hidden
-          >
-            <Mountain className="size-7" strokeWidth={2} />
+        <div className="races-next-milestone-card races-next-milestone-card--empty">
+          <span className="races-next-milestone-card__empty-icon" aria-hidden>
+            <Mountain strokeWidth={2} />
           </span>
-          <div className="flex min-w-0 flex-1 flex-col gap-3">
-            <div className="text-xl font-extrabold leading-snug text-[#1a1a1a] dark:text-[var(--color-text)] md:text-2xl">
-              Aucune course à venir
-            </div>
-            <p className="text-sm leading-relaxed text-[#5a6a5a] dark:text-[var(--color-text-muted)]">
+          <div className="races-next-milestone-card__main">
+            <div className="races-next-milestone-card__empty-title">Aucune course à venir</div>
+            <p className="races-next-milestone-card__empty-copy">
               Utilise le bouton « Nouvelle course » en haut de page pour ajouter ton prochain objectif.
             </p>
           </div>

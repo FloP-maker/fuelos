@@ -79,76 +79,53 @@ export function RacesTodayCard({ nextRace }: RacesTodayCardProps) {
   const NutritionIcon = phase === "charge" || phase === "course" ? Zap : Banana;
 
   return (
-    <div
-      className="races-today-card rounded-2xl bg-[color-mix(in_srgb,var(--color-bg-card)_92%,var(--color-bg-subtle))] px-4 py-4 dark:bg-[color-mix(in_srgb,var(--color-bg-card)_88%,var(--color-bg))]"
-      aria-label="Aujourd’hui"
-    >
-      <div className="mb-3 flex items-center gap-2.5">
+    <div className="races-today-card" aria-label="Aujourd’hui">
+      <div className="races-today-card__header">
         <span className="races-today-card__live-dot" aria-hidden />
         <span className="races-section-eyebrow">Aujourd&apos;hui</span>
       </div>
 
-      <div className="flex flex-row flex-wrap gap-3">
+      <div className="races-today-card__mic-row">
         {/* Course */}
-        <div className="races-today-card__mic races-today-card__mic--1 flex min-h-[118px] min-w-[min(100%,220px)] flex-1 flex-col gap-2.5 border border-[rgba(220,38,38,0.22)] bg-[#fff1f0] dark:border-red-500/28 dark:bg-red-950/25">
-          <div className="flex min-h-[22px] items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <Flag
-                className="size-4 shrink-0 text-red-600/90 dark:text-red-400"
-                strokeWidth={2.25}
-                aria-hidden
-              />
-              <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-red-900/80 dark:text-red-200/90">
-                Course
-              </span>
+        <div className="races-today-card__mic races-today-card__mic--1">
+          <div className="races-today-card__mic-head">
+            <div className="races-today-card__mic-title-group">
+              <Flag className="races-today-card__mic-icon" strokeWidth={2.25} aria-hidden />
+              <span className="races-today-card__mic-label">Course</span>
             </div>
-            <span className="inline-flex min-h-[22px] shrink-0 items-center justify-end">
+            <span className="races-today-card__mic-badge-wrap">
               {nextRace && courseBadgeLabel(nextRace) ? (
-                <span className="rounded-md bg-red-600/10 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-red-800/90 dark:bg-red-500/15 dark:text-red-200">
-                  {courseBadgeLabel(nextRace)}
-                </span>
+                <span className="races-today-card__mic-badge">{courseBadgeLabel(nextRace)}</span>
               ) : null}
             </span>
           </div>
-          <p className="text-[13px] font-semibold leading-relaxed text-[#1a1a1a] dark:text-[var(--color-text)]">
+          <p className="races-today-card__mic-body">
             {nextRace ? courseHeadline(nextRace) : "Aucune course planifiée"}
           </p>
         </div>
 
         {/* Nutrition */}
-        <div className="races-today-card__mic races-today-card__mic--2 flex min-h-[118px] min-w-[min(100%,220px)] flex-1 flex-col gap-2.5 border border-[rgba(245,158,11,0.22)] bg-[#fffbeb] dark:border-amber-500/28 dark:bg-amber-950/20">
-          <div className="flex min-h-[22px] items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <NutritionIcon
-                className="size-4 shrink-0 text-amber-600/90 dark:text-amber-400"
-                strokeWidth={2.25}
-                aria-hidden
-              />
-              <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-amber-900/80 dark:text-amber-200/90">
-                Nutrition
-              </span>
+        <div className="races-today-card__mic races-today-card__mic--2">
+          <div className="races-today-card__mic-head">
+            <div className="races-today-card__mic-title-group">
+              <NutritionIcon className="races-today-card__mic-icon" strokeWidth={2.25} aria-hidden />
+              <span className="races-today-card__mic-label">Nutrition</span>
             </div>
-            <span className="min-w-[2.5rem]" aria-hidden />
+            <span className="races-today-card__mic-spacer" aria-hidden />
           </div>
-          <p className="text-[13px] font-semibold leading-relaxed text-[#1a1a1a] dark:text-[var(--color-text)]">{nutritionLine}</p>
+          <p className="races-today-card__mic-body">{nutritionLine}</p>
         </div>
 
         {/* Hydratation */}
-        <div className="races-today-card__mic races-today-card__mic--3 flex min-h-[118px] min-w-[min(100%,220px)] flex-1 flex-col gap-2.5 border border-[rgba(59,130,246,0.22)] bg-[#eff6ff] dark:border-sky-500/28 dark:bg-sky-950/25">
-          <div className="flex min-h-[22px] items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <Droplets
-                className="size-4 shrink-0 text-sky-600/90 dark:text-sky-400"
-                strokeWidth={2.25}
-                aria-hidden
-              />
-              <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-sky-900/80 dark:text-sky-200/90">
-                Hydratation
-              </span>
+        <div className="races-today-card__mic races-today-card__mic--3">
+          <div className="races-today-card__mic-head">
+            <div className="races-today-card__mic-title-group">
+              <Droplets className="races-today-card__mic-icon" strokeWidth={2.25} aria-hidden />
+              <span className="races-today-card__mic-label">Hydratation</span>
             </div>
-            <span className="min-w-[2.5rem]" aria-hidden />
+            <span className="races-today-card__mic-spacer" aria-hidden />
           </div>
-          <p className="text-[13px] font-semibold leading-relaxed text-[#1a1a1a] dark:text-[var(--color-text)]">{action}</p>
+          <p className="races-today-card__mic-body">{action}</p>
         </div>
       </div>
     </div>

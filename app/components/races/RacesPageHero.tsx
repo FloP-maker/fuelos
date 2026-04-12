@@ -30,7 +30,7 @@ export function RacesPageHero({ onAddRace }: RacesPageHeroProps) {
           </div>
         </div>
 
-        <button type="button" className="races-page-hero__cta" onClick={onAddRace}>
+        <button type="button" className="races-page-hero__cta shrink-0" onClick={() => onAddRace()}>
           <Plus size={18} strokeWidth={2.25} aria-hidden />
           Nouvelle course
         </button>
