@@ -15,7 +15,6 @@
   color-scheme: light;
   --font-sans: var(--font-main), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: var(--font-sans);
-  --font-races: 'DM Sans', var(--font-main), system-ui, sans-serif;
 
   /* CTA / liens : vert principal (compat historique `var(--color-accent)`) */
   --color-accent: var(--color-primary);
@@ -116,11 +115,6 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
-  .races-page,
-  .races-page * {
-    font-family: var(--font-races);
-  }
-
   .races-page code,
   .races-page pre,
   .races-page kbd,
@@ -142,6 +136,15 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
 }
 
 h1 {
@@ -228,14 +231,17 @@ textarea:focus {
     }
   }
 
-  /* Mes courses : typo DM Sans, plus d’air horizontal sur grands écrans */
+  /* Mes courses : hero full-bleed (pas de padding horizontal sur le main) */
+  .fuel-main.races-page {
+    padding-inline: 0;
+  }
+
   .races-page {
-    font-family: var(--font-races);
     width: min(100%, 1600px) !important;
     max-width: 1600px;
     margin-left: auto;
     margin-right: auto;
-    padding-inline: clamp(1rem, 3vw, 2.5rem) !important;
+    padding-inline: 0 !important;
     padding-block: clamp(1.5rem, 3vw, 2.5rem) clamp(2rem, 4vw, 3rem) !important;
     background-color: var(--color-bg);
   }
@@ -244,10 +250,68 @@ textarea:focus {
     background-color: var(--color-bg);
   }
 
-  .races-page h1,
-  .races-page h2,
-  .races-page h3 {
-    font-family: var(--font-races);
+  /* Hero Mes courses : pleine largeur viewport (breakout du main max 1600px) */
+  .races-page-hero {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+    box-sizing: border-box;
+    width: 100vw;
+    max-width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    border-radius: 0 0 16px 16px;
+    background: linear-gradient(160deg, #1a2e1a 0%, #2d4a2d 60%, #1a2535 100%);
+  }
+
+  /* Même colonne que .races-layout (Strava-like) */
+  .races-page-hero__inner {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 1rem;
+    box-sizing: border-box;
+    height: 100%;
+    max-width: 1200px;
+    margin-inline: auto;
+    padding: 1.5rem clamp(1rem, 3vw, 2.5rem) 2rem;
+  }
+
+  .races-page-hero__left {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .races-page-hero__copy {
+    max-width: min(28rem, 100%);
+    padding-right: 0.5rem;
+  }
+
+  .races-page-hero__cta {
+    flex-shrink: 0;
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    background: #ffffff;
+    color: #2d6a4f;
+    border: none;
+    border-radius: 20px;
+    padding: 0.5rem 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.875rem;
+  }
+
+  .races-page-hero__cta:hover {
+    filter: brightness(1.03);
   }
 
   /* Mes courses : grille 2 colonnes (liste + calendrier sticky) */
@@ -257,7 +321,17 @@ textarea:focus {
     gap: 2rem;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem 1.5rem;
+    padding: 2rem clamp(1rem, 3vw, 2.5rem);
+  }
+
+  .races-layout__main {
+    align-self: start;
+  }
+
+  .races-layout__calendar {
+    min-width: 0;
+    min-height: 0;
+    align-self: start;
   }
 
   @media (max-width: 900px) {
@@ -272,9 +346,22 @@ textarea:focus {
       top: 5rem;
       align-self: start;
       z-index: 10;
-      max-height: calc(100vh - 5.5rem);
-      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      max-height: calc(100vh - 6rem);
+      overflow: hidden;
       overscroll-behavior: contain;
+    }
+
+    /* Scroll uniquement sur le corps du calendrier, pas sur l’en-tête (toolbar) */
+    .races-layout__calendar-sticky > .fuel-races-main-panel {
+      flex: 1 1 auto;
+      min-height: 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
   }
 
@@ -1347,6 +1434,7 @@ textarea:focus {
     border-radius: var(--fuel-card-radius);
     box-shadow: var(--fuel-card-shadow);
     background: var(--fuel-card-surface);
+    overflow: visible;
   }
 
   .fuel-card-interactive {

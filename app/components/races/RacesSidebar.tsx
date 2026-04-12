@@ -242,7 +242,7 @@ export function RacesSidebar({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex flex-col">
       <div className="border-b border-[var(--fuel-card-border)] px-4 py-4">
         <p className="text-[11px] font-medium tracking-wide text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)]">
           Calendrier
@@ -266,7 +266,7 @@ export function RacesSidebar({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-2 pb-4">
+      <div className="space-y-3 px-2 pb-4">
         <RacesListHelp />
 
         <div className="overflow-hidden rounded-2xl border border-[var(--fuel-card-border)] bg-[var(--fuel-card-surface)] shadow-[var(--fuel-card-shadow)]">
@@ -299,7 +299,7 @@ export function RacesSidebar({
             {openPast ? <ChevronDown className="size-4 shrink-0 opacity-70" /> : <ChevronRight className="size-4 shrink-0 opacity-70" />}
           </button>
           {openPast ? (
-            <div className="max-h-72 space-y-2.5 overflow-y-auto bg-[var(--fuel-card-surface)] p-2.5">
+            <div className="space-y-2.5 bg-[var(--fuel-card-surface)] p-2.5">
               {pastFiltered.length === 0 ? (
                 <p className="px-2 py-2 text-xs text-[var(--color-text-muted)]">Aucune course passée.</p>
               ) : (

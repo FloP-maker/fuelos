@@ -215,7 +215,7 @@ export default function RacesPage() {
           <div className="races-layout__main min-w-0 space-y-6 md:space-y-8">
             <RacesNextMilestone nextRace={nextMilestoneRace} />
             <RacesTodayCard nextRace={nextMilestoneRace} />
-            <div className="fuel-races-main-panel min-h-0 overflow-hidden">
+            <div className="fuel-races-main-panel">
               <RacesSidebar
                 upcoming={sidebarUpcoming}
                 past={sidebarPast}
@@ -230,7 +230,7 @@ export default function RacesPage() {
 
           <div className="races-layout__calendar min-w-0">
             <div className="races-layout__calendar-sticky">
-              <div className="fuel-races-main-panel flex min-h-0 flex-col overflow-hidden">
+              <div className="fuel-races-main-panel flex min-h-0 min-w-0 flex-col">
                 <RacesMonthCalendar
                   viewYear={view.year}
                   viewMonth={view.month}

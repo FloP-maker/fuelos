@@ -24,8 +24,8 @@ export type RacesCalendarToolbarProps = {
   isThisMonthView: boolean;
 };
 
-const pillNav =
-  "inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-subtle)] text-[var(--color-text-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-border-strong)_35%,var(--color-bg-subtle))] active:scale-[0.98] dark:bg-[var(--color-bg-elevated)] dark:text-[var(--color-text)] dark:ring-1 dark:ring-white/[0.06] dark:hover:bg-[var(--color-bg-card-hover)]";
+const navArrowClass =
+  "inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-transparent text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)] active:scale-[0.98] dark:hover:bg-[var(--color-bg-elevated)] dark:hover:text-[var(--color-text)]";
 
 export function RacesCalendarToolbar({
   viewFilter,
@@ -43,9 +43,43 @@ export function RacesCalendarToolbar({
 }: RacesCalendarToolbarProps) {
   const isWeek = listRange === "week";
   return (
-    <div className="flex flex-col gap-4 border-b border-[var(--fuel-card-border)] bg-[var(--fuel-card-surface)] px-4 py-4 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-3 md:px-5 dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-bg-card)]">
+    <div className="flex shrink-0 flex-col gap-3 border-b border-[var(--fuel-card-border)] bg-[var(--fuel-card-surface)] px-3 py-3 dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-bg-card)] sm:px-4 sm:py-3.5">
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        <button
+          type="button"
+          onClick={onPrevMonth}
+          className={navArrowClass}
+          aria-label={isWeek ? "Semaine précédente" : "Mois précédent"}
+        >
+          <ChevronLeft size={20} strokeWidth={2} />
+        </button>
+        <h2 className="min-w-0 flex-1 text-center text-base font-bold capitalize leading-tight tracking-tight text-[var(--color-text-primary)] dark:text-[var(--color-text)] sm:text-lg">
+          {calendarTitle}
+        </h2>
+        <button
+          type="button"
+          onClick={onNextMonth}
+          className={navArrowClass}
+          aria-label={isWeek ? "Semaine suivante" : "Mois suivant"}
+        >
+          <ChevronRight size={20} strokeWidth={2} />
+        </button>
+      </div>
+
+      {!isThisMonthView ? (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={onThisMonth}
+            className="rounded-full bg-[var(--color-bg-subtle)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-border-strong)_35%,var(--color-bg-subtle))] dark:bg-[var(--color-bg-elevated)] dark:text-[var(--color-text)] dark:ring-1 dark:ring-white/[0.06] dark:hover:bg-[var(--color-bg-card-hover)]"
+          >
+            {isWeek ? "Cette semaine" : "Mois actuel"}
+          </button>
+        </div>
+      ) : null}
+
       <div
-        className="inline-flex w-full max-w-md gap-0.5 p-1 md:w-auto"
+        className="mx-auto inline-flex w-full max-w-md gap-0.5 p-1"
         style={{
           background: "#f0f4f1",
           borderRadius: 12,
@@ -64,7 +98,7 @@ export function RacesCalendarToolbar({
               key={id}
               type="button"
               onClick={() => onViewFilter(id)}
-              className="flex-1 px-3 py-2 text-center text-xs font-semibold transition-colors duration-150 ease-out md:flex-none md:px-4 md:text-sm"
+              className="flex-1 px-3 py-2 text-center text-xs font-semibold transition-colors duration-150 ease-out sm:flex-none sm:px-4 sm:text-sm"
               style={
                 active
                   ? {
@@ -87,38 +121,7 @@ export function RacesCalendarToolbar({
         })}
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-2 md:gap-2.5">
-        <button
-          type="button"
-          onClick={onPrevMonth}
-          className={pillNav}
-          aria-label={isWeek ? "Semaine précédente" : "Mois précédent"}
-        >
-          <ChevronLeft size={18} strokeWidth={2.25} />
-        </button>
-        <h2 className="min-w-[10rem] text-center text-base font-semibold capitalize tracking-tight text-[var(--color-text-primary)] dark:text-[var(--color-text)] md:text-lg">
-          {calendarTitle}
-        </h2>
-        <button
-          type="button"
-          onClick={onNextMonth}
-          className={pillNav}
-          aria-label={isWeek ? "Semaine suivante" : "Mois suivant"}
-        >
-          <ChevronRight size={18} strokeWidth={2.25} />
-        </button>
-        {!isThisMonthView ? (
-          <button
-            type="button"
-            onClick={onThisMonth}
-            className="rounded-full bg-[var(--color-bg-subtle)] px-3.5 py-2 text-xs font-semibold text-[var(--color-text-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-border-strong)_35%,var(--color-bg-subtle))] dark:bg-[var(--color-bg-elevated)] dark:text-[var(--color-text)] dark:ring-1 dark:ring-white/[0.06] dark:hover:bg-[var(--color-bg-card-hover)]"
-          >
-            {isWeek ? "Cette semaine" : "Mois actuel"}
-          </button>
-        ) : null}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 md:gap-3">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
         <label className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary)] dark:text-[var(--color-text-muted)]">
           <span className="hidden sm:inline">Sport</span>
           <select

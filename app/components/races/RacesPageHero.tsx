@@ -7,14 +7,6 @@ export type RacesPageHeroProps = {
   onAddRace: () => void;
 };
 
-const heroShell: CSSProperties = {
-  position: "relative",
-  height: "220px",
-  overflow: "hidden",
-  borderRadius: 0,
-  background: "linear-gradient(160deg, #1a2e1a 0%, #2d4a2d 60%, #1a2535 100%)",
-};
-
 const mountainsSvg: CSSProperties = {
   position: "absolute",
   bottom: 0,
@@ -24,15 +16,6 @@ const mountainsSvg: CSSProperties = {
   opacity: 0.4,
   zIndex: 1,
   pointerEvents: "none",
-};
-
-const contentBlock: CSSProperties = {
-  position: "absolute",
-  bottom: "2rem",
-  left: "2rem",
-  zIndex: 2,
-  maxWidth: "min(28rem, calc(100% - 9rem))",
-  paddingRight: "0.5rem",
 };
 
 const titleStyle: CSSProperties = {
@@ -51,28 +34,9 @@ const subtitleStyle: CSSProperties = {
   lineHeight: 1.35,
 };
 
-const buttonStyle: CSSProperties = {
-  position: "absolute",
-  top: "1.5rem",
-  right: "1.5rem",
-  zIndex: 2,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "0.35rem",
-  background: "#ffffff",
-  color: "#2d6a4f",
-  border: "none",
-  borderRadius: "20px",
-  padding: "0.5rem 1.25rem",
-  fontWeight: 600,
-  cursor: "pointer",
-  fontSize: "0.875rem",
-};
-
 export function RacesPageHero({ onAddRace }: RacesPageHeroProps) {
   return (
-    <section style={heroShell} aria-labelledby="races-hero-title">
+    <section className="races-page-hero" aria-labelledby="races-hero-title">
       <svg
         style={mountainsSvg}
         viewBox="0 0 1200 200"
@@ -89,20 +53,28 @@ export function RacesPageHero({ onAddRace }: RacesPageHeroProps) {
         />
       </svg>
 
-      <div style={contentBlock}>
-        <h1 id="races-hero-title" style={titleStyle}>
-          <span aria-hidden>🏔️ </span>
-          Mes courses
-        </h1>
-        <p style={subtitleStyle}>
-          Prochain objectif, charge et récup : lecture rapide, comme un jalon en tête de tableau de bord.
-        </p>
-      </div>
+      <div className="races-page-hero__inner">
+        <div className="races-page-hero__left">
+          <div className="races-page-hero__copy">
+            <h1 id="races-hero-title" style={titleStyle}>
+              <span aria-hidden>🏔️ </span>
+              Mes courses
+            </h1>
+            <p style={subtitleStyle}>
+              Prochain objectif, charge et récup : lecture rapide, comme un jalon en tête de tableau de bord.
+            </p>
+          </div>
+        </div>
 
-      <button type="button" style={buttonStyle} onClick={onAddRace}>
-        <Plus size={18} strokeWidth={2.25} aria-hidden />
-        Nouvelle course
-      </button>
+        <button
+          type="button"
+          className="races-page-hero__cta"
+          onClick={onAddRace}
+        >
+          <Plus size={18} strokeWidth={2.25} aria-hidden />
+          Nouvelle course
+        </button>
+      </div>
     </section>
   );
 }
