@@ -1,6 +1,5 @@
 "use client";
 
-import type { CSSProperties } from "react";
 import Link from "next/link";
 import { Mountain } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -99,37 +98,13 @@ function PrepCountdownRing({
         <span className="text-[2rem] font-extrabold tabular-nums leading-none tracking-tight text-[#1a1a1a] dark:text-[var(--color-text)]">
           {displayDays}
         </span>
-        <span className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5a6a5a] dark:text-[var(--color-text-muted)]">
+        <span className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-secondary)] dark:text-[var(--color-text-muted)]">
           jours
         </span>
       </div>
     </div>
   );
 }
-
-const labelStyle: CSSProperties = {
-  fontSize: "0.75rem",
-  fontWeight: 600,
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  color: "#5a6a5a",
-  marginBottom: "0.25rem",
-};
-
-const subtitleStyle: CSSProperties = {
-  fontSize: "0.875rem",
-  color: "#5a6a5a",
-  marginTop: "0.75rem",
-};
-
-const linkStyle: CSSProperties = {
-  color: "#2d6a4f",
-  fontWeight: 600,
-  fontSize: "0.875rem",
-  marginTop: "0.75rem",
-  display: "inline-block",
-  textDecoration: "none",
-};
 
 export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
   const days = nextRace ? getDaysUntilRace(nextRace) : null;
@@ -143,7 +118,9 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
       {nextRace && days != null ? (
         <div className="races-next-milestone-card flex items-stretch gap-5 px-6 py-5 md:gap-6 md:px-7 md:py-6">
           <div className="min-w-0 flex-1">
-            <div style={labelStyle}>Prochain objectif</div>
+            <div className="mb-1 text-xs font-medium uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">
+              Prochain objectif
+            </div>
             <div className="mt-1 flex items-start gap-2.5">
               <Mountain
                 className="mt-0.5 size-6 shrink-0 text-[#2d6a4f] dark:text-[var(--color-primary-light)]"
@@ -177,8 +154,11 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
               </div>
             </div>
 
-            <div style={subtitleStyle}>{heroNutritionRecommendation(days)}</div>
-            <Link href={`/races/${nextRace.id}`} style={linkStyle}>
+            <div className="mt-3 text-sm text-[var(--color-text-secondary)]">{heroNutritionRecommendation(days)}</div>
+            <Link
+              href={`/races/${nextRace.id}`}
+              className="mt-3 inline-block text-sm font-semibold text-[var(--color-primary)] no-underline dark:text-[var(--color-primary-light)]"
+            >
               Voir mon plan nutritionnel →
             </Link>
           </div>

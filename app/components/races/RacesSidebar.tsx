@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Search } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronRight, Info, Search } from "lucide-react";
 import type { RaceEntry } from "@/lib/types/race";
 import { getDaysUntilRace } from "@/lib/races";
 import { raceSportVisual } from "@/lib/raceCalendarUi";
-import { getRaceNutritionListStatus, type RaceNutritionListStatus } from "@/lib/raceNutritionListStatus";
 import type { RacesCalendarListRange } from "./RacesCalendarToolbar";
 import { addDaysIso } from "@/lib/raceNutritionBands";
 
@@ -28,30 +27,6 @@ function norm(s: string): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-const NUTRITION_PILL: Record<
-  RaceNutritionListStatus,
-  { emoji: string; className: string; title: string }
-> = {
-  complete: {
-    emoji: "✅",
-    className:
-      "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-[color-mix(in_srgb,var(--color-accent)_35%,transparent)] dark:bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] dark:text-[var(--color-text)]",
-    title: "Nutrition : distance, glucides cibles et sodium renseignés",
-  },
-  partial: {
-    emoji: "⚠️",
-    className:
-      "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-500/35 dark:bg-amber-500/15 dark:text-amber-100",
-    title: "Nutrition : au moins un champ manquant (distance, glucides cibles ou sodium)",
-  },
-  empty: {
-    emoji: "🔴",
-    className:
-      "border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-500/40 dark:bg-rose-500/15 dark:text-rose-100",
-    title: "Nutrition : aucun champ renseigné (distance, glucides cibles, sodium)",
-  },
-};
-
 function countdownPillLabel(r: RaceEntry, mode: "upcoming" | "past"): string {
   const d = getDaysUntilRace(r);
   if (mode === "past") {
@@ -61,6 +36,23 @@ function countdownPillLabel(r: RaceEntry, mode: "upcoming" | "past"): string {
   }
   if (d < 0) return "—";
   return `J-${d}`;
+}
+
+function urgencyPillClass(r: RaceEntry, mode: "upcoming" | "past"): string {
+  const d = getDaysUntilRace(r);
+  if (mode === "past") {
+    return "border border-[#e5e5e5] bg-[#f3f3f3] text-[#555] dark:border-[var(--color-border-subtle)] dark:bg-white/10 dark:text-[var(--color-text-muted)]";
+  }
+  if (d < 0) {
+    return "border border-[#e5e5e5] bg-[#f3f3f3] text-[#555] dark:border-[var(--color-border-subtle)] dark:bg-white/10 dark:text-[var(--color-text-muted)]";
+  }
+  if (d < 30) {
+    return "border border-red-200/80 bg-red-50 text-red-900 dark:border-red-500/35 dark:bg-red-950/40 dark:text-red-100";
+  }
+  if (d < 90) {
+    return "border border-amber-200/90 bg-amber-50 text-amber-950 dark:border-amber-500/35 dark:bg-amber-950/35 dark:text-amber-100";
+  }
+  return "border border-emerald-200/90 bg-emerald-50 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-950/35 dark:text-emerald-100";
 }
 
 export type RacesSidebarProps = {
@@ -86,96 +78,112 @@ function RaceListCard({
 }) {
   const { Icon } = raceSportVisual(r.sport);
   const pill = countdownPillLabel(r, mode);
-  const nutritionStatus = mode === "upcoming" ? getRaceNutritionListStatus(r) : null;
-  const nutritionSpec = nutritionStatus ? NUTRITION_PILL[nutritionStatus] : null;
+  const pillClass = urgencyPillClass(r, mode);
+  const metaLine = [
+    formatShortDate(r.date),
+    r.sport || null,
+    typeof r.distance === "number" && r.distance > 0 ? `${r.distance} km` : null,
+    typeof r.elevationGain === "number" && r.elevationGain > 0 ? `D+ ${r.elevationGain} m` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <Link
-      href={`/races/${r.id}`}
-      onClick={onPick}
+    <article
       className={[
-        "group fuel-card fuel-card-interactive block no-underline text-inherit",
+        "rounded-xl border border-[#e8e8e8] bg-white p-3 shadow-sm dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-bg-card)]",
         active
-          ? "ring-2 ring-[color-mix(in_srgb,var(--color-accent)_38%,rgba(0,0,0,0.12))] dark:ring-[color-mix(in_srgb,var(--color-accent)_42%,transparent)]"
+          ? "ring-2 ring-[color-mix(in_srgb,var(--color-primary)_35%,transparent)] dark:ring-[color-mix(in_srgb,var(--color-accent)_40%,transparent)]"
           : "",
+        "hover:-translate-y-px hover:shadow-md",
       ].join(" ")}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start gap-3">
+        <span
+          className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#f4f5f4] text-[#1a1a1a] ring-1 ring-[#ececec] dark:bg-white/[0.06] dark:text-[var(--color-text)] dark:ring-white/[0.08]"
+          aria-hidden
+        >
+          <Icon className="size-[1.15rem]" strokeWidth={2} />
+        </span>
         <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-center gap-2">
-            <span
-              className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-text)_5%,transparent)] text-[var(--color-text)] ring-1 ring-[var(--fuel-card-border)] dark:bg-white/[0.06] dark:ring-white/[0.08]"
-              aria-hidden
-            >
-              <Icon className="size-[1.05rem] opacity-90" strokeWidth={2} />
-            </span>
-            <p className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--color-text)]">{r.name}</p>
-          </div>
-          <p className="mt-1.5 ps-11 text-xs text-[var(--color-text-muted)]">
-            {formatShortDate(r.date)}
-            {r.sport ? ` · ${r.sport}` : ""}
-            {typeof r.distance === "number" && r.distance > 0 ? (
-              <span className="tabular-nums">{` · ${r.distance} km`}</span>
-            ) : null}
-            {typeof r.elevationGain === "number" && r.elevationGain > 0 ? (
-              <span className="tabular-nums">{` · D+ ${r.elevationGain} m`}</span>
-            ) : null}
-          </p>
+          <p className="truncate text-[15px] font-bold leading-snug text-[#111] dark:text-[var(--color-text)]">{r.name}</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-[#6b7280] dark:text-[var(--color-text-muted)]">{metaLine}</p>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          {nutritionSpec ? (
-            <span
-              className={[
-                "inline-flex size-8 items-center justify-center rounded-full border text-[13px] leading-none ring-1 ring-[rgba(0,0,0,0.04)] dark:ring-white/[0.06]",
-                nutritionSpec.className,
-              ].join(" ")}
-              title={nutritionSpec.title}
-              aria-label={nutritionSpec.title}
-              role="img"
-            >
-              <span aria-hidden>{nutritionSpec.emoji}</span>
-            </span>
-          ) : null}
-          <span
-            className={[
-              "rounded-full px-3 py-1 text-[11px] font-bold tabular-nums",
-              mode === "upcoming"
-                ? "bg-[var(--color-primary)] text-[var(--color-on-primary)] shadow-sm"
-                : "bg-[color-mix(in_srgb,var(--color-text)_6%,var(--fuel-card-surface))] text-[var(--color-text-muted)] ring-1 ring-[var(--fuel-card-border)] dark:bg-white/[0.08] dark:text-[var(--color-text-muted)]",
-            ].join(" ")}
-          >
-            {pill}
-          </span>
-        </div>
+        <span
+          className={[
+            "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold tabular-nums leading-none",
+            pillClass,
+          ].join(" ")}
+        >
+          {pill}
+        </span>
       </div>
-      <span className="mt-3 inline-flex items-center gap-0.5 text-xs font-semibold text-[var(--color-accent)] transition group-hover:gap-1">
+      <Link
+        href={`/races/${r.id}`}
+        onClick={onPick}
+        className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#2d6a4f] bg-transparent px-3 py-2 text-xs font-semibold text-[#2d6a4f] transition hover:bg-[#ecf5ef] dark:border-[var(--color-primary-light)] dark:text-[var(--color-primary-light)] dark:hover:bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] sm:w-auto sm:justify-start"
+      >
         Voir la fiche
-        <ChevronRight className="size-3.5" strokeWidth={2.25} aria-hidden />
-      </span>
-    </Link>
+        <ArrowRight className="size-3.5 shrink-0" strokeWidth={2.25} aria-hidden />
+      </Link>
+    </article>
   );
 }
 
 function RacesListHelp() {
   return (
-    <details className="group mx-1 mb-1 rounded-2xl border border-[var(--fuel-card-border)] bg-[var(--fuel-card-surface)] text-left shadow-[var(--fuel-card-shadow)] dark:border-[var(--fuel-card-border)] dark:bg-[var(--fuel-card-surface)]">
-      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-2xl bg-[var(--color-bg-subtle)] px-3 py-2.5 text-xs font-medium text-[var(--color-text-secondary)] marker:content-none dark:bg-white/[0.06] dark:text-[var(--color-text-muted)] [&::-webkit-details-marker]:hidden">
-        <span className="text-base leading-none" aria-hidden>
-          ℹ️
-        </span>
-        <span>En savoir plus</span>
-        <ChevronDown className="ms-auto size-4 shrink-0 transition group-open:rotate-180" aria-hidden />
+    <details className="group mb-1 rounded-xl border border-[#e8e8e8] bg-white text-left dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-bg-card)]">
+      <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 text-sm text-[#6b7280] marker:content-none dark:text-[var(--color-text-muted)] [&::-webkit-details-marker]:hidden">
+        <Info className="size-4 shrink-0 text-[#9ca3af] dark:text-[var(--color-text-muted)]" strokeWidth={2} aria-hidden />
+        <span className="font-medium">En savoir plus</span>
+        <ChevronDown
+          className="ms-auto size-4 shrink-0 text-[#9ca3af] transition-transform duration-200 ease-out group-open:rotate-180 dark:text-[var(--color-text-muted)]"
+          aria-hidden
+        />
       </summary>
-      <div className="border-t border-[var(--fuel-card-border)] px-3 py-2.5 text-[11px] leading-relaxed text-[var(--color-text-secondary)] dark:text-[var(--color-text-muted)]">
+      <div className="border-t border-[#ececec] px-3 py-2.5 text-[12px] leading-relaxed text-[#6b7280] dark:border-[var(--color-border-subtle)] dark:text-[var(--color-text-muted)]">
         <p>
-          Les filtres <strong className="text-[var(--color-text)]">À venir</strong>,{" "}
-          <strong className="text-[var(--color-text)]">Passées</strong> et{" "}
-          <strong className="text-[var(--color-text)]">Tout</strong> s’appliquent aux cases du calendrier. Les bandeaux
+          Les filtres <strong className="text-[#374151] dark:text-[var(--color-text)]">À venir</strong>,{" "}
+          <strong className="text-[#374151] dark:text-[var(--color-text)]">Passées</strong> et{" "}
+          <strong className="text-[#374151] dark:text-[var(--color-text)]">Tout</strong> s’appliquent aux cases du calendrier. Les bandeaux
           charge et récup (définis sur chaque course) restent visibles selon le sport et la recherche. La liste respecte
           l’horizon choisi (1 à 6 mois).
         </p>
       </div>
     </details>
+  );
+}
+
+function AccordionGroupHeader({
+  label,
+  count,
+  open,
+  onToggle,
+}: {
+  label: string;
+  count: number;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-expanded={open}
+      onClick={onToggle}
+      className="flex w-full cursor-pointer items-center gap-2 border-b border-[#ececec] bg-transparent py-3 pl-1 pr-1 text-left transition hover:bg-black/[0.02] dark:border-[var(--color-border-subtle)] dark:hover:bg-white/[0.03]"
+    >
+      <span className="text-sm font-medium text-[#6b7280] dark:text-[var(--color-text-muted)]">{label}</span>
+      <span className="ms-auto flex items-center gap-1.5">
+        <span className="inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-[#ececec] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[#555] dark:bg-white/10 dark:text-[var(--color-text-muted)]">
+          {count}
+        </span>
+        {open ? (
+          <ChevronDown className="size-4 shrink-0 text-[#9ca3af] dark:text-[var(--color-text-muted)]" aria-hidden />
+        ) : (
+          <ChevronRight className="size-4 shrink-0 text-[#9ca3af] dark:text-[var(--color-text-muted)]" aria-hidden />
+        )}
+      </span>
+    </button>
   );
 }
 
@@ -227,25 +235,25 @@ export function RacesSidebar({
 
   return (
     <div className="flex flex-col">
-      <div className="border-b border-[var(--fuel-card-border)] px-4 py-4">
-        <p className="text-[11px] font-medium tracking-wide text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)]">
-          Calendrier
-        </p>
-        <p className="mt-0.5 text-sm font-semibold text-[var(--color-text)]">Liste des courses</p>
+      <div className="border-b border-[var(--fuel-card-border)] px-4 pb-3 pt-4 dark:border-[var(--color-border-subtle)]">
+        <h2 className="text-[18px] font-bold leading-tight tracking-tight text-[#111] dark:text-[var(--color-text)]">
+          Liste des courses
+        </h2>
       </div>
 
       <div className="px-4 py-3">
         <div className="relative">
           <Search
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--color-text-muted)] dark:text-[var(--color-text-muted)]"
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9ca3af] dark:text-[var(--color-text-muted)]"
+            strokeWidth={2}
             aria-hidden
           />
           <input
             type="search"
             value={searchQuery}
             onChange={(e) => onSearchQuery(e.target.value)}
-            placeholder="Rechercher…"
-            className="w-full rounded-2xl border border-[var(--fuel-card-border)] bg-[var(--fuel-card-surface)] py-2.5 pl-10 pr-3 text-sm text-[var(--color-text)] shadow-[var(--fuel-card-shadow)] outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-[color-mix(in_srgb,var(--color-accent)_45%,var(--fuel-card-border))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-accent)_22%,transparent)] dark:placeholder:text-[var(--color-text-muted)]"
+            placeholder="Rechercher une course..."
+            className="w-full rounded-[10px] border border-[#e3e3e3] bg-[#f8f8f8] py-2.5 pl-10 pr-3 text-sm font-normal text-[#111] transition placeholder:text-[#9ca3af] focus:border-[var(--color-primary)] focus:bg-white dark:border-[var(--color-border-subtle)] dark:bg-white/[0.06] dark:text-[var(--color-text)] dark:placeholder:text-[var(--color-text-muted)] dark:focus:border-[var(--color-accent)] dark:focus:bg-[var(--color-bg-card)]"
           />
         </div>
       </div>
@@ -253,19 +261,17 @@ export function RacesSidebar({
       <div className="space-y-3 px-2 pb-4">
         <RacesListHelp />
 
-        <div className="overflow-hidden rounded-2xl border border-[var(--fuel-card-border)] bg-[var(--fuel-card-surface)] shadow-[var(--fuel-card-shadow)]">
-          <button
-            type="button"
-            onClick={() => setOpenUp((o) => !o)}
-            className="flex w-full cursor-pointer items-center justify-between rounded-[10px] border-0 bg-[#f7f9f6] px-4 py-[0.65rem] text-left text-sm font-semibold text-[#1a1a1a] transition hover:brightness-[0.98]"
-          >
-            <span>À venir ({upcomingFiltered.length})</span>
-            {openUp ? <ChevronDown className="size-4 shrink-0 opacity-70" /> : <ChevronRight className="size-4 shrink-0 opacity-70" />}
-          </button>
+        <div className="overflow-hidden rounded-xl border border-[#e8e8e8] bg-[var(--fuel-card-surface)] dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-bg-card)]">
+          <AccordionGroupHeader
+            label="À venir"
+            count={upcomingFiltered.length}
+            open={openUp}
+            onToggle={() => setOpenUp((o) => !o)}
+          />
           {openUp ? (
-            <div className="space-y-2.5 bg-[var(--fuel-card-surface)] p-2.5">
+            <div className="space-y-2.5 border-t border-[#f0f0f0] bg-[#fafafa] p-2.5 dark:border-[var(--color-border-subtle)] dark:bg-[color-mix(in_srgb,var(--color-bg)_40%,var(--color-bg-card))]">
               {upcomingFiltered.length === 0 ? (
-                <p className="px-2 py-2 text-xs text-[var(--color-text-muted)]">Aucun résultat.</p>
+                <p className="px-2 py-2 text-xs text-[#6b7280] dark:text-[var(--color-text-muted)]">Aucun résultat.</p>
               ) : (
                 upcomingFiltered.map((r) => (
                   <RaceListCard
@@ -281,19 +287,17 @@ export function RacesSidebar({
           ) : null}
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-[var(--fuel-card-border)] bg-[var(--fuel-card-surface)] shadow-[var(--fuel-card-shadow)]">
-          <button
-            type="button"
-            onClick={() => setOpenPast((o) => !o)}
-            className="flex w-full cursor-pointer items-center justify-between rounded-[10px] border-0 bg-[#f7f9f6] px-4 py-[0.65rem] text-left text-sm font-semibold text-[#1a1a1a] transition hover:brightness-[0.98]"
-          >
-            <span>Passées ({pastFiltered.length})</span>
-            {openPast ? <ChevronDown className="size-4 shrink-0 opacity-70" /> : <ChevronRight className="size-4 shrink-0 opacity-70" />}
-          </button>
+        <div className="overflow-hidden rounded-xl border border-[#e8e8e8] bg-[var(--fuel-card-surface)] dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-bg-card)]">
+          <AccordionGroupHeader
+            label="Passées"
+            count={pastFiltered.length}
+            open={openPast}
+            onToggle={() => setOpenPast((o) => !o)}
+          />
           {openPast ? (
-            <div className="space-y-2.5 bg-[var(--fuel-card-surface)] p-2.5">
+            <div className="space-y-2.5 border-t border-[#f0f0f0] bg-[#fafafa] p-2.5 dark:border-[var(--color-border-subtle)] dark:bg-[color-mix(in_srgb,var(--color-bg)_40%,var(--color-bg-card))]">
               {pastFiltered.length === 0 ? (
-                <p className="px-2 py-2 text-xs text-[var(--color-text-muted)]">Aucune course passée.</p>
+                <p className="px-2 py-2 text-xs text-[#6b7280] dark:text-[var(--color-text-muted)]">Aucune course passée.</p>
               ) : (
                 pastFiltered.slice(0, 40).map((r) => (
                   <RaceListCard
@@ -306,7 +310,7 @@ export function RacesSidebar({
                 ))
               )}
               {pastFiltered.length > 40 ? (
-                <p className="px-2 text-[10px] text-[var(--color-text-muted)]">+ {pastFiltered.length - 40} autres…</p>
+                <p className="px-2 text-[10px] text-[#9ca3af] dark:text-[var(--color-text-muted)]">+ {pastFiltered.length - 40} autres…</p>
               ) : null}
             </div>
           ) : null}

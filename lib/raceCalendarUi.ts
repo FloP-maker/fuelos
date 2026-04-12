@@ -50,3 +50,24 @@ export function raceSportVisual(sport: string): RaceSportVisual {
     pillClass: "bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] ring-1 ring-[var(--color-border-subtle)]",
   };
 }
+
+/** Pastille 6px sous une case jour (couleur par sport). Trail → rouge. */
+export function raceSportDotClass(sport: string): string {
+  const s = sport.toLowerCase();
+  if (s.includes("ultra") || (s.includes("trail") && s.includes("ultra"))) {
+    return "bg-[#b91c1c]";
+  }
+  if (s.includes("trail")) {
+    return "bg-[#dc2626]";
+  }
+  if (s.includes("tri")) {
+    return "bg-[#7c3aed]";
+  }
+  if (s.includes("vélo") || s.includes("velo") || s.includes("cycl") || s.includes("vtt")) {
+    return "bg-[#2563eb]";
+  }
+  if (s.includes("route") || s.includes("marathon") || s.includes("running") || s.includes("course")) {
+    return "bg-[#0ea5e9]";
+  }
+  return "bg-[#2d6a4f]";
+}

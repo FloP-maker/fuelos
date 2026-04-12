@@ -8,7 +8,7 @@ import {
   type RacesCalendarListRange,
   type RacesCalendarViewFilter,
 } from "./RacesCalendarToolbar";
-import { raceSportVisual } from "@/lib/raceCalendarUi";
+import { raceSportDotClass, raceSportVisual } from "@/lib/raceCalendarUi";
 import {
   addDaysIso,
   buildSixWeekGrid,
@@ -46,11 +46,11 @@ function dayCellSurfaceClass(opts: {
   isSelected: boolean;
   tint?: NutritionDayCellTint;
 }): string {
-  const { inMonth, pastDay, isToday, isSelected, tint } = opts;
+  const { inMonth, pastDay, isSelected, tint } = opts;
   const base = [
-    "flex min-h-[72px] flex-col rounded-lg p-1.5 text-left transition sm:min-h-[78px] sm:p-2",
+    "relative flex min-h-[76px] flex-col rounded-[8px] p-1.5 text-left transition-[background-color,box-shadow,opacity] duration-150 ease-out sm:min-h-[82px] sm:p-2",
     inMonth
-      ? "hover:bg-[#f9fafb] dark:hover:bg-[color-mix(in_srgb,var(--color-bg-elevated)_35%,var(--color-bg-card))]"
+      ? "hover:bg-[#f0f7f0] dark:hover:bg-[color-mix(in_srgb,var(--color-bg-elevated)_40%,var(--color-bg-card))]"
       : "opacity-[0.58]",
     pastDay && inMonth ? "opacity-[0.88]" : "",
   ];
@@ -68,26 +68,18 @@ function dayCellSurfaceClass(opts: {
   }
   if (tint === "race") {
     base.push(
-      "bg-emerald-600/20 ring-2 ring-inset ring-emerald-700/35 dark:bg-emerald-500/28 dark:ring-emerald-400/45"
+      "bg-emerald-600/18 ring-1 ring-inset ring-emerald-700/25 dark:bg-emerald-500/22 dark:ring-emerald-400/35"
     );
   } else if (tint === "charge") {
-    base.push("bg-orange-100/95 dark:bg-orange-500/[0.16]");
+    base.push("bg-orange-100/90 dark:bg-orange-500/[0.14]");
   } else if (tint === "recovery") {
-    base.push("bg-emerald-50 dark:bg-emerald-400/[0.12]");
+    base.push("bg-emerald-50 dark:bg-emerald-400/[0.1]");
   } else {
     base.push("bg-white dark:bg-[var(--color-bg-card)]");
-    if (isToday) {
-      base.push(
-        "bg-emerald-50/70 dark:bg-[color-mix(in_srgb,var(--color-accent)_9%,var(--color-bg-card))]"
-      );
-    }
-  }
-  if (isToday && inMonth && tint && tint !== "race") {
-    base.push("ring-1 ring-emerald-500/40 ring-offset-0 dark:ring-emerald-400/30");
   }
   if (isSelected && inMonth) {
     base.push(
-      "ring-2 ring-[color-mix(in_srgb,var(--color-primary)_35%,var(--color-border))] ring-offset-0 dark:ring-[color-mix(in_srgb,var(--color-accent)_38%,transparent)]"
+      "ring-2 ring-[color-mix(in_srgb,var(--color-primary)_38%,var(--color-border))] ring-offset-0 dark:ring-[color-mix(in_srgb,var(--color-accent)_40%,transparent)]"
     );
   }
   return base.filter(Boolean).join(" ");
@@ -221,14 +213,15 @@ export function RacesMonthCalendar({
         isThisMonthView={isAnchorCurrent}
       />
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 sm:p-3 md:p-4">
+      <div className="races-scrollable-y min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 sm:p-3 md:p-4">
         <div className="rounded-2xl border border-[var(--fuel-card-border)] bg-[var(--fuel-card-surface)] p-2 shadow-[var(--fuel-card-shadow)] sm:p-3 dark:bg-[color-mix(in_srgb,var(--color-bg-elevated)_45%,var(--color-bg))]">
           <div className="mb-2 flex gap-2 sm:gap-3 md:mb-3">
             <div className="grid min-w-0 flex-1 grid-cols-7 gap-px overflow-hidden rounded-xl border border-[var(--fuel-card-border)] bg-[var(--color-races-grid-mute)] dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-races-grid-mute)]">
               {WEEKDAYS.map((wd) => (
                 <div
                   key={wd}
-                  className="flex h-8 items-center justify-center bg-white py-1 text-[10px] font-normal capitalize tracking-wide text-[#9ca3af] first:rounded-ss-lg last:rounded-se-lg dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text-muted)] sm:h-8 sm:text-[11px]"
+                  className="flex h-8 items-center justify-center bg-white py-1 text-[10px] font-medium capitalize tracking-wide text-[#6b7280] first:rounded-ss-lg last:rounded-se-lg dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text-muted)] sm:h-8 sm:text-[11px]"
+                  style={{ fontVariant: "all-small-caps", letterSpacing: "0.06em" }}
                 >
                   {wd}
                 </div>
@@ -307,9 +300,9 @@ export function RacesMonthCalendar({
                             tint,
                           })}
                         >
-                          <span className="flex h-7 items-start justify-center sm:h-7">
+                          <span className="relative z-[1] flex h-7 items-start justify-center sm:h-8">
                             {isToday && inMonth ? (
-                              <span className="inline-flex size-7 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-primary-light)_22%,var(--color-bg-card))] text-xs font-semibold tabular-nums text-[var(--color-primary-dark)] ring-2 ring-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] dark:bg-[color-mix(in_srgb,var(--color-accent)_20%,transparent)] dark:text-[var(--color-text)] dark:ring-[color-mix(in_srgb,var(--color-accent)_32%,transparent)] sm:text-sm">
+                              <span className="inline-flex size-8 items-center justify-center rounded-full bg-[#2d5016] text-sm font-semibold tabular-nums text-white shadow-sm dark:bg-[#3d6b24]">
                                 {day}
                               </span>
                             ) : (
@@ -326,7 +319,7 @@ export function RacesMonthCalendar({
                             )}
                           </span>
                           {list.length > 0 ? (
-                            <ul className="mt-0.5 flex min-h-0 flex-1 flex-col gap-0.5 overflow-hidden">
+                            <ul className="relative z-[1] mt-0.5 flex min-h-0 flex-1 flex-col gap-0.5 overflow-hidden pb-2">
                               {list.slice(0, 3).map((r) => {
                                 const { Icon } = raceSportVisual(r.sport);
                                 return (
@@ -352,8 +345,14 @@ export function RacesMonthCalendar({
                               ) : null}
                             </ul>
                           ) : (
-                            <span className="mt-auto text-[8px] text-transparent">.</span>
+                            <span className="mt-auto flex-1 text-[8px] text-transparent">.</span>
                           )}
+                          {list.length > 0 ? (
+                            <span
+                              className={`pointer-events-none absolute bottom-1.5 left-1/2 z-[2] size-[6px] -translate-x-1/2 rounded-full shadow-sm ${raceSportDotClass(list[0].sport)}`}
+                              aria-hidden
+                            />
+                          ) : null}
                         </button>
                       );
                     })}

@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { Banana, Droplets, Flag, Zap } from "lucide-react";
 import type { RaceEntry } from "@/lib/types/race";
 import { getDaysUntilRace } from "@/lib/races";
 import { getNutritionCalendarPhase, type NutritionCalendarPhase } from "@/lib/raceNutritionBands";
@@ -42,11 +42,20 @@ function phaseActionDuJour(phase: NutritionCalendarPhase): string {
   }
 }
 
-function courseLine(race: RaceEntry): string {
+function courseHeadline(race: RaceEntry): string {
   const d = getDaysUntilRace(race);
-  if (d <= 0) return `Course : ${race.name} — aujourd’hui`;
-  if (d === 1) return `Course : ${race.name} — demain`;
-  return `Course : ${race.name} — dans ${d} jours`;
+  if (d < 0) return `${race.name} — passée`;
+  if (d === 0) return `${race.name} — aujourd'hui`;
+  if (d === 1) return `${race.name} — demain`;
+  return `${race.name} dans ${d} jours`;
+}
+
+function courseBadgeLabel(race: RaceEntry | null): string | null {
+  if (!race) return null;
+  const d = getDaysUntilRace(race);
+  if (d < 0) return "Passée";
+  if (d === 0) return "Jour J";
+  return `${d}j`;
 }
 
 function resolvePhase(race: RaceEntry): NutritionCalendarPhase {
@@ -58,51 +67,85 @@ function resolvePhase(race: RaceEntry): NutritionCalendarPhase {
   return "preparation";
 }
 
-const rootStyle: CSSProperties = {
-  background: "#f0f7f4",
-  borderLeft: "4px solid #2d6a4f",
-  borderRadius: "0 12px 12px 0",
-  padding: "1rem 1.25rem",
-  margin: "0 1.5rem 1.5rem",
-};
-
-const labelStyle: CSSProperties = {
-  fontSize: "0.6875rem",
-  fontWeight: 600,
-  textTransform: "uppercase",
-  letterSpacing: "0.06em",
-  color: "#5a6a5a",
-  marginBottom: "0.35rem",
-};
-
-const lineStyle: CSSProperties = {
-  fontSize: "0.8125rem",
-  lineHeight: 1.45,
-  color: "#1a1a1a",
-};
-
 export function RacesTodayCard({ nextRace }: RacesTodayCardProps) {
   const phase = nextRace ? resolvePhase(nextRace) : null;
   const phaseLabel = phase ? PHASE_LABEL[phase] : "—";
-  const shortReco = phase ? phaseShortReco(phase) : "—";
-  const action = phase ? phaseActionDuJour(phase) : "Ajoute une course à venir pour recevoir des repères du jour.";
+  const shortReco = phase ? phaseShortReco(phase) : "Ajoute une course pour voir ta phase nutritionnelle.";
+  const action = phase
+    ? phaseActionDuJour(phase)
+    : "Ajoute une course à venir pour recevoir des repères du jour.";
+
+  const nutritionLine = phase ? `${phaseLabel} — ${shortReco}` : shortReco;
+  const NutritionIcon = phase === "charge" || phase === "course" ? Zap : Banana;
 
   return (
-    <div style={rootStyle} aria-label="Aujourd’hui">
-      <p style={labelStyle}>Aujourd’hui</p>
-      <div style={{ marginTop: "0.35rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-        <p style={lineStyle}>
-          <span aria-hidden>🎯 </span>
-          {nextRace ? courseLine(nextRace) : "Course : —"}
-        </p>
-        <p style={lineStyle}>
-          <span aria-hidden>🍌 </span>
-          Phase : {phase ? `${phaseLabel} — ${shortReco}` : "—"}
-        </p>
-        <p style={lineStyle}>
-          <span aria-hidden>💧 </span>
-          Action du jour : {action}
-        </p>
+    <div
+      className="races-today-card rounded-2xl bg-[color-mix(in_srgb,var(--color-bg-card)_92%,var(--color-bg-subtle))] px-4 py-4 dark:bg-[color-mix(in_srgb,var(--color-bg-card)_88%,var(--color-bg))] md:px-5"
+      aria-label="Aujourd’hui"
+    >
+      <div className="mb-3 flex items-center gap-2.5">
+        <span className="races-today-card__live-dot" aria-hidden />
+        <span className="races-today-card__label-text text-[11px] uppercase text-[var(--color-text-secondary)] dark:text-[var(--color-text-muted)]">
+          Aujourd&apos;hui
+        </span>
+      </div>
+
+      <div className="flex flex-row flex-wrap gap-3">
+        {/* Course */}
+        <div className="races-today-card__mic races-today-card__mic--1 flex min-w-[min(100%,220px)] flex-1 flex-col gap-2 rounded-[12px] border border-[rgba(220,38,38,0.2)] bg-[#fff1f0] px-4 py-3 dark:border-red-500/25 dark:bg-red-950/25">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <Flag
+                className="size-4 shrink-0 text-red-600/90 dark:text-red-400"
+                strokeWidth={2.25}
+                aria-hidden
+              />
+              <span className="text-[10px] font-bold uppercase tracking-wide text-red-900/75 dark:text-red-200/90">
+                Course
+              </span>
+            </div>
+            {nextRace && courseBadgeLabel(nextRace) ? (
+              <span className="shrink-0 rounded-md bg-red-600/10 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-red-800/90 dark:bg-red-500/15 dark:text-red-200">
+                {courseBadgeLabel(nextRace)}
+              </span>
+            ) : null}
+          </div>
+          <p className="text-[13px] font-semibold leading-snug text-[#1a1a1a] dark:text-[var(--color-text)]">
+            {nextRace ? courseHeadline(nextRace) : "Aucune course planifiée"}
+          </p>
+        </div>
+
+        {/* Nutrition */}
+        <div className="races-today-card__mic races-today-card__mic--2 flex min-w-[min(100%,220px)] flex-1 flex-col gap-2 rounded-[12px] border border-[rgba(245,158,11,0.2)] bg-[#fffbeb] px-4 py-3 dark:border-amber-500/25 dark:bg-amber-950/20">
+          <div className="flex items-center gap-2">
+            <NutritionIcon
+              className="size-4 shrink-0 text-amber-600/90 dark:text-amber-400"
+              strokeWidth={2.25}
+              aria-hidden
+            />
+            <span className="text-[10px] font-bold uppercase tracking-wide text-amber-900/75 dark:text-amber-200/90">
+              Nutrition
+            </span>
+          </div>
+          <p className="text-[13px] font-medium leading-snug text-[#1a1a1a] dark:text-[var(--color-text)]">
+            {nutritionLine}
+          </p>
+        </div>
+
+        {/* Hydratation */}
+        <div className="races-today-card__mic races-today-card__mic--3 flex min-w-[min(100%,220px)] flex-1 flex-col gap-2 rounded-[12px] border border-[rgba(59,130,246,0.2)] bg-[#eff6ff] px-4 py-3 dark:border-sky-500/25 dark:bg-sky-950/25">
+          <div className="flex items-center gap-2">
+            <Droplets
+              className="size-4 shrink-0 text-sky-600/90 dark:text-sky-400"
+              strokeWidth={2.25}
+              aria-hidden
+            />
+            <span className="text-[10px] font-bold uppercase tracking-wide text-sky-900/75 dark:text-sky-200/90">
+              Hydratation
+            </span>
+          </div>
+          <p className="text-[13px] font-medium leading-snug text-[#1a1a1a] dark:text-[var(--color-text)]">{action}</p>
+        </div>
       </div>
     </div>
   );

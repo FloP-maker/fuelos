@@ -212,7 +212,7 @@ export default function RacesPage() {
       <main className="fuel-main races-page">
         <RacesPageHero onAddRace={() => setAddOpen(true)} />
         <div className="races-layout">
-          <div className="races-layout__main min-w-0 space-y-6 md:space-y-8">
+          <div className="races-layout__main min-w-0">
             <RacesNextMilestone nextRace={nextMilestoneRace} />
             <RacesTodayCard nextRace={nextMilestoneRace} />
             <div className="fuel-races-main-panel">
@@ -229,7 +229,7 @@ export default function RacesPage() {
           </div>
 
           <div className="races-layout__calendar min-w-0">
-            <div className="races-layout__calendar-sticky">
+            <div className="races-layout__calendar-sticky races-scrollable-y">
               <div className="fuel-races-main-panel flex min-h-0 min-w-0 flex-col">
                 <RacesMonthCalendar
                   viewYear={view.year}

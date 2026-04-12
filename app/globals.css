@@ -249,11 +249,70 @@ textarea:focus {
     padding-inline: 0 !important;
     padding-top: 0 !important;
     padding-bottom: clamp(2rem, 4vw, 3rem) !important;
-    background-color: #f7f9f6;
+    background-color: var(--color-bg);
+    font-family: var(--font-main);
+    font-weight: 400;
   }
 
   html.dark .races-page {
     background-color: var(--color-bg);
+  }
+
+  /* Mes courses — typo (titres 700, labels 500, corps 400) */
+  .races-page h2 {
+    font-weight: 700;
+  }
+
+  .races-page label,
+  .races-page .races-today-card__label-text {
+    font-weight: 500;
+  }
+
+  /* Interactifs : transition par défaut */
+  .races-page :where(button, a[href], [role="tab"], [role="option"], summary):not(:disabled),
+  .races-page .races-next-milestone-card,
+  .races-page .races-today-card,
+  .races-page .races-layout__main article {
+    transition: all 150ms ease;
+  }
+
+  /* Focus clavier visible (anneau vert) */
+  .races-page :where(button, a, input, textarea, select, summary, [role="tab"], [role="option"]):focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .races-page :where(input, textarea, select):focus-visible {
+    box-shadow: none;
+    border-color: color-mix(in srgb, var(--color-primary) 65%, var(--color-border-strong));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .races-page :where(button, a[href], [role="tab"], [role="option"], summary):not(:disabled),
+    .races-page .races-next-milestone-card,
+    .races-page .races-today-card,
+    .races-page .races-layout__main article {
+      transition: none;
+    }
+  }
+
+  /* Scrollbars fines (liste / calendrier scrollables) */
+  .races-scrollable-y {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-primary-dark) transparent;
+  }
+
+  .races-scrollable-y::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .races-scrollable-y::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .races-scrollable-y::-webkit-scrollbar-thumb {
+    background: var(--color-primary-dark);
+    border-radius: 9999px;
   }
 
   @keyframes races-hero-title-in {
@@ -380,7 +439,11 @@ textarea:focus {
     cursor: pointer;
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
-    transition: background 0.2s ease;
+  }
+
+  .races-page-hero__cta:focus-visible {
+    outline: 2px solid var(--color-primary-light);
+    outline-offset: 2px;
   }
 
   .races-page-hero__cta:hover {
@@ -431,9 +494,6 @@ textarea:focus {
     border: 1px solid rgba(0, 0, 0, 0.06);
     background-color: #f4f7f4;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
-    transition:
-      transform 200ms ease,
-      box-shadow 200ms ease;
   }
 
   .races-page .races-next-milestone-card::after {
@@ -473,21 +533,97 @@ textarea:focus {
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .races-page .races-next-milestone-card:hover {
+      transform: none;
+    }
+  }
+
+  @keyframes races-today-live-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+      box-shadow: 0 0 0 0 color-mix(in srgb, #22c55e 55%, transparent);
+    }
+    50% {
+      transform: scale(1.12);
+      opacity: 0.88;
+      box-shadow: 0 0 0 10px color-mix(in srgb, #22c55e 0%, transparent);
+    }
+  }
+
+  @keyframes races-today-card-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .races-today-card__live-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    background: #22c55e;
+    animation: races-today-live-pulse 1.75s ease-in-out infinite;
+  }
+
+  .races-today-card__mic {
+    opacity: 0;
+    animation: races-today-card-in 0.45s ease-out forwards;
+  }
+
+  .races-today-card__mic--1 {
+    animation-delay: 0ms;
+  }
+
+  .races-today-card__mic--2 {
+    animation-delay: 100ms;
+  }
+
+  .races-today-card__mic--3 {
+    animation-delay: 200ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .races-today-card__live-dot {
+      animation: none;
+      box-shadow: none;
+    }
+
+    .races-today-card__mic {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .races-today-card__label-text {
+    font-variant: all-small-caps;
+    letter-spacing: 0.14em;
+  }
+
   /* Grille Mes courses */
   .races-layout {
     display: grid;
     grid-template-columns: 1fr 400px;
-    gap: 2rem;
+    gap: 24px;
     align-items: start;
     max-width: 1400px;
     margin: 0 auto;
-    padding: 2rem 2rem 4rem;
+    padding: 24px 24px clamp(48px, 8vw, 64px);
   }
 
   .races-layout__main {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 24px;
     min-width: 0;
     align-self: start;
   }
@@ -503,9 +639,9 @@ textarea:focus {
   }
 
   .races-layout__calendar-sticky {
-    background: #ffffff;
+    background: var(--color-bg-card);
     border-radius: 16px;
-    border: 1px solid rgba(0, 0, 0, 0.07);
+    border: 1px solid var(--fuel-card-border);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
     padding: 1.25rem;
   }
@@ -517,14 +653,14 @@ textarea:focus {
     box-shadow: none;
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 767px) {
     .races-layout {
       grid-template-columns: 1fr;
-      padding: 1.5rem 1rem 4rem;
+      padding: 24px 16px clamp(48px, 10vw, 64px);
     }
   }
 
-  @media (min-width: 901px) {
+  @media (min-width: 768px) {
     .races-layout__calendar-sticky {
       position: sticky;
       top: 5.5rem;
@@ -1610,9 +1746,9 @@ textarea:focus {
 
   /* Liste Mes courses : carte pleine hauteur, pas de scroll interne */
   .races-page .races-layout__main .fuel-races-main-panel {
-    background: #ffffff;
+    background: var(--color-bg-card);
     border-radius: 16px;
-    border: 1px solid rgba(0, 0, 0, 0.07);
+    border: 1px solid var(--fuel-card-border);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
     overflow: visible;
     height: auto;
@@ -1632,12 +1768,12 @@ textarea:focus {
   }
 
   .races-page .races-layout__main .fuel-races-main-panel details > summary {
-    background: #f7f9f6;
+    background: var(--color-bg-subtle);
     border-radius: 10px;
     padding: 0.65rem 1rem;
-    font-weight: 600;
+    font-weight: 500;
     font-size: 0.875rem;
-    color: #1a1a1a;
+    color: var(--color-text-primary);
     list-style: none;
     cursor: pointer;
   }
