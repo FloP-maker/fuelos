@@ -624,7 +624,10 @@ textarea:focus {
   /* Micro-cartes Aujourd’hui : même rayon (16px) que Prochain objectif + relief */
   .races-page .races-today-card__mic {
     border-radius: 16px;
-    overflow: hidden;
+    /* Pas de overflow:hidden : avec le rayon, ça coupait icônes / texte aux coins */
+    overflow: visible;
+    box-sizing: border-box;
+    padding: 15px 17px 16px 17px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
   }
 

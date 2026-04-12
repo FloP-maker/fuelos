@@ -90,7 +90,7 @@ export function RacesTodayCard({ nextRace }: RacesTodayCardProps) {
 
       <div className="flex flex-row flex-wrap gap-3">
         {/* Course */}
-        <div className="races-today-card__mic races-today-card__mic--1 flex min-h-[118px] min-w-[min(100%,220px)] flex-1 flex-col gap-2.5 border border-[rgba(220,38,38,0.22)] bg-[#fff1f0] px-5 py-4 dark:border-red-500/28 dark:bg-red-950/25">
+        <div className="races-today-card__mic races-today-card__mic--1 flex min-h-[118px] min-w-[min(100%,220px)] flex-1 flex-col gap-2.5 border border-[rgba(220,38,38,0.22)] bg-[#fff1f0] dark:border-red-500/28 dark:bg-red-950/25">
           <div className="flex min-h-[22px] items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
               <Flag
@@ -116,7 +116,7 @@ export function RacesTodayCard({ nextRace }: RacesTodayCardProps) {
         </div>
 
         {/* Nutrition */}
-        <div className="races-today-card__mic races-today-card__mic--2 flex min-h-[118px] min-w-[min(100%,220px)] flex-1 flex-col gap-2.5 border border-[rgba(245,158,11,0.22)] bg-[#fffbeb] px-5 py-4 dark:border-amber-500/28 dark:bg-amber-950/20">
+        <div className="races-today-card__mic races-today-card__mic--2 flex min-h-[118px] min-w-[min(100%,220px)] flex-1 flex-col gap-2.5 border border-[rgba(245,158,11,0.22)] bg-[#fffbeb] dark:border-amber-500/28 dark:bg-amber-950/20">
           <div className="flex min-h-[22px] items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
               <NutritionIcon
@@ -134,7 +134,7 @@ export function RacesTodayCard({ nextRace }: RacesTodayCardProps) {
         </div>
 
         {/* Hydratation */}
-        <div className="races-today-card__mic races-today-card__mic--3 flex min-h-[118px] min-w-[min(100%,220px)] flex-1 flex-col gap-2.5 border border-[rgba(59,130,246,0.22)] bg-[#eff6ff] px-5 py-4 dark:border-sky-500/28 dark:bg-sky-950/25">
+        <div className="races-today-card__mic races-today-card__mic--3 flex min-h-[118px] min-w-[min(100%,220px)] flex-1 flex-col gap-2.5 border border-[rgba(59,130,246,0.22)] bg-[#eff6ff] dark:border-sky-500/28 dark:bg-sky-950/25">
           <div className="flex min-h-[22px] items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
               <Droplets
