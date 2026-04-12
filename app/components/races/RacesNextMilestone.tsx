@@ -117,27 +117,29 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
     <div className="races-next-milestone relative">
       {nextRace && days != null ? (
         <div className="races-next-milestone-card flex items-stretch gap-5 px-6 py-5 md:gap-6 md:px-7 md:py-6">
-          <div className="min-w-0 flex-1">
-            <div className="mb-1 text-xs font-medium uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">
-              Prochain objectif
-            </div>
-            <div className="mt-1 flex items-start gap-2.5">
-              <Mountain
-                className="mt-0.5 size-6 shrink-0 text-[#2d6a4f] dark:text-[var(--color-primary-light)]"
-                strokeWidth={2.25}
-                aria-hidden
-              />
-              <div className="text-xl font-extrabold leading-tight tracking-tight text-[#1a1a1a] dark:text-[var(--color-text)] md:text-2xl">
-                {nextRace.name}
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <div className="text-xs font-medium uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">
+                Prochain objectif
+              </div>
+              <div className="flex items-start gap-2.5">
+                <Mountain
+                  className="mt-0.5 size-6 shrink-0 text-[#2d6a4f] dark:text-[var(--color-primary-light)]"
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+                <div className="text-xl font-extrabold leading-snug tracking-tight text-[#1a1a1a] dark:text-[var(--color-text)] md:text-2xl">
+                  {nextRace.name}
+                </div>
               </div>
             </div>
 
-            <div className="mt-3">
-              <p className="text-[11px] font-medium leading-snug text-[#5a6a5a] dark:text-[var(--color-text-muted)] md:text-xs">
+            <div className="flex flex-col gap-2">
+              <p className="text-[11px] font-medium leading-relaxed text-[#5a6a5a] dark:text-[var(--color-text-muted)] md:text-xs">
                 Progression préparation · {daysRem}j restants sur ~{windowDays}j
               </p>
               <div
-                className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[#dfe6df] dark:bg-white/10"
+                className="h-1.5 w-full overflow-hidden rounded-full bg-[#dfe6df] dark:bg-white/10"
                 role="progressbar"
                 aria-valuenow={Math.round(approach * 100)}
                 aria-valuemin={0}
@@ -154,10 +156,10 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
               </div>
             </div>
 
-            <div className="mt-3 text-sm text-[var(--color-text-secondary)]">{heroNutritionRecommendation(days)}</div>
+            <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">{heroNutritionRecommendation(days)}</p>
             <Link
               href={`/races/${nextRace.id}`}
-              className="mt-3 inline-block text-sm font-semibold text-[var(--color-primary)] no-underline dark:text-[var(--color-primary-light)]"
+              className="inline-block text-sm font-semibold leading-snug text-[var(--color-primary)] no-underline dark:text-[var(--color-primary-light)]"
             >
               Voir mon plan nutritionnel →
             </Link>
@@ -173,13 +175,13 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
           >
             <Mountain className="size-7" strokeWidth={2} />
           </span>
-          <div>
-            <div className="text-xl font-extrabold text-[#1a1a1a] dark:text-[var(--color-text)] md:text-2xl">
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            <div className="text-xl font-extrabold leading-snug text-[#1a1a1a] dark:text-[var(--color-text)] md:text-2xl">
               Aucune course à venir
             </div>
-            <div className="mt-2 text-sm text-[#5a6a5a] dark:text-[var(--color-text-muted)]">
+            <p className="text-sm leading-relaxed text-[#5a6a5a] dark:text-[var(--color-text-muted)]">
               Utilise le bouton « Nouvelle course » en haut de page pour ajouter ton prochain objectif.
-            </div>
+            </p>
           </div>
         </div>
       )}
