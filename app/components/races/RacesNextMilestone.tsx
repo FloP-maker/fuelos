@@ -31,9 +31,8 @@ function heroNutritionRecommendation(days: number): string {
 const cardOuter: CSSProperties = {
   background: "white",
   borderRadius: 16,
-  boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
   padding: "1.5rem",
-  margin: "1.5rem",
+  margin: 0,
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
@@ -92,7 +91,7 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
   const days = nextRace ? getDaysUntilRace(nextRace) : null;
 
   return (
-    <div className="relative z-[1] sm:mt-1">
+    <div className="races-next-milestone relative">
       {nextRace && days != null ? (
         <div style={cardOuter}>
           <div style={{ minWidth: 0, flex: 1 }}>
