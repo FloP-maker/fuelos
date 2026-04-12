@@ -85,9 +85,7 @@ export function RacesTodayCard({ nextRace }: RacesTodayCardProps) {
     >
       <div className="mb-3 flex items-center gap-2.5">
         <span className="races-today-card__live-dot" aria-hidden />
-        <span className="races-today-card__label-text text-[11px] uppercase text-[var(--color-text-secondary)] dark:text-[var(--color-text-muted)]">
-          Aujourd&apos;hui
-        </span>
+        <span className="races-section-eyebrow">Aujourd&apos;hui</span>
       </div>
 
       <div className="flex flex-row flex-wrap gap-3">

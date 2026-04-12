@@ -119,9 +119,7 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
         <div className="races-next-milestone-card flex items-stretch gap-5 px-6 py-5 md:gap-6 md:px-7 md:py-6">
           <div className="flex min-w-0 flex-1 flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <div className="text-xs font-medium uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">
-                Prochain objectif
-              </div>
+              <div className="races-section-eyebrow">Prochain objectif</div>
               <div className="flex items-start gap-2.5">
                 <Mountain
                   className="mt-0.5 size-6 shrink-0 text-[#2d6a4f] dark:text-[var(--color-primary-light)]"

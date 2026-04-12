@@ -263,8 +263,23 @@ textarea:focus {
     font-weight: 700;
   }
 
-  .races-page label,
-  .races-page .races-today-card__label-text {
+  /* Libellés de section (même style que « Prochain objectif ») */
+  .races-page .races-section-eyebrow,
+  .races-page h2.races-section-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+  }
+
+  html.dark .races-page .races-section-eyebrow,
+  html.dark .races-page h2.races-section-eyebrow {
+    color: var(--color-text-muted);
+  }
+
+  .races-page label {
     font-weight: 500;
   }
 
@@ -600,11 +615,6 @@ textarea:focus {
       opacity: 1;
       transform: none;
     }
-  }
-
-  .races-today-card__label-text {
-    font-variant: all-small-caps;
-    letter-spacing: 0.14em;
   }
 
   /* Micro-cartes Aujourd’hui : même rayon (16px) que Prochain objectif + relief */

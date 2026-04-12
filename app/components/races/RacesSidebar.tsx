@@ -236,9 +236,7 @@ export function RacesSidebar({
   return (
     <div className="flex flex-col">
       <div className="border-b border-[var(--fuel-card-border)] px-4 pb-3 pt-4 dark:border-[var(--color-border-subtle)]">
-        <h2 className="text-[18px] font-bold leading-tight tracking-tight text-[#111] dark:text-[var(--color-text)]">
-          Liste des courses
-        </h2>
+        <h2 className="races-section-eyebrow">Ma saison</h2>
       </div>
 
       <div className="px-4 py-3">

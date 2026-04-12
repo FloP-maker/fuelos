@@ -27,9 +27,6 @@ export function RacesPageHero({ onAddRace }: RacesPageHeroProps) {
               <span aria-hidden>🏔️ </span>
               Mes courses
             </h1>
-            <p>
-              Prochain objectif, charge et récup : lecture rapide, comme un jalon en tête de tableau de bord.
-            </p>
           </div>
         </div>
 
