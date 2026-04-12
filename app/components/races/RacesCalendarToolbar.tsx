@@ -44,28 +44,47 @@ export function RacesCalendarToolbar({
   const isWeek = listRange === "week";
   return (
     <div className="flex flex-col gap-4 border-b border-[var(--fuel-card-border)] bg-[var(--fuel-card-surface)] px-4 py-4 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-3 md:px-5 dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-bg-card)]">
-      <div className="inline-flex w-full max-w-md rounded-full bg-[var(--color-bg-subtle)] p-1 dark:bg-[var(--color-bg-elevated)] md:w-auto">
+      <div
+        className="inline-flex w-full max-w-md gap-0.5 p-1 md:w-auto"
+        style={{
+          background: "#f0f4f1",
+          borderRadius: 12,
+        }}
+      >
         {(
           [
             ["upcoming", "À venir"],
             ["past", "Passées"],
             ["all", "Tout"],
           ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => onViewFilter(id)}
-            className={[
-              "flex-1 rounded-full px-3 py-2 text-center text-xs font-semibold transition duration-200 ease-out md:flex-none md:px-4 md:text-sm",
-              viewFilter === id
-                ? "bg-[var(--color-bg-card)] text-[var(--color-text-primary)] shadow-[var(--shadow-sm)] dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text)] dark:shadow-[var(--shadow-xs)] dark:ring-1 dark:ring-white/[0.06]"
-                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] dark:text-[var(--color-text-muted)] dark:hover:text-[var(--color-text)]",
-            ].join(" ")}
-          >
-            {label}
-          </button>
-        ))}
+        ).map(([id, label]) => {
+          const active = viewFilter === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onViewFilter(id)}
+              className="flex-1 px-3 py-2 text-center text-xs font-semibold transition-colors duration-150 ease-out md:flex-none md:px-4 md:text-sm"
+              style={
+                active
+                  ? {
+                      background: "#2d6a4f",
+                      color: "white",
+                      borderRadius: 8,
+                      border: "none",
+                    }
+                  : {
+                      background: "transparent",
+                      color: "#5a6a5a",
+                      border: "none",
+                      borderRadius: 8,
+                    }
+              }
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-2 md:gap-2.5">

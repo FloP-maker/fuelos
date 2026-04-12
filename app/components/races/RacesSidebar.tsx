@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import type { RaceEntry } from "@/lib/types/race";
 import { getDaysUntilRace } from "@/lib/races";
@@ -225,8 +225,21 @@ export function RacesSidebar({
     });
   }, [past, searchQuery]);
 
-  const accordionBtn =
-    "flex w-full items-center justify-between border-b border-[var(--fuel-card-border)] bg-[var(--color-bg-subtle)] px-3 py-2.5 text-left text-sm font-semibold text-[var(--color-text-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-border-strong)_22%,var(--color-bg-subtle))] dark:border-[var(--fuel-card-border)] dark:bg-white/[0.07] dark:text-[var(--color-text)] dark:hover:bg-white/[0.1]";
+  const accordionBtnStyle: CSSProperties = {
+    display: "flex",
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "space-between",
+    background: "#f7f9f6",
+    borderRadius: 12,
+    padding: "0.75rem 1rem",
+    fontWeight: 600,
+    color: "#1a1a1a",
+    border: "none",
+    cursor: "pointer",
+    textAlign: "left",
+    fontSize: "0.875rem",
+  };
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -257,7 +270,7 @@ export function RacesSidebar({
         <RacesListHelp />
 
         <div className="overflow-hidden rounded-2xl border border-[var(--fuel-card-border)] bg-[var(--fuel-card-surface)] shadow-[var(--fuel-card-shadow)]">
-          <button type="button" onClick={() => setOpenUp((o) => !o)} className={accordionBtn}>
+          <button type="button" onClick={() => setOpenUp((o) => !o)} style={accordionBtnStyle} className="transition hover:brightness-[0.98]">
             <span>À venir ({upcomingFiltered.length})</span>
             {openUp ? <ChevronDown className="size-4 shrink-0 opacity-70" /> : <ChevronRight className="size-4 shrink-0 opacity-70" />}
           </button>
@@ -281,7 +294,7 @@ export function RacesSidebar({
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-[var(--fuel-card-border)] bg-[var(--fuel-card-surface)] shadow-[var(--fuel-card-shadow)]">
-          <button type="button" onClick={() => setOpenPast((o) => !o)} className={accordionBtn}>
+          <button type="button" onClick={() => setOpenPast((o) => !o)} style={accordionBtnStyle} className="transition hover:brightness-[0.98]">
             <span>Passées ({pastFiltered.length})</span>
             {openPast ? <ChevronDown className="size-4 shrink-0 opacity-70" /> : <ChevronRight className="size-4 shrink-0 opacity-70" />}
           </button>

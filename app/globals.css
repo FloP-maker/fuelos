@@ -4,6 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tailwind v4 : police par défaut des utilitaires font-sans / préflight */
+@theme {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    sans-serif;
+}
+
 /* Thème clair : sémantique FuelOS (mappe sur design-tokens) */
 :root {
   color-scheme: light;
@@ -103,11 +109,6 @@
 }
 
 @layer base {
-  body,
-  * {
-    font-family: var(--font-main), system-ui, sans-serif;
-  }
-
   code,
   pre,
   kbd,
@@ -140,6 +141,7 @@ body {
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
 
 h1 {
