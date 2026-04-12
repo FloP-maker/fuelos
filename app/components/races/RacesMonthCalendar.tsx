@@ -3,9 +3,21 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import type { RaceEntry } from "@/lib/types/race";
-import { RacesCalendarToolbar, type RacesCalendarViewFilter } from "./RacesCalendarToolbar";
+import {
+  RacesCalendarToolbar,
+  type RacesCalendarListRange,
+  type RacesCalendarViewFilter,
+} from "./RacesCalendarToolbar";
 import { raceSportVisual } from "@/lib/raceCalendarUi";
-import { buildSixWeekGrid, layoutBandsInWeek, nutritionBandsFromRaces } from "@/lib/raceNutritionBands";
+import {
+  addDaysIso,
+  buildSixWeekGrid,
+  layoutBandsInWeek,
+  nutritionBandsFromRaces,
+  nutritionDayTintsFromRaces,
+  type CalendarCell,
+  type NutritionDayCellTint,
+} from "@/lib/raceNutritionBands";
 
 const WEEKDAYS = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"] as const;
 
@@ -25,6 +37,60 @@ function weekKmForKeys(keys: string[], racesByDate: Map<string, RaceEntry[]>): n
     }
   }
   return Math.round(km * 10) / 10;
+}
+
+function dayCellSurfaceClass(opts: {
+  inMonth: boolean;
+  pastDay: boolean;
+  isToday: boolean;
+  isSelected: boolean;
+  tint?: NutritionDayCellTint;
+}): string {
+  const { inMonth, pastDay, isToday, isSelected, tint } = opts;
+  const base = [
+    "flex min-h-[72px] flex-col rounded-lg p-1.5 text-left transition sm:min-h-[78px] sm:p-2",
+    inMonth
+      ? "hover:bg-[#f9fafb] dark:hover:bg-[color-mix(in_srgb,var(--color-bg-elevated)_35%,var(--color-bg-card))]"
+      : "opacity-[0.58]",
+    pastDay && inMonth ? "opacity-[0.88]" : "",
+  ];
+  if (!inMonth) {
+    const outMonthBg =
+      tint === "race"
+        ? "bg-emerald-600/12 dark:bg-emerald-500/[0.12]"
+        : tint === "charge"
+          ? "bg-orange-50/80 dark:bg-orange-500/[0.08]"
+          : tint === "recovery"
+            ? "bg-emerald-50/70 dark:bg-emerald-400/[0.06]"
+            : "bg-white dark:bg-[var(--color-bg-card)]";
+    base.push(outMonthBg);
+    return base.filter(Boolean).join(" ");
+  }
+  if (tint === "race") {
+    base.push(
+      "bg-emerald-600/20 ring-2 ring-inset ring-emerald-700/35 dark:bg-emerald-500/28 dark:ring-emerald-400/45"
+    );
+  } else if (tint === "charge") {
+    base.push("bg-orange-100/95 dark:bg-orange-500/[0.16]");
+  } else if (tint === "recovery") {
+    base.push("bg-emerald-50 dark:bg-emerald-400/[0.12]");
+  } else {
+    base.push("bg-white dark:bg-[var(--color-bg-card)]");
+    if (isToday) {
+      base.push(
+        "bg-emerald-50/70 dark:bg-[color-mix(in_srgb,var(--color-accent)_9%,var(--color-bg-card))]"
+      );
+    }
+  }
+  if (isToday && inMonth && tint && tint !== "race") {
+    base.push("ring-1 ring-emerald-500/40 ring-offset-0 dark:ring-emerald-400/30");
+  }
+  if (isSelected && inMonth) {
+    base.push(
+      "ring-2 ring-[color-mix(in_srgb,#16a34a_35%,#e5e7eb)] ring-offset-0 dark:ring-[color-mix(in_srgb,var(--color-accent)_38%,transparent)]"
+    );
+  }
+  return base.filter(Boolean).join(" ");
 }
 
 function WeekKmSparkline({ values }: { values: number[] }) {
@@ -61,6 +127,10 @@ function WeekKmSparkline({ values }: { values: number[] }) {
 export type RacesMonthCalendarProps = {
   viewYear: number;
   viewMonth: number;
+  /** Lundi ISO de la semaine affichée lorsque `calendarListRange === "week"`. */
+  weekStartKey: string;
+  calendarListRange: RacesCalendarListRange;
+  onListRange: (n: RacesCalendarListRange) => void;
   onPrevMonth: () => void;
   onNextMonth: () => void;
   onThisMonth: () => void;
@@ -73,13 +143,18 @@ export type RacesMonthCalendarProps = {
   sportFilter: string;
   onSportFilter: (sport: string) => void;
   sportsOptions: string[];
-  rangeMonths: 1 | 3 | 6;
-  onRangeMonths: (n: 1 | 3 | 6) => void;
+  /** Titre du bandeau (mois ou plage de semaine). */
+  calendarTitle: string;
+  /** Mois courant ou semaine affichée contenant aujourd’hui. */
+  isAnchorCurrent: boolean;
 };
 
 export function RacesMonthCalendar({
   viewYear,
   viewMonth,
+  weekStartKey,
+  calendarListRange,
+  onListRange,
   onPrevMonth,
   onNextMonth,
   onThisMonth,
@@ -92,25 +167,28 @@ export function RacesMonthCalendar({
   sportFilter,
   onSportFilter,
   sportsOptions,
-  rangeMonths,
-  onRangeMonths,
+  calendarTitle,
+  isAnchorCurrent,
 }: RacesMonthCalendarProps) {
-  const title = useMemo(
-    () =>
-      new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
-        new Date(viewYear, viewMonth, 1)
-      ),
-    [viewYear, viewMonth]
-  );
+  const isWeekMode = calendarListRange === "week";
 
-  const cells = useMemo(
-    () => buildSixWeekGrid(viewYear, viewMonth),
-    [viewYear, viewMonth]
-  );
+  const cells = useMemo((): CalendarCell[] => {
+    if (!isWeekMode) return buildSixWeekGrid(viewYear, viewMonth);
+    const out: CalendarCell[] = [];
+    for (let i = 0; i < 7; i++) {
+      const key = addDaysIso(weekStartKey, i);
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+      if (!m) continue;
+      out.push({ key, day: Number(m[3]), inMonth: true });
+    }
+    return out;
+  }, [isWeekMode, viewYear, viewMonth, weekStartKey]);
 
   const rowCount = cells.length / 7;
 
   const bands = useMemo(() => nutritionBandsFromRaces(bandSourceRaces), [bandSourceRaces]);
+
+  const dayTints = useMemo(() => nutritionDayTintsFromRaces(bandSourceRaces), [bandSourceRaces]);
 
   const weekKmSeries = useMemo(() => {
     const series: number[] = [];
@@ -125,8 +203,6 @@ export function RacesMonthCalendar({
 
   const today = todayKey();
   const isPastDay = (k: string) => k < today;
-  const isThisMonthView =
-    new Date().getFullYear() === viewYear && new Date().getMonth() === viewMonth;
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--color-bg-card)]">
@@ -136,13 +212,13 @@ export function RacesMonthCalendar({
         sportFilter={sportFilter}
         onSportFilter={onSportFilter}
         sportsOptions={sportsOptions}
-        rangeMonths={rangeMonths}
-        onRangeMonths={onRangeMonths}
-        monthTitle={title}
+        listRange={calendarListRange}
+        onListRange={onListRange}
+        calendarTitle={calendarTitle}
         onPrevMonth={onPrevMonth}
         onNextMonth={onNextMonth}
         onThisMonth={onThisMonth}
-        isThisMonthView={isThisMonthView}
+        isThisMonthView={isAnchorCurrent}
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 sm:p-3 md:p-4">
@@ -217,24 +293,19 @@ export function RacesMonthCalendar({
                       const isToday = key === today;
                       const isSelected = key === selectedDate;
                       const pastDay = isPastDay(key);
+                      const tint = dayTints.get(key);
                       return (
                         <button
                           key={`${key}-${idx}`}
                           type="button"
                           onClick={() => onSelectDate(isSelected ? null : key)}
-                          className={[
-                            "flex min-h-[72px] flex-col rounded-lg bg-white p-1.5 text-left transition sm:min-h-[78px] sm:p-2 dark:bg-[var(--color-bg-card)]",
-                            inMonth
-                              ? "hover:bg-[#f9fafb] dark:hover:bg-[color-mix(in_srgb,var(--color-bg-elevated)_35%,var(--color-bg-card))]"
-                              : "opacity-[0.58]",
-                            pastDay && inMonth ? "opacity-[0.88]" : "",
-                            isToday && inMonth
-                              ? "bg-emerald-50/70 dark:bg-[color-mix(in_srgb,var(--color-accent)_9%,var(--color-bg-card))]"
-                              : "",
-                            isSelected && inMonth
-                              ? "ring-2 ring-[color-mix(in_srgb,#16a34a_35%,#e5e7eb)] ring-offset-0 dark:ring-[color-mix(in_srgb,var(--color-accent)_38%,transparent)]"
-                              : "",
-                          ].join(" ")}
+                          className={dayCellSurfaceClass({
+                            inMonth,
+                            pastDay,
+                            isToday,
+                            isSelected,
+                            tint,
+                          })}
                         >
                           <span className="flex h-7 items-start justify-center sm:h-7">
                             {isToday && inMonth ? (
@@ -290,8 +361,14 @@ export function RacesMonthCalendar({
 
                   <div className="flex w-[3.75rem] shrink-0 flex-col items-center justify-center rounded-xl border border-[#e5e7eb] bg-[#fafafa] px-1.5 py-2 text-center dark:border-[var(--color-border-subtle)] dark:bg-[color-mix(in_srgb,var(--color-bg-elevated)_55%,var(--color-bg))] sm:w-[4.5rem]">
                     <span className="text-[9px] font-medium text-[#9ca3af] dark:text-[var(--color-text-muted)]">Sem.</span>
-                    <span className="mt-0.5 font-semibold tabular-nums text-sm text-[#111827] dark:text-[var(--color-text)]">
-                      {weekKm || "—"}
+                    <span
+                      className={
+                        weekKm > 0
+                          ? "mt-0.5 font-semibold tabular-nums text-sm text-[#111827] dark:text-[var(--color-text)]"
+                          : "mt-0.5 font-semibold tabular-nums text-sm text-[#c4c4c4] dark:text-zinc-500"
+                      }
+                    >
+                      {weekKm > 0 ? weekKm : "—"}
                     </span>
                     <span className="text-[9px] text-[#9ca3af] dark:text-[var(--color-text-muted)]">km</span>
                     <div className="mt-1.5 h-1 w-full max-w-[2.75rem] overflow-hidden rounded-full bg-[#e5e7eb] dark:bg-[var(--color-border-subtle)]">

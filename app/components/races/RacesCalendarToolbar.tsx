@@ -4,18 +4,23 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export type RacesCalendarViewFilter = "upcoming" | "past" | "all";
 
+/** Horizon liste + granularité du calendrier (mois complet ou une semaine type ISO). */
+export type RacesCalendarListRange = 1 | 3 | 6 | "week";
+
 export type RacesCalendarToolbarProps = {
   viewFilter: RacesCalendarViewFilter;
   onViewFilter: (v: RacesCalendarViewFilter) => void;
   sportFilter: string;
   onSportFilter: (sport: string) => void;
   sportsOptions: string[];
-  rangeMonths: 1 | 3 | 6;
-  onRangeMonths: (n: 1 | 3 | 6) => void;
-  monthTitle: string;
+  listRange: RacesCalendarListRange;
+  onListRange: (n: RacesCalendarListRange) => void;
+  /** Titre affiché au centre (mois courant ou plage de semaine). */
+  calendarTitle: string;
   onPrevMonth: () => void;
   onNextMonth: () => void;
   onThisMonth: () => void;
+  /** Mois affiché = mois courant, ou semaine affichée contient aujourd’hui. */
   isThisMonthView: boolean;
 };
 
@@ -28,14 +33,15 @@ export function RacesCalendarToolbar({
   sportFilter,
   onSportFilter,
   sportsOptions,
-  rangeMonths,
-  onRangeMonths,
-  monthTitle,
+  listRange,
+  onListRange,
+  calendarTitle,
   onPrevMonth,
   onNextMonth,
   onThisMonth,
   isThisMonthView,
 }: RacesCalendarToolbarProps) {
+  const isWeek = listRange === "week";
   return (
     <div className="flex flex-col gap-4 border-b border-[#e5e7eb] bg-[var(--color-bg-card)] px-4 py-4 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-3 md:px-5 dark:border-[var(--color-border-subtle)]">
       <div className="inline-flex w-full max-w-md rounded-full bg-[#f3f4f6] p-1 dark:bg-[var(--color-bg-elevated)] md:w-auto">
@@ -63,13 +69,23 @@ export function RacesCalendarToolbar({
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-2 md:gap-2.5">
-        <button type="button" onClick={onPrevMonth} className={pillNav} aria-label="Mois précédent">
+        <button
+          type="button"
+          onClick={onPrevMonth}
+          className={pillNav}
+          aria-label={isWeek ? "Semaine précédente" : "Mois précédent"}
+        >
           <ChevronLeft size={18} strokeWidth={2.25} />
         </button>
         <h2 className="min-w-[10rem] text-center text-base font-semibold capitalize tracking-tight text-[#111827] dark:text-[var(--color-text)] md:text-lg">
-          {monthTitle}
+          {calendarTitle}
         </h2>
-        <button type="button" onClick={onNextMonth} className={pillNav} aria-label="Mois suivant">
+        <button
+          type="button"
+          onClick={onNextMonth}
+          className={pillNav}
+          aria-label={isWeek ? "Semaine suivante" : "Mois suivant"}
+        >
           <ChevronRight size={18} strokeWidth={2.25} />
         </button>
         {!isThisMonthView ? (
@@ -78,7 +94,7 @@ export function RacesCalendarToolbar({
             onClick={onThisMonth}
             className="rounded-full bg-[#f3f4f6] px-3.5 py-2 text-xs font-semibold text-[#111827] transition hover:bg-[#e5e7eb] dark:bg-[var(--color-bg-elevated)] dark:text-[var(--color-text)] dark:ring-1 dark:ring-white/[0.06] dark:hover:bg-[var(--color-bg-card-hover)]"
           >
-            Mois actuel
+            {isWeek ? "Cette semaine" : "Mois actuel"}
           </button>
         ) : null}
       </div>
@@ -102,10 +118,15 @@ export function RacesCalendarToolbar({
         <label className="flex items-center gap-2 text-xs font-medium text-[#6b7280] dark:text-[var(--color-text-muted)]">
           <span className="hidden sm:inline">Vue liste</span>
           <select
-            value={String(rangeMonths)}
-            onChange={(e) => onRangeMonths(Number(e.target.value) as 1 | 3 | 6)}
+            value={listRange === "week" ? "week" : String(listRange)}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "week") onListRange("week");
+              else onListRange(Number(v) as 1 | 3 | 6);
+            }}
             className="rounded-full border-0 bg-[#f3f4f6] px-3 py-2 text-xs font-semibold text-[#111827] outline-none transition focus:ring-2 focus:ring-[color-mix(in_srgb,#16a34a_28%,transparent)] dark:bg-[var(--color-bg-elevated)] dark:text-[var(--color-text)] dark:ring-1 dark:ring-white/[0.05] dark:focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)]"
           >
+            <option value="week">Semaine</option>
             <option value="1">1 mois</option>
             <option value="3">3 mois</option>
             <option value="6">6 mois</option>

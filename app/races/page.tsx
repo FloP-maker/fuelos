@@ -10,6 +10,8 @@ import { RacesSidebar } from "../components/races/RacesSidebar";
 import type { RacesCalendarViewFilter } from "../components/races/RacesCalendarToolbar";
 import { groupRacesByDate, loadRaces, partitionRacesByUpcoming } from "@/lib/races";
 import type { RaceEntry } from "@/lib/types/race";
+import { addDaysIso, isoMondayOfContainingWeek } from "@/lib/raceNutritionBands";
+import type { RacesCalendarListRange } from "../components/races/RacesCalendarToolbar";
 
 function todayIso(): string {
   const t = new Date();
@@ -26,6 +28,24 @@ function norm(s: string): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function formatFrenchWeekCalendarTitle(weekMondayKey: string): string {
+  const endKey = addDaysIso(weekMondayKey, 6);
+  const a = /^(\d{4})-(\d{2})-(\d{2})$/.exec(weekMondayKey);
+  const b = /^(\d{4})-(\d{2})-(\d{2})$/.exec(endKey);
+  if (!a || !b) return weekMondayKey;
+  const d0 = new Date(Number(a[1]), Number(a[2]) - 1, Number(a[3]));
+  const d1 = new Date(Number(b[1]), Number(b[2]) - 1, Number(b[3]));
+  const sameMonth = d0.getMonth() === d1.getMonth() && d0.getFullYear() === d1.getFullYear();
+  const mo0 = new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(d0);
+  const mo1 = new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(d1);
+  const y0 = d0.getFullYear();
+  const y1 = d1.getFullYear();
+  if (sameMonth) {
+    return `${d0.getDate()}–${d1.getDate()} ${mo0} ${y0}`;
+  }
+  return `${d0.getDate()} ${mo0} ${y0} – ${d1.getDate()} ${mo1} ${y1}`;
+}
+
 export default function RacesPage() {
   usePageTitle("Mes courses");
   const [races, setRaces] = useState<RaceEntry[]>([]);
@@ -34,11 +54,12 @@ export default function RacesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewFilter, setViewFilter] = useState<RacesCalendarViewFilter>("upcoming");
   const [sportFilter, setSportFilter] = useState("all");
-  const [rangeMonths, setRangeMonths] = useState<1 | 3 | 6>(3);
+  const [listRange, setListRange] = useState<RacesCalendarListRange>(3);
   const [view, setView] = useState(() => {
     const t = new Date();
     return { year: t.getFullYear(), month: t.getMonth() };
   });
+  const [weekStartKey, setWeekStartKey] = useState(() => isoMondayOfContainingWeek(new Date()));
 
   const todayStr = useMemo(() => todayIso(), []);
 
@@ -114,25 +135,59 @@ export default function RacesPage() {
   const racesByDate = useMemo(() => groupRacesByDate(filteredForCalendar), [filteredForCalendar]);
 
   const onPrevMonth = useCallback(() => {
+    if (listRange === "week") {
+      setWeekStartKey((k) => addDaysIso(k, -7));
+      return;
+    }
     setView((v) => {
       const m = v.month - 1;
       if (m < 0) return { year: v.year - 1, month: 11 };
       return { year: v.year, month: m };
     });
-  }, []);
+  }, [listRange]);
 
   const onNextMonth = useCallback(() => {
+    if (listRange === "week") {
+      setWeekStartKey((k) => addDaysIso(k, 7));
+      return;
+    }
     setView((v) => {
       const m = v.month + 1;
       if (m > 11) return { year: v.year + 1, month: 0 };
       return { year: v.year, month: m };
     });
-  }, []);
+  }, [listRange]);
 
   const onThisMonth = useCallback(() => {
     const t = new Date();
+    if (listRange === "week") {
+      setWeekStartKey(isoMondayOfContainingWeek(t));
+      return;
+    }
     setView({ year: t.getFullYear(), month: t.getMonth() });
-  }, []);
+  }, [listRange]);
+
+  const calendarTitle = useMemo(() => {
+    if (listRange === "week") return formatFrenchWeekCalendarTitle(weekStartKey);
+    return new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
+      new Date(view.year, view.month, 1)
+    );
+  }, [listRange, weekStartKey, view.year, view.month]);
+
+  const isCalendarAnchorCurrent = useMemo(() => {
+    if (listRange === "week") {
+      return todayStr >= weekStartKey && todayStr <= addDaysIso(weekStartKey, 6);
+    }
+    const t = new Date();
+    return t.getFullYear() === view.year && t.getMonth() === view.month;
+  }, [listRange, weekStartKey, view.year, view.month, todayStr]);
+
+  const onListRangeChange = useCallback((n: RacesCalendarListRange) => {
+    setListRange(n);
+    if (n === "week") {
+      setWeekStartKey(isoMondayOfContainingWeek(new Date(view.year, view.month, 1)));
+    }
+  }, [view.year, view.month]);
 
   const nextMilestoneRace = useMemo(() => upcomingAll[0] ?? null, [upcomingAll]);
 
@@ -141,8 +196,10 @@ export default function RacesPage() {
     if (!m) return;
     const y = Number(m[1]);
     const mo = Number(m[2]) - 1;
+    const d = Number(m[3]);
     if (Number.isFinite(y) && Number.isFinite(mo)) {
       setView({ year: y, month: mo });
+      setWeekStartKey(isoMondayOfContainingWeek(new Date(y, mo, d)));
       setSelectedDate(iso);
     }
   }, []);
@@ -163,7 +220,7 @@ export default function RacesPage() {
               onFocusDate={onFocusDate}
               searchQuery={searchQuery}
               onSearchQuery={setSearchQuery}
-              listRangeMonths={rangeMonths}
+              listRange={listRange}
             />
           </aside>
 
@@ -171,6 +228,9 @@ export default function RacesPage() {
             <RacesMonthCalendar
               viewYear={view.year}
               viewMonth={view.month}
+              weekStartKey={weekStartKey}
+              calendarListRange={listRange}
+              onListRange={onListRangeChange}
               onPrevMonth={onPrevMonth}
               onNextMonth={onNextMonth}
               onThisMonth={onThisMonth}
@@ -183,8 +243,8 @@ export default function RacesPage() {
               sportFilter={sportFilter}
               onSportFilter={setSportFilter}
               sportsOptions={sportsOptions}
-              rangeMonths={rangeMonths}
-              onRangeMonths={setRangeMonths}
+              calendarTitle={calendarTitle}
+              isAnchorCurrent={isCalendarAnchorCurrent}
             />
           </div>
         </div>

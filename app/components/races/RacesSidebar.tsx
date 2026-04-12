@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Activity, ChevronDown, ChevronRight, Mountain, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import type { RaceEntry } from "@/lib/types/race";
 import { getDaysUntilRace } from "@/lib/races";
 import { raceSportVisual } from "@/lib/raceCalendarUi";
+import { getRaceNutritionListStatus, type RaceNutritionListStatus } from "@/lib/raceNutritionListStatus";
+import type { RacesCalendarListRange } from "./RacesCalendarToolbar";
+import { addDaysIso } from "@/lib/raceNutritionBands";
 
 function formatShortDate(iso: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
@@ -24,6 +27,30 @@ function norm(s: string): string {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 }
+
+const NUTRITION_PILL: Record<
+  RaceNutritionListStatus,
+  { emoji: string; className: string; title: string }
+> = {
+  complete: {
+    emoji: "✅",
+    className:
+      "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-[color-mix(in_srgb,var(--color-accent)_35%,transparent)] dark:bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] dark:text-[var(--color-text)]",
+    title: "Nutrition : distance, glucides cibles et sodium renseignés",
+  },
+  partial: {
+    emoji: "⚠️",
+    className:
+      "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-500/35 dark:bg-amber-500/15 dark:text-amber-100",
+    title: "Nutrition : au moins un champ manquant (distance, glucides cibles ou sodium)",
+  },
+  empty: {
+    emoji: "🔴",
+    className:
+      "border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-500/40 dark:bg-rose-500/15 dark:text-rose-100",
+    title: "Nutrition : aucun champ renseigné (distance, glucides cibles, sodium)",
+  },
+};
 
 function countdownPillLabel(r: RaceEntry, mode: "upcoming" | "past"): string {
   const d = getDaysUntilRace(r);
@@ -45,7 +72,7 @@ export type RacesSidebarProps = {
   onFocusDate: (iso: string) => void;
   searchQuery: string;
   onSearchQuery: (q: string) => void;
-  listRangeMonths: 1 | 3 | 6;
+  listRange: RacesCalendarListRange;
 };
 
 function RaceListCard({
@@ -61,16 +88,15 @@ function RaceListCard({
 }) {
   const { Icon } = raceSportVisual(r.sport);
   const pill = countdownPillLabel(r, mode);
-  const hasMeta =
-    (typeof r.distance === "number" && r.distance > 0) ||
-    (typeof r.elevationGain === "number" && r.elevationGain > 0);
+  const nutritionStatus = mode === "upcoming" ? getRaceNutritionListStatus(r) : null;
+  const nutritionSpec = nutritionStatus ? NUTRITION_PILL[nutritionStatus] : null;
 
   return (
     <Link
       href={`/races/${r.id}`}
       onClick={onPick}
       className={[
-        "group relative block overflow-hidden rounded-xl border border-[#e5e7eb] bg-white py-3 pl-3.5 pr-3 shadow-[var(--shadow-xs)] transition",
+        "group relative block cursor-pointer overflow-hidden rounded-xl border border-[#e5e7eb] bg-white py-3 pl-3.5 pr-3 shadow-[var(--shadow-xs)] transition",
         "dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-races-veil)] dark:shadow-[var(--shadow-xs)] dark:ring-1 dark:ring-white/[0.04]",
         "border-l-[3px]",
         mode === "upcoming"
@@ -90,40 +116,45 @@ function RaceListCard({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-[#111827] dark:text-[var(--color-text)]">{r.name}</p>
               <p className="mt-0.5 text-xs text-[#6b7280] dark:text-[var(--color-text-muted)]">
                 {formatShortDate(r.date)}
                 {r.sport ? ` · ${r.sport}` : ""}
+                {typeof r.distance === "number" && r.distance > 0 ? (
+                  <span className="tabular-nums">{` · ${r.distance} km`}</span>
+                ) : null}
+                {typeof r.elevationGain === "number" && r.elevationGain > 0 ? (
+                  <span className="tabular-nums">{` · D+ ${r.elevationGain} m`}</span>
+                ) : null}
               </p>
             </div>
-            <span
-              className={[
-                "shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold tabular-nums",
-                mode === "upcoming"
-                  ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/80 dark:bg-[color-mix(in_srgb,var(--color-accent)_14%,transparent)] dark:text-[var(--color-text)] dark:ring-[color-mix(in_srgb,var(--color-accent)_24%,transparent)]"
-                  : "bg-zinc-100 text-zinc-600 ring-1 ring-zinc-200/80 dark:bg-[color-mix(in_srgb,var(--color-text-muted)_10%,var(--color-bg-elevated))] dark:text-[var(--color-text-muted)] dark:ring-[var(--color-border-subtle)]",
-              ].join(" ")}
-            >
-              {pill}
-            </span>
-          </div>
-          {hasMeta ? (
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#6b7280] dark:text-[var(--color-text-muted)]">
-              {typeof r.distance === "number" && r.distance > 0 ? (
-                <span className="inline-flex items-center gap-1">
-                  <Activity className="size-3.5 shrink-0 opacity-80" aria-hidden />
-                  <span className="tabular-nums">{r.distance} km</span>
+            <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+              {nutritionSpec ? (
+                <span
+                  className={[
+                    "inline-flex size-8 items-center justify-center rounded-full border text-[13px] leading-none ring-1 ring-black/[0.04] dark:ring-white/[0.06]",
+                    nutritionSpec.className,
+                  ].join(" ")}
+                  title={nutritionSpec.title}
+                  aria-label={nutritionSpec.title}
+                  role="img"
+                >
+                  <span aria-hidden>{nutritionSpec.emoji}</span>
                 </span>
               ) : null}
-              {typeof r.elevationGain === "number" && r.elevationGain > 0 ? (
-                <span className="inline-flex items-center gap-1">
-                  <Mountain className="size-3.5 shrink-0 opacity-80" aria-hidden />
-                  <span className="tabular-nums">D+ {r.elevationGain} m</span>
-                </span>
-              ) : null}
+              <span
+                className={[
+                  "rounded-full px-2.5 py-0.5 text-[11px] font-semibold tabular-nums",
+                  mode === "upcoming"
+                    ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/80 dark:bg-[color-mix(in_srgb,var(--color-accent)_14%,transparent)] dark:text-[var(--color-text)] dark:ring-[color-mix(in_srgb,var(--color-accent)_24%,transparent)]"
+                    : "bg-zinc-100 text-zinc-600 ring-1 ring-zinc-200/80 dark:bg-[color-mix(in_srgb,var(--color-text-muted)_10%,var(--color-bg-elevated))] dark:text-[var(--color-text-muted)] dark:ring-[var(--color-border-subtle)]",
+                ].join(" ")}
+              >
+                {pill}
+              </span>
             </div>
-          ) : null}
+          </div>
           <span className="mt-2 inline-flex items-center gap-0.5 text-xs font-semibold text-[#16a34a] transition group-hover:gap-1 dark:text-[var(--color-accent)]">
             Voir la fiche
             <ChevronRight className="size-3.5" strokeWidth={2.25} aria-hidden />
@@ -164,19 +195,27 @@ export function RacesSidebar({
   onFocusDate,
   searchQuery,
   onSearchQuery,
-  listRangeMonths,
+  listRange,
 }: RacesSidebarProps) {
   const [openUp, setOpenUp] = useState(true);
   const [openPast, setOpenPast] = useState(false);
 
   const maxListDate = useMemo(() => {
+    if (listRange === "week") {
+      const t = new Date();
+      const y = t.getFullYear();
+      const m = String(t.getMonth() + 1).padStart(2, "0");
+      const d = String(t.getDate()).padStart(2, "0");
+      const todayKey = `${y}-${m}-${d}`;
+      return addDaysIso(todayKey, 6);
+    }
     const t = new Date();
-    t.setMonth(t.getMonth() + listRangeMonths);
+    t.setMonth(t.getMonth() + listRange);
     const y = t.getFullYear();
     const m = String(t.getMonth() + 1).padStart(2, "0");
     const d = String(t.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
-  }, [listRangeMonths]);
+  }, [listRange]);
 
   const upcomingFiltered = useMemo(() => {
     const q = norm(searchQuery.trim());

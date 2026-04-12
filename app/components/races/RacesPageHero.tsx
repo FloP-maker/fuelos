@@ -1,20 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Mountain, Plus } from "lucide-react";
+import { Mountain, Plus } from "lucide-react";
 import type { RaceEntry } from "@/lib/types/race";
-import { getDaysUntilRace, getRaceApproachProgress } from "@/lib/races";
+import { getDaysUntilRace } from "@/lib/races";
 import { raceSportVisual } from "@/lib/raceCalendarUi";
+import { RacesTodayCard } from "./RacesTodayCard";
 
 export type RacesPageHeroProps = {
   nextRace: RaceEntry | null;
   onAddRace: () => void;
 };
 
+function countdownJLabel(days: number): string {
+  if (days <= 0) return "J0";
+  return `J-${days}`;
+}
+
+function heroNutritionRecommendation(days: number): string {
+  if (days > 30) {
+    return "Phase de préparation — maintiens 5–7 g/kg de glucides/jour";
+  }
+  if (days >= 6) {
+    return "Approche de la course — augmente progressivement les glucides";
+  }
+  if (days >= 3) {
+    return "🔥 Phase de charge — vise 8–10 g/kg/jour";
+  }
+  return "⚡ Jour course — glucides rapides, hydratation maximale";
+}
+
 export function RacesPageHero({ nextRace, onAddRace }: RacesPageHeroProps) {
   const days = nextRace ? getDaysUntilRace(nextRace) : null;
-  const progress = nextRace ? getRaceApproachProgress(nextRace) : 0;
-  const pct = Math.round(progress * 100);
   const SportIcon = nextRace ? raceSportVisual(nextRace.sport).Icon : null;
 
   return (
@@ -71,93 +88,58 @@ export function RacesPageHero({ nextRace, onAddRace }: RacesPageHeroProps) {
           </button>
         </div>
 
-        <div className="flex flex-col gap-6 lg:flex-row lg:justify-end">
-          <div className="w-full max-w-xl lg:ml-auto lg:shrink-0">
-            {nextRace && days != null && SportIcon ? (
-              <div className="rounded-xl border border-white/10 bg-white/[0.07] p-4 backdrop-blur-sm sm:p-5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
-                  Prochaine course
-                </p>
-                <div className="mt-3 flex items-start gap-3">
-                  <span
-                    className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/12 text-white ring-1 ring-white/20"
-                    aria-hidden
-                  >
-                    <SportIcon className="size-5 opacity-95" strokeWidth={2} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-2xl font-bold leading-[1.15] tracking-tight text-white sm:text-3xl md:text-4xl">
-                      {days === 0 ? (
-                        <>
-                          {nextRace.name}
-                          <span className="mt-1 block text-lg font-semibold text-emerald-200 sm:text-xl">
-                            Aujourd&apos;hui
-                          </span>
-                        </>
-                      ) : days === 1 ? (
-                        <>
-                          <span className="break-words">{nextRace.name}</span>{" "}
-                          <span className="font-semibold text-emerald-200/95">demain</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="break-words">{nextRace.name}</span>{" "}
-                          <span className="whitespace-nowrap font-semibold text-emerald-200/95">
-                            dans {days} jours
-                          </span>
-                        </>
-                      )}
-                    </p>
-                    {nextRace.location ? (
-                      <p className="mt-2 truncate text-xs text-zinc-400 sm:text-sm">{nextRace.location}</p>
-                    ) : null}
-                  </div>
-                </div>
+        <RacesTodayCard nextRace={nextRace} />
 
-                <div className="mt-5">
-                  <div className="mb-1.5 flex items-center justify-between gap-2 text-[11px] text-zinc-400">
-                    <span>Avancement vers le jour J</span>
-                    <span className="tabular-nums text-zinc-300">{pct}%</span>
-                  </div>
-                  <div
-                    className="h-2.5 overflow-hidden rounded-full bg-black/35 ring-1 ring-inset ring-white/10"
-                    role="progressbar"
-                    aria-valuenow={pct}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label="Progression vers la date de la course"
-                  >
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 shadow-[0_0_20px_rgba(52,211,153,0.35)] transition-[width] duration-500 ease-out"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-
-                <Link
-                  href={`/races/${nextRace.id}`}
-                  className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-emerald-300 transition hover:text-emerald-200"
+        <div className="relative z-[1] mt-0 sm:mt-1">
+          {nextRace && days != null && SportIcon ? (
+            <div className="rounded-2xl border border-white/15 bg-white/[0.07] px-5 py-8 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.5)] backdrop-blur-md sm:px-8 sm:py-10 md:px-10 md:py-11">
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-8">
+                <span
+                  className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/20 sm:size-16"
+                  aria-hidden
                 >
-                  Fiche et plan
-                  <ChevronRight className="size-4" strokeWidth={2.25} aria-hidden />
-                </Link>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-white/10 bg-white/[0.07] p-4 backdrop-blur-sm sm:p-5">
-                <div className="flex items-start gap-3">
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white ring-1 ring-white/15">
-                    <Mountain className="size-5 opacity-90" strokeWidth={2} aria-hidden />
-                  </span>
-                  <div>
-                    <p className="text-lg font-bold text-white">Aucune course à venir</p>
-                    <p className="mt-1 text-sm leading-relaxed text-zinc-300">
-                      Utilise le bouton « Nouvelle course » ci-dessus pour ajouter ton prochain objectif.
-                    </p>
-                  </div>
+                  <SportIcon className="size-7 opacity-95 sm:size-8" strokeWidth={2} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="break-words text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl md:text-6xl">
+                    {nextRace.name}
+                  </p>
+                  <p
+                    className="mt-3 font-mono text-3xl font-bold tabular-nums tracking-tight text-emerald-200 sm:text-4xl md:text-[2.75rem]"
+                    aria-label={`Compte à rebours : ${countdownJLabel(days)}`}
+                  >
+                    {countdownJLabel(days)}
+                  </p>
+                  <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/90 sm:text-lg">
+                    {heroNutritionRecommendation(days)}
+                  </p>
+                  {nextRace.location ? (
+                    <p className="mt-3 text-sm text-zinc-400">{nextRace.location}</p>
+                  ) : null}
+                  <Link
+                    href={`/races/${nextRace.id}`}
+                    className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-emerald-300 transition hover:text-emerald-200 sm:text-base"
+                  >
+                    Voir mon plan nutritionnel →
+                  </Link>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-white/15 bg-white/[0.07] px-5 py-8 backdrop-blur-md sm:px-8 sm:py-10">
+              <div className="flex flex-col items-start gap-4 sm:flex-row sm:gap-6">
+                <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/15 sm:size-16">
+                  <Mountain className="size-7 opacity-90 sm:size-8" strokeWidth={2} aria-hidden />
+                </span>
+                <div>
+                  <p className="text-2xl font-bold text-white sm:text-3xl">Aucune course à venir</p>
+                  <p className="mt-2 max-w-lg text-base leading-relaxed text-white/85">
+                    Utilise le bouton « Nouvelle course » ci-dessus pour ajouter ton prochain objectif.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>

@@ -53,23 +53,120 @@ export function addDaysIso(iso: string, delta: number): string {
   return dateKeyFromDate(dt);
 }
 
+/** Lundi (ISO semaine) de la semaine calendaire qui contient `d` (heure locale). */
+export function isoMondayOfContainingWeek(d: Date): string {
+  const dt = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const dow = dt.getDay();
+  const offset = dow === 0 ? -6 : 1 - dow;
+  dt.setDate(dt.getDate() + offset);
+  return dateKeyFromDate(dt);
+}
+
 const CHARGE_CLASS =
   "border border-[color-mix(in_srgb,var(--color-accent)_28%,transparent)] bg-[color-mix(in_srgb,var(--color-accent)_12%,var(--color-bg-elevated))] text-[var(--color-text)]";
 const RECOVERY_CLASS =
   "border border-[var(--color-border-subtle)] bg-[color-mix(in_srgb,var(--color-text-muted)_8%,var(--color-bg-elevated))] text-[var(--color-text-muted)]";
 
-function chargeDays(r: RaceEntry): number {
+/** Jours de charge effectifs (0 = désactivé). */
+export function getEffectiveNutritionChargeDaysBefore(r: RaceEntry): number {
   const v = r.nutritionChargeDaysBefore;
   if (v === 0) return 0;
   if (v == null || !Number.isFinite(v)) return DEFAULT_NUTRITION_CHARGE_DAYS_BEFORE;
   return Math.min(21, Math.max(1, Math.floor(v)));
 }
 
-function recoveryDays(r: RaceEntry): number {
+/** Jours de récup effectifs après J (0 = désactivé). */
+export function getEffectiveNutritionRecoveryDaysAfter(r: RaceEntry): number {
   const v = r.nutritionRecoveryDaysAfter;
   if (v === 0) return 0;
   if (v == null || !Number.isFinite(v)) return DEFAULT_NUTRITION_RECOVERY_DAYS_AFTER;
   return Math.min(21, Math.max(1, Math.floor(v)));
+}
+
+function chargeDays(r: RaceEntry): number {
+  return getEffectiveNutritionChargeDaysBefore(r);
+}
+
+function recoveryDays(r: RaceEntry): number {
+  return getEffectiveNutritionRecoveryDaysAfter(r);
+}
+
+export type NutritionDayCellTint = "race" | "charge" | "recovery";
+
+const TINT_PRIO: Record<NutritionDayCellTint, number> = {
+  race: 3,
+  charge: 2,
+  recovery: 1,
+};
+
+/**
+ * Teinte par jour pour le calendrier : jour J (prioritaire), charge J−n…J−1, récup J+1…J+n.
+ * Fenêtres charge/récup ignorées si les jours effectifs sont 0 sur la fiche.
+ */
+export function nutritionDayTintsFromRaces(races: RaceEntry[]): Map<string, NutritionDayCellTint> {
+  const out = new Map<string, NutritionDayCellTint>();
+  const put = (key: string, tint: NutritionDayCellTint) => {
+    const cur = out.get(key);
+    if (!cur || TINT_PRIO[tint] > TINT_PRIO[cur]) out.set(key, tint);
+  };
+  for (const r of races) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(r.date)) continue;
+    put(r.date, "race");
+    const n = getEffectiveNutritionChargeDaysBefore(r);
+    for (let i = -n; i <= -1; i++) {
+      put(addDaysIso(r.date, i), "charge");
+    }
+    const m = getEffectiveNutritionRecoveryDaysAfter(r);
+    for (let j = 1; j <= m; j++) {
+      put(addDaysIso(r.date, j), "recovery");
+    }
+  }
+  return out;
+}
+
+/** Différence en jours calendaires entre deux clés ISO `YYYY-MM-DD` (to − from). */
+export function calendarDaysBetweenIso(fromKey: string, toKey: string): number {
+  const a = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fromKey.trim());
+  const b = /^(\d{4})-(\d{2})-(\d{2})$/.exec(toKey.trim());
+  if (!a || !b) return 0;
+  const ta = Date.UTC(Number(a[1]), Number(a[2]) - 1, Number(a[3])) / 86_400_000;
+  const tb = Date.UTC(Number(b[1]), Number(b[2]) - 1, Number(b[3])) / 86_400_000;
+  return Math.round(tb - ta);
+}
+
+export type NutritionCalendarPhase = "preparation" | "charge" | "course" | "recovery";
+
+/**
+ * Phase nutritionnelle du jour (fenêtres charge J−n…J−1 et récup J+1…J+m).
+ * Si la charge est désactivée (0), la phase « charge » n’existe pas.
+ */
+export function getNutritionCalendarPhase(
+  r: RaceEntry,
+  now: Date = new Date()
+): NutritionCalendarPhase | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(r.date)) return null;
+  const todayKey = dateKeyFromDate(now);
+  const n = getEffectiveNutritionChargeDaysBefore(r);
+  const m = getEffectiveNutritionRecoveryDaysAfter(r);
+
+  const chargeStart = n > 0 ? addDaysIso(r.date, -n) : null;
+  const chargeEnd = n > 0 ? addDaysIso(r.date, -1) : null;
+  const recoveryStart = m > 0 ? addDaysIso(r.date, 1) : null;
+  const recoveryEnd = m > 0 ? addDaysIso(r.date, m) : null;
+
+  if (m > 0 && recoveryStart && recoveryEnd && todayKey >= recoveryStart && todayKey <= recoveryEnd) {
+    return "recovery";
+  }
+  if (todayKey === r.date) {
+    return "course";
+  }
+  if (n > 0 && chargeStart && chargeEnd && todayKey >= chargeStart && todayKey <= chargeEnd) {
+    return "charge";
+  }
+  if (todayKey < r.date) {
+    return "preparation";
+  }
+  return null;
 }
 
 /** Bandeaux charge (J−n…J−1) et récup (J+1…J+n) pour une course. */

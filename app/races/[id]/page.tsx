@@ -112,6 +112,15 @@ export default function RaceDetailPage() {
 
         <section className="fuel-card mt-8 p-5 md:p-6">
           <h2 className="font-display text-lg font-bold text-[var(--color-text)]">Périodes nutrition (calendrier)</h2>
+          <p className="mt-1.5 text-xs italic text-gray-400 dark:text-zinc-500">
+            Protocole basé sur les recommandations ACSM / IOC — charge glucidique : 8–12 g/kg sur J-3 à J-1 ·{" "}
+            <Link
+              href="/analyses"
+              className="text-gray-500 underline-offset-2 hover:text-gray-600 hover:underline dark:text-zinc-400 dark:hover:text-zinc-300"
+            >
+              Bibliothèque
+            </Link>
+          </p>
           <p className="mt-2 text-sm text-[var(--color-text-muted)]">
             Ces réglages dessinent les bandeaux <strong className="text-[var(--color-text)]">avant</strong> (charge) et{" "}
             <strong className="text-[var(--color-text)]">après</strong> (récup) la course sur la page Mes courses.{" "}
