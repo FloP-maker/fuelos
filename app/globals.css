@@ -424,9 +424,53 @@ textarea:focus {
     margin-bottom: 0;
   }
 
-  .races-page .races-next-milestone > div {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  .races-page .races-next-milestone-card {
+    position: relative;
+    overflow: hidden;
     border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background-color: #f4f7f4;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
+    transition:
+      transform 200ms ease,
+      box-shadow 200ms ease;
+  }
+
+  .races-page .races-next-milestone-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.03;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    background-size: 160px 160px;
+  }
+
+  html.dark .races-page .races-next-milestone-card::after {
+    mix-blend-mode: overlay;
+    opacity: 0.04;
+  }
+
+  .races-page .races-next-milestone-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 44px rgba(0, 0, 0, 0.18);
+  }
+
+  .races-page .races-next-milestone-card > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  html.dark .races-page .races-next-milestone-card {
+    background-color: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-subtle));
+    border-color: var(--fuel-card-border);
+    box-shadow: var(--fuel-card-shadow);
+  }
+
+  html.dark .races-page .races-next-milestone-card:hover {
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
   }
 
   /* Grille Mes courses */

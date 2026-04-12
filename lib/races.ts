@@ -74,6 +74,20 @@ export function getRaceApproachProgress(race: RaceEntry): number {
   return Math.max(0, Math.min(1, raw));
 }
 
+/** Fenêtre « préparation » en jours (même logique que `getRaceApproachProgress`), pour libellés type « ~120j ». */
+export function getRacePrepWindowDays(race: RaceEntry): number {
+  const parts = parseRaceDateParts(race.date);
+  if (!parts) return 120;
+  const [y, mo, d] = parts;
+  const endMs = new Date(y, mo - 1, d, 12, 0, 0, 0).getTime();
+  const createdMs = Date.parse(race.createdAt);
+  const fallbackStart = endMs - 150 * MS_PER_DAY;
+  const startMs =
+    Number.isFinite(createdMs) && createdMs < endMs ? createdMs : fallbackStart;
+  const span = Math.max(MS_PER_DAY, endMs - startMs);
+  return Math.max(1, Math.round(span / MS_PER_DAY));
+}
+
 export function getRacePhase(race: RaceEntry): RacePhase {
   if (race.debriefSnapshot != null && typeof race.debriefSnapshot === "object") {
     return "done";

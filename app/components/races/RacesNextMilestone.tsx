@@ -3,17 +3,16 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { Mountain } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { RaceEntry } from "@/lib/types/race";
-import { getDaysUntilRace } from "@/lib/races";
+import { getDaysUntilRace, getRaceApproachProgress, getRacePrepWindowDays } from "@/lib/races";
 
 export type RacesNextMilestoneProps = {
   nextRace: RaceEntry | null;
 };
 
-function countdownJLabel(days: number): string {
-  if (days < 0) return "—";
-  return `J-${days}`;
-}
+const RING_R = 46;
+const RING_C = 2 * Math.PI * RING_R;
 
 function heroNutritionRecommendation(days: number): string {
   if (days > 30) {
@@ -28,16 +27,85 @@ function heroNutritionRecommendation(days: number): string {
   return "⚡ Jour course — glucides rapides, hydratation maximale";
 }
 
-const cardOuter: CSSProperties = {
-  background: "white",
-  borderRadius: 16,
-  padding: "1.5rem",
-  margin: 0,
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: "1rem",
-};
+/** Vert #2d6a4f → orange #ea580c quand il reste &lt; 30 j. */
+function accentForDaysLeft(daysLeft: number): string {
+  if (daysLeft >= 30) return "#2d6a4f";
+  const t = Math.max(0, Math.min(1, daysLeft / 30));
+  const r2 = 234;
+  const g2 = 88;
+  const b2 = 12;
+  const r1 = 45;
+  const g1 = 106;
+  const b1 = 79;
+  const r = Math.round(r2 + t * (r1 - r2));
+  const g = Math.round(g2 + t * (g1 - g2));
+  const b = Math.round(b2 + t * (b1 - b2));
+  return `rgb(${r},${g},${b})`;
+}
+
+function PrepCountdownRing({
+  daysRemaining,
+  progress,
+}: {
+  daysRemaining: number;
+  progress: number;
+}) {
+  const [drawn, setDrawn] = useState(false);
+
+  useEffect(() => {
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      setDrawn(true);
+      return;
+    }
+    const id = requestAnimationFrame(() => setDrawn(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const p = Math.max(0, Math.min(1, progress));
+  const dashOffset = drawn ? RING_C * (1 - p) : RING_C;
+  const stroke = accentForDaysLeft(daysRemaining);
+  const displayDays = Math.max(0, daysRemaining);
+
+  return (
+    <div
+      className="relative flex size-[118px] shrink-0 flex-col items-center justify-center"
+      aria-label={`${displayDays} jours avant la course, environ ${Math.round(p * 100)} % de la période de préparation écoulée`}
+    >
+      <svg
+        className="absolute inset-0 size-full -rotate-90 text-[rgba(0,0,0,0.08)] dark:text-white/10"
+        viewBox="0 0 120 120"
+        aria-hidden
+      >
+        <circle cx="60" cy="60" r={RING_R} fill="none" stroke="currentColor" strokeWidth="5" />
+        <circle
+          cx="60"
+          cy="60"
+          r={RING_R}
+          fill="none"
+          stroke={stroke}
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeDasharray={RING_C}
+          strokeDashoffset={dashOffset}
+          style={{
+            transition: "stroke-dashoffset 1s ease-out, stroke 0.35s ease",
+          }}
+        />
+      </svg>
+      <div className="relative z-10 flex flex-col items-center">
+        <span className="text-[2rem] font-extrabold tabular-nums leading-none tracking-tight text-[#1a1a1a] dark:text-[var(--color-text)]">
+          {displayDays}
+        </span>
+        <span className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5a6a5a] dark:text-[var(--color-text-muted)]">
+          jours
+        </span>
+      </div>
+    </div>
+  );
+}
 
 const labelStyle: CSSProperties = {
   fontSize: "0.75rem",
@@ -48,16 +116,10 @@ const labelStyle: CSSProperties = {
   marginBottom: "0.25rem",
 };
 
-const titleStyle: CSSProperties = {
-  fontSize: "1.5rem",
-  fontWeight: 800,
-  color: "#1a1a1a",
-};
-
 const subtitleStyle: CSSProperties = {
   fontSize: "0.875rem",
   color: "#5a6a5a",
-  marginTop: "0.25rem",
+  marginTop: "0.75rem",
 };
 
 const linkStyle: CSSProperties = {
@@ -69,67 +131,74 @@ const linkStyle: CSSProperties = {
   textDecoration: "none",
 };
 
-const jBadgeStyle: CSSProperties = {
-  background: "#2d6a4f",
-  color: "white",
-  fontSize: "1.75rem",
-  fontWeight: 800,
-  borderRadius: 12,
-  padding: "1rem 1.25rem",
-  textAlign: "center",
-  lineHeight: 1,
-  flexShrink: 0,
-};
-
-const emptyCardOuter: CSSProperties = {
-  ...cardOuter,
-  alignItems: "flex-start",
-  justifyContent: "flex-start",
-};
-
 export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
   const days = nextRace ? getDaysUntilRace(nextRace) : null;
+  const approach = nextRace ? getRaceApproachProgress(nextRace) : 0;
+  const windowDays = nextRace ? getRacePrepWindowDays(nextRace) : 120;
+  const daysRem = days != null ? Math.max(0, days) : 0;
+  const barFill = accentForDaysLeft(daysRem);
 
   return (
     <div className="races-next-milestone relative">
       {nextRace && days != null ? (
-        <div style={cardOuter}>
-          <div style={{ minWidth: 0, flex: 1 }}>
+        <div className="races-next-milestone-card flex items-stretch gap-5 px-6 py-5 md:gap-6 md:px-7 md:py-6">
+          <div className="min-w-0 flex-1">
             <div style={labelStyle}>Prochain objectif</div>
-            <div style={titleStyle}>{nextRace.name}</div>
+            <div className="mt-1 flex items-start gap-2.5">
+              <Mountain
+                className="mt-0.5 size-6 shrink-0 text-[#2d6a4f] dark:text-[var(--color-primary-light)]"
+                strokeWidth={2.25}
+                aria-hidden
+              />
+              <div className="text-xl font-extrabold leading-tight tracking-tight text-[#1a1a1a] dark:text-[var(--color-text)] md:text-2xl">
+                {nextRace.name}
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <p className="text-[11px] font-medium leading-snug text-[#5a6a5a] dark:text-[var(--color-text-muted)] md:text-xs">
+                Progression préparation · {daysRem}j restants sur ~{windowDays}j
+              </p>
+              <div
+                className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[#dfe6df] dark:bg-white/10"
+                role="progressbar"
+                aria-valuenow={Math.round(approach * 100)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Progression préparation"
+              >
+                <div
+                  className="h-full rounded-full transition-[width] duration-300 ease-out"
+                  style={{
+                    width: `${Math.round(approach * 100)}%`,
+                    backgroundColor: barFill,
+                  }}
+                />
+              </div>
+            </div>
+
             <div style={subtitleStyle}>{heroNutritionRecommendation(days)}</div>
             <Link href={`/races/${nextRace.id}`} style={linkStyle}>
               Voir mon plan nutritionnel →
             </Link>
           </div>
-          <div style={jBadgeStyle} aria-label={`Compte à rebours : ${countdownJLabel(days)}`}>
-            {countdownJLabel(days)}
-          </div>
+
+          <PrepCountdownRing daysRemaining={days} progress={approach} />
         </div>
       ) : (
-        <div style={emptyCardOuter}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
-            <span
-              style={{
-                display: "flex",
-                width: 56,
-                height: 56,
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: 12,
-                background: "#f0f4f1",
-                color: "#1a1a1a",
-                flexShrink: 0,
-              }}
-              aria-hidden
-            >
-              <Mountain className="size-7" strokeWidth={2} />
-            </span>
-            <div>
-              <div style={{ ...titleStyle, fontSize: "1.25rem" }}>Aucune course à venir</div>
-              <div style={subtitleStyle}>
-                Utilise le bouton « Nouvelle course » en haut de page pour ajouter ton prochain objectif.
-              </div>
+        <div className="races-next-milestone-card flex items-start justify-start gap-4 px-6 py-5 md:px-7 md:py-6">
+          <span
+            className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-[#e8ede9] text-[#1a1a1a] dark:bg-white/10 dark:text-[var(--color-text)]"
+            aria-hidden
+          >
+            <Mountain className="size-7" strokeWidth={2} />
+          </span>
+          <div>
+            <div className="text-xl font-extrabold text-[#1a1a1a] dark:text-[var(--color-text)] md:text-2xl">
+              Aucune course à venir
+            </div>
+            <div className="mt-2 text-sm text-[#5a6a5a] dark:text-[var(--color-text-muted)]">
+              Utilise le bouton « Nouvelle course » en haut de page pour ajouter ton prochain objectif.
             </div>
           </div>
         </div>
