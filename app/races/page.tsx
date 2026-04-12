@@ -1,9 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import usePageTitle from "../lib/hooks/usePageTitle";
+import { useProfile } from "@/hooks/useProfile";
 import { Header } from "../components/Header";
 import { AddRaceModal } from "../components/AddRaceModal";
+import { RacesAuthGateModal } from "../components/races/RacesAuthGateModal";
+import { RacePlanFollowupModal } from "../components/races/RacePlanFollowupModal";
 import { RacesMonthCalendar } from "../components/races/RacesMonthCalendar";
 import { RacesNextMilestone } from "../components/races/RacesNextMilestone";
 import { RacesPageHero } from "../components/races/RacesPageHero";
@@ -50,8 +54,13 @@ function formatFrenchWeekCalendarTitle(weekMondayKey: string): string {
 
 export default function RacesPage() {
   usePageTitle("Mes courses");
+  const { status } = useSession();
+  const { profile: fuelProfile } = useProfile();
   const [races, setRaces] = useState<RaceEntry[]>([]);
   const [addOpen, setAddOpen] = useState(false);
+  const [authGateOpen, setAuthGateOpen] = useState(false);
+  const [planNudgeOpen, setPlanNudgeOpen] = useState(false);
+  const [lastSavedRace, setLastSavedRace] = useState<RaceEntry | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewFilter, setViewFilter] = useState<RacesCalendarViewFilter>("upcoming");
@@ -193,6 +202,25 @@ export default function RacesPage() {
 
   const nextMilestoneRace = useMemo(() => upcomingAll[0] ?? null, [upcomingAll]);
 
+  const openAddRaceModal = useCallback(() => setAddOpen(true), []);
+
+  const onRequestAddRace = useCallback(() => {
+    if (status === "unauthenticated") {
+      setAuthGateOpen(true);
+      return;
+    }
+    openAddRaceModal();
+  }, [status, openAddRaceModal]);
+
+  const onRaceSaved = useCallback(
+    (race: RaceEntry) => {
+      refresh();
+      setLastSavedRace(race);
+      setPlanNudgeOpen(true);
+    },
+    [refresh]
+  );
+
   const onFocusDate = useCallback((iso: string) => {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
     if (!m) return;
@@ -210,7 +238,7 @@ export default function RacesPage() {
     <>
       <Header />
       <main className="fuel-main races-page">
-        <RacesPageHero onAddRace={() => setAddOpen(true)} />
+        <RacesPageHero onAddRace={onRequestAddRace} />
         <div className="races-layout">
           <div className="races-layout__main min-w-0">
             <RacesNextMilestone nextRace={nextMilestoneRace} />
@@ -258,7 +286,24 @@ export default function RacesPage() {
         </div>
       </main>
 
-      <AddRaceModal open={addOpen} onClose={() => setAddOpen(false)} onSaved={refresh} />
+      <RacesAuthGateModal
+        open={authGateOpen}
+        onClose={() => setAuthGateOpen(false)}
+        onContinueLocal={() => {
+          setAuthGateOpen(false);
+          openAddRaceModal();
+        }}
+      />
+      <AddRaceModal open={addOpen} onClose={() => setAddOpen(false)} onSaved={onRaceSaved} />
+      <RacePlanFollowupModal
+        open={planNudgeOpen}
+        race={lastSavedRace}
+        fuelProfile={fuelProfile}
+        onClose={() => {
+          setPlanNudgeOpen(false);
+          setLastSavedRace(null);
+        }}
+      />
     </>
   );
 }

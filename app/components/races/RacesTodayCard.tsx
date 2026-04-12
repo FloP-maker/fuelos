@@ -80,7 +80,7 @@ export function RacesTodayCard({ nextRace }: RacesTodayCardProps) {
 
   return (
     <div
-      className="races-today-card rounded-2xl bg-[color-mix(in_srgb,var(--color-bg-card)_92%,var(--color-bg-subtle))] px-4 py-4 dark:bg-[color-mix(in_srgb,var(--color-bg-card)_88%,var(--color-bg))] md:px-5"
+      className="races-today-card rounded-2xl bg-[color-mix(in_srgb,var(--color-bg-card)_92%,var(--color-bg-subtle))] px-4 py-4 dark:bg-[color-mix(in_srgb,var(--color-bg-card)_88%,var(--color-bg))]"
       aria-label="Aujourd’hui"
     >
       <div className="mb-3 flex items-center gap-2.5">

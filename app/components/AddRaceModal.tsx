@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { addRace } from '@/lib/races';
+import type { RaceEntry } from '@/lib/types/race';
 
 const DISCIPLINES = ['Trail', 'Route', 'Ultra', 'Triathlon', 'Vélo'] as const;
 
@@ -18,7 +19,7 @@ export type AddRaceModalProps = {
   open: boolean;
   onClose: () => void;
   /** Appelé après enregistrement réussi (course ajoutée). */
-  onSaved?: () => void;
+  onSaved?: (race: RaceEntry) => void;
 };
 
 export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
@@ -67,7 +68,7 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
     const trimmed = name.trim();
     if (!trimmed || !date) return;
 
-    addRace({
+    const saved = addRace({
       name: trimmed,
       date,
       startTime: startTime.trim() || undefined,
@@ -86,7 +87,7 @@ export function AddRaceModal({ open, onClose, onSaved }: AddRaceModalProps) {
     setRecoveryDays(4);
     setChargeLabel('');
     setRecoveryLabel('');
-    onSaved?.();
+    onSaved?.(saved);
     onClose();
   };
 

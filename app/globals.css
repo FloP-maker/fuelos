@@ -375,6 +375,8 @@ textarea:focus {
   .races-page-hero__inner {
     position: relative;
     z-index: 4;
+    isolation: isolate;
+    pointer-events: auto;
     display: flex;
     flex: 1 1 auto;
     flex-direction: row;
@@ -440,6 +442,8 @@ textarea:focus {
   }
 
   .races-page-hero__cta {
+    position: relative;
+    z-index: 10;
     align-self: flex-start;
     margin-top: 0;
     margin-bottom: 0;
@@ -448,6 +452,7 @@ textarea:focus {
     justify-content: center;
     gap: 0.35rem;
     flex-shrink: 0;
+    pointer-events: auto;
     background: rgba(255, 255, 255, 0.15);
     color: #ffffff;
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -509,6 +514,8 @@ textarea:focus {
   .races-page .races-next-milestone-card {
     position: relative;
     overflow: hidden;
+    box-sizing: border-box;
+    padding: 16px;
     border-radius: 16px;
     border: 1px solid rgba(0, 0, 0, 0.06);
     background-color: #f4f7f4;

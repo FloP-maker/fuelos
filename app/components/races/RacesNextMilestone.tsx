@@ -116,7 +116,7 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
   return (
     <div className="races-next-milestone relative">
       {nextRace && days != null ? (
-        <div className="races-next-milestone-card flex items-stretch gap-5 px-6 py-5 md:gap-6 md:px-7 md:py-6">
+        <div className="races-next-milestone-card flex items-stretch gap-5 md:gap-6">
           <div className="flex min-w-0 flex-1 flex-col gap-4">
             <div className="flex flex-col gap-2">
               <div className="races-section-eyebrow">Prochain objectif</div>
@@ -166,7 +166,7 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
           <PrepCountdownRing daysRemaining={days} progress={approach} />
         </div>
       ) : (
-        <div className="races-next-milestone-card flex items-start justify-start gap-4 px-6 py-5 md:px-7 md:py-6">
+        <div className="races-next-milestone-card flex items-start justify-start gap-4">
           <span
             className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-[#e8ede9] text-[#1a1a1a] dark:bg-white/10 dark:text-[var(--color-text)]"
             aria-hidden
