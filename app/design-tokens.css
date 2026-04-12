@@ -1,0 +1,52 @@
+/**
+ * FuelOS — design tokens (palette, surfaces, typo).
+ * Importé en premier depuis `globals.css`.
+ * La variable `--color-accent` (mint) est réservée à la palette ; pour les CTA / liens,
+ * `globals.css` remap `--color-accent` → `--color-primary` afin de conserver la compatibilité
+ * avec les composants existants. Utiliser `--color-palette-mint` pour le mint explicite.
+ */
+:root {
+  /* Couleurs primaires */
+  --color-primary: #2d6a4f;
+  --color-primary-dark: #1f4d38;
+  --color-primary-light: #52b788;
+  --color-accent: #95d5b2;
+  --color-palette-mint: var(--color-accent);
+  /** Texte / icônes sur fond `--color-primary` (CTA plein ton) */
+  --color-on-primary: #f4faf7;
+
+  /* Fonds */
+  --color-bg: #f7f9f6;
+  --color-bg-card: #ffffff;
+  --color-bg-subtle: #f0f4f1;
+
+  /* Textes */
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #5a6a5a;
+  --color-text-muted: #9aad9a;
+
+  /* Bordures */
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-border-strong: rgba(0, 0, 0, 0.15);
+
+  /* Ombres */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.14);
+
+  /* Rayons */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* Typographie */
+  --font-main: 'Plus Jakarta Sans', sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+  --font-size-3xl: 2.75rem;
+}

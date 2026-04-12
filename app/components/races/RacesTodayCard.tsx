@@ -65,11 +65,11 @@ export function RacesTodayCard({ nextRace }: RacesTodayCardProps) {
 
   return (
     <div
-      className="relative z-[1] mb-3 rounded-xl border border-zinc-200/90 bg-zinc-100 px-3.5 py-3 shadow-sm dark:border-zinc-600/60 dark:bg-zinc-800/55 sm:mb-4 sm:px-4 sm:py-3.5"
+      className="relative z-[1] mb-3 rounded-2xl border border-[var(--fuel-card-border)] border-l-4 border-l-[var(--color-primary)] bg-[var(--fuel-card-surface)] px-6 py-5 shadow-[var(--fuel-card-shadow)] sm:mb-4"
       aria-label="Aujourd’hui"
     >
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Aujourd’hui</p>
-      <div className="mt-2 space-y-2 text-xs leading-relaxed text-zinc-700 dark:text-zinc-300">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Aujourd’hui</p>
+      <div className="mt-2 space-y-2 text-xs leading-relaxed text-[var(--color-text)]">
         <p>
           <span aria-hidden>🎯 </span>
           {nextRace ? courseLine(nextRace) : "Course : —"}

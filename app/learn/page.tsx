@@ -756,9 +756,9 @@ export default function LearnPage() {
                   fontWeight: 700,
                   fontSize: 15,
                   textDecoration: 'none',
-                  color: '#000',
+                  color: 'var(--color-on-primary)',
                   background: 'var(--color-accent)',
-                  border: '1px solid color-mix(in srgb, var(--color-accent) 40%, #000)',
+                  border: '1px solid color-mix(in srgb, var(--color-accent) 55%, var(--color-primary-dark))',
                   boxShadow: '0 4px 14px color-mix(in srgb, var(--color-accent) 35%, transparent)',
                   transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                 }}

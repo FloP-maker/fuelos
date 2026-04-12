@@ -22,8 +22,8 @@ const sizeStyles: Record<ButtonSize, CSSProperties> = {
 const variantStyles: Record<ButtonVariant, CSSProperties> = {
   primary: {
     background: 'var(--color-accent)',
-    color: '#000',
-    border: '1px solid color-mix(in srgb, var(--color-accent) 40%, #000)',
+    color: 'var(--color-on-primary)',
+    border: '1px solid color-mix(in srgb, var(--color-accent) 55%, var(--color-primary-dark))',
   },
   secondary: {
     background: 'var(--color-bg-card)',
@@ -33,7 +33,7 @@ const variantStyles: Record<ButtonVariant, CSSProperties> = {
   danger: {
     background: 'var(--color-danger)',
     color: '#fff',
-    border: '1px solid color-mix(in srgb, var(--color-danger) 40%, #000)',
+    border: '1px solid color-mix(in srgb, var(--color-danger) 55%, #7f1d1d)',
   },
   ghost: {
     background: 'color-mix(in srgb, var(--color-bg) 80%, transparent)',

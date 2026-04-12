@@ -87,7 +87,7 @@ function dayCellSurfaceClass(opts: {
   }
   if (isSelected && inMonth) {
     base.push(
-      "ring-2 ring-[color-mix(in_srgb,#16a34a_35%,#e5e7eb)] ring-offset-0 dark:ring-[color-mix(in_srgb,var(--color-accent)_38%,transparent)]"
+      "ring-2 ring-[color-mix(in_srgb,var(--color-primary)_35%,var(--color-border))] ring-offset-0 dark:ring-[color-mix(in_srgb,var(--color-accent)_38%,transparent)]"
     );
   }
   return base.filter(Boolean).join(" ");
@@ -222,9 +222,9 @@ export function RacesMonthCalendar({
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 sm:p-3 md:p-4">
-        <div className="rounded-2xl border border-[#e5e7eb] bg-white p-2 sm:p-3 dark:border-[var(--color-border-subtle)] dark:bg-[color-mix(in_srgb,var(--color-bg-elevated)_45%,var(--color-bg))]">
+        <div className="rounded-2xl border border-[var(--fuel-card-border)] bg-[var(--fuel-card-surface)] p-2 shadow-[var(--fuel-card-shadow)] sm:p-3 dark:bg-[color-mix(in_srgb,var(--color-bg-elevated)_45%,var(--color-bg))]">
           <div className="mb-2 flex gap-2 sm:gap-3 md:mb-3">
-            <div className="grid min-w-0 flex-1 grid-cols-7 gap-px overflow-hidden rounded-xl border border-[#e5e7eb] bg-[#e5e7eb] dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-races-grid-mute)]">
+            <div className="grid min-w-0 flex-1 grid-cols-7 gap-px overflow-hidden rounded-xl border border-[var(--fuel-card-border)] bg-[var(--color-races-grid-mute)] dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-races-grid-mute)]">
               {WEEKDAYS.map((wd) => (
                 <div
                   key={wd}
@@ -234,7 +234,7 @@ export function RacesMonthCalendar({
                 </div>
               ))}
             </div>
-            <div className="flex w-[3.75rem] shrink-0 flex-col items-center rounded-xl border border-[#e5e7eb] bg-[#fafafa] px-1 py-2 text-center dark:border-[var(--color-border-subtle)] dark:bg-[color-mix(in_srgb,var(--color-bg-elevated)_55%,var(--color-bg))] sm:w-[4.5rem]">
+            <div className="flex w-[3.75rem] shrink-0 flex-col items-center rounded-xl border border-[var(--fuel-card-border)] bg-[#fafafa] px-1 py-2 text-center dark:border-[var(--color-border-subtle)] dark:bg-[color-mix(in_srgb,var(--color-bg-elevated)_55%,var(--color-bg))] sm:w-[4.5rem]">
               <span className="text-[9px] font-medium tracking-wide text-[#9ca3af] dark:text-[var(--color-text-muted)]">Σ km</span>
               <WeekKmSparkline values={weekKmSeries} />
             </div>
@@ -285,7 +285,7 @@ export function RacesMonthCalendar({
                 ) : null}
 
                 <div className="flex gap-2 sm:gap-3">
-                  <div className="grid min-w-0 flex-1 grid-cols-7 gap-px overflow-hidden rounded-xl border border-[#e5e7eb] bg-[#e5e7eb] dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-races-grid-mute)]">
+                  <div className="grid min-w-0 flex-1 grid-cols-7 gap-px overflow-hidden rounded-xl border border-[var(--fuel-card-border)] bg-[var(--color-races-grid-mute)] dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-races-grid-mute)]">
                     {rowCells.map((cell, ci) => {
                       const idx = ri * 7 + ci;
                       const { key, day, inMonth } = cell;
@@ -309,7 +309,7 @@ export function RacesMonthCalendar({
                         >
                           <span className="flex h-7 items-start justify-center sm:h-7">
                             {isToday && inMonth ? (
-                              <span className="inline-flex size-7 items-center justify-center rounded-full bg-emerald-100 text-xs font-semibold tabular-nums text-emerald-800 ring-2 ring-[color-mix(in_srgb,#16a34a_22%,transparent)] dark:bg-[color-mix(in_srgb,var(--color-accent)_20%,transparent)] dark:text-[var(--color-text)] dark:ring-[color-mix(in_srgb,var(--color-accent)_32%,transparent)] sm:text-sm">
+                              <span className="inline-flex size-7 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-primary-light)_22%,var(--color-bg-card))] text-xs font-semibold tabular-nums text-[var(--color-primary-dark)] ring-2 ring-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] dark:bg-[color-mix(in_srgb,var(--color-accent)_20%,transparent)] dark:text-[var(--color-text)] dark:ring-[color-mix(in_srgb,var(--color-accent)_32%,transparent)] sm:text-sm">
                                 {day}
                               </span>
                             ) : (
@@ -317,7 +317,7 @@ export function RacesMonthCalendar({
                                 className={[
                                   "inline-flex min-w-[1.75rem] justify-center pt-0.5 text-xs font-medium tabular-nums sm:text-sm",
                                   inMonth
-                                    ? "text-[#111827] dark:text-[var(--color-text)]"
+                                    ? "text-[var(--color-text-primary)] dark:text-[var(--color-text)]"
                                     : "text-[#9ca3af] dark:text-[var(--color-text-muted)]",
                                 ].join(" ")}
                               >
@@ -335,7 +335,7 @@ export function RacesMonthCalendar({
                                       href={`/races/${r.id}`}
                                       onClick={(e) => e.stopPropagation()}
                                       className={[
-                                        "flex items-center gap-0.5 truncate rounded border border-[#e5e7eb] bg-[#fafafa] px-1 py-0.5 text-[8px] font-medium leading-tight text-[#374151] transition hover:bg-white dark:border-[var(--color-border-subtle)] dark:bg-[color-mix(in_srgb,var(--color-bg-elevated)_40%,var(--color-bg-card))] dark:text-[var(--color-text)] dark:hover:bg-[color-mix(in_srgb,var(--color-bg-card-hover)_70%,var(--color-bg-card))] sm:text-[9px]",
+                                        "flex items-center gap-0.5 truncate rounded border border-[var(--fuel-card-border)] bg-[#fafafa] px-1 py-0.5 text-[8px] font-medium leading-tight text-[#374151] transition hover:bg-white dark:border-[var(--color-border-subtle)] dark:bg-[color-mix(in_srgb,var(--color-bg-elevated)_40%,var(--color-bg-card))] dark:text-[var(--color-text)] dark:hover:bg-[color-mix(in_srgb,var(--color-bg-card-hover)_70%,var(--color-bg-card))] sm:text-[9px]",
                                         pastDay && inMonth ? "opacity-90" : "",
                                       ].join(" ")}
                                     >
@@ -359,19 +359,19 @@ export function RacesMonthCalendar({
                     })}
                   </div>
 
-                  <div className="flex w-[3.75rem] shrink-0 flex-col items-center justify-center rounded-xl border border-[#e5e7eb] bg-[#fafafa] px-1.5 py-2 text-center dark:border-[var(--color-border-subtle)] dark:bg-[color-mix(in_srgb,var(--color-bg-elevated)_55%,var(--color-bg))] sm:w-[4.5rem]">
+                  <div className="flex w-[3.75rem] shrink-0 flex-col items-center justify-center rounded-xl border border-[var(--fuel-card-border)] bg-[#fafafa] px-1.5 py-2 text-center dark:border-[var(--color-border-subtle)] dark:bg-[color-mix(in_srgb,var(--color-bg-elevated)_55%,var(--color-bg))] sm:w-[4.5rem]">
                     <span className="text-[9px] font-medium text-[#9ca3af] dark:text-[var(--color-text-muted)]">Sem.</span>
                     <span
                       className={
                         weekKm > 0
-                          ? "mt-0.5 font-semibold tabular-nums text-sm text-[#111827] dark:text-[var(--color-text)]"
+                          ? "mt-0.5 font-semibold tabular-nums text-sm text-[var(--color-text-primary)] dark:text-[var(--color-text)]"
                           : "mt-0.5 font-semibold tabular-nums text-sm text-[#c4c4c4] dark:text-zinc-500"
                       }
                     >
                       {weekKm > 0 ? weekKm : "—"}
                     </span>
                     <span className="text-[9px] text-[#9ca3af] dark:text-[var(--color-text-muted)]">km</span>
-                    <div className="mt-1.5 h-1 w-full max-w-[2.75rem] overflow-hidden rounded-full bg-[#e5e7eb] dark:bg-[var(--color-border-subtle)]">
+                    <div className="mt-1.5 h-1 w-full max-w-[2.75rem] overflow-hidden rounded-full bg-[var(--color-races-grid-mute)] dark:bg-[var(--color-border-subtle)]">
                       <div
                         className="h-full rounded-full bg-[var(--color-accent)] opacity-95 transition-all duration-300 dark:opacity-100"
                         style={{ width: `${barPct}%` }}

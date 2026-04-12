@@ -1,52 +1,52 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+@import './design-tokens.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Thème clair par défaut (next-themes ajoute la classe `dark` sur <html> en mode sombre) */
+/* Thème clair : sémantique FuelOS (mappe sur design-tokens) */
 :root {
   color-scheme: light;
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Plus Jakarta Sans', var(--font-sans);
-  /* Page courses : DM Sans pour un rendu plus “produit” */
-  --font-races: 'DM Sans', var(--font-sans);
+  --font-sans: var(--font-main), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: var(--font-sans);
+  --font-races: 'DM Sans', var(--font-main), system-ui, sans-serif;
 
-  --color-bg: #f9fafb;
-  --color-bg-elevated: #f3f4f6;
-  --color-bg-card: #ffffff;
-  --color-bg-card-hover: #f3f4f6;
-  --color-border: #e5e7eb;
-  --color-border-subtle: #f3f4f6;
-  --color-text: #111827;
-  --color-text-muted: #6b7280;
-  --color-accent: #16a34a;
-  --color-accent-hover: #15803d;
-  --color-accent-muted: color-mix(in srgb, var(--color-accent) 12%, transparent);
-  /* Aligné dark en clair (surfaces listes / calendrier) */
+  /* CTA / liens : vert principal (compat historique `var(--color-accent)`) */
+  --color-accent: var(--color-primary);
+  --color-accent-hover: var(--color-primary-dark);
+  --color-accent-muted: color-mix(in srgb, var(--color-primary) 14%, transparent);
+
+  --color-text: var(--color-text-primary);
+
+  --color-bg-elevated: var(--color-bg-subtle);
+  --color-bg-card-hover: var(--color-bg-subtle);
+  --color-border-subtle: color-mix(in srgb, var(--color-bg-subtle) 65%, var(--color-border));
+
+  /* Cartes */
+  --fuel-card-surface: var(--color-bg-card);
+  --fuel-card-border: var(--color-border);
+  --fuel-card-shadow: var(--shadow-sm), 0 0 0 1px color-mix(in srgb, var(--color-text-primary) 4%, transparent);
+  --fuel-card-shadow-hover: var(--shadow-lg);
+  --fuel-card-radius: var(--radius-lg);
+  --fuel-card-padding-block: 1.25rem;
+  --fuel-card-padding-inline: 1.5rem;
+
   --color-races-veil: var(--color-bg-card);
-  --color-races-grid-mute: #e5e7eb;
+  --color-races-grid-mute: color-mix(in srgb, var(--color-border-strong) 35%, var(--color-bg-subtle));
   --color-energy: #ea580c;
   --color-energy-soft: color-mix(in srgb, #ea580c 14%, transparent);
   --color-danger: #dc2626;
   --color-warning: #f59e0b;
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
   --radius-xl: 22px;
-  --radius-pill: 9999px;
+  --radius-pill: var(--radius-full);
 
-  --shadow-xs: 0 1px 2px rgb(24 24 27 / 0.06);
-  --shadow-sm: 0 2px 8px rgb(24 24 27 / 0.08);
-  --shadow-md: 0 12px 32px rgb(24 24 27 / 0.1);
-  --shadow-glow-accent: 0 0 48px color-mix(in srgb, var(--color-accent) 18%, transparent);
+  --shadow-xs: 0 1px 2px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  --shadow-glow-accent: 0 0 48px color-mix(in srgb, var(--color-primary) 18%, transparent);
 
-  /* Anneau focus recherche header (réf. type Strava, distinct du vert UI) */
   --color-search-focus: #2563eb;
   --color-search-ring: color-mix(in srgb, #2563eb 34%, transparent);
 
-  /* Largeur max alignée header / wizard / contenu (un peu plus large sur grands écrans) */
   --fuel-shell-max: 1040px;
 }
 
@@ -58,12 +58,22 @@
 
 .dark {
   color-scheme: dark;
+  --color-on-primary: #041a0d;
+  --color-text-primary: #f4f4f5;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #9ca3af;
+  --color-bg-subtle: #141816;
   --color-bg: #070707;
   --color-bg-elevated: #0c0c0c;
   --color-bg-card: #121212;
   --color-bg-card-hover: #181818;
-  --color-border: #2a2a2a;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border-strong: rgba(255, 255, 255, 0.18);
   --color-border-subtle: #1f1f1f;
+  --fuel-card-surface: var(--color-bg-card);
+  --fuel-card-border: rgba(255, 255, 255, 0.08);
+  --fuel-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --fuel-card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.45);
   --color-text: #f4f4f5;
   --color-text-muted: #a1a1aa;
   --color-accent: #38e07e;
@@ -92,6 +102,32 @@
   margin: 0;
 }
 
+@layer base {
+  body,
+  * {
+    font-family: var(--font-main), system-ui, sans-serif;
+  }
+
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .races-page,
+  .races-page * {
+    font-family: var(--font-races);
+  }
+
+  .races-page code,
+  .races-page pre,
+  .races-page kbd,
+  .races-page samp {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -102,20 +138,28 @@ body {
   overflow-x: hidden;
   background-color: var(--color-bg);
   color: var(--color-text);
-  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1,
+h1 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
 h2,
-h3,
+h3 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
 .font-display {
-  font-family: var(--font-display);
+  font-weight: 800;
   letter-spacing: -0.02em;
 }
 
 body {
+  font-weight: 400;
   background-image:
     radial-gradient(ellipse 100% 70% at 50% -20%, var(--color-accent-muted), transparent 50%),
     radial-gradient(ellipse 50% 35% at 100% 0%, var(--color-energy-soft), transparent 40%);
@@ -138,7 +182,7 @@ select,
 textarea {
   background-color: var(--color-bg-card);
   color: var(--color-text);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
 }
 
 input::placeholder,
@@ -191,6 +235,11 @@ textarea:focus {
     margin-right: auto;
     padding-inline: clamp(1rem, 3vw, 2.5rem) !important;
     padding-block: clamp(1.5rem, 3vw, 2.5rem) clamp(2rem, 4vw, 3rem) !important;
+    background-color: var(--color-bg);
+  }
+
+  html.dark .races-page {
+    background-color: var(--color-bg);
   }
 
   .races-page h1,
@@ -199,19 +248,51 @@ textarea:focus {
     font-family: var(--font-races);
   }
 
-  /* Barre du haut : style app « pro » pleine largeur (réf. type Strava), palette FuelOS */
-  .fuel-header-shell {
-    width: 100%;
-    background: var(--color-bg-card);
-    border-bottom: 1px solid var(--color-border-subtle);
+  /* Mes courses : grille 2 colonnes (liste + calendrier sticky) */
+  .races-layout {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
   }
 
-  .fuel-header-shell--sticky {
+  @media (max-width: 900px) {
+    .races-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (min-width: 901px) {
+    .races-layout__calendar-sticky {
+      position: sticky;
+      top: 5rem;
+      align-self: start;
+      z-index: 10;
+      max-height: calc(100vh - 5.5rem);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+  }
+
+  /* Barre du haut : verre dépoli, sticky */
+  .fuel-header-shell {
     position: sticky;
     top: 0;
-    z-index: 30;
-    background: var(--color-bg-card);
-    box-shadow: 0 1px 0 color-mix(in srgb, var(--color-border) 55%, transparent);
+    z-index: 100;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.85);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 0 color-mix(in srgb, rgba(0, 0, 0, 0.06) 100%, transparent);
+  }
+
+  html.dark .fuel-header-shell {
+    background: rgba(18, 20, 19, 0.88);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   /* Flex : logo + nav (compact) | zone droite qui occupe le reste (recherche → Strava) */
@@ -348,26 +429,49 @@ textarea:focus {
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border) 65%, transparent);
   }
 
+  @keyframes fuel-header-drawer-in {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fuel-header-nav-panel {
+      animation: none;
+    }
+  }
+
   .fuel-header-nav-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 45;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(2px);
+    z-index: 108;
+    background: rgba(0, 0, 0, 0.38);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
 
   .fuel-header-nav-panel {
     position: fixed;
-    inset: 0 0 0 auto;
-    z-index: 46;
-    width: min(100vw, 320px);
+    inset: 0 auto 0 0;
+    z-index: 109;
+    width: min(100vw, min(360px, 92vw));
     max-width: 100%;
     display: flex;
     flex-direction: column;
-    background: var(--color-bg-card);
-    border-left: 1px solid var(--color-border-subtle);
-    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.18);
+    background: #ffffff;
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 8px 0 40px rgba(0, 0, 0, 0.12);
     padding-bottom: env(safe-area-inset-bottom, 0);
+    animation: fuel-header-drawer-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  html.dark .fuel-header-nav-panel {
+    background: var(--color-bg-card);
+    border-right-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 8px 0 40px rgba(0, 0, 0, 0.45);
   }
 
   .fuel-header-nav-panel-head {
@@ -375,8 +479,12 @@ textarea:focus {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--color-border-subtle);
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  html.dark .fuel-header-nav-panel-head {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
   }
 
   .fuel-header-nav-panel-title {
@@ -408,32 +516,43 @@ textarea:focus {
   .fuel-header-nav-panel-links {
     display: flex;
     flex-direction: column;
-    padding: 8px 12px 20px;
-    gap: 2px;
+    padding: 1rem 1.25rem 1.75rem;
+    gap: 4px;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   .fuel-header-nav-panel-link {
     display: block;
-    padding: 14px 14px;
-    border-radius: 10px;
-    font-size: 0.9375rem;
-    font-weight: 600;
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 500;
     font-family: var(--font-sans);
-    color: var(--color-text);
+    color: #4a4a4a;
     text-decoration: none;
-    transition: background 0.15s ease;
+    border-bottom: 2px solid transparent;
+    transition:
+      color 0.15s ease,
+      background 0.15s ease,
+      border-bottom-color 0.15s ease,
+      font-weight 0.15s ease;
+  }
+
+  html.dark .fuel-header-nav-panel-link {
+    color: color-mix(in srgb, var(--color-text) 82%, transparent);
   }
 
   .fuel-header-nav-panel-link:hover {
-    background: color-mix(in srgb, var(--color-text) 7%, var(--color-bg-card));
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
   }
 
   .fuel-header-nav-panel-link[aria-current='page'] {
-    color: var(--color-accent);
-    background: color-mix(in srgb, var(--color-accent) 9%, var(--color-bg-card));
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 22%, transparent);
+    color: var(--color-primary);
+    font-weight: 700;
+    border-bottom-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 8%, transparent);
   }
 
   .fuel-header-nav-panel-link--secondary {
@@ -466,8 +585,9 @@ textarea:focus {
     }
   }
 
-  /* Wordmark type marque app (Strava orange → dégradé vert / énergie FuelOS) */
+  /* Wordmark FuelOS : vert marque, graisse forte */
   .fuel-header-wordmark {
+    font-weight: 800;
     color: var(--color-accent);
   }
 
@@ -732,11 +852,19 @@ textarea:focus {
   }
 
   .fuel-shop-search-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
     color: var(--color-text-muted);
     text-transform: uppercase;
+  }
+
+  /* Dates, catégories, métadonnées courtes */
+  .fuel-text-meta {
+    font-weight: 500;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .fuel-shop-search-wrap {
@@ -921,72 +1049,79 @@ textarea:focus {
     display: inline-flex;
     align-items: center;
     flex-shrink: 0;
-    padding: 6px clamp(10px, 1.35vw, 16px);
-    border-radius: 7px;
+    padding: 8px clamp(10px, 1.35vw, 16px) 6px;
+    border-radius: 6px 6px 0 0;
     font-size: 0.8125rem;
-    font-weight: 600;
+    font-weight: 500;
     font-family: var(--font-sans);
-    color: var(--color-text-muted);
+    color: #4a4a4a;
     text-decoration: none;
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
     transition:
       color 0.15s ease,
-      border-color 0.15s ease,
-      background 0.15s ease,
-      box-shadow 0.15s ease;
+      border-bottom-color 0.15s ease,
+      font-weight 0.15s ease;
     white-space: nowrap;
   }
 
+  html.dark .fuel-header-text-nav a {
+    color: color-mix(in srgb, var(--color-text) 72%, transparent);
+  }
+
   .fuel-header-text-nav a:hover {
-    color: var(--color-text);
-    background: color-mix(in srgb, var(--color-text) 7%, var(--color-bg-card));
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border) 65%, transparent);
+    color: var(--color-primary);
+  }
+
+  html.dark .fuel-header-text-nav a:hover {
+    color: var(--color-accent);
   }
 
   .fuel-header-text-nav a[aria-current='page'] {
-    color: var(--color-text);
+    color: var(--color-primary);
+    font-weight: 700;
+    border-bottom-color: var(--color-primary);
+  }
+
+  html.dark .fuel-header-text-nav a[aria-current='page'] {
+    color: var(--color-accent);
     border-bottom-color: var(--color-accent);
   }
 
   .fuel-header-text-nav a[aria-current='page']:hover {
-    background: color-mix(in srgb, var(--color-accent) 9%, var(--color-bg-card));
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 22%, transparent);
+    color: var(--color-primary);
   }
 
-  .dark .fuel-header-text-nav a:hover {
-    background: color-mix(in srgb, var(--color-text) 9%, var(--color-bg-card));
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border) 80%, transparent);
+  html.dark .fuel-header-text-nav a[aria-current='page']:hover {
+    color: var(--color-accent);
   }
 
-  .dark .fuel-header-text-nav a[aria-current='page']:hover {
-    background: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-card));
-  }
-
-  /* CTA principal (équivalent « bouton orange » Strava → vert FuelOS) */
+  /* CTA Connexion (header) */
   .fuel-header-cta {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.45rem 1rem;
-    border-radius: var(--radius-md);
+    padding: 0.4rem 1.2rem;
+    border-radius: 20px;
     font-size: 0.8125rem;
-    font-weight: 700;
+    font-weight: 600;
     font-family: var(--font-sans);
-    background: var(--color-accent);
-    color: #052e14;
-    border: 1px solid color-mix(in srgb, var(--color-accent) 70%, #0d3d24);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 70%, var(--color-primary-dark));
     text-decoration: none;
     white-space: nowrap;
-    box-shadow: var(--shadow-xs);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
     transition:
-      filter 0.15s ease,
+      background 0.15s ease,
+      border-color 0.15s ease,
       transform 0.12s ease,
       box-shadow 0.15s ease;
   }
 
   .fuel-header-cta:hover {
-    filter: brightness(1.06);
+    background: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
     box-shadow: var(--shadow-sm);
   }
 
@@ -995,13 +1130,20 @@ textarea:focus {
   }
 
   .dark .fuel-header-cta {
-    color: #041a0d;
+    background: var(--color-accent);
+    color: var(--color-on-primary);
     border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
   }
 
+  .dark .fuel-header-cta:hover {
+    background: color-mix(in srgb, var(--color-accent) 82%, #000);
+    border-color: color-mix(in srgb, var(--color-accent) 70%, var(--color-border));
+  }
+
   .fuel-header-cta--compact {
-    padding: 0.38rem 0.75rem;
+    padding: 0.4rem 1rem;
     font-size: 0.75rem;
+    border-radius: 20px;
   }
 
   /* Bandeau incitation connexion (sous le header) */
@@ -1185,20 +1327,46 @@ textarea:focus {
   }
 
   .fuel-card {
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xs);
-    transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease,
-      border-color 0.2s ease;
+    background: var(--fuel-card-surface);
+    border: 1px solid var(--fuel-card-border);
+    border-radius: var(--fuel-card-radius);
+    box-shadow: var(--fuel-card-shadow);
+    padding-block: var(--fuel-card-padding-block);
+    padding-inline: var(--fuel-card-padding-inline);
+    transition: all 0.2s ease;
+  }
+
+  .fuel-card--flush {
+    padding: 0;
+  }
+
+  .fuel-races-main-panel {
+    border: 1px solid var(--fuel-card-border);
+    border-radius: var(--fuel-card-radius);
+    box-shadow: var(--fuel-card-shadow);
+    background: var(--fuel-card-surface);
+  }
+
+  .fuel-card-interactive {
+    cursor: pointer;
+    transition: all 0.2s ease;
   }
 
   .fuel-card-interactive:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
-    border-color: color-mix(in srgb, var(--color-accent) 28%, var(--color-border));
+    transform: translateY(-2px);
+    box-shadow: var(--fuel-card-shadow-hover);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fuel-card,
+    .fuel-card-interactive,
+    .fuel-card-interactive:hover {
+      transition: none;
+    }
+
+    .fuel-card-interactive:hover {
+      transform: none;
+    }
   }
 
   .fuel-btn-pill {
@@ -1279,8 +1447,12 @@ textarea:focus {
     font-size: 1rem;
     font-weight: 700;
     font-family: var(--font-display);
-    background: linear-gradient(135deg, var(--color-accent) 0%, color-mix(in srgb, var(--color-energy) 35%, var(--color-accent)) 100%);
-    color: #052e14;
+    background: linear-gradient(
+      135deg,
+      var(--color-accent) 0%,
+      color-mix(in srgb, var(--color-energy) 35%, var(--color-accent)) 100%
+    );
+    color: var(--color-on-primary);
     border: none;
     cursor: pointer;
     text-decoration: none;

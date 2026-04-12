@@ -5,8 +5,10 @@ import usePageTitle from "../lib/hooks/usePageTitle";
 import { Header } from "../components/Header";
 import { AddRaceModal } from "../components/AddRaceModal";
 import { RacesMonthCalendar } from "../components/races/RacesMonthCalendar";
+import { RacesNextMilestone } from "../components/races/RacesNextMilestone";
 import { RacesPageHero } from "../components/races/RacesPageHero";
 import { RacesSidebar } from "../components/races/RacesSidebar";
+import { RacesTodayCard } from "../components/races/RacesTodayCard";
 import type { RacesCalendarViewFilter } from "../components/races/RacesCalendarToolbar";
 import { groupRacesByDate, loadRaces, partitionRacesByUpcoming } from "@/lib/races";
 import type { RaceEntry } from "@/lib/types/race";
@@ -207,45 +209,51 @@ export default function RacesPage() {
   return (
     <>
       <Header />
-      <main className="fuel-main races-page space-y-6 md:space-y-8">
-        <RacesPageHero nextRace={nextMilestoneRace} onAddRace={() => setAddOpen(true)} />
-        <div
-          className="flex min-h-[min(82vh,860px)] flex-col overflow-hidden rounded-2xl border border-[#e5e7eb] bg-[var(--color-bg-card)] shadow-[var(--shadow-sm)] dark:border-[var(--color-border-subtle)] dark:shadow-[0_12px_40px_-18px_rgba(0,0,0,0.65)] lg:flex-row"
-        >
-          <aside className="w-full shrink-0 lg:w-[300px] lg:max-w-[320px]">
-            <RacesSidebar
-              upcoming={sidebarUpcoming}
-              past={sidebarPast}
-              selectedDate={selectedDate}
-              onFocusDate={onFocusDate}
-              searchQuery={searchQuery}
-              onSearchQuery={setSearchQuery}
-              listRange={listRange}
-            />
-          </aside>
+      <main className="fuel-main races-page">
+        <RacesPageHero onAddRace={() => setAddOpen(true)} />
+        <div className="races-layout">
+          <div className="races-layout__main min-w-0 space-y-6 md:space-y-8">
+            <RacesNextMilestone nextRace={nextMilestoneRace} />
+            <RacesTodayCard nextRace={nextMilestoneRace} />
+            <div className="fuel-races-main-panel min-h-0 overflow-hidden">
+              <RacesSidebar
+                upcoming={sidebarUpcoming}
+                past={sidebarPast}
+                selectedDate={selectedDate}
+                onFocusDate={onFocusDate}
+                searchQuery={searchQuery}
+                onSearchQuery={setSearchQuery}
+                listRange={listRange}
+              />
+            </div>
+          </div>
 
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col border-t border-[var(--color-border)] lg:border-l lg:border-t-0">
-            <RacesMonthCalendar
-              viewYear={view.year}
-              viewMonth={view.month}
-              weekStartKey={weekStartKey}
-              calendarListRange={listRange}
-              onListRange={onListRangeChange}
-              onPrevMonth={onPrevMonth}
-              onNextMonth={onNextMonth}
-              onThisMonth={onThisMonth}
-              racesByDate={racesByDate}
-              bandSourceRaces={bandSourceRaces}
-              selectedDate={selectedDate}
-              onSelectDate={setSelectedDate}
-              viewFilter={viewFilter}
-              onViewFilter={setViewFilter}
-              sportFilter={sportFilter}
-              onSportFilter={setSportFilter}
-              sportsOptions={sportsOptions}
-              calendarTitle={calendarTitle}
-              isAnchorCurrent={isCalendarAnchorCurrent}
-            />
+          <div className="races-layout__calendar min-w-0">
+            <div className="races-layout__calendar-sticky">
+              <div className="fuel-races-main-panel flex min-h-0 flex-col overflow-hidden">
+                <RacesMonthCalendar
+                  viewYear={view.year}
+                  viewMonth={view.month}
+                  weekStartKey={weekStartKey}
+                  calendarListRange={listRange}
+                  onListRange={onListRangeChange}
+                  onPrevMonth={onPrevMonth}
+                  onNextMonth={onNextMonth}
+                  onThisMonth={onThisMonth}
+                  racesByDate={racesByDate}
+                  bandSourceRaces={bandSourceRaces}
+                  selectedDate={selectedDate}
+                  onSelectDate={setSelectedDate}
+                  viewFilter={viewFilter}
+                  onViewFilter={setViewFilter}
+                  sportFilter={sportFilter}
+                  onSportFilter={setSportFilter}
+                  sportsOptions={sportsOptions}
+                  calendarTitle={calendarTitle}
+                  isAnchorCurrent={isCalendarAnchorCurrent}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </main>

@@ -212,7 +212,7 @@ export default function ProfilPage() {
         </section>
 
         {/* 2. Prochaine course */}
-        <section className="fuel-card mb-8 overflow-hidden">
+        <section className="fuel-card fuel-card--flush mb-8 overflow-hidden">
           <div className="border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-accent)_10%,var(--color-bg-card)))] px-6 py-5 md:px-8">
             {sectionTitle("Ma prochaine course")}
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">
