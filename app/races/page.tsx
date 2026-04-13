@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import usePageTitle from "../lib/hooks/usePageTitle";
 import { useProfile } from "@/hooks/useProfile";
 import { Header } from "../components/Header";
@@ -56,9 +55,6 @@ function formatFrenchWeekCalendarTitle(weekMondayKey: string): string {
 export default function RacesPage() {
   usePageTitle("Mes courses");
   const { status } = useSession();
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
   const { profile: fuelProfile } = useProfile();
   const [races, setRaces] = useState<RaceEntry[]>([]);
   const [addOpen, setAddOpen] = useState(false);
@@ -219,13 +215,14 @@ export default function RacesPage() {
   }, [status, openAddRaceModal]);
 
   useEffect(() => {
-    if (searchParams.get("addRace") !== "1") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("addRace") !== "1") return;
     onRequestAddRace();
-    const next = new URLSearchParams(searchParams.toString());
-    next.delete("addRace");
-    const query = next.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-  }, [searchParams, onRequestAddRace, router, pathname]);
+    params.delete("addRace");
+    const query = params.toString();
+    const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
+    window.history.replaceState(null, "", nextUrl);
+  }, [onRequestAddRace]);
 
   const onRaceSaved = useCallback(
     (race: RaceEntry) => {
