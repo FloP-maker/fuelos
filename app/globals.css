@@ -478,6 +478,10 @@ textarea:focus {
     background: rgba(255, 255, 255, 0.25);
   }
 
+  .races-page-hero__cta:active {
+    transform: scale(0.98);
+  }
+
   .races-page-hero > svg {
     position: absolute;
     bottom: 0;
