@@ -1,34 +1,8 @@
-Après analyse complète du code existant (`profil/page.tsx`) et de l'esthétique de la page `/races`, voici un **nouveau `profil/page.tsx`** complet et optimisé — style Strava-like, sombre, cartes épurées, hero montagne, avatar mis en valeur, stats en évidence :
-
----
-
-## Ce qui change (et pourquoi)
-
-**Problèmes actuels :**
-- La sidebar affiche une carte "hero" (`races-next-milestone-card`) qui n'a pas de sens dans un contexte profil
-- L'accordion est fonctionnel mais visuellement très plat (pas de gradient, pas d'icône stylisée)
-- Les stats (poids, taille, âge, courses) sont cachées dans la sidebar sous forme de mini-tableau sans relief
-- Les "Actions rapides" et "Raccourcis" sont redondants
-- L'avatar est trop petit et peu mis en valeur
-- La section intégrations ressemble à une liste de settings basique
-
-**Direction : Strava-like endurance profile**
-- **Hero card** au-dessus du fold avec avatar large, nom, badges sport/niveau, stats horizontales
-- **Sidebar** transformée en "Activity Ring" + "Next Race" + liens CTA propres
-- **Accordéons** avec design card cohérent (gradient subtil sur header actif, icône SVG, divider vert accent)
-- **Sections** visuellement séparées avec un pill colored header
-
----
-
-## Code complet
-
-```tsx
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
-  Calendar,
   CalendarDays,
   ChevronDown,
   Footprints,
@@ -44,6 +18,7 @@ import {
 import { Header } from "../components/Header";
 import { Button } from "../components/Button";
 import { RacesNextMilestone } from "../components/races/RacesNextMilestone";
+import { RacesTodayCard } from "../components/races/RacesTodayCard";
 import usePageTitle from "../lib/hooks/usePageTitle";
 import { loadRaces, partitionRacesByUpcoming } from "@/lib/races";
 import type { RaceEntry } from "@/lib/types/race";
@@ -119,7 +94,7 @@ function StatPill({
   value: number | string;
   unit?: string;
   label: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center gap-0.5 px-4 py-3">
@@ -154,12 +129,12 @@ function SectionAccordion({
   accentColor,
 }: {
   id: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   subtitle: string;
   open: boolean;
   onToggle: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
   accentColor?: string;
 }) {
   return (
@@ -362,6 +337,8 @@ export default function ProfilPage() {
 
           {/* ── MAIN ─────────────────────────────────── */}
           <div className="races-layout__main min-w-0">
+            <RacesNextMilestone nextRace={nextRace} />
+            <RacesTodayCard nextRace={nextRace} />
 
             {/* ── ATHLETE IDENTITY CARD ──────────────── */}
             <div
@@ -794,30 +771,125 @@ export default function ProfilPage() {
                 <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {(
                     [
-                      ["dietVegetarian", "🌿 Végétarien"],
-                      ["dietVegan", "🌱 Vegan"],
-                      ["dietGlutenFree", "🌾 Sans gluten"],
-                      ["dietLactoseFree", "🥛 Sans lactose"],
-                      ["dietKosher", "🍖 Kosher"],
-                      ["dietHalal", "🍗 Halal"],
-                      ["dietGlutenFree", "🌾 Sans gluten"],
-                      ["dietLactoseFree", "🥛 Sans lactose"],
-                      ["dietKosher", "🍖 Kosher"],
-                      ["dietHalal", "🍗 Halal"],
+                      ["dietVegetarian", "Végétarien"],
+                      ["dietVegan", "Vegan"],
+                      ["dietGlutenFree", "Sans gluten"],
+                      ["dietLactoseFree", "Sans lactose"],
+                      ["dietNoCaffeine", "Sans caféine"],
                     ] as const
                   ).map(([key, label]) => (
                     <label
                       key={key}
                       className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-medium transition-colors ${
-                        profile[key as keyof FuelOsUserProfile]
+                        profile[key]
                           ? "border-[var(--color-accent)] bg-[var(--color-accent-muted)] text-[var(--color-text)]"
                           : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          className="sr-only"
-                          checked={profile[key as keyof FuelOsUserProfile]}
-                          onChange={(e) =>
-                            updateProfile({ [key as keyof FuelOsUserProfile]: e.target.checked })
-                          }
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={profile[key]}
+                        onChange={(e) => updateProfile({ [key]: e.target.checked })}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <label className="mt-6 block text-sm font-semibold text-[var(--color-text)]">
+                Allergènes (texte libre)
+                <textarea
+                  rows={2}
+                  className="mt-1.5 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3.5 py-2.5 text-sm text-[var(--color-text)] outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
+                  value={profile.allergenNotes}
+                  onChange={(e) => updateProfile({ allergenNotes: e.target.value })}
+                  placeholder="Ex. fruits à coque, arachides…"
+                />
+              </label>
+
+              <div className="mt-6">
+                <span className="text-sm font-semibold text-[var(--color-text)]">
+                  Marques favorites
+                </span>
+                <div className="mt-3 flex flex-wrap gap-4">
+                  {(
+                    [
+                      ["brandMaurten", "Maurten"],
+                      ["brandSis", "SiS"],
+                      ["brandTailwind", "Tailwind"],
+                      ["brandNaak", "Näak"],
+                      ["brandOther", "Autres"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <label key={key} className="flex cursor-pointer items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={profile[key]}
+                        onChange={(e) => updateProfile({ [key]: e.target.checked })}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <Button type="button" variant="primary" size="md" onClick={handleSave}>
+                  Enregistrer dans le calculateur
+                </Button>
+              </div>
+            </SectionAccordion>
+
+            <SectionAccordion
+              id="integrations"
+              icon={<Settings className="h-4 w-4" />}
+              title="Connexions"
+              subtitle="Strava, Garmin, Apple Health…"
+              open={openSection === "integrations"}
+              onToggle={() => toggleSection("integrations")}
+              accentColor="#64748b"
+            >
+              <p className="text-sm text-[var(--color-text-muted)]">
+                État local (démo) — les connexions réelles arriveront avec l&apos;OAuth.
+              </p>
+              <ul className="mt-5 space-y-3">
+                {INTEGRATIONS.map((int) => {
+                  const on = !!profile.integrationConnected[int.id];
+                  return (
+                    <li
+                      key={int.id}
+                      className="flex items-center justify-between gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-4 py-3"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="text-base" aria-hidden>
+                          {int.logo}
+                        </span>
+                        <span className="truncate text-sm font-semibold text-[var(--color-text)]">
+                          {int.name}
+                        </span>
+                      </div>
+                      <ToggleSwitch
+                        checked={on}
+                        accentColor={int.color}
+                        onChange={() =>
+                          updateProfile({
+                            integrationConnected: {
+                              ...profile.integrationConnected,
+                              [int.id]: !on,
+                            },
+                          })
+                        }
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            </SectionAccordion>
+          </div>
+        </div>
+      </main>
+    </>
+  );
+}
