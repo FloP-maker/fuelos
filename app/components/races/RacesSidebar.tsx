@@ -234,12 +234,12 @@ export function RacesSidebar({
   }, [past, searchQuery]);
 
   return (
-    <div className="flex flex-col">
-      <div className="border-b border-[var(--fuel-card-border)] px-4 pb-3 pt-4 dark:border-[var(--color-border-subtle)]">
+    <div className="races-season-panel flex flex-col">
+      <div className="races-season-panel__header border-b border-[var(--fuel-card-border)] px-5 pb-4 pt-5 dark:border-[var(--color-border-subtle)]">
         <h2 className="races-section-eyebrow">Ma saison</h2>
       </div>
 
-      <div className="px-4 py-3">
+      <div className="px-5 py-4">
         <div className="relative">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9ca3af] dark:text-[var(--color-text-muted)]"
@@ -256,7 +256,7 @@ export function RacesSidebar({
         </div>
       </div>
 
-      <div className="space-y-3 px-2 pb-4">
+      <div className="space-y-3 px-3 pb-5">
         <RacesListHelp />
 
         <div className="overflow-hidden rounded-xl border border-[#e8e8e8] bg-[var(--fuel-card-surface)] dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-bg-card)]">
