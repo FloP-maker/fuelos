@@ -5,6 +5,12 @@ export type RacesPageHeroProps = {
 };
 
 export function RacesPageHero({ onAddRace }: RacesPageHeroProps) {
+  const handleAddRace = (event: { preventDefault: () => void; stopPropagation: () => void }) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onAddRace();
+  };
+
   return (
     <section className="races-page-hero" aria-labelledby="races-hero-title">
       <svg viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden>
@@ -23,7 +29,12 @@ export function RacesPageHero({ onAddRace }: RacesPageHeroProps) {
           <div className="races-page-hero__copy">
             <h1 id="races-hero-title">Mes courses</h1>
           </div>
-          <button type="button" className="races-page-hero__cta shrink-0" onClick={onAddRace}>
+          <button
+            type="button"
+            className="races-page-hero__cta shrink-0"
+            onClick={handleAddRace}
+            onPointerUp={handleAddRace}
+          >
             Ajouter une nouvelle course
           </button>
         </div>
