@@ -346,7 +346,7 @@ export default function NewRaceHistoryPage() {
                 className={INP}
                 value={draft.meta.name}
                 onChange={(e) => setDraft((d) => ({ ...d, meta: { ...d.meta, name: e.target.value } }))}
-                placeholder="UTMB 2025"
+                placeholder="Ex. UTMB 2025"
               />
             </Field>
             <Field label="Sport">

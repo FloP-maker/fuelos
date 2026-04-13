@@ -37,6 +37,21 @@ const LOADER_MESSAGES = [
   "Construction de ta timeline…",
 ];
 
+/**
+ * Bornes basses d'allure basees sur des references record du monde (hommes),
+ * puis legerement relachees (+5%) pour eviter un verrou trop strict.
+ */
+const WORLD_RECORD_ANCHORS_KM_HOURS: ReadonlyArray<{ km: number; hours: number }> = [
+  { km: 5, hours: 12.588 / 60 }, // 12:35
+  { km: 10, hours: 26.183 / 60 }, // 26:11
+  { km: 21.0975, hours: 56.7 / 60 }, // 56:42
+  { km: 42.195, hours: 2.0186 }, // 2:01:07
+  { km: 50, hours: 2.636 }, // ~2:38
+  { km: 80, hours: 6.083 }, // ~6:05
+  { km: 100, hours: 6.083 }, // 100 km route
+];
+const WORLD_RECORD_FLOOR_FACTOR = 1.05;
+
 function suggestTargetHours(distance: number): number {
   if (distance <= 10) return 1.0;
   if (distance <= 21) return 2.5;
@@ -44,6 +59,25 @@ function suggestTargetHours(distance: number): number {
   if (distance <= 50) return 6.0;
   if (distance <= 80) return 10.0;
   return 16.0;
+}
+
+function worldRecordBasedMinTargetHours(distanceKm: number): number {
+  const d = Math.max(1, distanceKm);
+  const anchors = WORLD_RECORD_ANCHORS_KM_HOURS;
+  if (d <= anchors[0].km) return anchors[0].hours * (d / anchors[0].km) * WORLD_RECORD_FLOOR_FACTOR;
+  const last = anchors[anchors.length - 1];
+  if (d >= last.km) return (last.hours * (d / last.km)) * WORLD_RECORD_FLOOR_FACTOR;
+
+  for (let i = 0; i < anchors.length - 1; i += 1) {
+    const a = anchors[i];
+    const b = anchors[i + 1];
+    if (d < a.km || d > b.km) continue;
+    const t = (d - a.km) / (b.km - a.km);
+    const interp = a.hours + t * (b.hours - a.hours);
+    return interp * WORLD_RECORD_FLOOR_FACTOR;
+  }
+
+  return 0.5;
 }
 
 export function formatQuickStartTargetTimeLabel(h: number): string {
@@ -215,6 +249,17 @@ export function QuickStartWizard({ onSkip, onComplete }: QuickStartWizardProps) 
         : suggestTargetHours(answers.distance)
       : null;
 
+  const step3MinTarget =
+    answers.distance != null && answers.distance > 0 ? Math.max(0.5, worldRecordBasedMinTargetHours(answers.distance)) : 0.5;
+
+  useEffect(() => {
+    if (answers.distance == null || answers.distance <= 0) return;
+    const minTarget = Math.max(0.5, worldRecordBasedMinTargetHours(answers.distance));
+    if (answers.targetTime == null) return;
+    if (answers.targetTime >= minTarget) return;
+    setAnswers((a) => ({ ...a, targetTime: minTarget }));
+  }, [answers.distance, answers.targetTime]);
+
   const vitesseLine = useMemo(() => {
     const d = answers.distance;
     const t =
@@ -231,7 +276,7 @@ export function QuickStartWizard({ onSkip, onComplete }: QuickStartWizardProps) 
   }, [answers.distance, answers.targetTime]);
 
   const step3TimeLabel =
-    step3SliderValue != null ? formatQuickStartTargetTimeLabel(step3SliderValue) : "";
+    step3SliderValue != null ? formatQuickStartTargetTimeLabel(Math.max(step3SliderValue, step3MinTarget)) : "";
 
   const shell = (children: ReactNode) => (
     <div
@@ -543,13 +588,16 @@ export function QuickStartWizard({ onSkip, onComplete }: QuickStartWizardProps) 
           </div>
           <input
             type="range"
-            min={0.5}
+            min={step3MinTarget}
             max={24}
             step={0.5}
-            value={step3SliderValue}
-            onChange={(e) => setAnswers((a) => ({ ...a, targetTime: parseFloat(e.target.value) }))}
+            value={Math.max(step3SliderValue, step3MinTarget)}
+            onChange={(e) => setAnswers((a) => ({ ...a, targetTime: Math.max(step3MinTarget, parseFloat(e.target.value)) }))}
             style={{ width: "100%", accentColor: GREEN, marginBottom: 16 }}
           />
+          <p style={{ fontSize: 12, color: "#6b7280", textAlign: "center", margin: "0 0 10px", lineHeight: 1.45 }}>
+            Minimum autorise pour cette distance: {formatQuickStartTargetTimeLabel(step3MinTarget)}
+          </p>
           {vitesseLine && (
             <p style={{ fontSize: 14, color: "#374151", textAlign: "center", margin: 0, lineHeight: 1.5 }}>{vitesseLine}</p>
           )}
