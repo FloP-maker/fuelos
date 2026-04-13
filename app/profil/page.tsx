@@ -1,8 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Calendar,
+  Flag,
+  Footprints,
+  Leaf,
+  MapPin,
+  Settings,
+  Zap,
+} from "lucide-react";
 import { Header } from "../components/Header";
 import { Button } from "../components/Button";
 import usePageTitle from "../lib/hooks/usePageTitle";
@@ -44,10 +53,22 @@ const INTEGRATIONS: { id: FuelOsIntegrationId; name: string; logo: string }[] = 
   { id: "trainingpeaks", name: "TrainingPeaks", logo: "📈" },
 ];
 
+/** Aligné sur la maquette profil (vert forêt / accent). */
+const PROFILE_HERO_GRADIENT =
+  "linear-gradient(145deg, #1B4332 0%, #1f4d3a 42%, #2D6A4F 100%)";
+const PROFILE_GREEN_SOLID = "#1B4332";
+const PROFILE_BADGE_LEVEL_BG = "#4B7F52";
+
 function initials(first: string, last: string): string {
   const a = first.trim().charAt(0);
   const b = last.trim().charAt(0);
   return `${a}${b}`.toUpperCase() || "?";
+}
+
+function capitalizeSport(s: string): string {
+  const t = s.trim();
+  if (!t) return t;
+  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 }
 
 function formatRaceDateFr(isoDate: string): string {
@@ -141,7 +162,6 @@ function SectionAccordion({
 
 export default function ProfilPage() {
   usePageTitle("Profil");
-  const { data: session } = useSession();
   const { profile, updateProfile, syncToAthleteCalculator } = useProfile();
   const [races, setRaces] = useState<RaceEntry[]>([]);
   const [saveHint, setSaveHint] = useState<string | null>(null);
@@ -219,11 +239,12 @@ export default function ProfilPage() {
 
   const sportLabel = MAIN_SPORTS.find((s) => s.id === profile.mainSport)?.label ?? "";
   const levelLabel = LEVELS.find((l) => l.id === profile.athleticLevel)?.label ?? "";
+  const daysToNext = nextRace ? Math.max(0, getDaysUntilRace(nextRace)) : 0;
 
   return (
     <>
       <Header />
-      <main className="fuel-main mx-auto w-full max-w-[var(--fuel-shell-max)] px-4 py-8 md:px-6 md:py-10">
+      <main className="fuel-main mx-auto w-full max-w-[var(--fuel-shell-max)] bg-[#f9fafb] px-4 py-8 md:px-6 md:py-10 dark:bg-[var(--color-bg)]">
 
         {saveHint ? (
           <div
@@ -235,87 +256,94 @@ export default function ProfilPage() {
         ) : null}
 
         {/* Page title row */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--color-text)]">
+            <h1 className="font-display text-3xl font-bold tracking-tight text-[#111827] dark:text-[var(--color-text)]">
               Mon Profil
             </h1>
-            <p className="mt-0.5 text-sm text-[var(--color-text-muted)]">
+            <p className="mt-1 text-sm text-[#6b7280] dark:text-[var(--color-text-muted)]">
               Tes données athlète · FuelOS
             </p>
           </div>
           <Link
             href="#personal"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-bg-card-hover)]"
+            className="inline-flex shrink-0 items-center gap-2 self-start rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-sm font-semibold text-[#111827] shadow-sm hover:bg-[#f9fafb] dark:border-[var(--color-border)] dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text)] dark:hover:bg-[var(--color-bg-card-hover)]"
           >
-            ⚙️ Paramètres
+            <Settings className="h-4 w-4 text-[#6b7280]" strokeWidth={2} aria-hidden />
+            Paramètres
           </Link>
         </div>
 
-        {/* ── HERO CARD ── */}
-        <section className="mb-6 overflow-hidden rounded-2xl" style={{ background: "#2d5a3d" }}>
-          {/* Top part: avatar + info */}
-          <div className="flex items-center gap-5 px-6 py-6 md:px-8 md:py-8">
+        {/* ── HERO CARD (maquette) ── */}
+        <section
+          className="mb-6 overflow-hidden rounded-2xl shadow-md"
+          style={{ background: PROFILE_HERO_GRADIENT }}
+        >
+          <div className="flex items-center gap-5 px-6 py-7 md:px-8 md:py-8">
             <div className="relative shrink-0">
-              {profile.avatarDataUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={profile.avatarDataUrl}
-                  alt=""
-                  className="h-20 w-20 rounded-full object-cover ring-2 ring-white/30 md:h-24 md:w-24"
-                />
-              ) : (
-                <div
-                  className="flex h-20 w-20 items-center justify-center rounded-full text-xl font-bold text-white ring-2 ring-white/30 md:h-24 md:w-24"
-                  style={{ background: "rgba(255,255,255,0.15)" }}
-                  aria-hidden
-                >
-                  {initials(profile.firstName, profile.lastName)}
-                </div>
-              )}
-              <label
-                className="absolute -bottom-1 -right-1 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-white/90 text-xs shadow hover:bg-white"
-                title="Changer la photo"
-              >
-                📷
+              <label className="group relative block cursor-pointer">
+                {profile.avatarDataUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={profile.avatarDataUrl}
+                    alt=""
+                    className="h-[88px] w-[88px] rounded-full object-cover ring-2 ring-white/25 md:h-[100px] md:w-[100px]"
+                  />
+                ) : (
+                  <div
+                    className="flex h-[88px] w-[88px] items-center justify-center rounded-full text-2xl font-bold text-white ring-2 ring-white/25 md:h-[100px] md:w-[100px] md:text-[26px]"
+                    style={{ background: "#4b5563" }}
+                    aria-hidden
+                  >
+                    {initials(profile.firstName, profile.lastName)}
+                  </div>
+                )}
                 <input
                   type="file"
                   accept="image/*"
                   className="sr-only"
                   onChange={(e) => onAvatarFile(e.target.files?.[0] ?? null)}
                 />
+                <span
+                  className="pointer-events-none absolute bottom-0.5 right-0.5 h-4 w-4 rounded-full border-[3px] border-white bg-[#52b788] shadow-sm"
+                  aria-hidden
+                />
               </label>
             </div>
 
             <div className="min-w-0 flex-1">
-              <h2 className="font-display text-2xl font-bold text-white md:text-3xl">
+              <h2 className="font-display text-[1.65rem] font-bold leading-tight text-white md:text-3xl">
                 {displayName}
               </h2>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <span className="rounded-full border border-white/30 px-3 py-0.5 text-xs font-bold uppercase tracking-wide text-white">
-                  {sportLabel}
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                <span className="rounded-full border border-white/80 bg-transparent px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
+                  {sportLabel.toUpperCase()}
                 </span>
-                <span className="rounded-full border border-white/30 px-3 py-0.5 text-xs font-bold uppercase tracking-wide text-white">
-                  {levelLabel}
+                <span
+                  className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white"
+                  style={{ backgroundColor: PROFILE_BADGE_LEVEL_BG }}
+                >
+                  {levelLabel.toUpperCase()}
                 </span>
               </div>
-              <p className="mt-2 text-sm text-white/70">Athlète endurance · FuelOS</p>
+              <p className="mt-2.5 text-sm text-white/75">Athlète endurance · FuelOS</p>
             </div>
           </div>
 
-          {/* Stats bar */}
           <div
-            className="grid grid-cols-3 divide-x divide-white/20 border-t border-white/20"
-            style={{ background: "rgba(0,0,0,0.15)" }}
+            className="grid grid-cols-3 divide-x divide-white/25 border-t border-white/20"
+            style={{ background: "rgba(0,0,0,0.18)" }}
           >
             {[
               { value: profile.weightKg ?? "—", label: "KG" },
               { value: profile.age ?? "—", label: "ANS" },
               { value: seasonTotal, label: "COURSES" },
             ].map(({ value, label }) => (
-              <div key={label} className="flex flex-col items-center py-4">
-                <span className="font-display text-2xl font-extrabold text-white">{value}</span>
-                <span className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-white/60">
+              <div key={label} className="flex flex-col items-center py-4 md:py-5">
+                <span className="font-display text-[1.75rem] font-extrabold leading-none text-white md:text-[2rem]">
+                  {value}
+                </span>
+                <span className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-white/85">
                   {label}
                 </span>
               </div>
@@ -324,147 +352,126 @@ export default function ProfilPage() {
         </section>
 
         {/* ── PROCHAINE COURSE ── */}
-        <section className="fuel-card mb-6 overflow-hidden">
+        <section className="mb-6 overflow-hidden rounded-2xl border border-[#e8ecef] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:border-[var(--fuel-card-border)] dark:bg-[var(--fuel-card-surface)] dark:shadow-none">
           {!nextRace ? (
-            <div className="p-6 text-center md:p-8">
-              <p className="text-[var(--color-text-muted)]">
+            <div className="p-8 text-center">
+              <p className="text-[#6b7280] dark:text-[var(--color-text-muted)]">
                 Aucune course à venir. Ajoute ta prochaine objectif pour lancer la préparation.
               </p>
               <Link
                 href="/races"
-                className="mt-4 inline-flex rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-bold text-black hover:opacity-95"
+                className="mt-5 inline-flex items-center justify-center rounded-xl px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-95"
+                style={{ backgroundColor: PROFILE_GREEN_SOLID }}
               >
                 + Ajouter une course
               </Link>
             </div>
           ) : (
             <>
-              {/* Header row: label + name + countdown box */}
-              <div className="flex items-start justify-between gap-4 px-6 py-5 md:px-8">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-text-muted)]">
-                    🏁 Prochaine course
+              <div className="flex items-start justify-between gap-4 bg-white px-6 pb-5 pt-6 md:px-8 md:pb-6 md:pt-7 dark:bg-[var(--fuel-card-surface)]">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9ca3af] dark:text-[var(--color-text-muted)]">
+                    <Flag className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} aria-hidden />
+                    Prochaine course
                   </p>
-                  <h3 className="font-display mt-1 text-2xl font-extrabold text-[var(--color-text)] md:text-3xl">
+                  <h3 className="font-display mt-2 text-[1.65rem] font-extrabold leading-tight tracking-tight text-[#111827] dark:text-[var(--color-text)] md:text-[1.85rem]">
                     {nextRace.name}
                   </h3>
                 </div>
                 <div
-                  className="flex shrink-0 flex-col items-center justify-center rounded-2xl px-5 py-3 text-center text-white"
-                  style={{ background: "#2d5a3d", minWidth: "80px" }}
+                  className="flex min-w-[84px] shrink-0 flex-col items-center justify-center rounded-xl px-4 py-3 text-center text-white md:min-w-[92px]"
+                  style={{ backgroundColor: PROFILE_GREEN_SOLID }}
                 >
-                  <span className="font-display text-3xl font-extrabold leading-none">
-                    {Math.max(0, getDaysUntilRace(nextRace))}
+                  <span className="font-display text-[2rem] font-extrabold leading-none md:text-[2.25rem]">
+                    {daysToNext}
                   </span>
-                  <span className="mt-1 text-[10px] font-bold uppercase tracking-widest text-white/80">
+                  <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/95">
                     JOURS
                   </span>
                 </div>
               </div>
 
-              {/* Divider */}
-              <div className="border-t border-[var(--color-border-subtle)]" />
-
-              {/* Info pills + progress + CTA */}
-              <div className="bg-[var(--color-bg-elevated)] px-6 py-5 md:px-8">
-                {/* Pills */}
-                <div className="flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1 text-xs font-medium text-[var(--color-text)]">
-                    📅 {formatRaceDateFr(nextRace.date)}
+              <div className="border-t border-[#e8ecef] bg-[#f3f4f6] px-6 py-6 md:px-8 dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-bg-elevated)]">
+                <div className="flex flex-wrap gap-2.5">
+                  <span className="inline-flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-3.5 py-2 text-[13px] font-medium text-[#374151] shadow-sm dark:border-[var(--color-border)] dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text)]">
+                    <Calendar className="h-4 w-4 shrink-0 text-[#6b7280]" strokeWidth={2} aria-hidden />
+                    {formatRaceDateFr(nextRace.date)}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1 text-xs font-medium text-[var(--color-text)]">
-                    🏃 {nextRace.sport}
+                  <span className="inline-flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-3.5 py-2 text-[13px] font-medium text-[#374151] shadow-sm dark:border-[var(--color-border)] dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text)]">
+                    <Footprints className="h-4 w-4 shrink-0 text-[#6b7280]" strokeWidth={2} aria-hidden />
+                    {capitalizeSport(nextRace.sport)}
                   </span>
                   {nextRace.location?.trim() ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1 text-xs font-medium text-[var(--color-text)]">
-                      📍 {nextRace.location}
+                    <span className="inline-flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-3.5 py-2 text-[13px] font-medium text-[#374151] shadow-sm dark:border-[var(--color-border)] dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text)]">
+                      <MapPin className="h-4 w-4 shrink-0 text-[#6b7280]" strokeWidth={2} aria-hidden />
+                      {nextRace.location}
                     </span>
                   ) : null}
                 </div>
 
-                {/* Season progress */}
-                <div className="mt-5">
-                  <div className="mb-1.5 flex items-center justify-between text-xs font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
-                    <span>Saison</span>
-                    <span>{seasonDaysLeft} JOURS</span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-border-subtle)]">
-                    <div
-                      className="h-full rounded-full bg-[var(--color-accent)]"
-                      style={{
-                        width:
-                          seasonTotal > 0
-                            ? `${Math.round((past.length / seasonTotal) * 100)}%`
-                            : "0%",
-                      }}
-                    />
-                  </div>
+                <div className="mt-6 flex items-center justify-between border-b border-[#d1d5db] pb-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#9ca3af] dark:border-[var(--color-border-strong)] dark:text-[var(--color-text-muted)]">
+                  <span>Saison</span>
+                  <span>
+                    {seasonDaysLeft} JOURS
+                  </span>
                 </div>
 
-                {/* CTAs */}
                 <div className="mt-5 flex flex-wrap gap-3">
                   <Link
                     href="/plan"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-accent)] px-5 py-2 text-sm font-bold text-black hover:opacity-95"
+                    className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-95"
+                    style={{ backgroundColor: PROFILE_GREEN_SOLID }}
                   >
-                    ⚡ Générer le plan
+                    <Zap className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                    Générer le plan
                   </Link>
                   <Link
                     href="/race"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-5 py-2 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-bg-card-hover)]"
+                    className="inline-flex items-center gap-2 rounded-xl border border-[#d1d5db] bg-white px-5 py-2.5 text-sm font-semibold text-[#111827] shadow-sm hover:bg-[#f9fafb] dark:border-[var(--color-border)] dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text)] dark:hover:bg-[var(--color-bg-card-hover)]"
                   >
-                    🏃 Mode course
+                    <Footprints className="h-4 w-4 text-[#6b7280]" strokeWidth={2} aria-hidden />
+                    Mode course
                   </Link>
                   <Link
                     href="/prep"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-5 py-2 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-bg-card-hover)]"
+                    className="inline-flex items-center gap-2 rounded-xl border border-[#d1d5db] bg-white px-5 py-2.5 text-sm font-semibold text-[#111827] shadow-sm hover:bg-[#f9fafb] dark:border-[var(--color-border)] dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text)] dark:hover:bg-[var(--color-bg-card-hover)]"
                   >
-                    🥗 Pré / Post
+                    <Leaf className="h-4 w-4 text-[#6b7280]" strokeWidth={2} aria-hidden />
+                    Pré / Post
                   </Link>
                 </div>
 
-                {/* Following races */}
-                {followingRaces.length > 0 ? (
-                  <div className="mt-6 border-t border-[var(--color-border-subtle)] pt-5">
-                    <p className="text-xs font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
-                      À venir
-                    </p>
-                    <ul className="mt-3 space-y-2">
+                <div className="mt-7 border-t border-[#e5e7eb] pt-5 dark:border-[var(--color-border-subtle)]">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9ca3af] dark:text-[var(--color-text-muted)]">
+                    À venir
+                  </p>
+                  {followingRaces.length > 0 ? (
+                    <ul className="mt-3 space-y-2.5">
                       {followingRaces.map((r) => {
                         const dd = getDaysUntilRace(r);
                         return (
                           <li
                             key={r.id}
-                            className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--color-border-subtle)] pb-2 last:border-0 last:pb-0"
+                            className="flex flex-wrap items-baseline justify-between gap-2 text-sm"
                           >
-                            <span className="font-bold text-[var(--color-text)]">{r.name}</span>
-                            <span className="text-xs text-[var(--color-text-muted)]">
+                            <span className="font-bold text-[#111827] dark:text-[var(--color-text)]">
+                              {r.name}
+                            </span>
+                            <span className="text-[13px] text-[#9ca3af] dark:text-[var(--color-text-muted)]">
                               {formatRaceDateShort(r.date)} · {daysLabel(dd)}
                             </span>
                           </li>
                         );
                       })}
                     </ul>
-                    <Link
-                      href="/races"
-                      className="mt-3 inline-block text-sm font-semibold text-[var(--color-accent)] underline-offset-2 hover:underline"
-                    >
-                      Voir tout le calendrier →
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="mt-6 border-t border-[var(--color-border-subtle)] pt-5">
-                    <p className="text-xs font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
-                      À venir
-                    </p>
-                    <Link
-                      href="/races"
-                      className="mt-3 inline-block text-sm font-semibold text-[var(--color-accent)] underline-offset-2 hover:underline"
-                    >
-                      Voir tout le calendrier →
-                    </Link>
-                  </div>
-                )}
+                  ) : null}
+                  <Link
+                    href="/races"
+                    className="mt-4 inline-flex text-sm font-semibold text-[#1B4332] hover:underline dark:text-[var(--color-primary-light)]"
+                  >
+                    Voir tout le calendrier →
+                  </Link>
+                </div>
               </div>
             </>
           )}
