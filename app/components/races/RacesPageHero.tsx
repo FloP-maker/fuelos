@@ -23,17 +23,13 @@ export function RacesPageHero({ onAddRace }: RacesPageHeroProps) {
       <div className="races-page-hero__inner">
         <div className="races-page-hero__left">
           <div className="races-page-hero__copy">
-            <h1 id="races-hero-title">
-              <span aria-hidden>🏔️ </span>
-              Mes courses
-            </h1>
+            <h1 id="races-hero-title">Mes courses</h1>
           </div>
+          <button type="button" className="races-page-hero__cta shrink-0" onClick={() => onAddRace()}>
+            <Plus size={18} strokeWidth={2.25} aria-hidden />
+            Nouvelle course
+          </button>
         </div>
-
-        <button type="button" className="races-page-hero__cta shrink-0" onClick={() => onAddRace()}>
-          <Plus size={18} strokeWidth={2.25} aria-hidden />
-          Nouvelle course
-        </button>
       </div>
     </section>
   );
