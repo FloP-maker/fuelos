@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import usePageTitle from "../lib/hooks/usePageTitle";
 import { useProfile } from "@/hooks/useProfile";
 import { Header } from "../components/Header";
@@ -55,6 +56,9 @@ function formatFrenchWeekCalendarTitle(weekMondayKey: string): string {
 export default function RacesPage() {
   usePageTitle("Mes courses");
   const { status } = useSession();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const { profile: fuelProfile } = useProfile();
   const [races, setRaces] = useState<RaceEntry[]>([]);
   const [addOpen, setAddOpen] = useState(false);
@@ -213,6 +217,15 @@ export default function RacesPage() {
     }
     openAddRaceModal();
   }, [status, openAddRaceModal]);
+
+  useEffect(() => {
+    if (searchParams.get("addRace") !== "1") return;
+    onRequestAddRace();
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("addRace");
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [searchParams, onRequestAddRace, router, pathname]);
 
   const onRaceSaved = useCallback(
     (race: RaceEntry) => {
