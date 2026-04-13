@@ -1,7 +1,5 @@
 "use client";
 
-import { Plus } from "lucide-react";
-
 export type RacesPageHeroProps = {
   onAddRace: () => void;
 };
@@ -25,8 +23,7 @@ export function RacesPageHero({ onAddRace }: RacesPageHeroProps) {
           <div className="races-page-hero__copy">
             <h1 id="races-hero-title">Mes courses</h1>
           </div>
-          <button type="button" className="races-page-hero__cta shrink-0" onClick={() => onAddRace()}>
-            <Plus size={18} strokeWidth={2.25} aria-hidden />
+          <button type="button" className="races-page-hero__cta shrink-0" onClick={onAddRace}>
             Ajouter une nouvelle course
           </button>
         </div>

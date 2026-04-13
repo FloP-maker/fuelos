@@ -445,7 +445,7 @@ textarea:focus {
 
   .races-page-hero__cta {
     position: relative;
-    z-index: 10;
+    z-index: 30;
     align-self: flex-start;
     margin-top: auto;
     margin-bottom: 0;
@@ -463,6 +463,8 @@ textarea:focus {
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
+    pointer-events: auto;
+    touch-action: manipulation;
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
   }
