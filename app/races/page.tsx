@@ -202,11 +202,13 @@ export default function RacesPage() {
 
   const nextMilestoneRace = useMemo(() => upcomingAll[0] ?? null, [upcomingAll]);
 
-  const openAddRaceModal = useCallback(() => setAddOpen(true), []);
+  const openAddRaceModal = useCallback(() => {
+    window.setTimeout(() => setAddOpen(true), 0);
+  }, []);
 
   const onRequestAddRace = useCallback(() => {
     if (status === "unauthenticated") {
-      setAuthGateOpen(true);
+      window.setTimeout(() => setAuthGateOpen(true), 0);
       return;
     }
     openAddRaceModal();
@@ -289,10 +291,6 @@ export default function RacesPage() {
       <RacesAuthGateModal
         open={authGateOpen}
         onClose={() => setAuthGateOpen(false)}
-        onContinueLocal={() => {
-          setAuthGateOpen(false);
-          openAddRaceModal();
-        }}
       />
       <AddRaceModal open={addOpen} onClose={() => setAddOpen(false)} onSaved={onRaceSaved} />
       <RacePlanFollowupModal

@@ -458,9 +458,9 @@ textarea:focus {
     background: rgba(255, 255, 255, 0.15);
     color: #ffffff;
     border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 20px;
-    padding: 0.72rem 1.35rem;
-    font-size: 0.9rem;
+    border-radius: 22px;
+    padding: 0.9rem 1.75rem;
+    font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
     pointer-events: auto;
