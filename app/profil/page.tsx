@@ -1,21 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { signOut } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Calendar,
-  Flag,
+  CalendarDays,
   Footprints,
   Leaf,
-  MapPin,
   Settings,
   Zap,
 } from "lucide-react";
 import { Header } from "../components/Header";
 import { Button } from "../components/Button";
+import { RacesNextMilestone } from "../components/races/RacesNextMilestone";
+import { RacesTodayCard } from "../components/races/RacesTodayCard";
 import usePageTitle from "../lib/hooks/usePageTitle";
-import { getDaysUntilRace, loadRaces, partitionRacesByUpcoming } from "@/lib/races";
+import { loadRaces, partitionRacesByUpcoming } from "@/lib/races";
 import type { RaceEntry } from "@/lib/types/race";
 import { useProfile } from "@/hooks/useProfile";
 import type {
@@ -53,9 +53,6 @@ const INTEGRATIONS: { id: FuelOsIntegrationId; name: string; logo: string }[] = 
   { id: "trainingpeaks", name: "TrainingPeaks", logo: "📈" },
 ];
 
-/** Aligné sur la maquette profil (vert forêt / accent). */
-const PROFILE_HERO_GRADIENT =
-  "linear-gradient(145deg, #1B4332 0%, #1f4d3a 42%, #2D6A4F 100%)";
 const PROFILE_GREEN_SOLID = "#1B4332";
 const PROFILE_BADGE_LEVEL_BG = "#4B7F52";
 
@@ -63,41 +60,6 @@ function initials(first: string, last: string): string {
   const a = first.trim().charAt(0);
   const b = last.trim().charAt(0);
   return `${a}${b}`.toUpperCase() || "?";
-}
-
-function capitalizeSport(s: string): string {
-  const t = s.trim();
-  if (!t) return t;
-  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
-}
-
-function formatRaceDateFr(isoDate: string): string {
-  const d = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return isoDate;
-  return d.toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-function formatRaceDateShort(isoDate: string): string {
-  const d = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return isoDate;
-  return d.toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function daysLabel(d: number): string {
-  if (d === 0) return "Jour J";
-  if (d === 1) return "1 jour";
-  if (d > 1) return `${d} jours`;
-  if (d === -1) return "Il y a 1 jour";
-  return `Il y a ${Math.abs(d)} jours`;
 }
 
 function inputClass() {
@@ -126,7 +88,7 @@ function SectionAccordion({
   children: React.ReactNode;
 }) {
   return (
-    <section className="fuel-card mb-4 overflow-hidden">
+    <section className="fuel-races-main-panel mb-4 overflow-hidden">
       <button
         type="button"
         className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left md:px-8"
@@ -163,10 +125,8 @@ function SectionAccordion({
 export default function ProfilPage() {
   usePageTitle("Profil");
   const { profile, updateProfile, syncToAthleteCalculator } = useProfile();
-  const [races, setRaces] = useState<RaceEntry[]>([]);
+  const [races, setRaces] = useState<RaceEntry[]>(() => loadRaces());
   const [saveHint, setSaveHint] = useState<string | null>(null);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState("");
   const [openSection, setOpenSection] = useState<string | null>("personal");
 
   const toggleSection = (id: string) =>
@@ -174,7 +134,6 @@ export default function ProfilPage() {
 
   const refreshRaces = useCallback(() => setRaces(loadRaces()), []);
   useEffect(() => {
-    refreshRaces();
     const onVis = () => refreshRaces();
     const onStorage = (e: StorageEvent) => {
       if (e.key === "fuelos_races" || e.key === null) refreshRaces();
@@ -189,9 +148,7 @@ export default function ProfilPage() {
 
   const { upcoming, past } = useMemo(() => partitionRacesByUpcoming(races), [races]);
   const nextRace = upcoming[0] ?? null;
-  const followingRaces = upcoming.slice(1, 4);
   const seasonTotal = past.length + upcoming.length;
-  const seasonDaysLeft = nextRace ? getDaysUntilRace(nextRace) : 0;
 
   const onAvatarFile = (file: File | null) => {
     if (!file || !file.type.startsWith("image/")) return;
@@ -213,278 +170,112 @@ export default function ProfilPage() {
     window.setTimeout(() => setSaveHint(null), 4000);
   };
 
-  const handleDeleteAccount = () => {
-    if (deleteConfirm.trim().toLowerCase() !== "supprimer") return;
-    try {
-      const keys = [
-        "fuelos_user_profile_v1",
-        "athlete-profile",
-        "fuelos_races",
-        "fuelos_active_plan",
-        "fuelos_prep_state",
-        "fuelos_onboarding_profile_done",
-        "fuelos_onboarding_event_done",
-      ];
-      for (const k of keys) localStorage.removeItem(k);
-    } catch {
-      /* ignore */
-    }
-    setDeleteOpen(false);
-    setDeleteConfirm("");
-    void signOut({ callbackUrl: "/" });
-  };
-
   const displayName =
     [profile.firstName, profile.lastName].filter(Boolean).join(" ").trim() || "Athlète FuelOS";
 
   const sportLabel = MAIN_SPORTS.find((s) => s.id === profile.mainSport)?.label ?? "";
   const levelLabel = LEVELS.find((l) => l.id === profile.athleticLevel)?.label ?? "";
-  const daysToNext = nextRace ? Math.max(0, getDaysUntilRace(nextRace)) : 0;
+  const goalLabel = GOALS.find((g) => g.id === profile.mainGoal)?.label ?? "";
 
   return (
     <>
       <Header />
-      <main className="fuel-main mx-auto w-full max-w-[var(--fuel-shell-max)] bg-[#f9fafb] px-4 py-8 md:px-6 md:py-10 dark:bg-[var(--color-bg)]">
+      <main className="fuel-main races-page">
+        <section className="races-page-hero" aria-labelledby="profil-hero-title">
+          <svg viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden>
+            <path
+              fill="#0f1f0f"
+              d="M0 200 L0 120 L180 40 L320 95 L480 25 L620 80 L780 15 L920 70 L1080 30 L1200 90 L1200 200 Z"
+            />
+            <path
+              fill="#0f1f0f"
+              d="M0 200 L0 150 L220 85 L400 130 L560 60 L720 110 L900 50 L1040 95 L1200 75 L1200 200 Z"
+            />
+          </svg>
+
+          <div className="races-page-hero__inner">
+            <div className="races-page-hero__left">
+              <div className="races-page-hero__copy">
+                <h1 id="profil-hero-title">Mon profil</h1>
+                <p>
+                  Nutrition d&apos;endurance et repères personnalisés — même esprit que{" "}
+                  <span className="font-semibold text-white/90">Mes courses</span>.
+                </p>
+              </div>
+              <div className="flex w-full max-w-xl flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                <Link href="#personal" className="races-page-hero__cta">
+                  Modifier mes infos
+                </Link>
+                <Link
+                  href="/races?addRace=1"
+                  className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
+                >
+                  Ajouter une course
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {saveHint ? (
           <div
-            className="mb-6 rounded-lg border border-[var(--color-accent)] bg-[var(--color-accent-muted)] px-4 py-3 text-sm font-medium text-[var(--color-text)]"
+            className="relative z-10 mx-auto max-w-[1400px] px-6 pb-2 pt-3 md:px-6"
             role="status"
           >
-            {saveHint}
+            <div className="rounded-xl border border-[var(--color-accent)] bg-[var(--color-accent-muted)] px-4 py-3 text-sm font-medium text-[var(--color-text)] shadow-sm">
+              {saveHint}
+            </div>
           </div>
         ) : null}
 
-        {/* Page title row */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="font-display text-3xl font-bold tracking-tight text-[#111827] dark:text-[var(--color-text)]">
-              Mon Profil
-            </h1>
-            <p className="mt-1 text-sm text-[#6b7280] dark:text-[var(--color-text-muted)]">
-              Tes données athlète · FuelOS
-            </p>
-          </div>
-          <Link
-            href="#personal"
-            className="inline-flex shrink-0 items-center gap-2 self-start rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-sm font-semibold text-[#111827] shadow-sm hover:bg-[#f9fafb] dark:border-[var(--color-border)] dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text)] dark:hover:bg-[var(--color-bg-card-hover)]"
-          >
-            <Settings className="h-4 w-4 text-[#6b7280]" strokeWidth={2} aria-hidden />
-            Paramètres
-          </Link>
-        </div>
+        <div className="races-layout">
+          <div className="races-layout__main min-w-0">
+            <RacesNextMilestone nextRace={nextRace} />
+            <RacesTodayCard nextRace={nextRace} />
 
-        {/* ── HERO CARD (maquette) ── */}
-        <section
-          className="mb-6 overflow-hidden rounded-2xl shadow-md"
-          style={{ background: PROFILE_HERO_GRADIENT }}
-        >
-          <div className="flex items-center gap-5 px-6 py-7 md:px-8 md:py-8">
-            <div className="relative shrink-0">
-              <label className="group relative block cursor-pointer">
-                {profile.avatarDataUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={profile.avatarDataUrl}
-                    alt=""
-                    className="h-[88px] w-[88px] rounded-full object-cover ring-2 ring-white/25 md:h-[100px] md:w-[100px]"
-                  />
-                ) : (
-                  <div
-                    className="flex h-[88px] w-[88px] items-center justify-center rounded-full text-2xl font-bold text-white ring-2 ring-white/25 md:h-[100px] md:w-[100px] md:text-[26px]"
-                    style={{ background: "#4b5563" }}
-                    aria-hidden
-                  >
-                    {initials(profile.firstName, profile.lastName)}
-                  </div>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={(e) => onAvatarFile(e.target.files?.[0] ?? null)}
-                />
-                <span
-                  className="pointer-events-none absolute bottom-0.5 right-0.5 h-4 w-4 rounded-full border-[3px] border-white bg-[#52b788] shadow-sm"
-                  aria-hidden
-                />
-              </label>
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <h2 className="font-display text-[1.65rem] font-bold leading-tight text-white md:text-3xl">
-                {displayName}
-              </h2>
-              <div className="mt-2.5 flex flex-wrap gap-2">
-                <span className="rounded-full border border-white/80 bg-transparent px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
-                  {sportLabel.toUpperCase()}
-                </span>
-                <span
-                  className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white"
-                  style={{ backgroundColor: PROFILE_BADGE_LEVEL_BG }}
-                >
-                  {levelLabel.toUpperCase()}
-                </span>
-              </div>
-              <p className="mt-2.5 text-sm text-white/75">Athlète endurance · FuelOS</p>
-            </div>
-          </div>
-
-          <div
-            className="grid grid-cols-3 divide-x divide-white/25 border-t border-white/20"
-            style={{ background: "rgba(0,0,0,0.18)" }}
-          >
-            {[
-              { value: profile.weightKg ?? "—", label: "KG" },
-              { value: profile.age ?? "—", label: "ANS" },
-              { value: seasonTotal, label: "COURSES" },
-            ].map(({ value, label }) => (
-              <div key={label} className="flex flex-col items-center py-4 md:py-5">
-                <span className="font-display text-[1.75rem] font-extrabold leading-none text-white md:text-[2rem]">
-                  {value}
-                </span>
-                <span className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-white/85">
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── PROCHAINE COURSE ── */}
-        <section className="mb-6 overflow-hidden rounded-2xl border border-[#e8ecef] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:border-[var(--fuel-card-border)] dark:bg-[var(--fuel-card-surface)] dark:shadow-none">
-          {!nextRace ? (
-            <div className="p-8 text-center">
-              <p className="text-[#6b7280] dark:text-[var(--color-text-muted)]">
-                Aucune course à venir. Ajoute ta prochaine objectif pour lancer la préparation.
-              </p>
-              <Link
-                href="/races"
-                className="mt-5 inline-flex items-center justify-center rounded-xl px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-95"
-                style={{ backgroundColor: PROFILE_GREEN_SOLID }}
-              >
-                + Ajouter une course
-              </Link>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-start justify-between gap-4 bg-white px-6 pb-5 pt-6 md:px-8 md:pb-6 md:pt-7 dark:bg-[var(--fuel-card-surface)]">
-                <div className="min-w-0">
-                  <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9ca3af] dark:text-[var(--color-text-muted)]">
-                    <Flag className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} aria-hidden />
-                    Prochaine course
-                  </p>
-                  <h3 className="font-display mt-2 text-[1.65rem] font-extrabold leading-tight tracking-tight text-[#111827] dark:text-[var(--color-text)] md:text-[1.85rem]">
-                    {nextRace.name}
-                  </h3>
-                </div>
-                <div
-                  className="flex min-w-[84px] shrink-0 flex-col items-center justify-center rounded-xl px-4 py-3 text-center text-white md:min-w-[92px]"
+            <div className="fuel-races-main-panel px-5 py-4 md:px-6">
+              <p className="races-section-eyebrow mb-3">Actions rapides</p>
+              <div className="flex flex-wrap gap-2.5">
+                <Link
+                  href="/plan"
+                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-95"
                   style={{ backgroundColor: PROFILE_GREEN_SOLID }}
                 >
-                  <span className="font-display text-[2rem] font-extrabold leading-none md:text-[2.25rem]">
-                    {daysToNext}
-                  </span>
-                  <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/95">
-                    JOURS
-                  </span>
-                </div>
+                  <Zap className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  Plan nutrition
+                </Link>
+                <Link
+                  href="/race"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text)] shadow-sm hover:bg-[var(--color-bg-card-hover)]"
+                >
+                  <Footprints className="h-4 w-4 opacity-70" strokeWidth={2} aria-hidden />
+                  Mode course
+                </Link>
+                <Link
+                  href="/prep"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text)] shadow-sm hover:bg-[var(--color-bg-card-hover)]"
+                >
+                  <Leaf className="h-4 w-4 opacity-70" strokeWidth={2} aria-hidden />
+                  Pré / Post
+                </Link>
+                <Link
+                  href="/races"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text)] shadow-sm hover:bg-[var(--color-bg-card-hover)]"
+                >
+                  <CalendarDays className="h-4 w-4 opacity-70" strokeWidth={2} aria-hidden />
+                  Calendrier
+                </Link>
               </div>
-
-              <div className="border-t border-[#e8ecef] bg-[#f3f4f6] px-6 py-6 md:px-8 dark:border-[var(--color-border-subtle)] dark:bg-[var(--color-bg-elevated)]">
-                <div className="flex flex-wrap gap-2.5">
-                  <span className="inline-flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-3.5 py-2 text-[13px] font-medium text-[#374151] shadow-sm dark:border-[var(--color-border)] dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text)]">
-                    <Calendar className="h-4 w-4 shrink-0 text-[#6b7280]" strokeWidth={2} aria-hidden />
-                    {formatRaceDateFr(nextRace.date)}
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-3.5 py-2 text-[13px] font-medium text-[#374151] shadow-sm dark:border-[var(--color-border)] dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text)]">
-                    <Footprints className="h-4 w-4 shrink-0 text-[#6b7280]" strokeWidth={2} aria-hidden />
-                    {capitalizeSport(nextRace.sport)}
-                  </span>
-                  {nextRace.location?.trim() ? (
-                    <span className="inline-flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-3.5 py-2 text-[13px] font-medium text-[#374151] shadow-sm dark:border-[var(--color-border)] dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text)]">
-                      <MapPin className="h-4 w-4 shrink-0 text-[#6b7280]" strokeWidth={2} aria-hidden />
-                      {nextRace.location}
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="mt-6 flex items-center justify-between border-b border-[#d1d5db] pb-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#9ca3af] dark:border-[var(--color-border-strong)] dark:text-[var(--color-text-muted)]">
-                  <span>Saison</span>
-                  <span>
-                    {seasonDaysLeft} JOURS
-                  </span>
-                </div>
-
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <Link
-                    href="/plan"
-                    className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-95"
-                    style={{ backgroundColor: PROFILE_GREEN_SOLID }}
-                  >
-                    <Zap className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                    Générer le plan
-                  </Link>
-                  <Link
-                    href="/race"
-                    className="inline-flex items-center gap-2 rounded-xl border border-[#d1d5db] bg-white px-5 py-2.5 text-sm font-semibold text-[#111827] shadow-sm hover:bg-[#f9fafb] dark:border-[var(--color-border)] dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text)] dark:hover:bg-[var(--color-bg-card-hover)]"
-                  >
-                    <Footprints className="h-4 w-4 text-[#6b7280]" strokeWidth={2} aria-hidden />
-                    Mode course
-                  </Link>
-                  <Link
-                    href="/prep"
-                    className="inline-flex items-center gap-2 rounded-xl border border-[#d1d5db] bg-white px-5 py-2.5 text-sm font-semibold text-[#111827] shadow-sm hover:bg-[#f9fafb] dark:border-[var(--color-border)] dark:bg-[var(--color-bg-card)] dark:text-[var(--color-text)] dark:hover:bg-[var(--color-bg-card-hover)]"
-                  >
-                    <Leaf className="h-4 w-4 text-[#6b7280]" strokeWidth={2} aria-hidden />
-                    Pré / Post
-                  </Link>
-                </div>
-
-                <div className="mt-7 border-t border-[#e5e7eb] pt-5 dark:border-[var(--color-border-subtle)]">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9ca3af] dark:text-[var(--color-text-muted)]">
-                    À venir
-                  </p>
-                  {followingRaces.length > 0 ? (
-                    <ul className="mt-3 space-y-2.5">
-                      {followingRaces.map((r) => {
-                        const dd = getDaysUntilRace(r);
-                        return (
-                          <li
-                            key={r.id}
-                            className="flex flex-wrap items-baseline justify-between gap-2 text-sm"
-                          >
-                            <span className="font-bold text-[#111827] dark:text-[var(--color-text)]">
-                              {r.name}
-                            </span>
-                            <span className="text-[13px] text-[#9ca3af] dark:text-[var(--color-text-muted)]">
-                              {formatRaceDateShort(r.date)} · {daysLabel(dd)}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : null}
-                  <Link
-                    href="/races"
-                    className="mt-4 inline-flex text-sm font-semibold text-[#1B4332] hover:underline dark:text-[var(--color-primary-light)]"
-                  >
-                    Voir tout le calendrier →
-                  </Link>
-                </div>
-              </div>
-            </>
-          )}
-        </section>
+            </div>
 
         {/* ── ACCORDION SECTIONS ── */}
 
         {/* Infos personnelles */}
         <SectionAccordion
           id="personal"
-          icon="⚡"
-          title="Données de performance"
-          subtitle="FTP, VMA, allure seuil, sudation"
+          icon="👤"
+          title="Identité & athlète"
+          subtitle="Morphologie, sports pratiqués, objectif"
           open={openSection === "personal"}
           onToggle={() => toggleSection("personal")}
         >
@@ -662,8 +453,8 @@ export default function ProfilPage() {
         <SectionAccordion
           id="nutrition"
           icon="🥗"
-          title="Préférences nutritionnelles"
-          subtitle="Forme, régimes et marques favoris"
+          title="Performance & nutrition"
+          subtitle="FTP, hydratation, préférences alimentaires"
           open={openSection === "nutrition"}
           onToggle={() => toggleSection("nutrition")}
         >
@@ -756,15 +547,13 @@ export default function ProfilPage() {
               />
             </label>
           </div>
-          <div className="mt-6">
-            <Button type="button" variant="secondary" size="md" onClick={handleSavePersonal}>
-              Enregistrer dans le calculateur
-            </Button>
-          </div>
 
           {/* Préférences nutrition */}
           <div className="mt-8 border-t border-[var(--color-border-subtle)] pt-6">
-            <div className="flex justify-between text-xs font-semibold text-[var(--color-text-muted)]">
+            <h4 className="font-display text-sm font-bold text-[var(--color-text)]">
+              Préférences nutritionnelles
+            </h4>
+            <div className="mt-3 flex justify-between text-xs font-semibold text-[var(--color-text-muted)]">
               <span>100 % liquide</span>
               <span>100 % solide</span>
             </div>
@@ -838,8 +627,8 @@ export default function ProfilPage() {
               ))}
             </div>
           </div>
-          <div className="mt-6">
-            <Button type="button" variant="secondary" size="md" onClick={handleSavePersonal}>
+          <div className="mt-8">
+            <Button type="button" variant="primary" size="md" onClick={handleSavePersonal}>
               Enregistrer dans le calculateur
             </Button>
           </div>
@@ -854,8 +643,178 @@ export default function ProfilPage() {
           open={openSection === "integrations"}
           onToggle={() => toggleSection("integrations")}
         >
-          <p>Connexions</p>
+          <p className="text-sm text-[var(--color-text-muted)]">
+            État local (démo) — les connexions réelles arriveront avec l&apos;OAuth.
+          </p>
+          <ul className="mt-5 space-y-3">
+            {INTEGRATIONS.map((int) => {
+              const on = !!profile.integrationConnected[int.id];
+              return (
+                <li
+                  key={int.id}
+                  className="flex items-center justify-between gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-4 py-3"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="text-base" aria-hidden>
+                      {int.logo}
+                    </span>
+                    <span className="truncate text-sm font-semibold text-[var(--color-text)]">
+                      {int.name}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={on}
+                    onClick={() =>
+                      updateProfile({
+                        integrationConnected: {
+                          ...profile.integrationConnected,
+                          [int.id]: !on,
+                        },
+                      })
+                    }
+                    className={`relative shrink-0 inline-flex h-7 w-12 items-center rounded-full border transition-colors ${
+                      on
+                        ? "border-[var(--color-accent)] bg-[var(--color-accent-muted)]"
+                        : "border-[var(--color-border)] bg-[var(--color-bg-card)]"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                        on ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         </SectionAccordion>
+          </div>
+
+          <aside className="races-layout__calendar min-w-0">
+            <div className="races-layout__calendar-sticky races-scrollable-y space-y-4">
+              <div className="races-next-milestone-card flex-col !items-stretch !gap-4 !p-5 sm:flex-row sm:!items-start">
+                <div className="relative shrink-0">
+                  <label className="group relative block cursor-pointer">
+                    {profile.avatarDataUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={profile.avatarDataUrl}
+                        alt=""
+                        className="mx-auto h-20 w-20 rounded-full object-cover ring-2 ring-[var(--color-border)] sm:mx-0"
+                      />
+                    ) : (
+                      <div
+                        className="mx-auto flex h-20 w-20 items-center justify-center rounded-full text-lg font-bold text-white ring-2 ring-white/25 sm:mx-0"
+                        style={{ background: "#4b5563" }}
+                        aria-hidden
+                      >
+                        {initials(profile.firstName, profile.lastName)}
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={(e) => onAvatarFile(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                </div>
+                <div className="min-w-0 flex-1 text-center sm:text-left">
+                  <p className="races-section-eyebrow mb-1">Athlète</p>
+                  <p className="font-display text-lg font-bold leading-tight text-[var(--color-text)]">
+                    {displayName}
+                  </p>
+                  <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
+                    <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-text)]">
+                      {sportLabel || "—"}
+                    </span>
+                    <span
+                      className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white"
+                      style={{ backgroundColor: PROFILE_BADGE_LEVEL_BG }}
+                    >
+                      {levelLabel || "—"}
+                    </span>
+                  </div>
+                  {goalLabel ? (
+                    <p className="mt-2 text-xs font-medium text-[var(--color-text-muted)]">
+                      Objectif · {goalLabel}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="fuel-races-main-panel overflow-hidden p-0">
+                <div className="grid grid-cols-2 divide-x divide-[var(--color-border)] border-b border-[var(--color-border)]">
+                  {[
+                    { v: profile.weightKg ?? "—", l: "Poids", u: "kg" },
+                    { v: profile.heightCm ?? "—", l: "Taille", u: "cm" },
+                  ].map((x) => (
+                    <div key={x.l} className="px-3 py-3 text-center">
+                      <div className="font-display text-xl font-extrabold text-[var(--color-text)]">
+                        {x.v}
+                        {typeof x.v === "number" ? (
+                          <span className="text-[11px] font-semibold text-[var(--color-text-muted)]">
+                            {" "}
+                            {x.u}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+                        {x.l}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 divide-x divide-[var(--color-border)]">
+                  {[
+                    { v: profile.age ?? "—", l: "Âge" },
+                    { v: seasonTotal, l: "Courses" },
+                  ].map((x) => (
+                    <div key={x.l} className="px-3 py-3 text-center">
+                      <div className="font-display text-xl font-extrabold text-[var(--color-text)]">
+                        {x.v}
+                      </div>
+                      <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+                        {x.l}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="fuel-races-main-panel px-4 py-4">
+                <p className="races-section-eyebrow mb-3">Raccourcis</p>
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href="#personal"
+                    className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2.5 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-bg-card-hover)]"
+                  >
+                    <Settings className="h-4 w-4 opacity-70" strokeWidth={2} aria-hidden />
+                    Identité & formulaire
+                  </Link>
+                  <Link
+                    href="/races"
+                    className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2.5 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-bg-card-hover)]"
+                  >
+                    <Calendar className="h-4 w-4 opacity-70" strokeWidth={2} aria-hidden />
+                    Mes courses
+                  </Link>
+                  <Link
+                    href="/plan"
+                    className="inline-flex items-center gap-2 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-white hover:opacity-95"
+                    style={{ backgroundColor: PROFILE_GREEN_SOLID }}
+                  >
+                    <Zap className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                    Mon plan nutrition
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
       </main>
     </>
   );
