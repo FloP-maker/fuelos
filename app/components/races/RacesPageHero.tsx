@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 export type RacesPageHeroProps = {
   onAddRace: () => void;
 };
@@ -25,13 +23,9 @@ export function RacesPageHero({ onAddRace }: RacesPageHeroProps) {
           <div className="races-page-hero__copy">
             <h1 id="races-hero-title">Mes courses</h1>
           </div>
-          <Link
-            href="/races?addRace=1"
-            className="races-page-hero__cta shrink-0"
-            onClick={() => onAddRace()}
-          >
+          <button type="button" className="races-page-hero__cta shrink-0" onClick={() => onAddRace()}>
             Ajouter une nouvelle course
-          </Link>
+          </button>
         </div>
       </div>
     </section>

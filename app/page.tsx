@@ -226,9 +226,6 @@ export default function Home() {
                 historique sur tous tes appareils.
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginTop: 6 }}>
-                <a href="#decouvrir" className="fuel-cta fuel-touch-btn">
-                  Découvrir
-                </a>
                 <Link href="/plan?step=event&onboarding=1" className="fuel-cta-outline fuel-touch-btn">
                   Générer un plan en 2 minutes
                 </Link>

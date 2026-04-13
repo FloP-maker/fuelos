@@ -28,6 +28,10 @@ import { Header } from '../components/Header';
 import { SectionBreadcrumb } from '../components/SectionBreadcrumb';
 import { Button } from '../components/Button';
 import { DebriefForm } from '../components/DebriefForm';
+import { AddRaceModal } from '../components/AddRaceModal';
+import { RacesAuthGateModal } from '../components/races/RacesAuthGateModal';
+import { RacePlanFollowupModal } from '../components/races/RacePlanFollowupModal';
+import type { RaceEntry } from '@/lib/types/race';
 import {
   activeFuelPlanFromStoredBundle,
   buildAutoInsight,
@@ -382,7 +386,7 @@ async function requestNotificationPermission(): Promise<boolean> {
 
 function RaceContent() {
   const searchParams = useSearchParams();
-  const { mergeAthleteProfile } = useProfile();
+  const { mergeAthleteProfile, profile: fuelProfile } = useProfile();
 
   const [raceState, setRaceState] = useState<RaceState>(INITIAL_RACE_STATE);
   /** Dernière course commitée en mémoire — évite appendDebrief avec un état obsolète (tick / batch React). */
@@ -426,6 +430,10 @@ function RaceContent() {
     insight: string;
   } | null>(null);
   const [isSavingDebriefFeedback, setIsSavingDebriefFeedback] = useState(false);
+  const [addRaceOpen, setAddRaceOpen] = useState(false);
+  const [raceAuthGateOpen, setRaceAuthGateOpen] = useState(false);
+  const [racePlanNudgeOpen, setRacePlanNudgeOpen] = useState(false);
+  const [lastSavedRaceEntry, setLastSavedRaceEntry] = useState<RaceEntry | null>(null);
 
   const [gpsRace, setGpsRace] = useState<{
     onCourseKm: number | null;
@@ -434,7 +442,7 @@ function RaceContent() {
     error: string | null;
   }>({ onCourseKm: null, raw: null, offCourse: false, error: null });
 
-  const { data: authSession } = useSession();
+  const { data: authSession, status: sessionStatus } = useSession();
   const raceLiveOpt = useRaceLiveOptional();
   const liveIntakesRef = useRef<PlannedIntake[] | undefined>(undefined);
   liveIntakesRef.current = raceLiveOpt?.session?.intakes;
@@ -507,6 +515,37 @@ function RaceContent() {
       setOnboarding({ profileDone: false, eventStepDone: false, hasPlanInStorage: false });
     }
   }, []);
+
+  const openAddRaceModal = useCallback(() => {
+    window.setTimeout(() => setAddRaceOpen(true), 0);
+  }, []);
+
+  const onRequestAddRace = useCallback(() => {
+    if (sessionStatus === 'unauthenticated') {
+      window.setTimeout(() => setRaceAuthGateOpen(true), 0);
+      return;
+    }
+    openAddRaceModal();
+  }, [sessionStatus, openAddRaceModal]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('addRace') !== '1') return;
+    onRequestAddRace();
+    params.delete('addRace');
+    const query = params.toString();
+    const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
+    window.history.replaceState(null, '', nextUrl);
+  }, [onRequestAddRace]);
+
+  const onRaceSavedFromModal = useCallback(
+    (race: RaceEntry) => {
+      refreshOnboarding();
+      setLastSavedRaceEntry(race);
+      setRacePlanNudgeOpen(true);
+    },
+    [refreshOnboarding]
+  );
 
   useEffect(() => {
     refreshOnboarding();
@@ -1276,18 +1315,37 @@ function RaceContent() {
     gpsRace.error,
   ]);
 
+  const raceAddModals = (
+    <>
+      <RacesAuthGateModal open={raceAuthGateOpen} onClose={() => setRaceAuthGateOpen(false)} />
+      <AddRaceModal open={addRaceOpen} onClose={() => setAddRaceOpen(false)} onSaved={onRaceSavedFromModal} />
+      <RacePlanFollowupModal
+        open={racePlanNudgeOpen}
+        race={lastSavedRaceEntry}
+        fuelProfile={fuelProfile}
+        onClose={() => {
+          setRacePlanNudgeOpen(false);
+          setLastSavedRaceEntry(null);
+        }}
+      />
+    </>
+  );
+
   if (!planLoadResolved) {
     return (
-      <div className="fuel-page">
-        <Header sticky />
-        <main className="fuel-main" style={{ ...S.main, paddingTop: 52 }}>
-          <SectionBreadcrumb />
-          <div style={{ maxWidth: 520, margin: '0 auto', textAlign: 'center', paddingTop: 56 }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>⚡</div>
-            <p style={{ ...S.muted, fontSize: 14, margin: 0 }}>Chargement du plan…</p>
-          </div>
-        </main>
-      </div>
+      <>
+        <div className="fuel-page">
+          <Header sticky />
+          <main className="fuel-main" style={{ ...S.main, paddingTop: 52 }}>
+            <SectionBreadcrumb />
+            <div style={{ maxWidth: 520, margin: '0 auto', textAlign: 'center', paddingTop: 56 }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>⚡</div>
+              <p style={{ ...S.muted, fontSize: 14, margin: 0 }}>Chargement du plan…</p>
+            </div>
+          </main>
+        </div>
+        {raceAddModals}
+      </>
     );
   }
 
@@ -1320,22 +1378,33 @@ function RaceContent() {
     ] as const;
 
     return (
-      <div className="fuel-page">
-        <Header sticky />
+      <>
+        <div className="fuel-page">
+          <Header sticky />
 
-        <main className="fuel-main" style={{ ...S.main, paddingTop: 52 }}>
-          <SectionBreadcrumb />
-          <div style={{ maxWidth: 520, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: 24 }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>⚡</div>
-              <h1 className="font-display" style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>
-                Mode course
-              </h1>
-              <p style={{ ...S.muted, fontSize: 14, margin: 0, lineHeight: 1.5 }}>
-                Aucun plan chargé. Trois étapes dans le planificateur, puis tu reviens ici pour lancer le
-                chronomètre et les alertes.
-              </p>
-            </div>
+          <main className="fuel-main" style={{ ...S.main, paddingTop: 52 }}>
+            <SectionBreadcrumb />
+            <div style={{ maxWidth: 520, margin: '0 auto' }}>
+              <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                <div style={{ fontSize: 40, marginBottom: 8 }}>⚡</div>
+                <h1 className="font-display" style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>
+                  Mode course
+                </h1>
+                <p style={{ ...S.muted, fontSize: 14, margin: 0, lineHeight: 1.5 }}>
+                  Aucun plan chargé. Trois étapes dans le planificateur, puis tu reviens ici pour lancer le
+                  chronomètre et les alertes.
+                </p>
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <Button type="button" variant="primary" size="md" fullWidth onClick={onRequestAddRace}>
+                  Ajouter une nouvelle course
+                </Button>
+                <p style={{ ...S.muted, fontSize: 12, margin: '10px 0 0', lineHeight: 1.45, textAlign: 'center' }}>
+                  Nom, date, discipline et fenêtres nutrition (calendrier). Ensuite, configure le détail de la course
+                  dans le planificateur pour générer ta timeline.
+                </p>
+              </div>
 
             <div
               style={{
@@ -1549,9 +1618,11 @@ function RaceContent() {
                 </p>
               </div>
             </div>
-          </div>
-        </main>
-      </div>
+            </div>
+          </main>
+        </div>
+        {raceAddModals}
+      </>
     );
   }
 
@@ -1607,16 +1678,17 @@ function RaceContent() {
         : 'Rythme conforme';
 
   return (
-    <div className="fuel-page">
-      <Header sticky />
+    <>
+      <div className="fuel-page">
+        <Header sticky />
 
-      <main className="fuel-main" style={S.main}>
-        <SectionBreadcrumb />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="font-display" style={{ fontSize: 22, fontWeight: 900, marginBottom: 2 }}>
-              Mode course
-            </div>
+        <main className="fuel-main" style={S.main}>
+          <SectionBreadcrumb />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="font-display" style={{ fontSize: 22, fontWeight: 900, marginBottom: 2 }}>
+                Mode course
+              </div>
             {raceState.status !== 'finished' && (
               <div role="tablist" aria-label="Type de course" style={S.raceTabBar}>
                 <button
@@ -2689,7 +2761,9 @@ function RaceContent() {
           </div>
         </div>
       </DestructiveConfirmOverlay>
-    </div>
+      </div>
+      {raceAddModals}
+    </>
   );
 }
 
