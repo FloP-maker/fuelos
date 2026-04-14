@@ -89,7 +89,7 @@ export function Header({ activePage: activePageProp, sticky, tall, extra }: Head
               .join(' ')}
             aria-current={isActive ? 'page' : undefined}
             aria-label={`${item.label} — ${NAV_ACCOUNT_REQUIRED_HINT}`}
-            title={NAV_ACCOUNT_REQUIRED_HINT}
+            data-tooltip={NAV_ACCOUNT_REQUIRED_HINT}
             onClick={() => openAuthGate(item.href)}
           >
             <span className="fuel-header-text-nav-link__row">
@@ -122,7 +122,7 @@ export function Header({ activePage: activePageProp, sticky, tall, extra }: Head
           className="fuel-header-nav-panel-link fuel-header-nav-panel-link--locked"
           aria-current={isActive ? 'page' : undefined}
           aria-label={`${item.label} — ${NAV_ACCOUNT_REQUIRED_HINT}`}
-          title={NAV_ACCOUNT_REQUIRED_HINT}
+          data-tooltip={NAV_ACCOUNT_REQUIRED_HINT}
           onClick={() => {
             setMobileNavOpen(false);
             openAuthGate(item.href);

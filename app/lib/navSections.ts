@@ -17,16 +17,15 @@ export const NAV_ACCOUNT_REQUIRED_HINT = 'Accessible avec un compte FuelOS';
 
 /**
  * Ordre = Découverte puis Espace athlète (séparateur visuel dans le header).
- * Hors session : Plan et Produits restent libres ; les autres ouvrent la modale de connexion.
+ * Mémoire et Analyses sont dans `/profil` (onglets), pas dans ce menu.
+ * Hors session : Plan et Produits libres ; le reste ouvre la modale de connexion.
  */
 export const NAV_SECTIONS: NavSectionItem[] = [
   { href: '/plan', label: 'Plan', page: 'plan', group: 'discover', requiresAccount: false },
   { href: '/produits', label: 'Produits', page: 'shop', group: 'discover', requiresAccount: false },
-  { href: '/analyses', label: 'Analyses', page: 'learn', group: 'discover', requiresAccount: true },
   { href: '/races', label: 'Mes courses', page: 'races', group: 'athlete', requiresAccount: true },
   { href: '/prep', label: 'Pré / post', page: 'prep', group: 'athlete', requiresAccount: true },
   { href: '/race', label: 'Mode course', page: 'race', group: 'athlete', requiresAccount: true },
-  { href: '/history', label: 'Mémoire', page: 'history', group: 'athlete', requiresAccount: true },
 ];
 
 export const NAV_GROUP_LABELS: Record<NavGroupId, string> = {
@@ -97,5 +96,9 @@ export function sectionLabelForPathname(pathname: string | null): string | undef
   const page = pathnameToHeaderPage(pathname);
   if (!page) return undefined;
   if (page === 'home') return 'Accueil';
-  return NAV_SECTIONS.find((s) => s.page === page)?.label;
+  const fromNav = NAV_SECTIONS.find((s) => s.page === page)?.label;
+  if (fromNav) return fromNav;
+  if (page === 'history') return 'Mémoire';
+  if (page === 'learn') return 'Analyses';
+  return undefined;
 }

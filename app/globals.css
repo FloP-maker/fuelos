@@ -1485,6 +1485,49 @@ textarea:focus {
     color: color-mix(in srgb, var(--color-text) 72%, var(--color-text-muted));
   }
 
+  button.fuel-header-nav-panel-link--locked {
+    position: relative;
+    cursor: help;
+  }
+
+  button.fuel-header-nav-panel-link--locked::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    top: calc(100% + 6px);
+    z-index: 80;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: center;
+    text-wrap: balance;
+    color: var(--color-text);
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border-strong);
+    box-shadow: var(--shadow-md);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.14s ease,
+      visibility 0.14s ease;
+  }
+
+  button.fuel-header-nav-panel-link--locked:hover::after,
+  button.fuel-header-nav-panel-link--locked:focus-visible::after {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    button.fuel-header-nav-panel-link--locked::after {
+      transition: none;
+    }
+  }
+
   .fuel-header-nav-panel-link--secondary {
     margin-top: 8px;
     padding-top: 18px;
@@ -2034,11 +2077,54 @@ textarea:focus {
   }
 
   .fuel-header-text-nav-link--locked {
+    position: relative;
+    cursor: help;
     color: color-mix(in srgb, #4a4a4a 72%, var(--color-text-muted));
   }
 
   html.dark .fuel-header-text-nav-link--locked {
     color: color-mix(in srgb, var(--color-text) 58%, var(--color-text-muted));
+  }
+
+  /* Infobulle au survol / focus clavier (invité, entrées verrouillées) */
+  .fuel-header-text-nav-link--locked::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 8px);
+    z-index: 80;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: min(280px, 78vw);
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: center;
+    text-wrap: balance;
+    color: var(--color-text);
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border-strong);
+    box-shadow: var(--shadow-md);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.14s ease,
+      visibility 0.14s ease;
+  }
+
+  .fuel-header-text-nav-link--locked:hover::after,
+  .fuel-header-text-nav-link--locked:focus-visible::after {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fuel-header-text-nav-link--locked::after {
+      transition: none;
+    }
   }
 
   html.dark .fuel-header-text-nav-link {
