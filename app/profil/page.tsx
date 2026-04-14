@@ -141,10 +141,14 @@ function ProfileHeroMetric({
   help: string;
 }) {
   return (
-    <div className="rounded-3xl border border-white/12 bg-white/8 px-4 py-3 backdrop-blur-md">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/58">{label}</p>
-      <p className="mt-2 text-xl font-extrabold tracking-tight text-white">{value}</p>
-      <p className="mt-1 text-xs text-white/62">{help}</p>
+    <div className="relative overflow-hidden rounded-2xl border border-white/14 bg-white/[0.07] px-4 py-3.5 shadow-[0_12px_40px_rgba(0,0,0,0.18)] backdrop-blur-md">
+      <div
+        className="pointer-events-none absolute inset-y-2 left-0 w-0.5 rounded-full bg-gradient-to-b from-[var(--color-energy)] to-[var(--color-accent)]"
+        aria-hidden
+      />
+      <p className="pl-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/55">{label}</p>
+      <p className="mt-1.5 pl-2 font-display text-2xl font-black tracking-tight text-white">{value}</p>
+      <p className="mt-1 pl-2 text-[11px] leading-snug text-white/65">{help}</p>
     </div>
   );
 }
@@ -163,18 +167,22 @@ function DashboardTile({
   children?: ReactNode;
 }) {
   return (
-    <article className="rounded-[28px] border border-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-border))] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--color-bg-card)_84%,white)_0%,var(--color-bg-card)_62%,color-mix(in_srgb,var(--color-primary)_6%,var(--color-bg-card))_100%)] p-5 shadow-[0_18px_45px_color-mix(in_srgb,#06110a_10%,transparent)]">
-      <div className="flex items-start gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] text-[var(--color-primary)]">
+    <article className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5 shadow-[0_2px_16px_color-mix(in_srgb,#000_4%,transparent)] transition-[box-shadow,transform] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-[0_12px_36px_color-mix(in_srgb,#000_8%,transparent)] md:rounded-3xl">
+      <div
+        className="pointer-events-none absolute inset-y-3 left-0 w-[3px] rounded-full bg-gradient-to-b from-[var(--color-energy)] via-[var(--color-accent)] to-[var(--color-primary)] opacity-90"
+        aria-hidden
+      />
+      <div className="relative flex items-start gap-3.5 pl-1.5">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--color-energy)_12%,var(--color-bg-subtle))] text-[var(--color-energy)] ring-1 ring-[color-mix(in_srgb,var(--color-energy)_22%,transparent)]">
           {icon}
         </span>
         <div className="min-w-0">
-          <p className="races-section-eyebrow">{eyebrow}</p>
-          <h3 className="mt-1 font-display text-lg font-extrabold text-[var(--color-text)]">{title}</h3>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-text-muted)]">{eyebrow}</p>
+          <h3 className="mt-1.5 font-display text-lg font-black tracking-tight text-[var(--color-text)]">{title}</h3>
           <p className="mt-1 text-sm leading-relaxed text-[var(--color-text-muted)]">{body}</p>
         </div>
       </div>
-      {children ? <div className="mt-5">{children}</div> : null}
+      {children ? <div className="relative mt-5 pl-1.5">{children}</div> : null}
     </article>
   );
 }
@@ -189,11 +197,13 @@ function StatPill({
   label: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-card)_70%,var(--color-bg-elevated))] px-4 py-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">{label}</p>
-      <div className="mt-2 flex items-end gap-1">
-        <span className="font-display text-2xl font-extrabold tracking-tight text-[var(--color-text)]">{value}</span>
-        {unit ? <span className="pb-0.5 text-xs font-semibold text-[var(--color-text-muted)]">{unit}</span> : null}
+    <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-border)_88%,var(--color-energy))] bg-[color-mix(in_srgb,var(--color-bg-subtle)_55%,var(--color-bg-card))] px-4 py-3.5">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">{label}</p>
+      <div className="mt-1.5 flex items-baseline gap-1">
+        <span className="font-display text-[1.65rem] font-black leading-none tracking-tight text-[var(--color-text)]">
+          {value}
+        </span>
+        {unit ? <span className="text-xs font-bold text-[var(--color-text-muted)]">{unit}</span> : null}
       </div>
     </div>
   );
@@ -218,37 +228,46 @@ function SectionAccordion({
   children: ReactNode;
   accentColor?: string;
 }) {
+  const accent = accentColor ?? GREEN;
   return (
     <section
-      className="overflow-hidden rounded-[30px] border border-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-border))] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-bg-card)_88%,white)_0%,var(--color-bg-card)_100%)] shadow-[0_16px_40px_color-mix(in_srgb,#021408_8%,transparent)]"
+      className={[
+        "overflow-hidden rounded-2xl border bg-[var(--color-bg-card)] shadow-sm transition-[border-color,box-shadow] duration-200 md:rounded-3xl",
+        open
+          ? "border-[color-mix(in_srgb,var(--color-energy)_28%,var(--color-border))] shadow-[0_8px_32px_color-mix(in_srgb,#000_6%,transparent)]"
+          : "border-[var(--color-border)] hover:border-[color-mix(in_srgb,var(--color-text-muted)_35%,var(--color-border))]",
+      ].join(" ")}
       aria-labelledby={`section-${id}-title`}
     >
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left md:px-6"
+        className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left md:px-6 md:py-5"
         onClick={onToggle}
         aria-expanded={open}
         aria-controls={`section-${id}-body`}
         id={`section-${id}-title`}
       >
-        <div className="flex min-w-0 items-center gap-4">
+        <div className="flex min-w-0 items-center gap-3.5 md:gap-4">
           <span
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-md ring-2 ring-white/10"
             style={{
-              background: `linear-gradient(135deg, ${accentColor ?? GREEN} 0%, color-mix(in srgb, ${
-                accentColor ?? GREEN
-              } 60%, white) 100%)`,
+              background: `linear-gradient(145deg, ${accent} 0%, color-mix(in srgb, ${accent} 55%, #0f172a) 100%)`,
             }}
           >
             {icon}
           </span>
           <div className="min-w-0">
-            <p className="text-base font-extrabold text-[var(--color-text)]">{title}</p>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">{subtitle}</p>
+            <p className="font-display text-base font-black tracking-tight text-[var(--color-text)] md:text-lg">
+              {title}
+            </p>
+            <p className="mt-0.5 text-sm leading-snug text-[var(--color-text-muted)]">{subtitle}</p>
           </div>
         </div>
         <ChevronDown
-          className="h-5 w-5 shrink-0 text-[var(--color-text-muted)] transition-transform duration-200"
+          className={[
+            "h-5 w-5 shrink-0 transition-transform duration-200",
+            open ? "text-[var(--color-energy)]" : "text-[var(--color-text-muted)]",
+          ].join(" ")}
           style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
           aria-hidden
         />
@@ -257,7 +276,7 @@ function SectionAccordion({
       {open ? (
         <div
           id={`section-${id}-body`}
-          className="border-t border-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-border))] px-5 py-5 md:px-6"
+          className="border-t border-[var(--color-border-subtle)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_40%,var(--color-bg-card))] px-4 py-5 md:px-6 md:py-6"
         >
           {children}
         </div>
@@ -375,7 +394,7 @@ export default function ProfilPage() {
     <>
       <Header />
       <main className="fuel-main races-page">
-        <section className="races-page-hero" aria-labelledby="profil-hero-title">
+        <section className="races-page-hero profil-hero" aria-labelledby="profil-hero-title">
           <svg viewBox="0 0 1200 220" preserveAspectRatio="none" aria-hidden>
             <path
               fill="#0b1711"
@@ -387,27 +406,26 @@ export default function ProfilPage() {
             />
           </svg>
           <div className="races-page-hero__inner">
-            <div className="races-page-hero__left gap-5">
+            <div className="races-page-hero__left w-full max-w-[1400px] gap-6">
               <div className="races-page-hero__copy max-w-3xl">
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/78 backdrop-blur-md">
-                  <Sparkles className="h-3.5 w-3.5" aria-hidden />
-                  Endurance nutrition profile
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/[0.09] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/80 backdrop-blur-md">
+                  <Sparkles className="h-3.5 w-3.5 text-[var(--color-energy)]" aria-hidden />
+                  Profil athlète
                 </span>
                 <h1 id="profil-hero-title" className="mt-4">
-                  Un profil athlète qui alimente chaque plan, chaque sortie, chaque debrief.
+                  Là où ton corps rencontre le plan nutrition.
                 </h1>
-                <p className="mt-3 max-w-2xl text-sm text-white/72">
-                  Même langage visuel que le mode course, avec une lecture plus premium façon app
-                  d&apos;endurance: identité, métriques de carburant, connexions et préférences
-                  nutritionnelles au même endroit.
+                <p className="mt-3 max-w-2xl text-sm text-white/75">
+                  Un tableau de bord clair : identité, carburant, hydratation et connexions — le même fil conducteur
+                  que tes courses, tes analyses et ton calculateur.
                 </p>
               </div>
 
-              <div className="grid w-full gap-3 md:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.95fr)]">
-                <div className="rounded-[32px] border border-white/12 bg-[linear-gradient(150deg,rgba(255,255,255,0.18)_0%,rgba(255,255,255,0.08)_58%,rgba(255,255,255,0.04)_100%)] p-5 shadow-[0_18px_60px_rgba(2,6,4,0.28)] backdrop-blur-xl">
-                  <div className="flex flex-col gap-5 md:flex-row md:items-center">
-                    <label className="group relative mx-auto block cursor-pointer md:mx-0">
-                      <div className="relative h-24 w-24 overflow-hidden rounded-[28px] border border-white/16 bg-white/10 shadow-lg">
+              <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(260px,0.65fr)]">
+                <div className="rounded-[28px] border border-white/14 bg-[linear-gradient(155deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.07)_45%,rgba(255,255,255,0.03)_100%)] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl md:rounded-[32px] md:p-6">
+                  <div className="flex flex-col gap-6 md:flex-row md:items-start">
+                    <label className="group relative mx-auto shrink-0 cursor-pointer md:mx-0">
+                      <div className="relative h-[5.5rem] w-[5.5rem] overflow-hidden rounded-[26px] border-2 border-white/20 bg-white/10 shadow-xl ring-2 ring-[color-mix(in_srgb,var(--color-energy)_45%,transparent)]">
                         {profile.avatarDataUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -417,17 +435,17 @@ export default function ProfilPage() {
                           />
                         ) : (
                           <div
-                            className="flex h-full w-full items-center justify-center text-2xl font-extrabold text-white"
+                            className="flex h-full w-full items-center justify-center font-display text-3xl font-black text-white"
                             style={{
-                              background: `linear-gradient(135deg, ${GREEN_MUTED} 0%, ${GREEN_LIGHT} 100%)`,
+                              background: `linear-gradient(145deg, ${GREEN_MUTED} 0%, ${GREEN_LIGHT} 55%, color-mix(in srgb, var(--color-energy) 35%, ${GREEN_LIGHT}) 100%)`,
                             }}
                             aria-hidden
                           >
                             {initials(profile.firstName, profile.lastName)}
                           </div>
                         )}
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/35 opacity-0 transition-opacity group-hover:opacity-100">
-                          <span className="text-xs font-semibold text-white">Photo</span>
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                          <span className="text-[11px] font-bold uppercase tracking-wide text-white">Photo</span>
                         </div>
                       </div>
                       <input
@@ -439,84 +457,93 @@ export default function ProfilPage() {
                     </label>
 
                     <div className="min-w-0 flex-1">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/56">
-                        Athlete cockpit
-                      </p>
-                      <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-white">
-                        {displayName}
-                      </h2>
+                      <div className="flex flex-wrap items-end gap-2">
+                        <h2 className="font-display text-[clamp(1.65rem,4vw,2.25rem)] font-black leading-none tracking-tight text-white">
+                          {displayName}
+                        </h2>
+                        {seasonTotal > 0 ? (
+                          <span className="mb-0.5 rounded-full border border-white/20 bg-black/20 px-2.5 py-0.5 text-[11px] font-bold text-white/85">
+                            {seasonTotal} course{seasonTotal > 1 ? "s" : ""}
+                          </span>
+                        ) : null}
+                      </div>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {sportObj ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/14 bg-white/8 px-3 py-1 text-xs font-semibold text-white/86">
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/18 bg-black/15 px-3 py-1 text-xs font-bold text-white">
                             <span aria-hidden>{sportObj.emoji}</span>
                             {sportObj.label}
                           </span>
                         ) : null}
                         {levelObj ? (
                           <span
-                            className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold text-white"
+                            className="inline-flex items-center rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide text-white shadow-sm"
                             style={{ backgroundColor: levelObj.color }}
                           >
                             {levelObj.label}
                           </span>
                         ) : null}
                         {goalObj ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/14 bg-white/8 px-3 py-1 text-xs font-semibold text-white/78">
-                            <Target className="h-3.5 w-3.5" aria-hidden />
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/18 bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">
+                            <Target className="h-3.5 w-3.5 text-[var(--color-energy)]" aria-hidden />
                             {goalObj.label}
                           </span>
                         ) : null}
                       </div>
-                      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+
+                      <div className="mt-5 grid gap-2.5 sm:grid-cols-3">
                         <ProfileHeroMetric
                           label="Complétude"
                           value={`${completion}%`}
-                          help="Prêt pour des recommandations plus fines"
+                          help="Plus c’est rempli, plus les plans sont précis."
                         />
                         <ProfileHeroMetric
-                          label="Connecté"
+                          label="Sources"
                           value={`${connectedCount}/5`}
-                          help="Sources de données d&apos;entraînement"
+                          help="Apps et boîtiers liés au profil."
                         />
                         <ProfileHeroMetric
-                          label="Mode nutrition"
+                          label="Carburant"
                           value={nutritionMode}
-                          help="Tolérance carburant pendant l&apos;effort"
+                          help="Liquide / solide pendant l’effort."
                         />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-3 md:grid-cols-1">
+                <div className="flex flex-col gap-3">
                   <ProfileHeroMetric
                     label="Métrique clé"
                     value={primaryPerformanceStat}
-                    help={sportObj ? `Repère principal pour ${sportObj.theme.toLowerCase()}` : "Ajoute une donnée de performance"}
+                    help={
+                      sportObj
+                        ? `Repère pour ${sportObj.theme.toLowerCase()}`
+                        : "FTP ou VMA : à renseigner pour affiner les plans."
+                    }
                   />
                   <ProfileHeroMetric
-                    label="Hydratation"
+                    label="Sudation"
                     value={
                       typeof profile.sweatRateMlPerH === "number"
                         ? `${profile.sweatRateMlPerH} ml/h`
-                        : "Non renseignée"
+                        : "—"
                     }
                     help={
                       typeof profile.sodiumLossMgPerH === "number"
-                        ? `${profile.sodiumLossMgPerH} mg sodium/h`
-                        : "Ajoute ta perte sodée"
+                        ? `${profile.sodiumLossMgPerH} mg sodium / h`
+                        : "Sodium perdu : à calibrer pour l’hydratation."
                     }
                   />
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                     <Link href="#personal" className="races-page-hero__cta">
-                      Modifier mon profil
+                      Éditer le profil
                     </Link>
                     <Link
                       href="/profil/integrations"
-                      className="inline-flex items-center justify-center rounded-full border border-white/16 bg-white/8 px-5 py-3 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/14"
+                      className="inline-flex flex-1 items-center justify-center rounded-full border border-white/22 bg-[color-mix(in_srgb,var(--color-energy)_22%,rgba(255,255,255,0.08))] px-5 py-3 text-sm font-bold text-white shadow-lg backdrop-blur-md transition hover:bg-[color-mix(in_srgb,var(--color-energy)_32%,rgba(255,255,255,0.12))] sm:flex-none"
                     >
                       <Link2 className="mr-2 h-4 w-4" aria-hidden />
-                      Connexions
+                      Intégrations
                     </Link>
                   </div>
                 </div>
@@ -535,8 +562,8 @@ export default function ProfilPage() {
 
         <div className="races-layout">
           <div className="races-layout__main min-w-0">
-            <nav className="fuel-races-main-panel mb-4 overflow-hidden" aria-label="Sections du profil">
-              <div className="flex border-b border-[var(--color-border)] px-1 sm:px-2">
+            <nav className="mb-6 scroll-mt-6" aria-label="Sections du profil">
+              <div className="flex gap-1 rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_88%,var(--color-bg))] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 {PROFIL_TABS.map((tab) => {
                   const active = profilTab === tab.id;
                   const Icon = tab.icon;
@@ -546,14 +573,19 @@ export default function ProfilPage() {
                       type="button"
                       onClick={() => setProfilTab(tab.id)}
                       className={[
-                        "relative -mb-px flex min-h-[52px] flex-1 items-center justify-center gap-2 border-b-2 px-2 py-2.5 text-sm font-semibold transition-colors sm:flex-none sm:px-5",
+                        "relative flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl px-2 py-2 text-sm font-bold transition-all sm:min-h-[50px] sm:flex-none sm:px-5",
                         active
-                          ? "border-[var(--color-primary)] text-[var(--color-text)]"
-                          : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
+                          ? "bg-[var(--color-bg-card)] text-[var(--color-text)] shadow-[0_4px_20px_color-mix(in_srgb,#000_12%,transparent),0_0_0_1px_color-mix(in_srgb,var(--color-energy)_35%,transparent)]"
+                          : "text-[var(--color-text-muted)] hover:bg-[color-mix(in_srgb,var(--color-bg-card)_55%,transparent)] hover:text-[var(--color-text)]",
                       ].join(" ")}
                       aria-current={active ? "page" : undefined}
                     >
-                      <Icon className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+                      <Icon
+                        className={["h-4 w-4 shrink-0", active ? "text-[var(--color-energy)]" : "opacity-75"].join(
+                          " "
+                        )}
+                        aria-hidden
+                      />
                       <span className="hidden sm:inline">{tab.label}</span>
                       <span className="sm:hidden">{tab.short}</span>
                     </button>
@@ -572,9 +604,9 @@ export default function ProfilPage() {
 
                   <DashboardTile
                     icon={<ShieldCheck className="h-5 w-5" aria-hidden />}
-                    eyebrow="Fuel state"
-                    title="Résumé du profil"
-                    body="Un cockpit clair pour savoir ce qui manque avant de fiabiliser les plans et recommandations."
+                    eyebrow="État du profil"
+                    title="Vue synthèse"
+                    body="Les chiffres qui pilotent ton calculateur : morpho, saison et progression du remplissage."
                   >
                     <div className="grid gap-3 sm:grid-cols-2">
                       <StatPill
@@ -620,8 +652,8 @@ export default function ProfilPage() {
                     title={sportObj ? `${sportObj.label} · ${levelObj?.short ?? "Profil"}` : "Profil athlète"}
                     body={
                       sports.length > 0
-                        ? `Sports actifs: ${sports.join(", ")}`
-                        : "Sélectionne tes sports pour adapter les repères nutritionnels."
+                        ? `Sports cochés : ${sports.join(", ")}`
+                        : "Indique les disciplines pratiquées pour caler les repères nutrition."
                     }
                   >
                     <div className="flex flex-wrap gap-2">
@@ -642,9 +674,9 @@ export default function ProfilPage() {
 
                   <DashboardTile
                     icon={<Droplets className="h-5 w-5" aria-hidden />}
-                    eyebrow="Fueling"
-                    title="Profil de tolérance"
-                    body="Hydratation, sodium et texture d&apos;apport pour préparer les courses longues."
+                    eyebrow="Carburant & eau"
+                    title="Tolérance à l’effort"
+                    body="Sueur, sodium et mix liquide / solide : la base des longues sorties."
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3">
@@ -673,8 +705,8 @@ export default function ProfilPage() {
                   <DashboardTile
                     icon={<Link2 className="h-5 w-5" aria-hidden />}
                     eyebrow="Connectivité"
-                    title="Écosystème d&apos;entraînement"
-                    body="Une lecture inspirée des apps d&apos;endurance pour visualiser ce qui alimente ton profil."
+                    title="Où passent tes données"
+                    body="Strava, Garmin, Apple Health… Ce qui est « live » alimente tes analyses et ton suivi."
                   >
                     <div className="space-y-2">
                       {INTEGRATIONS.slice(0, 3).map((integration) => {
@@ -694,13 +726,13 @@ export default function ProfilPage() {
                               </div>
                             </div>
                             <span
-                              className="rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em]"
+                              className="rounded-full px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.16em]"
                               style={{
                                 color: connected ? integration.color : "var(--color-text-muted)",
                                 backgroundColor: connected ? `${integration.color}18` : "var(--color-bg-card)",
                               }}
                             >
-                              {connected ? "Live" : "Off"}
+                              {connected ? "Actif" : "Off"}
                             </span>
                           </div>
                         );
@@ -716,85 +748,88 @@ export default function ProfilPage() {
                 </div>
 
                 <div
-                  className="fuel-races-main-panel overflow-hidden rounded-[30px] border border-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-border))]"
+                  className="fuel-races-main-panel overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--color-energy)_22%,var(--color-border))] shadow-[0_8px_40px_color-mix(in_srgb,#000_6%,transparent)] md:rounded-[28px]"
                   id="personal"
                 >
-                  <div className="grid gap-4 border-b border-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-border))] bg-[linear-gradient(160deg,color-mix(in_srgb,var(--color-primary)_9%,var(--color-bg-card))_0%,var(--color-bg-card)_70%)] p-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)] lg:p-6">
+                  <div className="grid gap-5 border-b border-[var(--color-border-subtle)] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--color-energy)_10%,var(--color-bg-card))_0%,var(--color-bg-card)_55%,var(--color-bg-card)_100%)] p-5 lg:grid-cols-[minmax(0,1.08fr)_minmax(300px,0.92fr)] lg:p-7">
                     <div>
-                      <p className="races-section-eyebrow">Overview</p>
-                      <h2 className="mt-2 font-display text-2xl font-extrabold tracking-tight text-[var(--color-text)]">
-                        Profil athlète, prêt pour la personnalisation.
+                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--color-energy)]">
+                        Activité
+                      </p>
+                      <h2 className="mt-2 font-display text-2xl font-black tracking-tight text-[var(--color-text)] md:text-[1.65rem]">
+                        Passe du profil à la ligne de départ.
                       </h2>
                       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)]">
-                        Le look reprend les codes du mode course, mais avec une lecture plus calme
-                        et analytique, pensée comme une page profil d&apos;application de nutrition
-                        sportive.
+                        Raccourcis vers les outils FuelOS : plan nutrition, jour J, charge autour de la course et
+                        calendrier — sans quitter ton espace athlète.
                       </p>
 
-                      <div className="mt-5 flex flex-wrap gap-3">
+                      <div className="mt-6 flex flex-wrap gap-2.5">
                         <Link
                           href="/plan"
-                          className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm"
+                          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[var(--color-energy)] to-[color-mix(in_srgb,var(--color-energy)_75%,var(--color-accent))] px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:brightness-105"
                         >
                           <Zap className="h-4 w-4" aria-hidden />
                           Plan nutrition
                         </Link>
                         <Link
                           href="/race"
-                          className="inline-flex items-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text)]"
+                          className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-bold text-[var(--color-text)] shadow-sm transition hover:border-[color-mix(in_srgb,var(--color-energy)_40%,var(--color-border))]"
                         >
-                          <Footprints className="h-4 w-4 opacity-70" aria-hidden />
+                          <Footprints className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
                           Mode course
                         </Link>
                         <Link
                           href="/prep"
-                          className="inline-flex items-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text)]"
+                          className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-bold text-[var(--color-text)] shadow-sm transition hover:border-[color-mix(in_srgb,var(--color-energy)_40%,var(--color-border))]"
                         >
-                          <Leaf className="h-4 w-4 opacity-70" aria-hidden />
-                          Pré / Post
+                          <Leaf className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
+                          Pré / post
                         </Link>
                         <Link
                           href="/races"
-                          className="inline-flex items-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text)]"
+                          className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-bold text-[var(--color-text)] shadow-sm transition hover:border-[color-mix(in_srgb,var(--color-energy)_40%,var(--color-border))]"
                         >
-                          <CalendarDays className="h-4 w-4 opacity-70" aria-hidden />
-                          Calendrier
+                          <CalendarDays className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
+                          Mes courses
                         </Link>
                       </div>
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-                      <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                      <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-4 md:rounded-3xl">
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
                           Objectif saison
                         </p>
-                        <p className="mt-2 text-lg font-extrabold text-[var(--color-text)]">
+                        <p className="mt-2 font-display text-lg font-black text-[var(--color-text)]">
                           {goalObj?.label ?? "À définir"}
                         </p>
                         <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                          {goalObj?.cue ?? "Clarifie ton axe principal pour mieux hiérarchiser les recommandations."}
+                          {goalObj?.cue ?? "Choisis un axe pour prioriser les reco nutrition."}
                         </p>
                       </div>
-                      <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                          Marques favorites
+                      <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-4 md:rounded-3xl">
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                          Marques
                         </p>
-                        <p className="mt-2 text-lg font-extrabold text-[var(--color-text)]">
+                        <p className="mt-2 font-display text-lg font-black text-[var(--color-text)]">
                           {brands.length > 0 ? brands.length : "0"}
                         </p>
                         <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                          {brands.length > 0 ? brands.join(", ") : "Ajoute tes préférences produits."}
+                          {brands.length > 0 ? brands.join(", ") : "Sélectionne les marques que tu utilises."}
                         </p>
                       </div>
-                      <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                      <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-4 md:rounded-3xl">
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
                           Prochaine course
                         </p>
-                        <p className="mt-2 text-lg font-extrabold text-[var(--color-text)]">
-                          {nextRace ? nextRace.name : "Aucune programmée"}
+                        <p className="mt-2 line-clamp-2 font-display text-lg font-black text-[var(--color-text)]">
+                          {nextRace ? nextRace.name : "—"}
                         </p>
                         <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                          {nextRace ? "FuelOS pourra te proposer un plan plus contextuel." : "Ajoute une course pour contextualiser le profil."}
+                          {nextRace
+                            ? "Contexte pris en compte pour tes plans."
+                            : "Ajoute un objectif dans Mes courses."}
                         </p>
                       </div>
                     </div>
@@ -1059,12 +1094,14 @@ export default function ProfilPage() {
                       </div>
 
                       <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-4">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                          Readiness
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                          Repère effort
                         </p>
-                        <p className="mt-2 text-lg font-extrabold text-[var(--color-text)]">{primaryPerformanceStat}</p>
+                        <p className="mt-2 font-display text-lg font-black text-[var(--color-text)]">
+                          {primaryPerformanceStat}
+                        </p>
                         <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-                          Une seule métrique forte suffit déjà à rendre les recommandations plus crédibles.
+                          FTP ou VMA : une seule donnée forte suffit à ancrer les recommandations.
                         </p>
                       </div>
                     </div>
@@ -1075,8 +1112,8 @@ export default function ProfilPage() {
                         <span className="text-sm font-bold text-[var(--color-text)]">Hydratation & sudation</span>
                       </div>
                       <div className="grid gap-4 sm:grid-cols-2">
-                        <label className="block text-sm font-semibold text-[var(--color-text)]">
-                          Sweat rate (ml/h)
+                          <label className="block text-sm font-semibold text-[var(--color-text)]">
+                            Débit de sueur (ml/h)
                           <input
                             type="number"
                             min={200}
@@ -1207,7 +1244,7 @@ export default function ProfilPage() {
                     id="integrations"
                     icon={<Settings className="h-5 w-5" />}
                     title="Connexions"
-                    subtitle="Un rendu plus proche des apps d'endurance pour visualiser tes sources actives."
+                    subtitle="Active ou coupe chaque source : c’est indicatif pour visualiser ton écosystème."
                     open={openSection === "integrations"}
                     onToggle={() => toggleSection("integrations")}
                     accentColor="#64748B"
@@ -1252,7 +1289,7 @@ export default function ProfilPage() {
                             <div className="flex items-center gap-4">
                               <div className="text-right">
                                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                                  Sync
+                                  État
                                 </p>
                                 <p className="mt-1 text-sm font-semibold text-[var(--color-text)]">
                                   {connected ? "Activée" : "Inactive"}

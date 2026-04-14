@@ -509,6 +509,55 @@ textarea:focus {
     opacity: 0.38;
   }
 
+  /* Profil : liseré énergie + bandes (lecture type app sport / data) */
+  .races-page-hero.profil-hero {
+    background:
+      linear-gradient(
+        115deg,
+        color-mix(in srgb, var(--color-energy) 14%, transparent) 0%,
+        transparent 48%
+      ),
+      linear-gradient(180deg, rgba(26, 58, 42, 0.35) 0%, transparent 42%),
+      linear-gradient(165deg, #0a0f0a 0%, #122418 28%, #1a3a2a 58%, #162a22 78%, #1a2535 100%);
+  }
+
+  .races-page-hero.profil-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0.55;
+    background: repeating-linear-gradient(
+      -17deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.028) 10px,
+      rgba(255, 255, 255, 0.028) 11px
+    );
+  }
+
+  .races-page-hero.profil-hero .races-page-hero__inner {
+    z-index: 5;
+  }
+
+  .races-page-hero.profil-hero h1,
+  .races-page-hero.profil-hero .races-page-hero__copy h1 {
+    font-size: clamp(1.75rem, 4.8vw, 2.35rem);
+    letter-spacing: -0.03em;
+  }
+
+  html.dark .races-page-hero.profil-hero {
+    background:
+      linear-gradient(
+        115deg,
+        color-mix(in srgb, var(--color-energy) 22%, transparent) 0%,
+        transparent 50%
+      ),
+      linear-gradient(180deg, rgba(30, 70, 48, 0.22) 0%, transparent 40%),
+      linear-gradient(165deg, #050807 0%, #0c1610 30%, #153028 58%, #0c121c 88%, #0a0e18 100%);
+  }
+
   /* Prochain objectif : sous le hero (air hero → carte via padding-top .races-layout) */
   .races-page .races-next-milestone {
     position: relative;
