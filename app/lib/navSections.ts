@@ -20,8 +20,8 @@ export const NAV_ACCOUNT_REQUIRED_HINT = 'Accessible avec un compte FuelOS';
  * Mémoire et Analyses sont dans `/profil` (onglets), pas dans ce menu.
  * Hors session : Plan et Produits libres ; le reste ouvre la modale de connexion.
  *
- * Les URLs `requiresAccount: true` sont aussi bloquées côté serveur (voir `middleware.ts`
- * et `lib/authRequiredRoutes.ts`) pour éviter l’accès direct sans session.
+ * Les URLs `requiresAccount: true` sont aussi filtrées côté Edge (cookie de session, voir
+ * `middleware.ts`, `lib/authRequiredRoutes.ts`, `lib/middlewareSessionCookie.ts`).
  */
 export const NAV_SECTIONS: NavSectionItem[] = [
   { href: '/plan', label: 'Plan', page: 'plan', group: 'discover', requiresAccount: false },
