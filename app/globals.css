@@ -1450,9 +1450,16 @@ textarea:focus {
     color: color-mix(in srgb, var(--color-text) 82%, transparent);
   }
 
-  .fuel-header-nav-panel-link:hover {
+  .fuel-header-nav-panel-link:hover,
+  .fuel-header-nav-panel-link:focus-visible {
     color: var(--color-primary);
-    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  }
+
+  html.dark .fuel-header-nav-panel-link:hover,
+  html.dark .fuel-header-nav-panel-link:focus-visible {
+    color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 12%, transparent);
   }
 
   .fuel-header-nav-panel-link[aria-current='page'] {
@@ -1486,46 +1493,7 @@ textarea:focus {
   }
 
   button.fuel-header-nav-panel-link--locked {
-    position: relative;
-    cursor: help;
-  }
-
-  button.fuel-header-nav-panel-link--locked::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    left: 0.75rem;
-    right: 0.75rem;
-    top: calc(100% + 6px);
-    z-index: 80;
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    line-height: 1.35;
-    text-align: center;
-    text-wrap: balance;
-    color: var(--color-text);
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border-strong);
-    box-shadow: var(--shadow-md);
-    pointer-events: none;
-    opacity: 0;
-    visibility: hidden;
-    transition:
-      opacity 0.14s ease,
-      visibility 0.14s ease;
-  }
-
-  button.fuel-header-nav-panel-link--locked:hover::after,
-  button.fuel-header-nav-panel-link--locked:focus-visible::after {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    button.fuel-header-nav-panel-link--locked::after {
-      transition: none;
-    }
+    cursor: pointer;
   }
 
   .fuel-header-nav-panel-link--secondary {
@@ -2039,7 +2007,7 @@ textarea:focus {
     align-items: center;
     flex-shrink: 0;
     padding: 8px clamp(10px, 1.35vw, 16px) 6px;
-    border-radius: 6px 6px 0 0;
+    border-radius: 8px 8px 0 0;
     font-size: 0.8125rem;
     font-weight: 500;
     font-family: var(--font-sans);
@@ -2052,6 +2020,7 @@ textarea:focus {
     cursor: pointer;
     transition:
       color 0.15s ease,
+      background 0.15s ease,
       border-bottom-color 0.15s ease,
       font-weight 0.15s ease;
     white-space: nowrap;
@@ -2077,8 +2046,7 @@ textarea:focus {
   }
 
   .fuel-header-text-nav-link--locked {
-    position: relative;
-    cursor: help;
+    cursor: pointer;
     color: color-mix(in srgb, #4a4a4a 72%, var(--color-text-muted));
   }
 
@@ -2086,76 +2054,45 @@ textarea:focus {
     color: color-mix(in srgb, var(--color-text) 58%, var(--color-text-muted));
   }
 
-  /* Infobulle au survol / focus clavier (invité, entrées verrouillées) */
-  .fuel-header-text-nav-link--locked::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    left: 50%;
-    top: calc(100% + 8px);
-    z-index: 80;
-    transform: translateX(-50%);
-    width: max-content;
-    max-width: min(280px, 78vw);
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    line-height: 1.35;
-    text-align: center;
-    text-wrap: balance;
-    color: var(--color-text);
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border-strong);
-    box-shadow: var(--shadow-md);
-    pointer-events: none;
-    opacity: 0;
-    visibility: hidden;
-    transition:
-      opacity 0.14s ease,
-      visibility 0.14s ease;
-  }
-
-  .fuel-header-text-nav-link--locked:hover::after,
-  .fuel-header-text-nav-link--locked:focus-visible::after {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .fuel-header-text-nav-link--locked::after {
-      transition: none;
-    }
-  }
-
   html.dark .fuel-header-text-nav-link {
     color: color-mix(in srgb, var(--color-text) 72%, transparent);
   }
 
-  .fuel-header-text-nav-link:hover {
+  .fuel-header-text-nav-link:hover,
+  .fuel-header-text-nav-link:focus-visible {
     color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   }
 
-  html.dark .fuel-header-text-nav-link:hover {
+  html.dark .fuel-header-text-nav-link:hover,
+  html.dark .fuel-header-text-nav-link:focus-visible {
     color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 12%, transparent);
   }
 
   .fuel-header-text-nav-link[aria-current='page'] {
     color: var(--color-primary);
     font-weight: 700;
     border-bottom-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
   }
 
   html.dark .fuel-header-text-nav-link[aria-current='page'] {
     color: var(--color-accent);
     border-bottom-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
   }
 
-  .fuel-header-text-nav-link[aria-current='page']:hover {
+  .fuel-header-text-nav-link[aria-current='page']:hover,
+  .fuel-header-text-nav-link[aria-current='page']:focus-visible {
     color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
   }
 
-  html.dark .fuel-header-text-nav-link[aria-current='page']:hover {
+  html.dark .fuel-header-text-nav-link[aria-current='page']:hover,
+  html.dark .fuel-header-text-nav-link[aria-current='page']:focus-visible {
     color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 14%, transparent);
   }
 
   /* CTA Connexion (header) */
