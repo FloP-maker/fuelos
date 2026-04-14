@@ -19,6 +19,9 @@ export const NAV_ACCOUNT_REQUIRED_HINT = 'Accessible avec un compte FuelOS';
  * Ordre = Découverte puis Espace athlète (séparateur visuel dans le header).
  * Mémoire et Analyses sont dans `/profil` (onglets), pas dans ce menu.
  * Hors session : Plan et Produits libres ; le reste ouvre la modale de connexion.
+ *
+ * Les URLs `requiresAccount: true` sont aussi bloquées côté serveur (voir `middleware.ts`
+ * et `lib/authRequiredRoutes.ts`) pour éviter l’accès direct sans session.
  */
 export const NAV_SECTIONS: NavSectionItem[] = [
   { href: '/plan', label: 'Plan', page: 'plan', group: 'discover', requiresAccount: false },
