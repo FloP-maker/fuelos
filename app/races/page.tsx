@@ -298,10 +298,7 @@ export default function RacesPage() {
         </div>
       </main>
 
-      <RacesAuthGateModal
-        open={authGateOpen}
-        onClose={() => setAuthGateOpen(false)}
-      />
+      <RacesAuthGateModal open={authGateOpen} onClose={() => setAuthGateOpen(false)} returnTo="/races" />
       <AddRaceModal open={addOpen} onClose={() => setAddOpen(false)} onSaved={onRaceSaved} />
       <RacePlanFollowupModal
         open={planNudgeOpen}

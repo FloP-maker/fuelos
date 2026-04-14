@@ -1405,9 +1405,28 @@ textarea:focus {
     display: flex;
     flex-direction: column;
     padding: 1rem 1.25rem 1.75rem;
-    gap: 4px;
+    gap: 0;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .fuel-header-nav-panel-group {
+    padding-bottom: 0.35rem;
+  }
+
+  .fuel-header-nav-panel-group-label {
+    padding: 0.65rem 1.25rem 0.35rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  .fuel-header-nav-panel-group-links {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .fuel-header-nav-panel-link {
@@ -1441,6 +1460,29 @@ textarea:focus {
     font-weight: 700;
     border-bottom-color: var(--color-primary);
     background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  }
+
+  html.dark .fuel-header-nav-panel-link[aria-current='page'] {
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  }
+
+  button.fuel-header-nav-panel-link {
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .fuel-header-nav-panel-link--locked {
+    color: color-mix(in srgb, #4a4a4a 78%, var(--color-text-muted));
+  }
+
+  html.dark .fuel-header-nav-panel-link--locked {
+    color: color-mix(in srgb, var(--color-text) 72%, var(--color-text-muted));
   }
 
   .fuel-header-nav-panel-link--secondary {
@@ -1933,7 +1975,23 @@ textarea:focus {
     display: none;
   }
 
-  .fuel-header-text-nav a {
+  .fuel-header-text-nav-item-wrap {
+    display: inline-flex;
+    align-items: stretch;
+    flex-shrink: 0;
+  }
+
+  .fuel-header-nav-sep {
+    align-self: center;
+    width: 1px;
+    height: 1.1rem;
+    margin-inline: clamp(4px, 0.8vw, 10px);
+    background: var(--color-border-strong);
+    opacity: 0.45;
+    flex-shrink: 0;
+  }
+
+  .fuel-header-text-nav-link {
     display: inline-flex;
     align-items: center;
     flex-shrink: 0;
@@ -1944,8 +2002,11 @@ textarea:focus {
     font-family: var(--font-sans);
     color: #4a4a4a;
     text-decoration: none;
+    border: none;
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
+    background: transparent;
+    cursor: pointer;
     transition:
       color 0.15s ease,
       border-bottom-color 0.15s ease,
@@ -1953,34 +2014,61 @@ textarea:focus {
     white-space: nowrap;
   }
 
-  html.dark .fuel-header-text-nav a {
+  .fuel-header-text-nav-link__row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+  }
+
+  .fuel-header-text-nav-link__row--panel {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .fuel-header-nav-lock {
+    width: 0.72rem;
+    height: 0.72rem;
+    flex-shrink: 0;
+    opacity: 0.42;
+    color: var(--color-text-muted);
+  }
+
+  .fuel-header-text-nav-link--locked {
+    color: color-mix(in srgb, #4a4a4a 72%, var(--color-text-muted));
+  }
+
+  html.dark .fuel-header-text-nav-link--locked {
+    color: color-mix(in srgb, var(--color-text) 58%, var(--color-text-muted));
+  }
+
+  html.dark .fuel-header-text-nav-link {
     color: color-mix(in srgb, var(--color-text) 72%, transparent);
   }
 
-  .fuel-header-text-nav a:hover {
+  .fuel-header-text-nav-link:hover {
     color: var(--color-primary);
   }
 
-  html.dark .fuel-header-text-nav a:hover {
+  html.dark .fuel-header-text-nav-link:hover {
     color: var(--color-accent);
   }
 
-  .fuel-header-text-nav a[aria-current='page'] {
+  .fuel-header-text-nav-link[aria-current='page'] {
     color: var(--color-primary);
     font-weight: 700;
     border-bottom-color: var(--color-primary);
   }
 
-  html.dark .fuel-header-text-nav a[aria-current='page'] {
+  html.dark .fuel-header-text-nav-link[aria-current='page'] {
     color: var(--color-accent);
     border-bottom-color: var(--color-accent);
   }
 
-  .fuel-header-text-nav a[aria-current='page']:hover {
+  .fuel-header-text-nav-link[aria-current='page']:hover {
     color: var(--color-primary);
   }
 
-  html.dark .fuel-header-text-nav a[aria-current='page']:hover {
+  html.dark .fuel-header-text-nav-link[aria-current='page']:hover {
     color: var(--color-accent);
   }
 

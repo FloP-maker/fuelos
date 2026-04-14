@@ -1,17 +1,51 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { signIn } from "next-auth/react";
+import { authGateCopyForReturnPath } from "@/app/lib/navSections";
 
 export type RacesAuthGateModalProps = {
   open: boolean;
   onClose: () => void;
+  /**
+   * Chemin de retour après connexion (ex. `/race`, `/history`).
+   * URL absolue acceptée ; défaut `/races` si absent.
+   */
+  returnTo?: string;
 };
 
-export function RacesAuthGateModal({ open, onClose }: RacesAuthGateModalProps) {
+function toAbsoluteCallbackUrl(returnTo: string | undefined): string {
+  if (typeof window === "undefined") {
+    return returnTo?.startsWith("http") ? returnTo! : `/races`;
+  }
+  if (!returnTo?.trim()) {
+    return `${window.location.origin}/races`;
+  }
+  if (returnTo.startsWith("http://") || returnTo.startsWith("https://")) {
+    return returnTo;
+  }
+  const path = returnTo.startsWith("/") ? returnTo : `/${returnTo}`;
+  return new URL(path, window.location.origin).href;
+}
+
+function pathForCopy(returnTo: string | undefined): string {
+  if (!returnTo?.trim()) return "/races";
+  try {
+    if (returnTo.startsWith("http://") || returnTo.startsWith("https://")) {
+      return new URL(returnTo).pathname;
+    }
+  } catch {
+    /* ignore */
+  }
+  return returnTo.startsWith("/") ? returnTo : `/${returnTo}`;
+}
+
+export function RacesAuthGateModal({ open, onClose, returnTo }: RacesAuthGateModalProps) {
   const titleId = useId();
   const [mounted, setMounted] = useState(false);
+
+  const copy = useMemo(() => authGateCopyForReturnPath(pathForCopy(returnTo)), [returnTo]);
 
   useEffect(() => setMounted(true), []);
 
@@ -31,11 +65,9 @@ export function RacesAuthGateModal({ open, onClose }: RacesAuthGateModalProps) {
 
   if (!open || !mounted) return null;
 
-  const callbackUrl =
-    typeof window !== "undefined" ? `${window.location.origin}/races` : "/races";
-
   const handleGoogle = () => {
-    void signIn("google", { callbackUrl });
+    const url = toAbsoluteCallbackUrl(returnTo);
+    void signIn("google", { callbackUrl: url });
   };
 
   const node = (
@@ -49,12 +81,9 @@ export function RacesAuthGateModal({ open, onClose }: RacesAuthGateModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id={titleId} className="text-lg font-semibold text-[var(--color-text)]">
-          Compte FuelOS
+          {copy.title}
         </h2>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-muted)]">
-          Connecte-toi pour synchroniser tes courses et ton historique sur tous tes appareils, et activer la creation
-          de plans nutrition adaptes automatiquement a ton profil.
-        </p>
+        <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-muted)]">{copy.description}</p>
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"

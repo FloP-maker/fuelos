@@ -1317,7 +1317,7 @@ function RaceContent() {
 
   const raceAddModals = (
     <>
-      <RacesAuthGateModal open={raceAuthGateOpen} onClose={() => setRaceAuthGateOpen(false)} />
+      <RacesAuthGateModal open={raceAuthGateOpen} onClose={() => setRaceAuthGateOpen(false)} returnTo="/race" />
       <AddRaceModal open={addRaceOpen} onClose={() => setAddRaceOpen(false)} onSaved={onRaceSavedFromModal} />
       <RacePlanFollowupModal
         open={racePlanNudgeOpen}
