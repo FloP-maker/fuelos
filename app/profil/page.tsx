@@ -3,20 +3,25 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
+  Activity,
+  BarChart3,
   CalendarDays,
   ChevronDown,
+  Droplets,
   Footprints,
+  Gauge,
+  LayoutGrid,
   Leaf,
+  Library,
   Settings,
   Trophy,
   User,
   Zap,
-  Activity,
-  Droplets,
-  Gauge,
 } from "lucide-react";
 import { Header } from "../components/Header";
 import { Button } from "../components/Button";
+import { ProfileAnalysesTabContent } from "../components/profil/ProfileAnalysesTabContent";
+import { ProfileMemoryTabContent } from "../components/profil/ProfileMemoryTabContent";
 import { RacesNextMilestone } from "../components/races/RacesNextMilestone";
 import { RacesTodayCard } from "../components/races/RacesTodayCard";
 import usePageTitle from "../lib/hooks/usePageTitle";
@@ -68,6 +73,19 @@ const INTEGRATIONS: {
 const GREEN = "#1B4332";
 const GREEN_LIGHT = "#4B7F52";
 const GREEN_MUTED = "#22543D";
+
+type ProfilDashboardTab = "overview" | "memory" | "insights";
+
+const PROFIL_TABS: {
+  id: ProfilDashboardTab;
+  label: string;
+  short: string;
+  icon: typeof LayoutGrid;
+}[] = [
+  { id: "overview", label: "Aperçu", short: "Aperçu", icon: LayoutGrid },
+  { id: "memory", label: "Mémoire", short: "Mémoire", icon: Library },
+  { id: "insights", label: "Analyses", short: "Analyses", icon: BarChart3 },
+];
 
 /* ─── helpers ───────────────────────────────────────────── */
 
@@ -225,6 +243,7 @@ export default function ProfilPage() {
   const [races, setRaces] = useState<RaceEntry[]>(() => loadRaces());
   const [saveHint, setSaveHint] = useState<string | null>(null);
   const [openSection, setOpenSection] = useState<string | null>("personal");
+  const [profilTab, setProfilTab] = useState<ProfilDashboardTab>("overview");
 
   const toggleSection = (id: string) =>
     setOpenSection((prev) => (prev === id ? null : id));
@@ -337,6 +356,38 @@ export default function ProfilPage() {
 
           {/* ── MAIN ─────────────────────────────────── */}
           <div className="races-layout__main min-w-0">
+            <nav
+              className="fuel-races-main-panel mb-4 overflow-hidden"
+              aria-label="Sections du profil"
+            >
+              <div className="flex border-b border-[var(--color-border)] px-1 sm:px-2">
+                {PROFIL_TABS.map((t) => {
+                  const active = profilTab === t.id;
+                  const Icon = t.icon;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setProfilTab(t.id)}
+                      className={[
+                        "relative -mb-px flex min-h-[48px] flex-1 items-center justify-center gap-2 border-b-2 px-2 py-2.5 text-sm font-semibold transition-colors sm:flex-none sm:px-5",
+                        active
+                          ? "border-[var(--color-primary)] text-[var(--color-text)] dark:border-[var(--color-accent)] dark:text-[var(--color-text)]"
+                          : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
+                      ].join(" ")}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      <Icon className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+                      <span className="hidden sm:inline">{t.label}</span>
+                      <span className="sm:hidden">{t.short}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </nav>
+
+            {profilTab === "overview" ? (
+              <>
             <RacesNextMilestone nextRace={nextRace} />
             <RacesTodayCard nextRace={nextRace} />
 
@@ -887,6 +938,20 @@ export default function ProfilPage() {
                 })}
               </ul>
             </SectionAccordion>
+              </>
+            ) : null}
+
+            {profilTab === "memory" ? (
+              <div className="min-w-0 pb-2">
+                <ProfileMemoryTabContent />
+              </div>
+            ) : null}
+
+            {profilTab === "insights" ? (
+              <div className="min-w-0 pb-2">
+                <ProfileAnalysesTabContent />
+              </div>
+            ) : null}
           </div>
         </div>
       </main>

@@ -12,15 +12,18 @@ export type NavSectionItem = {
   requiresAccount: boolean;
 };
 
+/** Infobulle native (title) sur les entrées verrouillées pour les invités. */
+export const NAV_ACCOUNT_REQUIRED_HINT = 'Accessible avec un compte FuelOS';
+
 /**
  * Ordre = Découverte puis Espace athlète (séparateur visuel dans le header).
- * Mes courses reste accessible sans compte (données locales) ; Pré/post, Mode course et Mémoire demandent un compte.
+ * Hors session : Plan et Produits restent libres ; les autres ouvrent la modale de connexion.
  */
 export const NAV_SECTIONS: NavSectionItem[] = [
   { href: '/plan', label: 'Plan', page: 'plan', group: 'discover', requiresAccount: false },
   { href: '/produits', label: 'Produits', page: 'shop', group: 'discover', requiresAccount: false },
-  { href: '/analyses', label: 'Analyses', page: 'learn', group: 'discover', requiresAccount: false },
-  { href: '/races', label: 'Mes courses', page: 'races', group: 'athlete', requiresAccount: false },
+  { href: '/analyses', label: 'Analyses', page: 'learn', group: 'discover', requiresAccount: true },
+  { href: '/races', label: 'Mes courses', page: 'races', group: 'athlete', requiresAccount: true },
   { href: '/prep', label: 'Pré / post', page: 'prep', group: 'athlete', requiresAccount: true },
   { href: '/race', label: 'Mode course', page: 'race', group: 'athlete', requiresAccount: true },
   { href: '/history', label: 'Mémoire', page: 'history', group: 'athlete', requiresAccount: true },
@@ -30,14 +33,6 @@ export const NAV_GROUP_LABELS: Record<NavGroupId, string> = {
   discover: 'Découverte',
   athlete: 'Espace athlète',
 };
-
-/** Libellé dans la barre : suffixe « (compte) » uniquement pour les invités sur les entrées protégées. */
-export function navSectionHeaderLabel(item: NavSectionItem, opts?: { showAccountSuffix?: boolean }): string {
-  if (item.requiresAccount && opts?.showAccountSuffix) {
-    return `${item.label} (compte)`;
-  }
-  return item.label;
-}
 
 /** Texte du modal de connexion selon la destination après OAuth. */
 export function authGateCopyForReturnPath(returnPath: string): { title: string; description: string } {
@@ -69,6 +64,13 @@ export function authGateCopyForReturnPath(returnPath: string): { title: string; 
       title: 'Mes courses',
       description:
         'Connecte-toi pour synchroniser ton calendrier de courses sur ton compte et activer les actions liées au cloud (ajout de course, suivi multi-appareils).',
+    };
+  }
+  if (path.startsWith('/analyses') || path.startsWith('/learn')) {
+    return {
+      title: 'Analyses',
+      description:
+        'Connecte-toi pour accéder à tes analyses nutrition, les tendances liées à ton profil et les contenus sauvegardés sur ton compte.',
     };
   }
   return {

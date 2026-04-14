@@ -11,9 +11,9 @@ import { AuthMenu } from './AuthMenu';
 import { FuelLogo } from './FuelLogo';
 import { SiteSearch } from './SiteSearch';
 import {
+  NAV_ACCOUNT_REQUIRED_HINT,
   NAV_GROUP_LABELS,
   NAV_SECTIONS,
-  navSectionHeaderLabel,
   pathnameToHeaderPage,
   type HeaderActivePage,
   type NavGroupId,
@@ -77,7 +77,6 @@ export function Header({ activePage: activePageProp, sticky, tall, extra }: Head
     const showSep = Boolean(prev && prev.group === 'discover' && item.group === 'athlete');
     const isActive = resolvedActive === item.page;
     const locked = guestLocked && item.requiresAccount;
-    const label = navSectionHeaderLabel(item, { showAccountSuffix: locked });
 
     return (
       <span key={item.href} className="fuel-header-text-nav-item-wrap">
@@ -89,10 +88,12 @@ export function Header({ activePage: activePageProp, sticky, tall, extra }: Head
               .filter(Boolean)
               .join(' ')}
             aria-current={isActive ? 'page' : undefined}
+            aria-label={`${item.label} — ${NAV_ACCOUNT_REQUIRED_HINT}`}
+            title={NAV_ACCOUNT_REQUIRED_HINT}
             onClick={() => openAuthGate(item.href)}
           >
             <span className="fuel-header-text-nav-link__row">
-              {label}
+              {item.label}
               <Lock className="fuel-header-nav-lock" strokeWidth={2} aria-hidden />
             </span>
           </button>
@@ -102,7 +103,7 @@ export function Header({ activePage: activePageProp, sticky, tall, extra }: Head
             className="fuel-header-text-nav-link"
             aria-current={isActive ? 'page' : undefined}
           >
-            {label}
+            {item.label}
           </Link>
         )}
       </span>
@@ -112,7 +113,6 @@ export function Header({ activePage: activePageProp, sticky, tall, extra }: Head
   const renderMobileNavItem = (item: NavSectionItem) => {
     const isActive = resolvedActive === item.page;
     const locked = guestLocked && item.requiresAccount;
-    const label = navSectionHeaderLabel(item, { showAccountSuffix: locked });
 
     if (locked) {
       return (
@@ -121,13 +121,15 @@ export function Header({ activePage: activePageProp, sticky, tall, extra }: Head
           type="button"
           className="fuel-header-nav-panel-link fuel-header-nav-panel-link--locked"
           aria-current={isActive ? 'page' : undefined}
+          aria-label={`${item.label} — ${NAV_ACCOUNT_REQUIRED_HINT}`}
+          title={NAV_ACCOUNT_REQUIRED_HINT}
           onClick={() => {
             setMobileNavOpen(false);
             openAuthGate(item.href);
           }}
         >
           <span className="fuel-header-text-nav-link__row fuel-header-text-nav-link__row--panel">
-            {label}
+            {item.label}
             <Lock className="fuel-header-nav-lock" strokeWidth={2} aria-hidden />
           </span>
         </button>
@@ -142,7 +144,7 @@ export function Header({ activePage: activePageProp, sticky, tall, extra }: Head
         aria-current={isActive ? 'page' : undefined}
         onClick={() => setMobileNavOpen(false)}
       >
-        {label}
+        {item.label}
       </Link>
     );
   };
