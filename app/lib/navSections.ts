@@ -1,4 +1,13 @@
-export type HeaderActivePage = 'home' | 'plan' | 'shop' | 'races' | 'race' | 'learn' | 'prep' | 'history';
+export type HeaderActivePage =
+  | 'home'
+  | 'plan'
+  | 'shop'
+  | 'races'
+  | 'race'
+  | 'learn'
+  | 'prep'
+  | 'history'
+  | 'profile';
 
 /** Groupe navigation : découverte (sans compte) vs espace athlète (compte pour certaines entrées). */
 export type NavGroupId = 'discover' | 'athlete';
@@ -17,8 +26,8 @@ export const NAV_ACCOUNT_REQUIRED_HINT = 'Accessible avec un compte FuelOS';
 
 /**
  * Ordre = Découverte puis Espace athlète (séparateur visuel dans le header).
- * Mémoire et Analyses sont dans `/profil` (onglets), pas dans ce menu.
- * Hors session : Plan et Produits libres ; le reste ouvre la modale de connexion.
+ * Mémoire et Analyses : onglets dans `/profil`, aussi accessible via l’entrée « Profil ».
+ * Hors session : Plan, Produits et Profil (profil local) ; le reste ouvre la modale de connexion.
  *
  * Les URLs `requiresAccount: true` sont aussi filtrées côté Edge (cookie de session, voir
  * `middleware.ts`, `lib/authRequiredRoutes.ts`, `lib/middlewareSessionCookie.ts`).
@@ -29,6 +38,7 @@ export const NAV_SECTIONS: NavSectionItem[] = [
   { href: '/races', label: 'Mes courses', page: 'races', group: 'athlete', requiresAccount: true },
   { href: '/prep', label: 'Pré / post', page: 'prep', group: 'athlete', requiresAccount: true },
   { href: '/race', label: 'Mode course', page: 'race', group: 'athlete', requiresAccount: true },
+  { href: '/profil', label: 'Profil', page: 'profile', group: 'athlete', requiresAccount: false },
 ];
 
 export const NAV_GROUP_LABELS: Record<NavGroupId, string> = {
@@ -75,6 +85,13 @@ export function authGateCopyForReturnPath(returnPath: string): { title: string; 
         'Connecte-toi pour accéder à tes analyses nutrition, les tendances liées à ton profil et les contenus sauvegardés sur ton compte.',
     };
   }
+  if (path.startsWith('/profil')) {
+    return {
+      title: 'Profil',
+      description:
+        'Connecte-toi pour synchroniser ton profil, ta mémoire de courses et tes analyses sur tous tes appareils.',
+    };
+  }
   return {
     title: 'Compte FuelOS',
     description:
@@ -92,6 +109,7 @@ export function pathnameToHeaderPage(pathname: string | null): HeaderActivePage 
   if (pathname.startsWith('/prep')) return 'prep';
   if (pathname.startsWith('/history')) return 'history';
   if (pathname.startsWith('/learn') || pathname.startsWith('/analyses')) return 'learn';
+  if (pathname.startsWith('/profil')) return 'profile';
   return undefined;
 }
 

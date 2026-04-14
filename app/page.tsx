@@ -3,13 +3,16 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { CSSProperties, JSX } from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { BookOpen, ChefHat, Crosshair, ShoppingBag, UserRound, Zap } from 'lucide-react';
+import { BookOpen, ChefHat, Crosshair, Lock, ShoppingBag, UserRound, Zap } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { pathnameRequiresAuthentication } from '@/lib/authRequiredRoutes';
 import { Header } from './components/Header';
 import { LandingAuthPanel } from './components/LandingAuthPanel';
 import { QuickStartWizard } from './components/QuickStartWizard';
+import { RacesAuthGateModal } from './components/races/RacesAuthGateModal';
+import { NAV_ACCOUNT_REQUIRED_HINT } from './lib/navSections';
 import { PRODUCTS } from './lib/products';
 
 const S = {
