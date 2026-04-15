@@ -620,7 +620,7 @@ export default function ProfilPage() {
         <div className="profil-hero-floating-card relative z-10 -mt-16 mx-4 rounded-2xl bg-white p-5 shadow-xl md:mx-10 md:p-6">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="flex min-w-0 items-center gap-4">
-              <label className="group relative block h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full">
+              <label className="group relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full">
                 <div className="relative h-20 w-20 overflow-hidden rounded-full border-4 border-white bg-[#e6efe6] shadow">
                   {profile.avatarDataUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -739,7 +739,7 @@ export default function ProfilPage() {
 
         <div className="races-layout max-w-4xl mx-auto px-4">
           <div className="races-layout__main min-w-0">
-            <nav className="profil-tabs-shell mb-3 scroll-mt-6" aria-label="Sections du profil">
+            <nav className="profil-tabs-shell mb-1 scroll-mt-6" aria-label="Sections du profil">
               <div className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
@@ -817,7 +817,7 @@ export default function ProfilPage() {
             {profilTab === "overview" ? (
               <>
                 {hasPendingSync ? (
-                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-energy)_32%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-energy)_8%,var(--color-bg-card))] px-4 py-3 text-sm">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-energy)_32%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-energy)_8%,var(--color-bg-card))] px-4 py-3 text-sm">
                     <span className="font-medium text-[var(--color-text)]">
                       Modifications non synchronisées avec le calculateur.
                     </span>
@@ -849,34 +849,34 @@ export default function ProfilPage() {
                           </p>
 
                           <div className="mt-6 rounded-2xl bg-[color-mix(in_srgb,var(--color-energy)_7%,var(--color-bg-card))] p-3">
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div className="mt-4 grid grid-cols-2 gap-3">
                               <Link
                                 href="/plan"
-                                className="flex items-center gap-3 rounded-xl bg-white p-4 text-sm font-semibold text-[var(--color-text)] shadow-sm transition hover:shadow-md"
+                                className="flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm transition hover:shadow-md"
                               >
-                                <Zap className="h-5 w-5 text-[var(--color-energy)]" aria-hidden />
-                                <span>Plan nutrition</span>
+                                <span className="text-2xl" aria-hidden>⚡</span>
+                                <span className="text-sm font-medium text-[var(--color-text)]">Plan nutrition</span>
                               </Link>
                               <Link
                                 href="/race"
-                                className="flex items-center gap-3 rounded-xl bg-white p-4 text-sm font-semibold text-[var(--color-text)] shadow-sm transition hover:shadow-md"
+                                className="flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm transition hover:shadow-md"
                               >
-                                <Footprints className="h-5 w-5 text-[var(--color-energy)]" aria-hidden />
-                                <span>Mode course</span>
+                                <span className="text-2xl" aria-hidden>🏃</span>
+                                <span className="text-sm font-medium text-[var(--color-text)]">Mode course</span>
                               </Link>
                               <Link
                                 href="/prep"
-                                className="flex items-center gap-3 rounded-xl bg-white p-4 text-sm font-semibold text-[var(--color-text)] shadow-sm transition hover:shadow-md"
+                                className="flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm transition hover:shadow-md"
                               >
-                                <Leaf className="h-5 w-5 text-[var(--color-energy)]" aria-hidden />
-                                <span>Pré / post</span>
+                                <span className="text-2xl" aria-hidden>🌿</span>
+                                <span className="text-sm font-medium text-[var(--color-text)]">Pré / post</span>
                               </Link>
                               <Link
                                 href="/races"
-                                className="flex items-center gap-3 rounded-xl bg-white p-4 text-sm font-semibold text-[var(--color-text)] shadow-sm transition hover:shadow-md"
+                                className="flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm transition hover:shadow-md"
                               >
-                                <CalendarDays className="h-5 w-5 text-[var(--color-energy)]" aria-hidden />
-                                <span>Mes courses</span>
+                                <span className="text-2xl" aria-hidden>📅</span>
+                                <span className="text-sm font-medium text-[var(--color-text)]">Mes courses</span>
                               </Link>
                             </div>
                           </div>
@@ -934,7 +934,7 @@ export default function ProfilPage() {
                     </div>
 
                     <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid grid-cols-2 gap-4">
                       <label className="relative block">
                         <input
                           placeholder="Prénom"
