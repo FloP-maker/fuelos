@@ -27,7 +27,6 @@ import { Button } from "../components/Button";
 import { ProfileAnalysesTabContent } from "../components/profil/ProfileAnalysesTabContent";
 import { ProfileMemoryTabContent } from "../components/profil/ProfileMemoryTabContent";
 import { RacesNextMilestone } from "../components/races/RacesNextMilestone";
-import { RacesTodayCard } from "../components/races/RacesTodayCard";
 import usePageTitle from "../lib/hooks/usePageTitle";
 import { loadRaces, partitionRacesByUpcoming } from "@/lib/races";
 import type { RaceEntry } from "@/lib/types/race";
@@ -393,7 +392,7 @@ export default function ProfilPage() {
   return (
     <>
       <Header />
-      <main className="fuel-main races-page">
+      <main className="fuel-main races-page profil-page">
         <section className="races-page-hero profil-hero" aria-labelledby="profil-hero-title">
           <svg viewBox="0 0 1200 220" preserveAspectRatio="none" aria-hidden>
             <path
@@ -553,7 +552,7 @@ export default function ProfilPage() {
         </section>
 
         {saveHint ? (
-          <div className="relative z-10 mx-auto max-w-[1400px] px-6 pb-2 pt-3 md:px-6" role="status">
+          <div className="relative z-10 px-6 pb-3 pt-4 md:px-10" role="status">
             <div className="rounded-2xl border border-[var(--color-accent)] bg-[var(--color-accent-muted)] px-4 py-3 text-sm font-medium text-[var(--color-text)] shadow-sm">
               {saveHint}
             </div>
@@ -596,10 +595,9 @@ export default function ProfilPage() {
 
             {profilTab === "overview" ? (
               <>
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-                  <div className="space-y-4">
+                <div className="grid gap-8 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
+                  <div>
                     <RacesNextMilestone nextRace={nextRace} />
-                    <RacesTodayCard nextRace={nextRace} />
                   </div>
 
                   <DashboardTile
@@ -645,7 +643,7 @@ export default function ProfilPage() {
                   </DashboardTile>
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-3">
+                <div className="grid gap-8 lg:grid-cols-2">
                   <DashboardTile
                     icon={<Medal className="h-5 w-5" aria-hidden />}
                     eyebrow="Identité sportive"
@@ -702,56 +700,13 @@ export default function ProfilPage() {
                     </div>
                   </DashboardTile>
 
-                  <DashboardTile
-                    icon={<Link2 className="h-5 w-5" aria-hidden />}
-                    eyebrow="Connectivité"
-                    title="Où passent tes données"
-                    body="Strava, Garmin, Apple Health… Ce qui est « live » alimente tes analyses et ton suivi."
-                  >
-                    <div className="space-y-2">
-                      {INTEGRATIONS.slice(0, 3).map((integration) => {
-                        const connected = !!profile.integrationConnected[integration.id];
-                        return (
-                          <div
-                            key={integration.id}
-                            className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3"
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-base" aria-hidden>
-                                {integration.logo}
-                              </span>
-                              <div>
-                                <p className="text-sm font-semibold text-[var(--color-text)]">{integration.name}</p>
-                                <p className="text-xs text-[var(--color-text-muted)]">{integration.description}</p>
-                              </div>
-                            </div>
-                            <span
-                              className="rounded-full px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.16em]"
-                              style={{
-                                color: connected ? integration.color : "var(--color-text-muted)",
-                                backgroundColor: connected ? `${integration.color}18` : "var(--color-bg-card)",
-                              }}
-                            >
-                              {connected ? "Actif" : "Off"}
-                            </span>
-                          </div>
-                        );
-                      })}
-                      <Link
-                        href="/profil/integrations"
-                        className="inline-flex items-center text-sm font-semibold text-[var(--color-primary)]"
-                      >
-                        Gérer toutes les connexions
-                      </Link>
-                    </div>
-                  </DashboardTile>
                 </div>
 
                 <div
                   className="fuel-races-main-panel overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--color-energy)_22%,var(--color-border))] shadow-[0_8px_40px_color-mix(in_srgb,#000_6%,transparent)] md:rounded-[28px]"
                   id="personal"
                 >
-                  <div className="grid gap-5 border-b border-[var(--color-border-subtle)] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--color-energy)_10%,var(--color-bg-card))_0%,var(--color-bg-card)_55%,var(--color-bg-card)_100%)] p-5 lg:grid-cols-[minmax(0,1.08fr)_minmax(300px,0.92fr)] lg:p-7">
+                  <div className="grid gap-8 border-b border-[var(--color-border-subtle)] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--color-energy)_10%,var(--color-bg-card))_0%,var(--color-bg-card)_55%,var(--color-bg-card)_100%)] p-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)] lg:p-8">
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--color-energy)]">
                         Activité
@@ -796,7 +751,7 @@ export default function ProfilPage() {
                       </div>
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                    <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
                       <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-4 md:rounded-3xl">
                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
                           Objectif saison

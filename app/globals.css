@@ -1154,6 +1154,33 @@ textarea:focus {
     margin-top: 0 !important;
   }
 
+  /* Profil : desktop plein écran + respiration plus généreuse */
+  .races-page.profil-page {
+    width: 100% !important;
+    max-width: none;
+  }
+
+  .races-page.profil-page .races-page-hero__inner {
+    max-width: none;
+    padding-left: clamp(20px, 3.2vw, 56px);
+    padding-right: clamp(20px, 3.2vw, 56px);
+  }
+
+  .races-page.profil-page .races-page-hero__left {
+    max-width: none;
+  }
+
+  .races-page.profil-page .races-layout {
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(30px, 3.8vw, 52px);
+    padding: clamp(86px, 9vw, 116px) clamp(20px, 3.2vw, 56px) clamp(64px, 9vw, 110px);
+  }
+
+  .races-page.profil-page .races-layout__main {
+    gap: clamp(30px, 3.8vw, 52px);
+  }
+
   .races-layout__calendar {
     min-width: 0;
     min-height: 0;
