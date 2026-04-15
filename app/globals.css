@@ -514,16 +514,16 @@ textarea:focus {
   }
 
   .races-page.profil-page .races-page-hero.profil-hero {
-    min-height: 190px;
+    min-height: 174px;
   }
 
   .races-page.profil-page .races-page-hero.profil-hero .races-page-hero__inner {
-    padding-top: max(18px, calc(12px + env(safe-area-inset-top, 0px)));
-    padding-bottom: 56px;
+    padding-top: max(16px, calc(10px + env(safe-area-inset-top, 0px)));
+    padding-bottom: 50px;
   }
 
   .races-page.profil-page .races-page-hero.profil-hero h1 {
-    font-size: clamp(1.7rem, 4.6vw, 2.15rem);
+    font-size: clamp(1.62rem, 4.3vw, 2.02rem);
   }
 
   .races-page.profil-page .profil-hero-floating-card {
@@ -531,8 +531,8 @@ textarea:focus {
   }
 
   .races-page.profil-page .profil-hero-completion-ring {
-    width: 112px;
-    height: 112px;
+    width: 104px;
+    height: 104px;
   }
 
   /* Prochain objectif : sous le hero (air hero → carte via padding-top .races-layout) */
@@ -1154,6 +1154,23 @@ textarea:focus {
     --profil-quick-jump-bg: color-mix(in srgb, var(--color-energy) 6%, var(--color-bg-card));
     width: 100% !important;
     max-width: none;
+    background: #f5f3ee;
+  }
+
+  .races-page.profil-page .races-page-hero__cta {
+    background: #2d4a2d;
+    color: #fff;
+    border-radius: 0.75rem;
+    border-color: color-mix(in srgb, #2d4a2d 70%, #000000);
+  }
+
+  .races-page.profil-page .races-page-hero__cta:hover {
+    background: #233b23;
+  }
+
+  .races-page.profil-page section[aria-labelledby^="section-"] label {
+    font-size: 0.875rem;
+    color: #6b7280;
   }
 
   .races-page.profil-page .races-page-hero__inner {
@@ -1167,10 +1184,11 @@ textarea:focus {
   }
 
   .races-page.profil-page .races-layout {
-    max-width: none;
+    max-width: 64rem;
+    margin-inline: auto;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--profil-space-main);
-    padding: clamp(64px, 7.2vw, 88px) clamp(20px, 3.2vw, 56px) clamp(64px, 9vw, 110px);
+    padding: clamp(34px, 4.4vw, 48px) 1rem clamp(64px, 9vw, 110px);
   }
 
   .races-page.profil-page .races-layout__main {
@@ -1179,6 +1197,25 @@ textarea:focus {
 
   .races-page.profil-page .races-next-milestone {
     margin-inline: 0;
+  }
+
+  .races-page.profil-page .races-next-milestone-card {
+    border-left-width: 4px;
+    border-left-color: #16a34a;
+  }
+
+  .races-page.profil-page .races-next-milestone .races-section-eyebrow {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 600;
+    color: #9ca3af;
+  }
+
+  /* Keep identical countdown ring style as /races */
+  .races-page.profil-page .races-next-milestone-card__ring {
+    width: 120px;
+    height: 120px;
   }
 
   .races-page.profil-page .profil-sticky-rail {
@@ -1317,6 +1354,19 @@ textarea:focus {
     .races-page.profil-page .profil-tabs-shell {
       position: static;
       backdrop-filter: none;
+    }
+
+    .races-page.profil-page .races-page-hero.profil-hero {
+      min-height: 160px;
+    }
+
+    .races-page.profil-page .races-page-hero.profil-hero .races-page-hero__inner {
+      padding-bottom: 44px;
+    }
+
+    .races-page.profil-page .profil-hero-completion-ring {
+      width: 96px;
+      height: 96px;
     }
   }
 

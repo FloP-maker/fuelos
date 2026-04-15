@@ -6,8 +6,6 @@ import {
   Activity,
   BarChart3,
   CalendarDays,
-  Circle,
-  CircleCheckBig,
   ChevronDown,
   Droplets,
   Footprints,
@@ -105,6 +103,61 @@ function inputClass() {
 
 function selectClass() {
   return "mt-1.5 w-full rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-card)_82%,var(--color-bg-elevated))] px-4 py-3 text-sm text-[var(--color-text)] outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition duration-200 focus:border-[color-mix(in_srgb,var(--color-energy)_55%,var(--color-accent))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-energy)_24%,transparent)]";
+}
+
+function floatingInputClass() {
+  return "peer w-full rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-card)_86%,var(--color-bg-elevated))] px-4 pb-2 pt-6 text-sm text-[var(--color-text)] outline-none transition duration-200 focus:border-[color-mix(in_srgb,var(--color-energy)_55%,var(--color-accent))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-energy)_24%,transparent)] placeholder:text-transparent";
+}
+
+function floatingLabelClass() {
+  return "pointer-events-none absolute left-4 top-2 text-sm font-medium text-gray-500 transition-all duration-200 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold peer-focus:text-[var(--color-energy)]";
+}
+
+function SemiGauge({
+  label,
+  value,
+  unit,
+  min,
+  max,
+  accent = "#D97706",
+}: {
+  label: string;
+  value: number | null;
+  unit: string;
+  min: number;
+  max: number;
+  accent?: string;
+}) {
+  const size = 132;
+  const radius = 44;
+  const cx = size / 2;
+  const cy = size / 2 + 8;
+  const start = Math.PI;
+  const end = 2 * Math.PI;
+  const arc = (a: number) => `${cx + radius * Math.cos(a)} ${cy + radius * Math.sin(a)}`;
+  const p = value == null ? 0 : Math.max(0, Math.min(1, (value - min) / (max - min)));
+  const valueAngle = start + (end - start) * p;
+
+  return (
+    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-4">
+      <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">{label}</p>
+      <div className="mt-2 flex items-center justify-center">
+        <svg viewBox={`0 0 ${size} ${size}`} className="h-24 w-32" aria-hidden>
+          <path d={`M ${arc(start)} A ${radius} ${radius} 0 0 1 ${arc(end)}`} fill="none" stroke="rgba(148,163,184,0.28)" strokeWidth="8" strokeLinecap="round" />
+          <path
+            d={`M ${arc(start)} A ${radius} ${radius} 0 0 1 ${arc(valueAngle)}`}
+            fill="none"
+            stroke={accent}
+            strokeWidth="8"
+            strokeLinecap="round"
+          />
+        </svg>
+      </div>
+      <p className="mt-1 text-center text-lg font-bold text-gray-900">
+        {value == null ? "À renseigner" : `${value} ${unit}`}
+      </p>
+    </div>
+  );
 }
 
 function profileCompletion(profile: FuelOsUserProfile) {
@@ -367,6 +420,41 @@ export default function ProfilPage() {
       : typeof profile.runnerVmaKmh === "number"
         ? `${profile.runnerVmaKmh} km/h VMA`
         : "À renseigner";
+  const bmi =
+    typeof profile.weightKg === "number" && typeof profile.heightCm === "number" && profile.heightCm > 0
+      ? profile.weightKg / Math.pow(profile.heightCm / 100, 2)
+      : null;
+  const weeklySparkline = useMemo(() => {
+    const now = new Date();
+    const day = now.getDay();
+    const mondayDelta = day === 0 ? -6 : 1 - day;
+    const currentWeekStart = new Date(now);
+    currentWeekStart.setHours(0, 0, 0, 0);
+    currentWeekStart.setDate(now.getDate() + mondayDelta);
+
+    const starts = [3, 2, 1, 0].map((w) => {
+      const d = new Date(currentWeekStart);
+      d.setDate(currentWeekStart.getDate() - w * 7);
+      return d;
+    });
+    const counts = starts.map((start) => {
+      const end = new Date(start);
+      end.setDate(start.getDate() + 7);
+      return races.filter((race) => {
+        const t = new Date(race.date);
+        return t >= start && t < end;
+      }).length;
+    });
+    return counts;
+  }, [races]);
+  const sparkMax = Math.max(1, ...weeklySparkline);
+  const sparkPoints = weeklySparkline
+    .map((v, i) => {
+      const x = (i / 3) * 120;
+      const y = 40 - (v / sparkMax) * 32;
+      return `${x},${y}`;
+    })
+    .join(" ");
   const profileSnapshot = useMemo(() => JSON.stringify(profile), [profile]);
   const setupChecklist = useMemo(
     () => [
@@ -602,6 +690,45 @@ export default function ProfilPage() {
           </div>
         </div>
 
+        <section className="relative z-10 mx-4 mt-3 md:mx-10" aria-label="Stats rapides">
+          <div className="grid grid-cols-3 gap-3">
+            <article className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Complétude profil</p>
+              <p className="mt-2 text-2xl font-bold text-gray-900">{completion}%</p>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--color-border)]">
+                <div
+                  className="h-full rounded-full bg-[var(--color-primary)]"
+                  style={{ width: `${completion}%` }}
+                  aria-hidden
+                />
+              </div>
+            </article>
+
+            <article className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Priorités</p>
+              <p className="mt-2 text-2xl font-bold text-gray-900">{pendingChecklist.length} items</p>
+              <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                {pendingChecklist.length > 0
+                  ? pendingChecklist
+                      .slice(0, 3)
+                      .map((item) => item.label)
+                      .join(" · ")
+                  : "Aucune priorité restante"}
+              </p>
+            </article>
+
+            <article className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Sync</p>
+              <p className="mt-2 text-2xl font-bold text-gray-900">
+                {autoSaveStatus === "error" ? "Erreur" : hasPendingSync ? "En attente" : "✓ À jour"}
+              </p>
+              <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                {lastSyncedAt ? `Dernière synchro: ${lastSyncedAt}` : "Dernière synchro: —"}
+              </p>
+            </article>
+          </div>
+        </section>
+
         {saveHint ? (
           <div className="relative z-10 px-6 pb-3 pt-4 md:px-10" role="status">
             <div className="rounded-2xl border border-[var(--color-accent)] bg-[var(--color-accent-muted)] px-4 py-3 text-sm font-medium text-[var(--color-text)] shadow-sm">
@@ -610,12 +737,12 @@ export default function ProfilPage() {
           </div>
         ) : null}
 
-        <div className="races-layout">
+        <div className="races-layout max-w-4xl mx-auto px-4">
           <div className="races-layout__main min-w-0">
-            <nav className="profil-tabs-shell mb-8 scroll-mt-6" aria-label="Sections du profil">
+            <nav className="profil-tabs-shell mb-3 scroll-mt-6" aria-label="Sections du profil">
               <div className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-center justify-end gap-2">
-                  <span className="text-xs font-semibold text-[var(--color-text-muted)]">
+                  <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
                     Affichage
                   </span>
                   <div className="inline-flex rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] p-1">
@@ -655,7 +782,7 @@ export default function ProfilPage() {
                   ) : null}
                 </div>
 
-                <div className="flex gap-1 rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_88%,var(--color-bg))] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                <div className="flex gap-1 rounded-2xl border border-[var(--color-border)] bg-transparent p-1">
                   {PROFIL_TABS.map((tab) => {
                     const active = profilTab === tab.id;
                     const Icon = tab.icon;
@@ -667,8 +794,8 @@ export default function ProfilPage() {
                         className={[
                           "profil-tab-btn relative flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl px-2 py-2 text-sm font-semibold transition-all sm:min-h-[50px] sm:flex-none sm:px-5",
                           active
-                            ? "bg-[var(--color-bg-card)] text-[var(--color-text)] shadow-[0_4px_20px_color-mix(in_srgb,#000_12%,transparent),0_0_0_1px_color-mix(in_srgb,var(--color-energy)_35%,transparent)]"
-                            : "text-[var(--color-text-muted)] hover:bg-[color-mix(in_srgb,var(--color-bg-card)_55%,transparent)] hover:text-[var(--color-text)]",
+                            ? "bg-white text-[#1b3a23] shadow-sm ring-1 ring-[color-mix(in_srgb,#1b3a23_10%,var(--color-border))]"
+                            : "bg-transparent text-[var(--color-text-muted)] hover:bg-[color-mix(in_srgb,var(--color-bg-card)_45%,transparent)] hover:text-[var(--color-text)]",
                         ].join(" ")}
                         aria-current={active ? "page" : undefined}
                       >
@@ -700,8 +827,8 @@ export default function ProfilPage() {
                   </div>
                 ) : null}
 
-                <div className="grid items-start gap-12 xl:grid-cols-[minmax(0,1fr)_360px]">
-                  <div className="space-y-12">
+                <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+                  <div className="space-y-6">
                     <RacesNextMilestone nextRace={nextRace} />
 
                     <div
@@ -721,41 +848,43 @@ export default function ProfilPage() {
                             calendrier — sans quitter ton espace athlète.
                           </p>
 
-                          <div className="mt-6 flex flex-wrap gap-2.5">
-                            <Link
-                              href="/plan"
-                              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[var(--color-energy)] to-[color-mix(in_srgb,var(--color-energy)_75%,var(--color-accent))] px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:brightness-105"
-                            >
-                              <Zap className="h-4 w-4" aria-hidden />
-                              Plan nutrition
-                            </Link>
-                            <Link
-                              href="/race"
-                              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-bold text-[var(--color-text)] shadow-sm transition hover:border-[color-mix(in_srgb,var(--color-energy)_40%,var(--color-border))]"
-                            >
-                              <Footprints className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
-                              Mode course
-                            </Link>
-                            <Link
-                              href="/prep"
-                              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-bold text-[var(--color-text)] shadow-sm transition hover:border-[color-mix(in_srgb,var(--color-energy)_40%,var(--color-border))]"
-                            >
-                              <Leaf className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
-                              Pré / post
-                            </Link>
-                            <Link
-                              href="/races"
-                              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-bold text-[var(--color-text)] shadow-sm transition hover:border-[color-mix(in_srgb,var(--color-energy)_40%,var(--color-border))]"
-                            >
-                              <CalendarDays className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
-                              Mes courses
-                            </Link>
+                          <div className="mt-6 rounded-2xl bg-[color-mix(in_srgb,var(--color-energy)_7%,var(--color-bg-card))] p-3">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                              <Link
+                                href="/plan"
+                                className="flex items-center gap-3 rounded-xl bg-white p-4 text-sm font-semibold text-[var(--color-text)] shadow-sm transition hover:shadow-md"
+                              >
+                                <Zap className="h-5 w-5 text-[var(--color-energy)]" aria-hidden />
+                                <span>Plan nutrition</span>
+                              </Link>
+                              <Link
+                                href="/race"
+                                className="flex items-center gap-3 rounded-xl bg-white p-4 text-sm font-semibold text-[var(--color-text)] shadow-sm transition hover:shadow-md"
+                              >
+                                <Footprints className="h-5 w-5 text-[var(--color-energy)]" aria-hidden />
+                                <span>Mode course</span>
+                              </Link>
+                              <Link
+                                href="/prep"
+                                className="flex items-center gap-3 rounded-xl bg-white p-4 text-sm font-semibold text-[var(--color-text)] shadow-sm transition hover:shadow-md"
+                              >
+                                <Leaf className="h-5 w-5 text-[var(--color-energy)]" aria-hidden />
+                                <span>Pré / post</span>
+                              </Link>
+                              <Link
+                                href="/races"
+                                className="flex items-center gap-3 rounded-xl bg-white p-4 text-sm font-semibold text-[var(--color-text)] shadow-sm transition hover:shadow-md"
+                              >
+                                <CalendarDays className="h-5 w-5 text-[var(--color-energy)]" aria-hidden />
+                                <span>Mes courses</span>
+                              </Link>
+                            </div>
                           </div>
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                           <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-[18px] md:rounded-3xl">
-                            <p className="text-xs font-semibold text-[var(--color-text-muted)]">
+                            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
                               Objectif saison
                             </p>
                             <p className="mt-2 font-display text-lg font-black text-[var(--color-text)]">
@@ -766,7 +895,7 @@ export default function ProfilPage() {
                             </p>
                           </div>
                           <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-[18px] md:rounded-3xl">
-                            <p className="text-xs font-semibold text-[var(--color-text-muted)]">
+                            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
                               Prochaine course
                             </p>
                             <p className="mt-2 line-clamp-2 font-display text-lg font-black text-[var(--color-text)]">
@@ -782,7 +911,7 @@ export default function ProfilPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-5">
+                    <div className="space-y-6">
                   <SectionAccordion
                     id="personal"
                     icon={<User className="h-5 w-5" />}
@@ -792,62 +921,90 @@ export default function ProfilPage() {
                     onToggle={() => toggleSection("personal")}
                     accentColor={GREEN}
                   >
+                    <div className="mb-4 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-[var(--color-bg-subtle)] px-3 py-1 text-sm font-semibold text-gray-900">
+                        {typeof profile.weightKg === "number" ? `${profile.weightKg}kg` : "Poids —"}
+                      </span>
+                      <span className="rounded-full bg-[var(--color-bg-subtle)] px-3 py-1 text-sm font-semibold text-gray-900">
+                        {typeof profile.heightCm === "number" ? `${profile.heightCm}cm` : "Taille —"}
+                      </span>
+                      <span className="rounded-full bg-[var(--color-bg-subtle)] px-3 py-1 text-sm font-semibold text-gray-900">
+                        IMC {bmi == null ? "—" : bmi.toFixed(1)}
+                      </span>
+                    </div>
+
+                    <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <label className="block text-sm font-semibold text-[var(--color-text)]">
-                        Prénom
+                      <label className="relative block">
                         <input
-                          className={inputClass()}
+                          placeholder="Prénom"
+                          className={floatingInputClass()}
                           value={profile.firstName}
                           onChange={(e) => updateProfile({ firstName: e.target.value })}
                         />
+                        <span className={floatingLabelClass()}>
+                          Prénom
+                        </span>
                       </label>
-                      <label className="block text-sm font-semibold text-[var(--color-text)]">
-                        Nom
+                      <label className="relative block">
                         <input
-                          className={inputClass()}
+                          placeholder="Nom"
+                          className={floatingInputClass()}
                           value={profile.lastName}
                           onChange={(e) => updateProfile({ lastName: e.target.value })}
                         />
+                        <span className={floatingLabelClass()}>
+                          Nom
+                        </span>
                       </label>
-                      <label className="block text-sm font-semibold text-[var(--color-text)]">
-                        Poids (kg)
+                      <label className="relative block">
                         <input
                           type="number"
                           min={30}
                           max={200}
                           step={0.1}
-                          className={inputClass()}
+                          placeholder="Poids (kg)"
+                          className={floatingInputClass()}
                           value={profile.weightKg ?? ""}
                           onChange={(e) =>
                             updateProfile({ weightKg: e.target.value === "" ? null : Number(e.target.value) })
                           }
                         />
+                        <span className={floatingLabelClass()}>
+                          Poids (kg)
+                        </span>
                       </label>
-                      <label className="block text-sm font-semibold text-[var(--color-text)]">
-                        Taille (cm)
+                      <label className="relative block">
                         <input
                           type="number"
                           min={120}
                           max={230}
-                          className={inputClass()}
+                          placeholder="Taille (cm)"
+                          className={floatingInputClass()}
                           value={profile.heightCm ?? ""}
                           onChange={(e) =>
                             updateProfile({ heightCm: e.target.value === "" ? null : Number(e.target.value) })
                           }
                         />
+                        <span className={floatingLabelClass()}>
+                          Taille (cm)
+                        </span>
                       </label>
-                      <label className="block text-sm font-semibold text-[var(--color-text)]">
-                        Âge
+                      <label className="relative block">
                         <input
                           type="number"
                           min={10}
                           max={99}
-                          className={inputClass()}
+                          placeholder="Âge"
+                          className={floatingInputClass()}
                           value={profile.age ?? ""}
                           onChange={(e) =>
                             updateProfile({ age: e.target.value === "" ? null : Number(e.target.value) })
                           }
                         />
+                        <span className={floatingLabelClass()}>
+                          Âge
+                        </span>
                       </label>
                       <div>
                         <span className="block text-sm font-semibold text-[var(--color-text)]">Sexe</span>
@@ -855,10 +1012,10 @@ export default function ProfilPage() {
                           {(["M", "F", "other"] as const).map((sex) => (
                             <label
                               key={sex}
-                              className={`flex cursor-pointer items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-medium transition-colors ${
+                              className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all ${
                                 profile.sex === sex
-                                  ? "border-[var(--color-accent)] bg-[var(--color-accent-muted)] text-[var(--color-text)]"
-                                  : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]"
+                                  ? "border-[color-mix(in_srgb,var(--color-energy)_45%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-energy)_12%,var(--color-bg-card))] text-[var(--color-text)] shadow-sm"
+                                  : "border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] hover:border-[var(--color-energy)]"
                               }`}
                             >
                               <input
@@ -874,8 +1031,9 @@ export default function ProfilPage() {
                         </div>
                       </div>
                     </div>
+                    </div>
 
-                    <div className="mt-6">
+                    <div className="mt-6 rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                       <span className="text-sm font-semibold text-[var(--color-text)]">Sports pratiqués</span>
                       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                         {(
@@ -889,10 +1047,10 @@ export default function ProfilPage() {
                         ).map(([key, label]) => (
                           <label
                             key={key}
-                            className={`flex cursor-pointer items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-medium transition-colors ${
+                            className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-all ${
                               profile.sports[key]
-                                ? "border-[var(--color-accent)] bg-[var(--color-accent-muted)] text-[var(--color-text)]"
-                                : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]"
+                                ? "border-[color-mix(in_srgb,var(--color-energy)_45%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-energy)_12%,var(--color-bg-card))] text-[var(--color-text)] shadow-sm"
+                                : "border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] hover:border-[var(--color-energy)]"
                             }`}
                           >
                             <input
@@ -909,13 +1067,11 @@ export default function ProfilPage() {
                       </div>
                     </div>
 
-                    <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <span className="block text-sm font-semibold text-[var(--color-text)]">
-                          Sport principal
-                        </span>
+                    <div className="mt-6 rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <label className="relative block">
                         <select
-                          className={selectClass()}
+                          className={floatingInputClass()}
                           value={profile.mainSport}
                           onChange={(e) => updateProfile({ mainSport: e.target.value as FuelOsMainSport })}
                         >
@@ -925,17 +1081,15 @@ export default function ProfilPage() {
                             </option>
                           ))}
                         </select>
-                      </div>
-                      <div>
-                        <span className="block text-sm font-semibold text-[var(--color-text)]">
-                          Niveau athlétique
+                        <span className="pointer-events-none absolute left-4 top-2 text-sm font-medium text-gray-500">
+                          Sport principal
                         </span>
+                      </label>
+                      <label className="relative block">
                         <select
-                          className={selectClass()}
+                          className={floatingInputClass()}
                           value={profile.athleticLevel}
-                          onChange={(e) =>
-                            updateProfile({ athleticLevel: e.target.value as FuelOsAthleticLevel })
-                          }
+                          onChange={(e) => updateProfile({ athleticLevel: e.target.value as FuelOsAthleticLevel })}
                         >
                           {LEVELS.map((level) => (
                             <option key={level.id} value={level.id}>
@@ -943,17 +1097,15 @@ export default function ProfilPage() {
                             </option>
                           ))}
                         </select>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <span className="block text-sm font-semibold text-[var(--color-text)]">
-                          Objectif principal
+                        <span className="pointer-events-none absolute left-4 top-2 text-sm font-medium text-gray-500">
+                          Niveau athlétique
                         </span>
+                      </label>
+                      <label className="relative block sm:col-span-2">
                         <select
-                          className={selectClass()}
+                          className={floatingInputClass()}
                           value={profile.mainGoal}
-                          onChange={(e) =>
-                            updateProfile({ mainGoal: e.target.value as FuelOsUserProfile["mainGoal"] })
-                          }
+                          onChange={(e) => updateProfile({ mainGoal: e.target.value as FuelOsUserProfile["mainGoal"] })}
                         >
                           {GOALS.map((goal) => (
                             <option key={goal.id} value={goal.id}>
@@ -961,13 +1113,21 @@ export default function ProfilPage() {
                             </option>
                           ))}
                         </select>
-                      </div>
+                        <span className="pointer-events-none absolute left-4 top-2 text-sm font-medium text-gray-500">
+                          Objectif principal
+                        </span>
+                      </label>
+                    </div>
                     </div>
 
                     <div className="mt-6">
-                      <Button type="button" variant="primary" size="md" onClick={handleSave}>
+                      <button
+                        type="button"
+                        onClick={handleSave}
+                        className="w-full rounded-xl bg-[#2d4a2d] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#233b23]"
+                      >
                         Sauvegarder le profil
-                      </Button>
+                      </button>
                     </div>
                   </SectionAccordion>
 
@@ -978,7 +1138,7 @@ export default function ProfilPage() {
                     subtitle="Les réglages qui rendent les plans plus pertinents sur effort long."
                     open={openSection === "nutrition"}
                     onToggle={() => toggleSection("nutrition")}
-                    accentColor="#1D4ED8"
+                    accentColor="#D97706"
                   >
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
                       <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
@@ -987,47 +1147,50 @@ export default function ProfilPage() {
                           <span className="text-sm font-bold text-[var(--color-text)]">Données de performance</span>
                         </div>
                         <div className="grid gap-4 sm:grid-cols-2">
-                          <label className="block text-sm font-semibold text-[var(--color-text)]">
-                            FTP (W)
+                          <label className="relative block">
                             <input
                               type="number"
                               min={50}
                               max={650}
-                              className={inputClass()}
+                              placeholder="FTP (W)"
+                              className={floatingInputClass()}
                               value={profile.ftpWatts ?? ""}
-                              placeholder="ex. 240"
                               onChange={(e) =>
                                 updateProfile({ ftpWatts: e.target.value === "" ? null : Number(e.target.value) })
                               }
                             />
+                            <span className={floatingLabelClass()}>
+                              FTP (W)
+                            </span>
                           </label>
-                          <label className="block text-sm font-semibold text-[var(--color-text)]">
-                            VMA (km/h)
+                          <label className="relative block">
                             <input
                               type="number"
                               min={8}
                               max={25}
                               step={0.1}
-                              className={inputClass()}
+                              placeholder="VMA (km/h)"
+                              className={floatingInputClass()}
                               value={profile.runnerVmaKmh ?? ""}
-                              placeholder="ex. 16.5"
                               onChange={(e) =>
                                 updateProfile({
                                   runnerVmaKmh: e.target.value === "" ? null : Number(e.target.value),
                                 })
                               }
                             />
+                            <span className={floatingLabelClass()}>
+                              VMA (km/h)
+                            </span>
                           </label>
-                          <label className="block text-sm font-semibold text-[var(--color-text)] sm:col-span-2">
-                            Allure seuil (min/km)
+                          <label className="relative block sm:col-span-2">
                             <input
                               type="number"
                               min={2.6}
                               max={12}
                               step={0.1}
-                              className={inputClass()}
+                              placeholder="Allure seuil (min/km)"
+                              className={floatingInputClass()}
                               value={profile.runnerThresholdPaceMinPerKm ?? ""}
-                              placeholder="ex. 4.5 pour 4:30 / km"
                               onChange={(e) =>
                                 updateProfile({
                                   runnerThresholdPaceMinPerKm:
@@ -1035,19 +1198,37 @@ export default function ProfilPage() {
                                 })
                               }
                             />
+                            <span className={floatingLabelClass()}>
+                              Allure seuil (min/km)
+                            </span>
                           </label>
                         </div>
                       </div>
 
                       <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-4">
-                        <p className="text-xs font-semibold text-[var(--color-text-muted)]">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
                           Repère effort
                         </p>
-                        <p className="mt-2 font-display text-lg font-black text-[var(--color-text)]">
-                          {primaryPerformanceStat}
-                        </p>
-                        <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-                          FTP ou VMA : une seule donnée forte suffit à ancrer les recommandations.
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                          <SemiGauge
+                            label="FTP"
+                            value={typeof profile.ftpWatts === "number" ? profile.ftpWatts : null}
+                            unit="W"
+                            min={120}
+                            max={420}
+                            accent="#d97706"
+                          />
+                          <SemiGauge
+                            label="VMA"
+                            value={typeof profile.runnerVmaKmh === "number" ? profile.runnerVmaKmh : null}
+                            unit="km/h"
+                            min={8}
+                            max={24}
+                            accent="#d97706"
+                          />
+                        </div>
+                        <p className="mt-2 text-sm text-[#d97706]">
+                          FTP/VMA orientent la personnalisation endurance.
                         </p>
                       </div>
                     </div>
@@ -1144,18 +1325,20 @@ export default function ProfilPage() {
                       </div>
                     </div>
 
-                    <label className="block text-sm font-semibold text-[var(--color-text)]">
-                      Allergènes (texte libre)
-                      <textarea
-                        rows={3}
-                        className="mt-1.5 w-full rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-card)_82%,var(--color-bg-elevated))] px-4 py-3 text-sm text-[var(--color-text)] outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition duration-200 focus:border-[color-mix(in_srgb,var(--color-energy)_55%,var(--color-accent))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-energy)_24%,transparent)]"
-                        value={profile.allergenNotes}
-                        onChange={(e) => updateProfile({ allergenNotes: e.target.value })}
-                        placeholder="Ex. fruits à coque, arachides…"
-                      />
-                    </label>
+                    <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
+                      <label className="block text-sm font-semibold text-[var(--color-text)]">
+                        Allergènes (texte libre)
+                        <textarea
+                          rows={3}
+                          className="mt-1.5 w-full rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-card)_82%,var(--color-bg-elevated))] px-4 py-3 text-sm text-[var(--color-text)] outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition duration-200 focus:border-[color-mix(in_srgb,var(--color-energy)_55%,var(--color-accent))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-energy)_24%,transparent)]"
+                          value={profile.allergenNotes}
+                          onChange={(e) => updateProfile({ allergenNotes: e.target.value })}
+                          placeholder="Ex. fruits à coque, arachides…"
+                        />
+                      </label>
+                    </div>
 
-                    <div>
+                    <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                       <span className="text-sm font-semibold text-[var(--color-text)]">Marques favorites</span>
                       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                         {(
@@ -1188,9 +1371,13 @@ export default function ProfilPage() {
                     </div>
 
                     <div className="mt-8">
-                      <Button type="button" variant="primary" size="md" onClick={handleSave}>
+                      <button
+                        type="button"
+                        onClick={handleSave}
+                        className="w-full rounded-xl bg-[#2d4a2d] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#233b23]"
+                      >
                         Enregistrer dans le calculateur
-                      </Button>
+                      </button>
                     </div>
                   </SectionAccordion>
 
@@ -1291,10 +1478,10 @@ export default function ProfilPage() {
                     </div>
 
                     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
-                      <p className="text-xs font-semibold text-[var(--color-text-muted)]">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
                         Readiness athlète
                       </p>
-                      <p className="mt-2 text-xl font-black text-[var(--color-text)]">{completion}%</p>
+                      <p className="mt-2 text-2xl font-bold text-gray-900">{completion}%</p>
                       <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--color-border)]">
                         <div
                           className="h-full rounded-full bg-[linear-gradient(90deg,var(--color-primary),var(--color-energy))]"
@@ -1328,7 +1515,7 @@ export default function ProfilPage() {
                     </div>
 
                     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
-                      <p className="text-xs font-semibold text-[var(--color-text-muted)]">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
                         Actions rapides
                       </p>
                       <div className="mt-2 mb-2 flex items-center justify-between gap-3 rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2">
@@ -1390,7 +1577,7 @@ export default function ProfilPage() {
                     </div>
 
                     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
-                      <p className="text-xs font-semibold text-[var(--color-text-muted)]">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
                         Priorités profil
                       </p>
                       <div className="mt-3 space-y-2">
@@ -1398,26 +1585,30 @@ export default function ProfilPage() {
                           <div
                             key={item.id}
                             className={[
-                              "flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-xs",
+                              "flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-xs",
                               item.done
                                 ? "border-[color-mix(in_srgb,var(--color-primary)_28%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-bg-card))]"
-                                : "border-[var(--color-border)] bg-[var(--color-bg-subtle)]",
+                                : "border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]",
                             ].join(" ")}
                           >
-                            <span className="inline-flex items-center gap-2 text-[var(--color-text)]">
-                              {item.done ? (
-                                <CircleCheckBig className="h-3.5 w-3.5 text-[var(--color-primary)]" aria-hidden />
-                              ) : (
-                                <Circle className="h-3.5 w-3.5 text-[var(--color-text-muted)]" aria-hidden />
-                              )}
+                            <span className={["inline-flex items-center gap-2", item.done ? "text-[var(--color-text)]" : "text-[var(--color-text-muted)]"].join(" ")}>
+                              <span
+                                className={[
+                                  "inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px]",
+                                  item.done ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500",
+                                ].join(" ")}
+                                aria-hidden
+                              >
+                                {item.done ? "✅" : "⬜"}
+                              </span>
                               {item.label}
                             </span>
                             {!item.done ? (
                               <a
                                 href={item.anchor}
-                                className="profil-priority-jump rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-text-muted)]"
+                                className="profil-priority-jump rounded-full border border-[var(--color-border)] px-2.5 py-1 text-[10px] font-semibold text-[var(--color-text-muted)]"
                               >
-                                Aller
+                                → Renseigner
                               </a>
                             ) : null}
                           </div>
@@ -1431,7 +1622,7 @@ export default function ProfilPage() {
                       {nextPriorityAnchor ? (
                         <a
                           href={nextPriorityAnchor}
-                          className="profil-continue-setup mt-3 inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text)]"
+                          className="profil-continue-setup mt-3 inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-energy)_45%,#f59e0b)] bg-[color-mix(in_srgb,#f59e0b_14%,var(--color-bg-card))] px-3.5 py-1.5 text-xs font-semibold text-[#b45309]"
                         >
                           Continuer le setup
                         </a>
@@ -1451,9 +1642,34 @@ export default function ProfilPage() {
             ) : null}
 
             {profilTab === "insights" ? (
-              <div className="fuel-theme-panel min-w-0 pb-2">
-                <div className="fuel-theme-panel__inner">
+              <div className="space-y-4">
+                <div className="fuel-theme-panel min-w-0">
+                  <div className="fuel-theme-panel__inner">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Progression 4 semaines</p>
+                    <div className="mt-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-4">
+                      <svg viewBox="0 0 120 44" className="h-12 w-full" aria-label="Sparkline progression 4 semaines">
+                        <polyline
+                          fill="none"
+                          stroke="#d97706"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          points={sparkPoints}
+                        />
+                      </svg>
+                      <div className="mt-2 grid grid-cols-4 text-[11px] text-gray-500">
+                        <span>S-3</span>
+                        <span className="text-center">S-2</span>
+                        <span className="text-center">S-1</span>
+                        <span className="text-right">Cette semaine</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="fuel-theme-panel min-w-0 pb-2">
+                  <div className="fuel-theme-panel__inner">
                   <ProfileAnalysesTabContent />
+                  </div>
                 </div>
               </div>
             ) : null}
