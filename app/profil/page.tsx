@@ -140,7 +140,7 @@ function SemiGauge({
 
   return (
     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-4">
-      <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">{label}</p>
+      <p className="profil-kicker">{label}</p>
       <div className="mt-2 flex items-center justify-center">
         <svg viewBox={`0 0 ${size} ${size}`} className="h-24 w-32" aria-hidden>
           <path d={`M ${arc(start)} A ${radius} ${radius} 0 0 1 ${arc(end)}`} fill="none" stroke="rgba(148,163,184,0.28)" strokeWidth="8" strokeLinecap="round" />
@@ -499,6 +499,12 @@ export default function ProfilPage() {
   const pendingChecklist = setupChecklist.filter((item) => !item.done);
   const setupProgressPct = Math.round(((setupChecklist.length - pendingChecklist.length) / setupChecklist.length) * 100);
   const nextPriorityAnchor = pendingChecklist[0]?.anchor ?? null;
+  const readinessFillClass =
+    completion > 70
+      ? "bg-[var(--color-primary)]"
+      : completion >= 50
+        ? "bg-[#d97706]"
+        : "bg-[#dc2626]";
 
   const onAvatarFile = (file: File | null) => {
     if (!file || !file.type.startsWith("image/")) return;
@@ -677,8 +683,7 @@ export default function ProfilPage() {
 
         <section className="relative z-10 mx-4 mt-3 md:mx-10" aria-label="Stats rapides">
           <div
-            className="fuel-race-kpis-grid"
-            style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}
+            className="fuel-race-kpis-grid grid grid-cols-1 gap-3 md:grid-cols-3"
           >
             <article className="rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white p-[18px] shadow-[0_1px_2px_rgba(26,26,26,0.08)]">
               <p
@@ -687,7 +692,7 @@ export default function ProfilPage() {
               >
                 Complétude profil
               </p>
-              <p className="mt-2 text-[20px] font-bold text-gray-900">{completion}%</p>
+              <p className="profil-value mt-2">{completion}%</p>
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--color-border)]">
                 <div
                   className="h-full rounded-full bg-[var(--color-primary)]"
@@ -704,8 +709,8 @@ export default function ProfilPage() {
               >
                 Priorités
               </p>
-              <p className="mt-2 text-[20px] font-bold text-gray-900">{pendingChecklist.length} items</p>
-              <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+              <p className="profil-value mt-2">{pendingChecklist.length} items</p>
+              <p className="profil-subtitle mt-2">
                 {pendingChecklist.length > 0
                   ? pendingChecklist
                       .slice(0, 3)
@@ -722,10 +727,10 @@ export default function ProfilPage() {
               >
                 Sync
               </p>
-              <p className="mt-2 text-[20px] font-bold text-gray-900">
+              <p className="profil-value mt-2">
                 {autoSaveStatus === "error" ? "Erreur" : hasPendingSync ? "En attente" : "✓ À jour"}
               </p>
-              <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+              <p className="profil-subtitle mt-2">
                 {lastSyncedAt ? `Dernière synchro: ${lastSyncedAt}` : "Dernière synchro: —"}
               </p>
             </article>
@@ -740,7 +745,7 @@ export default function ProfilPage() {
           </div>
         ) : null}
 
-        <div className="races-layout max-w-4xl mx-auto px-4">
+        <div className="races-layout mx-auto">
           <div className="races-layout__main min-w-0">
             <nav className="profil-tabs-shell mb-1 scroll-mt-6" aria-label="Sections du profil">
               <div className="relative">
@@ -822,8 +827,8 @@ export default function ProfilPage() {
                   </div>
                 ) : null}
 
-                <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-                  <div className="space-y-6">
+                <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+                  <div className="space-y-8">
                     <RacesNextMilestone nextRace={nextRace} />
 
                     <div
@@ -835,9 +840,9 @@ export default function ProfilPage() {
                           <h2 className="font-display text-2xl font-black tracking-tight text-[var(--color-text)] md:text-[1.65rem]">
                             Passe du profil à la ligne de départ.
                           </h2>
-                          <p className="mt-1 text-sm text-[var(--color-text-muted)]">Accès rapide aux modules clés.</p>
+                          <p className="profil-subtitle mt-1">Accès rapide aux modules clés.</p>
 
-                          <div className="mt-4 grid grid-cols-2 gap-3">
+                          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                             <Link
                               href="/plan"
                               className="flex items-center gap-3 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-4 py-[14px] transition duration-200 hover:-translate-y-[1px] hover:shadow-md"
@@ -869,18 +874,18 @@ export default function ProfilPage() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                           <div className="rounded-[16px] border border-[var(--color-border)] bg-white p-[18px] shadow-sm">
                             <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-bg-card))]">
                               <Target className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
                             </div>
-                            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                            <p className="profil-kicker">
                               Objectif saison
                             </p>
                             <p className="mt-2 font-display text-lg font-black text-[var(--color-text)]">
                               {goalObj?.label ?? "À définir"}
                             </p>
-                            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                            <p className="profil-subtitle mt-1">
                               {goalObj?.cue ?? "Choisis un axe pour prioriser les reco nutrition."}
                             </p>
                           </div>
@@ -888,13 +893,13 @@ export default function ProfilPage() {
                             <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-bg-card))]">
                               <Mountain className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
                             </div>
-                            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                            <p className="profil-kicker">
                               Prochaine course
                             </p>
                             <p className="mt-2 line-clamp-2 font-display text-lg font-black text-[var(--color-text)]">
                               {nextRace ? nextRace.name : "—"}
                             </p>
-                            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                            <p className="profil-subtitle mt-1">
                               {nextRace
                                 ? "Contexte pris en compte pour tes plans."
                                 : "Ajoute un objectif dans Mes courses."}
@@ -904,7 +909,7 @@ export default function ProfilPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                   <SectionAccordion
                     id="personal"
                     icon={<User className="h-5 w-5" />}
@@ -927,7 +932,7 @@ export default function ProfilPage() {
                     </div>
 
                     <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <label className="relative block">
                         <input
                           placeholder="Prénom"
@@ -1028,7 +1033,7 @@ export default function ProfilPage() {
 
                     <div className="mt-6 rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                       <span className="text-sm font-semibold text-[var(--color-text)]">Sports pratiqués</span>
-                      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
                         {(
                           [
                             ["trail", "🏔️ Trail"],
@@ -1061,7 +1066,7 @@ export default function ProfilPage() {
                     </div>
 
                     <div className="mt-6 rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <label className="relative block">
                         <select
                           className={selectClass()}
@@ -1094,7 +1099,7 @@ export default function ProfilPage() {
                           Niveau athlétique
                         </span>
                       </label>
-                      <label className="relative block sm:col-span-2">
+                      <label className="relative block md:col-span-2">
                         <select
                           className={selectClass()}
                           value={profile.mainGoal}
@@ -1139,7 +1144,7 @@ export default function ProfilPage() {
                           <Gauge className="h-4 w-4 text-[var(--color-text-muted)]" />
                           <span className="text-sm font-bold text-[var(--color-text)]">Données de performance</span>
                         </div>
-                        <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-4 md:grid-cols-2">
                           <label className="relative block">
                             <input
                               type="number"
@@ -1175,7 +1180,7 @@ export default function ProfilPage() {
                               VMA (km/h)
                             </span>
                           </label>
-                          <label className="relative block sm:col-span-2">
+                          <label className="relative block md:col-span-2">
                             <input
                               type="number"
                               min={2.6}
@@ -1199,10 +1204,10 @@ export default function ProfilPage() {
                       </div>
 
                       <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-4">
-                        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                        <p className="profil-kicker">
                           Repère effort
                         </p>
-                        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                        <div className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-1">
                           <SemiGauge
                             label="FTP"
                             value={typeof profile.ftpWatts === "number" ? profile.ftpWatts : null}
@@ -1231,7 +1236,7 @@ export default function ProfilPage() {
                         <Droplets className="h-4 w-4 text-[var(--color-text-muted)]" />
                         <span className="text-sm font-bold text-[var(--color-text)]">Hydratation & sudation</span>
                       </div>
-                      <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="grid gap-4 md:grid-cols-2">
                           <label className="block text-sm font-semibold text-[var(--color-text)]">
                             Débit de sueur (ml/h)
                           <input
@@ -1288,7 +1293,7 @@ export default function ProfilPage() {
 
                     <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                       <span className="text-sm font-bold text-[var(--color-text)]">Régimes & restrictions</span>
-                      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
                         {(
                           [
                             ["dietVegetarian", "Végétarien"],
@@ -1333,7 +1338,7 @@ export default function ProfilPage() {
 
                     <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                       <span className="text-sm font-semibold text-[var(--color-text)]">Marques favorites</span>
-                      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
                         {(
                           [
                             ["brandMaurten", "Maurten"],
@@ -1414,7 +1419,7 @@ export default function ProfilPage() {
                                     {connected ? "Connectée" : "Déconnectée"}
                                   </span>
                                 </div>
-                                <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                                <p className="profil-subtitle mt-1">
                                   {integration.description}
                                 </p>
                               </div>
@@ -1450,9 +1455,9 @@ export default function ProfilPage() {
                     </div>
                   </div>
 
-                  <aside className="profil-sticky-rail space-y-6">
-                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
-                      <p className="text-[11px] font-semibold text-[var(--color-text-muted)]">Navigation rapide</p>
+                  <aside className="profil-sticky-rail space-y-8 lg:sticky lg:top-[80px] lg:self-start">
+                    <div className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
+                      <p className="profil-kicker">Navigation rapide</p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {[
                           ["#personal", "Identité"],
@@ -1470,17 +1475,13 @@ export default function ProfilPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                    <div className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
+                      <p className="profil-kicker">
                         Readiness athlète
                       </p>
-                      <p className="mt-2 text-2xl font-bold text-gray-900">{completion}%</p>
+                      <p className="profil-value mt-2">{completion}%</p>
                       <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--color-border)]">
-                        <div
-                          className="h-full rounded-full bg-[linear-gradient(90deg,var(--color-primary),var(--color-energy))]"
-                          style={{ width: `${completion}%` }}
-                          aria-hidden
-                        />
+                        <div className={`h-full rounded-full ${readinessFillClass}`} style={{ width: `${completion}%` }} aria-hidden />
                       </div>
                       <div className="mt-3 grid gap-2">
                         <div className="flex items-center justify-between rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2 text-xs">
@@ -1500,21 +1501,21 @@ export default function ProfilPage() {
                           </span>
                         </div>
                       </div>
-                      <p className="mt-3 text-[11px] text-[var(--color-text-muted)]">
+                      <p className="profil-subtitle mt-3">
                         {pendingChecklist.length === 0
                           ? "Prêt pour les recommandations avancées."
                           : `${pendingChecklist.length} priorité${pendingChecklist.length > 1 ? "s" : ""} avant la pleine personnalisation.`}
                       </p>
                     </div>
 
-                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                    <div className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
+                      <p className="profil-kicker">
                         Actions rapides
                       </p>
                       <div className="mt-2 mb-2 flex items-center justify-between gap-3 rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2">
                         <div>
                           <p className="text-xs font-semibold text-[var(--color-text)]">Autosave intelligent</p>
-                          <p className="text-[11px] text-[var(--color-text-muted)]">
+                          <p className="profil-subtitle">
                             {autoSaveEnabled ? "Actif (délai ~1.4 s)" : "Désactivé (synchro manuelle)"}
                           </p>
                         </div>
@@ -1551,14 +1552,18 @@ export default function ProfilPage() {
                           <Link2 className="mr-2 h-4 w-4" aria-hidden />
                           Gérer les intégrations
                         </Link>
-                        <Button type="button" variant="primary" size="md" onClick={handleSave}>
+                        <button
+                          type="button"
+                          onClick={handleSave}
+                          className="w-full rounded-xl border border-[var(--color-primary)] bg-transparent px-4 py-2.5 text-sm font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,white)]"
+                        >
                           {hasPendingSync ? "Synchroniser" : "Forcer la synchro"}
-                        </Button>
+                        </button>
                       </div>
                       {lastSyncedAt ? (
-                        <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">Dernière synchro: {lastSyncedAt}</p>
+                        <p className="profil-subtitle mt-2">Dernière synchro: {lastSyncedAt}</p>
                       ) : null}
-                      <p className="mt-1 text-[11px] text-[var(--color-text-muted)]" aria-live="polite">
+                      <p className="profil-subtitle mt-1" aria-live="polite">
                         {autoSaveStatus === "saving"
                           ? "Synchronisation en cours..."
                           : autoSaveStatus === "error"
@@ -1569,8 +1574,8 @@ export default function ProfilPage() {
                       </p>
                     </div>
 
-                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                    <div className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
+                      <p className="profil-kicker">
                         Priorités profil
                       </p>
                       <div className="mt-3 space-y-2">
@@ -1588,11 +1593,11 @@ export default function ProfilPage() {
                               <span
                                 className={[
                                   "inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px]",
-                                  item.done ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500",
+                                  item.done ? "bg-green-100 text-green-700" : "border border-gray-300 bg-transparent text-gray-400",
                                 ].join(" ")}
                                 aria-hidden
                               >
-                                {item.done ? "✅" : "⬜"}
+                                {item.done ? "✅" : "○"}
                               </span>
                               {item.label}
                             </span>
@@ -1635,10 +1640,10 @@ export default function ProfilPage() {
             ) : null}
 
             {profilTab === "insights" ? (
-              <div className="space-y-4">
+              <div className="space-y-8">
                 <div className="fuel-theme-panel min-w-0">
                   <div className="fuel-theme-panel__inner">
-                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Progression 4 semaines</p>
+                    <p className="profil-kicker">Progression 4 semaines</p>
                     <div className="mt-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-4">
                       <svg viewBox="0 0 120 44" className="h-12 w-full" aria-label="Sparkline progression 4 semaines">
                         <polyline
