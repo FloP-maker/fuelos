@@ -80,6 +80,8 @@ const GREEN_MUTED = "#22543D";
 
 type ProfilDashboardTab = "overview" | "memory" | "insights";
 type ProfilDensityMode = "auto" | "standard" | "compact";
+const PROFILE_LAST_TAB_KEY = "fuelos_profile_last_tab";
+const PROFILE_LAST_SECTION_KEY = "fuelos_profile_last_section";
 
 const PROFIL_TABS: {
   id: ProfilDashboardTab;
@@ -354,6 +356,12 @@ export default function ProfilPage() {
       if (saved === "compact" || saved === "standard" || saved === "auto") {
         setDensityMode(saved);
       }
+      const savedTab = localStorage.getItem(PROFILE_LAST_TAB_KEY);
+      if (savedTab === "overview" || savedTab === "memory" || savedTab === "insights") {
+        setProfilTab(savedTab);
+      }
+      const savedSection = localStorage.getItem(PROFILE_LAST_SECTION_KEY);
+      if (savedSection) setOpenSection(savedSection);
       const autoSaveStored = localStorage.getItem("fuelos_profile_autosave");
       if (autoSaveStored === "0") setAutoSaveEnabled(false);
     } catch {
@@ -379,6 +387,24 @@ export default function ProfilPage() {
       /* ignore */
     }
   }, [densityMode]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PROFILE_LAST_TAB_KEY, profilTab);
+    } catch {
+      /* ignore */
+    }
+  }, [profilTab]);
+
+  useEffect(() => {
+    try {
+      if (openSection) {
+        localStorage.setItem(PROFILE_LAST_SECTION_KEY, openSection);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [openSection]);
 
   useEffect(() => {
     try {
@@ -453,6 +479,7 @@ export default function ProfilPage() {
     ]
   );
   const pendingChecklist = setupChecklist.filter((item) => !item.done);
+  const nextPriorityAnchor = pendingChecklist[0]?.anchor ?? null;
 
   const onAvatarFile = (file: File | null) => {
     if (!file || !file.type.startsWith("image/")) return;
@@ -1509,6 +1536,15 @@ export default function ProfilPage() {
                       {lastSyncedAt ? (
                         <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">Dernière synchro: {lastSyncedAt}</p>
                       ) : null}
+                      <p className="mt-1 text-[11px] text-[var(--color-text-muted)]" aria-live="polite">
+                        {autoSaveStatus === "saving"
+                          ? "Synchronisation en cours..."
+                          : autoSaveStatus === "error"
+                            ? "La dernière synchronisation a échoué."
+                            : hasPendingSync
+                              ? "Des changements attendent une synchronisation."
+                              : "Toutes les modifications sont synchronisées."}
+                      </p>
                     </div>
 
                     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
@@ -1550,6 +1586,14 @@ export default function ProfilPage() {
                           ? "Profil prêt : base complète pour plans et analyses."
                           : `${pendingChecklist.length} point${pendingChecklist.length > 1 ? "s" : ""} à compléter en priorité.`}
                       </p>
+                      {nextPriorityAnchor ? (
+                        <a
+                          href={nextPriorityAnchor}
+                          className="mt-3 inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text)]"
+                        >
+                          Continuer le setup
+                        </a>
+                      ) : null}
                     </div>
                   </aside>
                 </div>
