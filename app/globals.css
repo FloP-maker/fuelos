@@ -509,16 +509,16 @@ textarea:focus {
     opacity: 0.38;
   }
 
-  /* Profil : liseré énergie + bandes (lecture type app sport / data) */
+  /* Profil hero: cleaner, higher readability */
   .races-page-hero.profil-hero {
     background:
       linear-gradient(
-        115deg,
-        color-mix(in srgb, var(--color-energy) 14%, transparent) 0%,
-        transparent 48%
+        125deg,
+        color-mix(in srgb, var(--color-energy) 10%, transparent) 0%,
+        transparent 52%
       ),
-      linear-gradient(180deg, rgba(26, 58, 42, 0.35) 0%, transparent 42%),
-      linear-gradient(165deg, #0a0f0a 0%, #122418 28%, #1a3a2a 58%, #162a22 78%, #1a2535 100%);
+      linear-gradient(180deg, rgba(25, 53, 39, 0.22) 0%, transparent 46%),
+      linear-gradient(165deg, #0c120f 0%, #14241d 34%, #1a3026 62%, #1a2532 100%);
   }
 
   .races-page-hero.profil-hero::after {
@@ -527,14 +527,8 @@ textarea:focus {
     inset: 0;
     z-index: 3;
     pointer-events: none;
-    opacity: 0.22;
-    background: repeating-linear-gradient(
-      -17deg,
-      transparent,
-      transparent 10px,
-      rgba(255, 255, 255, 0.028) 10px,
-      rgba(255, 255, 255, 0.028) 11px
-    );
+    opacity: 0.08;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 64%);
   }
 
   .races-page-hero.profil-hero .races-page-hero__inner {
@@ -556,12 +550,12 @@ textarea:focus {
   html.dark .races-page-hero.profil-hero {
     background:
       linear-gradient(
-        115deg,
-        color-mix(in srgb, var(--color-energy) 22%, transparent) 0%,
-        transparent 50%
+        125deg,
+        color-mix(in srgb, var(--color-energy) 14%, transparent) 0%,
+        transparent 54%
       ),
-      linear-gradient(180deg, rgba(30, 70, 48, 0.22) 0%, transparent 40%),
-      linear-gradient(165deg, #050807 0%, #0c1610 30%, #153028 58%, #0c121c 88%, #0a0e18 100%);
+      linear-gradient(180deg, rgba(30, 70, 48, 0.16) 0%, transparent 44%),
+      linear-gradient(165deg, #060907 0%, #101811 34%, #163028 62%, #101822 100%);
   }
 
   /* Prochain objectif : sous le hero (air hero → carte via padding-top .races-layout) */
@@ -1173,14 +1167,14 @@ textarea:focus {
     --profil-shadow-soft: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
     --profil-shadow-soft-strong: 0 8px 24px color-mix(in srgb, #000 6%, transparent);
     --profil-border-soft: color-mix(in srgb, var(--color-border) 86%, transparent);
-    --profil-space-main: clamp(30px, 3.8vw, 52px);
+    --profil-space-main: clamp(36px, 4.4vw, 64px);
     --profil-space-main-compact: clamp(20px, 2.6vw, 34px);
     --profil-letter-kicker: 0.12em;
     --profil-tabs-top: 4.7rem;
     --profil-rail-top: 6.25rem;
     --profil-rail-max-height: calc(100vh - 7rem);
     --profil-tabs-blur: blur(6px);
-    --profil-quick-jump-bg: color-mix(in srgb, var(--color-energy) 10%, var(--color-bg-card));
+    --profil-quick-jump-bg: color-mix(in srgb, var(--color-energy) 6%, var(--color-bg-card));
     width: 100% !important;
     max-width: none;
   }
@@ -1236,7 +1230,7 @@ textarea:focus {
   }
 
   .races-page.profil-page .profil-tabs-shell button {
-    letter-spacing: 0.01em;
+    letter-spacing: 0;
   }
 
   .races-page.profil-page .profil-tab-btn,
@@ -1298,7 +1292,7 @@ textarea:focus {
   }
 
   .races-page.profil-page .profil-quick-jump:hover {
-    border-color: color-mix(in srgb, var(--color-energy) 45%, var(--color-border));
+    border-color: color-mix(in srgb, var(--color-energy) 28%, var(--color-border));
     color: var(--color-text);
     background: var(--profil-quick-jump-bg);
   }
@@ -1306,9 +1300,13 @@ textarea:focus {
   .races-page.profil-page .profil-priority-jump:hover,
   .races-page.profil-page .profil-continue-setup:hover,
   .races-page.profil-page .profil-soft-action:hover {
-    border-color: color-mix(in srgb, var(--color-energy) 45%, var(--color-border));
+    border-color: color-mix(in srgb, var(--color-energy) 28%, var(--color-border));
     color: var(--color-text);
-    background: color-mix(in srgb, var(--color-energy) 10%, var(--color-bg-card));
+    background: color-mix(in srgb, var(--color-energy) 7%, var(--color-bg-card));
+  }
+
+  .races-page.profil-page .text-\[var\(--color-text-muted\)\] {
+    color: color-mix(in srgb, var(--color-text-muted) 92%, var(--color-text));
   }
 
   html.dark .races-page.profil-page article,
@@ -1318,6 +1316,10 @@ textarea:focus {
   html.dark .fuel-theme-panel {
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
     border-color: color-mix(in srgb, var(--color-border) 82%, #ffffff);
+  }
+
+  html.dark .races-page.profil-page .text-\[var\(--color-text-muted\)\] {
+    color: color-mix(in srgb, var(--color-text-muted) 76%, #ffffff);
   }
 
   .races-page.profil-page .profil-sticky-rail .text-\[10px\].font-black {
@@ -1361,7 +1363,7 @@ textarea:focus {
 
   .races-page.profil-page.profil-density-compact .races-layout__main,
   .races-page.profil-page.profil-density-compact .space-y-10 {
-    gap: clamp(18px, 2.2vw, 28px);
+    gap: clamp(22px, 2.5vw, 32px);
     --tw-space-y-reverse: 0;
     margin-top: 0 !important;
   }

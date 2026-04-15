@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Activity,
   BarChart3,
@@ -78,6 +78,8 @@ const GREEN_MUTED = "#22543D";
 
 type ProfilDashboardTab = "overview" | "memory" | "insights";
 type ProfilDensityMode = "auto" | "standard" | "compact";
+const PROFILE_DENSITY_KEY = "fuelos_profile_density";
+const PROFILE_AUTOSAVE_KEY = "fuelos_profile_autosave";
 const PROFILE_LAST_TAB_KEY = "fuelos_profile_last_tab";
 const PROFILE_LAST_SECTION_KEY = "fuelos_profile_last_section";
 
@@ -133,26 +135,20 @@ function activeSports(profile: FuelOsUserProfile) {
   ].filter(Boolean) as string[];
 }
 
-function ProfileHeroMetric({
-  label,
-  value,
-  help,
-}: {
-  label: string;
-  value: string;
-  help: string;
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/16 bg-white/[0.06] px-4 py-3.5 shadow-[0_4px_18px_rgba(0,0,0,0.14)] backdrop-blur-sm">
-      <div
-        className="pointer-events-none absolute inset-y-3 left-0 w-px rounded-full bg-gradient-to-b from-[var(--color-energy)] to-[var(--color-accent)] opacity-75"
-        aria-hidden
-      />
-      <p className="pl-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/55">{label}</p>
-      <p className="mt-1.5 pl-2 font-display text-2xl font-black tracking-tight text-white">{value}</p>
-      <p className="mt-1 pl-2 text-[11px] leading-snug text-white/65">{help}</p>
-    </div>
-  );
+function safeStorageGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeStorageSet(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* ignore */
+  }
 }
 
 function SectionAccordion({
@@ -207,7 +203,9 @@ function SectionAccordion({
             <p className="font-display text-base font-black tracking-tight text-[var(--color-text)] md:text-lg">
               {title}
             </p>
-            <p className="mt-0.5 text-sm leading-snug text-[var(--color-text-muted)]">{subtitle}</p>
+            <p className="mt-1 text-sm leading-relaxed text-[color-mix(in_srgb,var(--color-text-muted)_92%,var(--color-text))]">
+              {subtitle}
+            </p>
           </div>
         </div>
         <ChevronDown
@@ -275,6 +273,7 @@ export default function ProfilPage() {
   const [densityMode, setDensityMode] = useState<ProfilDensityMode>("auto");
   const [isAutoCompactViewport, setIsAutoCompactViewport] = useState(false);
   const [syncedProfileSnapshot, setSyncedProfileSnapshot] = useState<string>("");
+  const saveHintTimeoutRef = useRef<number | null>(null);
 
   const toggleSection = (id: string) => setOpenSection((prev) => (prev === id ? null : id));
   const refreshRaces = useCallback(() => setRaces(loadRaces()), []);
@@ -293,67 +292,56 @@ export default function ProfilPage() {
   }, [refreshRaces]);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("fuelos_profile_density");
-      if (saved === "compact" || saved === "standard" || saved === "auto") {
-        setDensityMode(saved);
-      }
-      const savedTab = localStorage.getItem(PROFILE_LAST_TAB_KEY);
-      if (savedTab === "overview" || savedTab === "memory" || savedTab === "insights") {
-        setProfilTab(savedTab);
-      }
-      const savedSection = localStorage.getItem(PROFILE_LAST_SECTION_KEY);
-      if (savedSection) setOpenSection(savedSection);
-      const autoSaveStored = localStorage.getItem("fuelos_profile_autosave");
-      if (autoSaveStored === "0") setAutoSaveEnabled(false);
-    } catch {
-      /* ignore */
+    const savedDensity = safeStorageGet(PROFILE_DENSITY_KEY);
+    if (savedDensity === "compact" || savedDensity === "standard" || savedDensity === "auto") {
+      setDensityMode(savedDensity);
+    }
+    const savedTab = safeStorageGet(PROFILE_LAST_TAB_KEY);
+    if (savedTab === "overview" || savedTab === "memory" || savedTab === "insights") {
+      setProfilTab(savedTab);
+    }
+    const savedSection = safeStorageGet(PROFILE_LAST_SECTION_KEY);
+    if (savedSection) setOpenSection(savedSection);
+    if (safeStorageGet(PROFILE_AUTOSAVE_KEY) === "0") {
+      setAutoSaveEnabled(false);
     }
   }, []);
 
   useEffect(() => {
-    const onResize = () => {
-      if (typeof window === "undefined") return;
+    let rafId: number | null = null;
+    const updateViewportMode = () => {
       // Compact auto pour desktop "resserré" (tablettes paysage + petits laptops)
       setIsAutoCompactViewport(window.innerWidth >= 1024 && window.innerWidth < 1520);
     };
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    const onResize = () => {
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null;
+        updateViewportMode();
+      });
+    };
+    updateViewportMode();
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => {
+      window.removeEventListener("resize", onResize);
+      if (rafId !== null) window.cancelAnimationFrame(rafId);
+    };
   }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("fuelos_profile_density", densityMode);
-    } catch {
-      /* ignore */
-    }
+    safeStorageSet(PROFILE_DENSITY_KEY, densityMode);
   }, [densityMode]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(PROFILE_LAST_TAB_KEY, profilTab);
-    } catch {
-      /* ignore */
-    }
+    safeStorageSet(PROFILE_LAST_TAB_KEY, profilTab);
   }, [profilTab]);
 
   useEffect(() => {
-    try {
-      if (openSection) {
-        localStorage.setItem(PROFILE_LAST_SECTION_KEY, openSection);
-      }
-    } catch {
-      /* ignore */
-    }
+    if (openSection) safeStorageSet(PROFILE_LAST_SECTION_KEY, openSection);
   }, [openSection]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("fuelos_profile_autosave", autoSaveEnabled ? "1" : "0");
-    } catch {
-      /* ignore */
-    }
+    safeStorageSet(PROFILE_AUTOSAVE_KEY, autoSaveEnabled ? "1" : "0");
   }, [autoSaveEnabled]);
 
   const { upcoming, past } = useMemo(() => partitionRacesByUpcoming(races), [races]);
@@ -444,6 +432,15 @@ export default function ProfilPage() {
     }
   }, [profileSnapshot, syncedProfileSnapshot]);
 
+  useEffect(
+    () => () => {
+      if (saveHintTimeoutRef.current !== null) {
+        window.clearTimeout(saveHintTimeoutRef.current);
+      }
+    },
+    []
+  );
+
   const runSync = useCallback(
     (mode: "manual" | "auto") => {
       try {
@@ -454,13 +451,15 @@ export default function ProfilPage() {
         setAutoSaveStatus("saved");
         if (mode === "manual") {
           setSaveHint("Profil enregistré dans le calculateur ✓");
-          window.setTimeout(() => setSaveHint(null), 4000);
+          if (saveHintTimeoutRef.current !== null) window.clearTimeout(saveHintTimeoutRef.current);
+          saveHintTimeoutRef.current = window.setTimeout(() => setSaveHint(null), 4000);
         }
       } catch {
         setAutoSaveStatus("error");
         if (mode === "manual") {
           setSaveHint("Échec de synchronisation. Réessaie dans quelques secondes.");
-          window.setTimeout(() => setSaveHint(null), 5000);
+          if (saveHintTimeoutRef.current !== null) window.clearTimeout(saveHintTimeoutRef.current);
+          saveHintTimeoutRef.current = window.setTimeout(() => setSaveHint(null), 5000);
         }
       }
     },
@@ -511,33 +510,23 @@ export default function ProfilPage() {
           .join(" ")}
       >
         <section className="races-page-hero profil-hero" aria-labelledby="profil-hero-title">
-          <svg viewBox="0 0 1200 220" preserveAspectRatio="none" aria-hidden>
-            <path
-              fill="#0b1711"
-              d="M0 220 L0 118 L138 64 L236 110 L360 24 L484 96 L626 42 L760 114 L902 28 L1076 88 L1200 54 L1200 220 Z"
-            />
-            <path
-              fill="#13241a"
-              d="M0 220 L0 156 L154 104 L294 146 L462 72 L628 132 L816 68 L978 124 L1128 92 L1200 114 L1200 220 Z"
-            />
-          </svg>
           <div className="races-page-hero__inner">
             <div className="races-page-hero__left w-full max-w-[1400px] gap-8">
               <div className="races-page-hero__copy max-w-none">
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/[0.09] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/80 backdrop-blur-md">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/[0.08] px-3 py-1 text-[11px] font-semibold text-white/78">
                   <Sparkles className="h-3.5 w-3.5 text-[var(--color-energy)]" aria-hidden />
                   Profil athlète
                 </span>
                 <h1 id="profil-hero-title" className="mt-4 max-w-none">
-                  Cockpit athlète: prêt pour la prochaine course.
+                  Un profil clair. Des décisions plus rapides.
                 </h1>
-                <p className="mt-4 max-w-[72ch] text-base text-white/75">
-                  Moins de texte, plus d’action: renseigne le minimum vital, synchronise, puis enchaîne sur Plan ou Mode course.
+                <p className="mt-4 max-w-[68ch] text-base text-white/82">
+                  Renseigne l'essentiel, synchronise, puis passe sur Plan ou Mode course. Priorité à la lisibilité, pas au bruit.
                 </p>
-                <div className="mt-5 grid w-full gap-2 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-white/20 bg-black/20 px-3 py-2.5 backdrop-blur-sm">
+                <div className="mt-6 grid w-full gap-2.5 sm:grid-cols-3">
+                  <div className="rounded-xl border border-white/16 bg-black/18 px-3 py-2.5">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/70">Complétude</span>
+                      <span className="text-[11px] font-medium text-white/78">Complétude</span>
                       <span className="text-sm font-bold text-white">{completion}%</span>
                     </div>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
@@ -548,9 +537,9 @@ export default function ProfilPage() {
                       />
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-white/20 bg-black/20 px-3 py-2.5 backdrop-blur-sm">
+                  <div className="rounded-xl border border-white/16 bg-black/18 px-3 py-2.5">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/70">Priorités</span>
+                      <span className="text-[11px] font-medium text-white/78">Priorités</span>
                       <span className="text-sm font-bold text-white">{pendingChecklist.length}</span>
                     </div>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
@@ -561,9 +550,9 @@ export default function ProfilPage() {
                       />
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-white/20 bg-black/20 px-3 py-2.5 backdrop-blur-sm">
+                  <div className="rounded-xl border border-white/16 bg-black/18 px-3 py-2.5">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/70">Sync</span>
+                      <span className="text-[11px] font-medium text-white/78">Sync</span>
                       <span className="text-sm font-bold text-white">{syncStatusLabel}</span>
                     </div>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
@@ -577,8 +566,8 @@ export default function ProfilPage() {
                 </div>
               </div>
 
-              <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.55fr)]">
-                <div className="rounded-[28px] border border-white/14 bg-[linear-gradient(155deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.07)_45%,rgba(255,255,255,0.03)_100%)] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl md:rounded-[32px] md:p-6">
+              <div className="grid w-full gap-6">
+                <div className="rounded-[26px] border border-white/14 bg-[linear-gradient(160deg,rgba(255,255,255,0.14)_0%,rgba(255,255,255,0.04)_58%,rgba(255,255,255,0.02)_100%)] p-5 shadow-[0_18px_56px_rgba(0,0,0,0.28)] md:rounded-[30px] md:p-6">
                   <div className="flex flex-col gap-6 md:flex-row md:items-start">
                     <label className="group relative mx-auto shrink-0 cursor-pointer md:mx-0">
                       <div className="relative h-[5.5rem] w-[5.5rem] overflow-hidden rounded-[26px] border-2 border-white/20 bg-white/10 shadow-xl ring-2 ring-[color-mix(in_srgb,var(--color-energy)_45%,transparent)]">
@@ -601,7 +590,7 @@ export default function ProfilPage() {
                           </div>
                         )}
                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                          <span className="text-[11px] font-bold uppercase tracking-wide text-white">Photo</span>
+                          <span className="text-[11px] font-semibold text-white">Photo</span>
                         </div>
                       </div>
                       <input
@@ -632,7 +621,7 @@ export default function ProfilPage() {
                         ) : null}
                         {levelObj ? (
                           <span
-                            className="inline-flex items-center rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide text-white shadow-sm"
+                            className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm"
                             style={{ backgroundColor: levelObj.color }}
                           >
                             {levelObj.label}
@@ -646,51 +635,19 @@ export default function ProfilPage() {
                         ) : null}
                       </div>
 
-                      <div className="mt-5 grid gap-2.5 sm:grid-cols-3">
-                        <ProfileHeroMetric
-                          label="Complétude"
-                          value={`${completion}%`}
-                          help="Plus c’est rempli, plus les plans sont précis."
-                        />
-                        <ProfileHeroMetric
-                          label="Sources"
-                          value={`${connectedCount}/5`}
-                          help="Apps et boîtiers liés au profil."
-                        />
-                        <ProfileHeroMetric
-                          label="Carburant"
-                          value={nutritionMode}
-                          help="Liquide / solide pendant l’effort."
-                        />
+                      <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                        <div className="rounded-xl border border-white/14 bg-black/18 px-3 py-2 text-xs">
+                          <span className="text-white/64">Métrique clé</span>
+                          <p className="mt-1 text-sm font-bold text-white">{primaryPerformanceStat}</p>
+                        </div>
+                        <div className="rounded-xl border border-white/14 bg-black/18 px-3 py-2 text-xs">
+                          <span className="text-white/64">Carburant</span>
+                          <p className="mt-1 text-sm font-bold text-white">{nutritionMode}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <ProfileHeroMetric
-                    label="Métrique clé"
-                    value={primaryPerformanceStat}
-                    help={
-                      sportObj
-                        ? `Repère pour ${sportObj.theme.toLowerCase()}`
-                        : "FTP ou VMA : à renseigner pour affiner les plans."
-                    }
-                  />
-                  <ProfileHeroMetric
-                    label="Sudation"
-                    value={
-                      typeof profile.sweatRateMlPerH === "number"
-                        ? `${profile.sweatRateMlPerH} ml/h`
-                        : "—"
-                    }
-                    help={
-                      typeof profile.sodiumLossMgPerH === "number"
-                        ? `${profile.sodiumLossMgPerH} mg sodium / h`
-                        : "Sodium perdu : à calibrer pour l’hydratation."
-                    }
-                  />
-                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                  <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                     <Link href="#personal" className="races-page-hero__cta">
                       Éditer le profil
                     </Link>
@@ -704,7 +661,7 @@ export default function ProfilPage() {
                     ) : null}
                     <Link
                       href="/profil/integrations"
-                      className="inline-flex flex-1 items-center justify-center rounded-full border border-white/24 bg-white/[0.09] px-5 py-3 text-sm font-semibold text-white shadow-[0_3px_14px_rgba(0,0,0,0.18)] backdrop-blur-md transition hover:bg-white/[0.14] sm:flex-none"
+                      className="inline-flex flex-1 items-center justify-center rounded-full border border-white/24 bg-white/[0.09] px-5 py-3 text-sm font-semibold text-white shadow-[0_3px_14px_rgba(0,0,0,0.18)] transition hover:bg-white/[0.14] sm:flex-none"
                     >
                       <Link2 className="mr-2 h-4 w-4" aria-hidden />
                       Intégrations
@@ -779,7 +736,7 @@ export default function ProfilPage() {
                         type="button"
                         onClick={() => setProfilTab(tab.id)}
                         className={[
-                          "profil-tab-btn relative flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl px-2 py-2 text-sm font-bold transition-all sm:min-h-[50px] sm:flex-none sm:px-5",
+                          "profil-tab-btn relative flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl px-2 py-2 text-sm font-semibold transition-all sm:min-h-[50px] sm:flex-none sm:px-5",
                           active
                             ? "bg-[var(--color-bg-card)] text-[var(--color-text)] shadow-[0_4px_20px_color-mix(in_srgb,#000_12%,transparent),0_0_0_1px_color-mix(in_srgb,var(--color-energy)_35%,transparent)]"
                             : "text-[var(--color-text-muted)] hover:bg-[color-mix(in_srgb,var(--color-bg-card)_55%,transparent)] hover:text-[var(--color-text)]",
@@ -814,8 +771,8 @@ export default function ProfilPage() {
                   </div>
                 ) : null}
 
-                <div className="grid items-start gap-10 xl:grid-cols-[minmax(0,1fr)_360px]">
-                  <div className="space-y-10">
+                <div className="grid items-start gap-12 xl:grid-cols-[minmax(0,1fr)_360px]">
+                  <div className="space-y-12">
                     <RacesNextMilestone nextRace={nextRace} />
 
                     <div
@@ -824,7 +781,7 @@ export default function ProfilPage() {
                     >
                       <div className="grid gap-8 border-b border-[var(--color-border-subtle)] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--color-energy)_10%,var(--color-bg-card))_0%,var(--color-bg-card)_55%,var(--color-bg-card)_100%)] p-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)] lg:p-8">
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--color-energy)]">
+                          <p className="text-xs font-semibold text-[var(--color-energy)]">
                             Activité
                           </p>
                           <h2 className="mt-2 font-display text-2xl font-black tracking-tight text-[var(--color-text)] md:text-[1.65rem]">
@@ -868,8 +825,8 @@ export default function ProfilPage() {
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                          <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-4 md:rounded-3xl">
-                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                          <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-[18px] md:rounded-3xl">
+                            <p className="text-xs font-semibold text-[var(--color-text-muted)]">
                               Objectif saison
                             </p>
                             <p className="mt-2 font-display text-lg font-black text-[var(--color-text)]">
@@ -879,8 +836,8 @@ export default function ProfilPage() {
                               {goalObj?.cue ?? "Choisis un axe pour prioriser les reco nutrition."}
                             </p>
                           </div>
-                          <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-4 md:rounded-3xl">
-                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                          <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-[18px] md:rounded-3xl">
+                            <p className="text-xs font-semibold text-[var(--color-text-muted)]">
                               Prochaine course
                             </p>
                             <p className="mt-2 line-clamp-2 font-display text-lg font-black text-[var(--color-text)]">
@@ -901,7 +858,7 @@ export default function ProfilPage() {
                     id="personal"
                     icon={<User className="h-5 w-5" />}
                     title="Identité & morphologie"
-                    subtitle="Le socle du profil athlète: informations physiques, sport principal et objectif."
+                    subtitle="Le socle du profil: physique, sport principal et objectif."
                     open={openSection === "personal"}
                     onToggle={() => toggleSection("personal")}
                     accentColor={GREEN}
@@ -1089,7 +1046,7 @@ export default function ProfilPage() {
                     id="nutrition"
                     icon={<Activity className="h-5 w-5" />}
                     title="Performance & nutrition"
-                    subtitle="Les réglages qui rendent les plans plus pertinents pour l'effort long."
+                    subtitle="Les réglages qui rendent les plans plus pertinents sur effort long."
                     open={openSection === "nutrition"}
                     onToggle={() => toggleSection("nutrition")}
                     accentColor="#1D4ED8"
@@ -1154,7 +1111,7 @@ export default function ProfilPage() {
                       </div>
 
                       <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-4">
-                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                        <p className="text-xs font-semibold text-[var(--color-text-muted)]">
                           Repère effort
                         </p>
                         <p className="mt-2 font-display text-lg font-black text-[var(--color-text)]">
@@ -1209,7 +1166,7 @@ export default function ProfilPage() {
 
                     <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                       <span className="text-sm font-bold text-[var(--color-text)]">Tolérance digestive</span>
-                      <div className="mt-3 flex justify-between text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
+                      <div className="mt-3 flex justify-between text-[11px] font-semibold text-[var(--color-text-muted)]">
                         <span>100 % liquide</span>
                         <span>{profile.digestiveLiquidSolidPct} %</span>
                         <span>100 % solide</span>
@@ -1312,7 +1269,7 @@ export default function ProfilPage() {
                     id="integrations"
                     icon={<Settings className="h-5 w-5" />}
                     title="Connexions"
-                    subtitle="Active ou coupe chaque source : c’est indicatif pour visualiser ton écosystème."
+                    subtitle="Active ou coupe chaque source pour refléter ton écosystème réel."
                     open={openSection === "integrations"}
                     onToggle={() => toggleSection("integrations")}
                     accentColor="#64748B"
@@ -1339,13 +1296,13 @@ export default function ProfilPage() {
                                     {integration.name}
                                   </p>
                                   <span
-                                    className="rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em]"
+                                    className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
                                     style={{
                                       color: connected ? integration.color : "var(--color-text-muted)",
                                       backgroundColor: connected ? `${integration.color}18` : "var(--color-bg-subtle)",
                                     }}
                                   >
-                                    {connected ? "Connecté" : "Déconnecté"}
+                                    {connected ? "Connectée" : "Déconnectée"}
                                   </span>
                                 </div>
                                 <p className="mt-1 text-sm text-[var(--color-text-muted)]">
@@ -1356,7 +1313,7 @@ export default function ProfilPage() {
 
                             <div className="flex items-center gap-4">
                               <div className="text-right">
-                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                                <p className="text-xs font-medium text-[var(--color-text-muted)]">
                                   État
                                 </p>
                                 <p className="mt-1 text-sm font-semibold text-[var(--color-text)]">
@@ -1384,8 +1341,8 @@ export default function ProfilPage() {
                     </div>
                   </div>
 
-                  <aside className="profil-sticky-rail space-y-5">
-                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-3.5 shadow-sm md:rounded-3xl">
+                  <aside className="profil-sticky-rail space-y-6">
+                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
                       <p className="text-[11px] font-semibold text-[var(--color-text-muted)]">Navigation rapide</p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {[
@@ -1405,7 +1362,7 @@ export default function ProfilPage() {
                     </div>
 
                     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                      <p className="text-xs font-semibold text-[var(--color-text-muted)]">
                         Readiness athlète
                       </p>
                       <p className="mt-2 text-xl font-black text-[var(--color-text)]">{completion}%</p>
@@ -1442,7 +1399,7 @@ export default function ProfilPage() {
                     </div>
 
                     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                      <p className="text-xs font-semibold text-[var(--color-text-muted)]">
                         Actions rapides
                       </p>
                       <div className="mt-2 mb-2 flex items-center justify-between gap-3 rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2">
@@ -1504,7 +1461,7 @@ export default function ProfilPage() {
                     </div>
 
                     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                      <p className="text-xs font-semibold text-[var(--color-text-muted)]">
                         Priorités profil
                       </p>
                       <div className="mt-3 space-y-2">
@@ -1529,7 +1486,7 @@ export default function ProfilPage() {
                             {!item.done ? (
                               <a
                                 href={item.anchor}
-                                className="profil-priority-jump rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--color-text-muted)]"
+                                className="profil-priority-jump rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-text-muted)]"
                               >
                                 Aller
                               </a>
