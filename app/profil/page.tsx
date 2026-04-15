@@ -511,162 +511,133 @@ export default function ProfilPage() {
       >
         <section className="races-page-hero profil-hero" aria-labelledby="profil-hero-title">
           <div className="races-page-hero__inner">
-            <div className="races-page-hero__left w-full max-w-[1400px] gap-8">
-              <div className="races-page-hero__copy max-w-none">
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/[0.08] px-3 py-1 text-[11px] font-semibold text-white/78">
-                  <Sparkles className="h-3.5 w-3.5 text-[var(--color-energy)]" aria-hidden />
-                  Profil athlète
-                </span>
-                <h1 id="profil-hero-title" className="mt-4 max-w-none">
-                  Un profil clair. Des décisions plus rapides.
-                </h1>
-                <p className="mt-4 max-w-[68ch] text-base text-white/82">
-                  Renseigne l'essentiel, synchronise, puis passe sur Plan ou Mode course. Priorité à la lisibilité, pas au bruit.
-                </p>
-                <div className="mt-6 grid w-full gap-2.5 sm:grid-cols-3">
-                  <div className="rounded-xl border border-white/16 bg-black/18 px-3 py-2.5">
+            <div className="profil-hero-shell">
+              <div className="profil-hero-head">
+                <div className="races-page-hero__copy max-w-none">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/[0.07] px-3 py-1 text-[11px] font-medium text-white/80">
+                    <Sparkles className="h-3.5 w-3.5 text-[var(--color-energy)]" aria-hidden />
+                    Profil athlète
+                  </span>
+                  <h1 id="profil-hero-title" className="mt-3 max-w-none">
+                    Un profil clair. Des décisions plus rapides.
+                  </h1>
+                  <p className="mt-3 max-w-[68ch] text-base text-white/84">
+                    Renseigne l'essentiel, synchronise, puis passe sur Plan ou Mode course.
+                  </p>
+                </div>
+                <div className="grid w-full gap-2 sm:grid-cols-3 lg:max-w-[520px]">
+                  <div className="profil-hero-stat">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-medium text-white/78">Complétude</span>
-                      <span className="text-sm font-bold text-white">{completion}%</span>
+                      <span>Complétude</span>
+                      <strong>{completion}%</strong>
                     </div>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
-                      <div
-                        className="h-full rounded-full bg-[var(--color-energy)]"
-                        style={{ width: `${completion}%` }}
-                        aria-hidden
-                      />
+                      <div className="h-full rounded-full bg-[var(--color-energy)]" style={{ width: `${completion}%` }} />
                     </div>
                   </div>
-                  <div className="rounded-xl border border-white/16 bg-black/18 px-3 py-2.5">
+                  <div className="profil-hero-stat">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-medium text-white/78">Priorités</span>
-                      <span className="text-sm font-bold text-white">{pendingChecklist.length}</span>
+                      <span>Priorités</span>
+                      <strong>{pendingChecklist.length}</strong>
                     </div>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
-                      <div
-                        className="h-full rounded-full bg-[var(--color-primary)]"
-                        style={{ width: `${setupProgressPct}%` }}
-                        aria-hidden
-                      />
+                      <div className="h-full rounded-full bg-[var(--color-primary)]" style={{ width: `${setupProgressPct}%` }} />
                     </div>
                   </div>
-                  <div className="rounded-xl border border-white/16 bg-black/18 px-3 py-2.5">
+                  <div className="profil-hero-stat">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-medium text-white/78">Sync</span>
-                      <span className="text-sm font-bold text-white">{syncStatusLabel}</span>
+                      <span>Sync</span>
+                      <strong>{syncStatusLabel}</strong>
                     </div>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
-                      <div
-                        className="h-full rounded-full bg-[var(--color-accent)]"
-                        style={{ width: `${syncConfidencePct}%` }}
-                        aria-hidden
-                      />
+                      <div className="h-full rounded-full bg-[var(--color-accent)]" style={{ width: `${syncConfidencePct}%` }} />
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="grid w-full gap-6">
-                <div className="rounded-[26px] border border-white/14 bg-[linear-gradient(160deg,rgba(255,255,255,0.14)_0%,rgba(255,255,255,0.04)_58%,rgba(255,255,255,0.02)_100%)] p-5 shadow-[0_18px_56px_rgba(0,0,0,0.28)] md:rounded-[30px] md:p-6">
-                  <div className="flex flex-col gap-6 md:flex-row md:items-start">
-                    <label className="group relative mx-auto shrink-0 cursor-pointer md:mx-0">
-                      <div className="relative h-[5.5rem] w-[5.5rem] overflow-hidden rounded-[26px] border-2 border-white/20 bg-white/10 shadow-xl ring-2 ring-[color-mix(in_srgb,var(--color-energy)_45%,transparent)]">
-                        {profile.avatarDataUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={profile.avatarDataUrl}
-                            alt={displayName}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div
-                            className="flex h-full w-full items-center justify-center font-display text-3xl font-black text-white"
-                            style={{
-                              background: `linear-gradient(145deg, ${GREEN_MUTED} 0%, ${GREEN_LIGHT} 55%, color-mix(in srgb, var(--color-energy) 35%, ${GREEN_LIGHT}) 100%)`,
-                            }}
-                            aria-hidden
-                          >
-                            {initials(profile.firstName, profile.lastName)}
-                          </div>
-                        )}
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                          <span className="text-[11px] font-semibold text-white">Photo</span>
-                        </div>
+              <div className="profil-hero-body">
+                <label className="group relative shrink-0 cursor-pointer">
+                  <div className="relative h-[4.25rem] w-[4.25rem] overflow-hidden rounded-2xl border border-white/22 bg-white/10">
+                    {profile.avatarDataUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={profile.avatarDataUrl} alt={displayName} className="h-full w-full object-cover" />
+                    ) : (
+                      <div
+                        className="flex h-full w-full items-center justify-center font-display text-2xl font-black text-white"
+                        style={{
+                          background: `linear-gradient(145deg, ${GREEN_MUTED} 0%, ${GREEN_LIGHT} 55%, color-mix(in srgb, var(--color-energy) 35%, ${GREEN_LIGHT}) 100%)`,
+                        }}
+                        aria-hidden
+                      >
+                        {initials(profile.firstName, profile.lastName)}
                       </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="sr-only"
-                        onChange={(e) => onAvatarFile(e.target.files?.[0] ?? null)}
-                      />
-                    </label>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-end gap-2">
-                        <h2 className="font-display text-[clamp(1.65rem,4vw,2.25rem)] font-black leading-none tracking-tight text-white">
-                          {displayName}
-                        </h2>
-                        {seasonTotal > 0 ? (
-                          <span className="mb-0.5 rounded-full border border-white/20 bg-black/20 px-2.5 py-0.5 text-[11px] font-bold text-white/85">
-                            {seasonTotal} course{seasonTotal > 1 ? "s" : ""}
-                          </span>
-                        ) : null}
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {sportObj ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/18 bg-black/15 px-3 py-1 text-xs font-bold text-white">
-                            <span aria-hidden>{sportObj.emoji}</span>
-                            {sportObj.label}
-                          </span>
-                        ) : null}
-                        {levelObj ? (
-                          <span
-                            className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm"
-                            style={{ backgroundColor: levelObj.color }}
-                          >
-                            {levelObj.label}
-                          </span>
-                        ) : null}
-                        {goalObj ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/18 bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">
-                            <Target className="h-3.5 w-3.5 text-[var(--color-energy)]" aria-hidden />
-                            {goalObj.label}
-                          </span>
-                        ) : null}
-                      </div>
-
-                      <div className="mt-5 grid gap-2 sm:grid-cols-2">
-                        <div className="rounded-xl border border-white/14 bg-black/18 px-3 py-2 text-xs">
-                          <span className="text-white/64">Métrique clé</span>
-                          <p className="mt-1 text-sm font-bold text-white">{primaryPerformanceStat}</p>
-                        </div>
-                        <div className="rounded-xl border border-white/14 bg-black/18 px-3 py-2 text-xs">
-                          <span className="text-white/64">Carburant</span>
-                          <p className="mt-1 text-sm font-bold text-white">{nutritionMode}</p>
-                        </div>
-                      </div>
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/35 opacity-0 transition-opacity group-hover:opacity-100">
+                      <span className="text-[11px] font-semibold text-white">Photo</span>
                     </div>
                   </div>
-                  <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                    <Link href="#personal" className="races-page-hero__cta">
-                      Éditer le profil
-                    </Link>
-                    {nextPriorityAnchor ? (
-                      <a
-                        href={nextPriorityAnchor}
-                        className="inline-flex flex-1 items-center justify-center rounded-full border border-white/24 bg-black/20 px-5 py-3 text-sm font-semibold text-white transition hover:bg-black/30 sm:flex-none"
-                      >
-                        Continuer le setup
-                      </a>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={(e) => onAvatarFile(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-end gap-2">
+                    <h2 className="font-display text-[clamp(1.45rem,3.6vw,2rem)] font-black leading-none tracking-tight text-white">
+                      {displayName}
+                    </h2>
+                    {seasonTotal > 0 ? (
+                      <span className="mb-0.5 rounded-full border border-white/20 bg-black/18 px-2.5 py-0.5 text-[11px] font-semibold text-white/88">
+                        {seasonTotal} course{seasonTotal > 1 ? "s" : ""}
+                      </span>
                     ) : null}
-                    <Link
-                      href="/profil/integrations"
-                      className="inline-flex flex-1 items-center justify-center rounded-full border border-white/24 bg-white/[0.09] px-5 py-3 text-sm font-semibold text-white shadow-[0_3px_14px_rgba(0,0,0,0.18)] transition hover:bg-white/[0.14] sm:flex-none"
-                    >
-                      <Link2 className="mr-2 h-4 w-4" aria-hidden />
-                      Intégrations
-                    </Link>
                   </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {sportObj ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/16 bg-black/14 px-3 py-1 text-xs font-semibold text-white">
+                        <span aria-hidden>{sportObj.emoji}</span>
+                        {sportObj.label}
+                      </span>
+                    ) : null}
+                    {levelObj ? (
+                      <span
+                        className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-white shadow-sm"
+                        style={{ backgroundColor: levelObj.color }}
+                      >
+                        {levelObj.label}
+                      </span>
+                    ) : null}
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/16 bg-black/14 px-3 py-1 text-xs font-semibold text-white/92">
+                      {primaryPerformanceStat}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/16 bg-black/14 px-3 py-1 text-xs font-semibold text-white/92">
+                      {nutritionMode}
+                    </span>
+                    {goalObj ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/16 bg-black/14 px-3 py-1 text-xs font-semibold text-white/92">
+                        <Target className="h-3.5 w-3.5 text-[var(--color-energy)]" aria-hidden />
+                        {goalObj.label}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="flex w-full flex-wrap gap-2 md:w-auto md:justify-end">
+                  <Link href="#personal" className="races-page-hero__cta">
+                    Éditer le profil
+                  </Link>
+                  {nextPriorityAnchor ? (
+                    <a
+                      href={nextPriorityAnchor}
+                      className="inline-flex items-center justify-center rounded-full border border-white/22 bg-black/18 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black/28"
+                    >
+                      Continuer
+                    </a>
+                  ) : null}
                 </div>
               </div>
             </div>

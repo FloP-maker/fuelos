@@ -539,6 +539,46 @@ textarea:focus {
     max-width: none;
   }
 
+  .races-page-hero.profil-hero .profil-hero-shell {
+    border: 1px solid color-mix(in srgb, #ffffff 14%, transparent);
+    border-radius: clamp(18px, 2.8vw, 28px);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.2);
+    padding: clamp(16px, 2vw, 24px);
+  }
+
+  .races-page-hero.profil-hero .profil-hero-head {
+    display: grid;
+    gap: clamp(14px, 2vw, 22px);
+  }
+
+  .races-page-hero.profil-hero .profil-hero-stat {
+    border: 1px solid color-mix(in srgb, #ffffff 18%, transparent);
+    border-radius: 0.8rem;
+    background: color-mix(in srgb, #000000 20%, transparent);
+    padding: 0.62rem 0.78rem;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.72rem;
+    font-weight: 500;
+  }
+
+  .races-page-hero.profil-hero .profil-hero-stat strong {
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .races-page-hero.profil-hero .profil-hero-body {
+    margin-top: clamp(14px, 2vw, 20px);
+    padding-top: clamp(12px, 1.8vw, 16px);
+    border-top: 1px solid color-mix(in srgb, #ffffff 14%, transparent);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    align-items: center;
+    justify-content: space-between;
+  }
+
   .races-page-hero.profil-hero h1,
   .races-page-hero.profil-hero .races-page-hero__copy h1 {
     font-size: clamp(2rem, 5.4vw, 3.15rem);
@@ -1193,7 +1233,7 @@ textarea:focus {
     max-width: none;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--profil-space-main);
-    padding: clamp(86px, 9vw, 116px) clamp(20px, 3.2vw, 56px) clamp(64px, 9vw, 110px);
+    padding: clamp(72px, 8vw, 98px) clamp(20px, 3.2vw, 56px) clamp(64px, 9vw, 110px);
   }
 
   .races-page.profil-page .races-layout__main {
@@ -1340,6 +1380,11 @@ textarea:focus {
     .races-page.profil-page .profil-tabs-shell {
       position: static;
       backdrop-filter: none;
+    }
+
+    .races-page-hero.profil-hero .profil-hero-shell {
+      border-radius: 16px;
+      padding: 14px;
     }
   }
 
