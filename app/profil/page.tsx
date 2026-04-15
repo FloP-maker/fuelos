@@ -16,9 +16,7 @@ import {
   Leaf,
   Library,
   Link2,
-  Medal,
   Settings,
-  ShieldCheck,
   Sparkles,
   Target,
   User,
@@ -153,62 +151,6 @@ function ProfileHeroMetric({
       <p className="pl-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/55">{label}</p>
       <p className="mt-1.5 pl-2 font-display text-2xl font-black tracking-tight text-white">{value}</p>
       <p className="mt-1 pl-2 text-[11px] leading-snug text-white/65">{help}</p>
-    </div>
-  );
-}
-
-function DashboardTile({
-  icon,
-  eyebrow,
-  title,
-  body,
-  children,
-}: {
-  icon: ReactNode;
-  eyebrow: string;
-  title: string;
-  body: string;
-  children?: ReactNode;
-}) {
-  return (
-    <article className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5 shadow-[0_2px_14px_color-mix(in_srgb,#000_3%,transparent)] transition-[box-shadow,border-color] duration-200 hover:border-[color-mix(in_srgb,var(--color-energy)_25%,var(--color-border))] hover:shadow-[0_8px_24px_color-mix(in_srgb,#000_6%,transparent)] md:rounded-3xl">
-      <div
-        className="pointer-events-none absolute inset-y-3 left-0 w-[3px] rounded-full bg-gradient-to-b from-[var(--color-energy)] via-[var(--color-accent)] to-[var(--color-primary)] opacity-90"
-        aria-hidden
-      />
-      <div className="relative flex items-start gap-3.5 pl-1.5">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--color-energy)_12%,var(--color-bg-subtle))] text-[var(--color-energy)] ring-1 ring-[color-mix(in_srgb,var(--color-energy)_22%,transparent)]">
-          {icon}
-        </span>
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-text-muted)]">{eyebrow}</p>
-          <h3 className="mt-1.5 font-display text-lg font-black tracking-tight text-[var(--color-text)]">{title}</h3>
-          <p className="mt-1 text-sm leading-relaxed text-[var(--color-text-muted)]">{body}</p>
-        </div>
-      </div>
-      {children ? <div className="relative mt-5 pl-1.5">{children}</div> : null}
-    </article>
-  );
-}
-
-function StatPill({
-  value,
-  unit,
-  label,
-}: {
-  value: number | string;
-  unit?: string;
-  label: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-border)_88%,var(--color-energy))] bg-[color-mix(in_srgb,var(--color-bg-subtle)_55%,var(--color-bg-card))] px-4 py-3.5">
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">{label}</p>
-      <div className="mt-1.5 flex items-baseline gap-1">
-        <span className="font-display text-[1.65rem] font-black leading-none tracking-tight text-[var(--color-text)]">
-          {value}
-        </span>
-        {unit ? <span className="text-xs font-bold text-[var(--color-text-muted)]">{unit}</span> : null}
-      </div>
     </div>
   );
 }
@@ -479,6 +421,7 @@ export default function ProfilPage() {
     ]
   );
   const pendingChecklist = setupChecklist.filter((item) => !item.done);
+  const setupProgressPct = Math.round(((setupChecklist.length - pendingChecklist.length) / setupChecklist.length) * 100);
   const nextPriorityAnchor = pendingChecklist[0]?.anchor ?? null;
 
   const onAvatarFile = (file: File | null) => {
@@ -529,6 +472,26 @@ export default function ProfilPage() {
     densityMode === "compact" ||
     (densityMode === "auto" && isAutoCompactViewport && profilTab === "overview");
   const hasPendingSync = Boolean(syncedProfileSnapshot) && syncedProfileSnapshot !== profileSnapshot;
+  const syncStatusLabel =
+    autoSaveStatus === "saving"
+      ? "Sync en cours"
+      : autoSaveStatus === "error"
+        ? "Erreur sync"
+        : hasPendingSync
+          ? autoSaveEnabled
+            ? "En attente auto"
+            : "En attente"
+          : "À jour";
+  const syncConfidencePct =
+    autoSaveStatus === "error"
+      ? 20
+      : autoSaveStatus === "saving"
+        ? 60
+        : hasPendingSync
+          ? autoSaveEnabled
+            ? 55
+            : 45
+          : 100;
 
   useEffect(() => {
     if (!autoSaveEnabled || !hasPendingSync || !syncedProfileSnapshot) return;
@@ -566,12 +529,52 @@ export default function ProfilPage() {
                   Profil athlète
                 </span>
                 <h1 id="profil-hero-title" className="mt-4 max-w-none">
-                  Là où ton corps rencontre le plan nutrition.
+                  Cockpit athlète: prêt pour la prochaine course.
                 </h1>
                 <p className="mt-4 max-w-[72ch] text-base text-white/75">
-                  Un tableau de bord clair : identité, carburant, hydratation et connexions — le même fil conducteur
-                  que tes courses, tes analyses et ton calculateur.
+                  Moins de texte, plus d’action: renseigne le minimum vital, synchronise, puis enchaîne sur Plan ou Mode course.
                 </p>
+                <div className="mt-5 grid w-full gap-2 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-white/20 bg-black/20 px-3 py-2.5 backdrop-blur-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/70">Complétude</span>
+                      <span className="text-sm font-bold text-white">{completion}%</span>
+                    </div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
+                      <div
+                        className="h-full rounded-full bg-[var(--color-energy)]"
+                        style={{ width: `${completion}%` }}
+                        aria-hidden
+                      />
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-white/20 bg-black/20 px-3 py-2.5 backdrop-blur-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/70">Priorités</span>
+                      <span className="text-sm font-bold text-white">{pendingChecklist.length}</span>
+                    </div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
+                      <div
+                        className="h-full rounded-full bg-[var(--color-primary)]"
+                        style={{ width: `${setupProgressPct}%` }}
+                        aria-hidden
+                      />
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-white/20 bg-black/20 px-3 py-2.5 backdrop-blur-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/70">Sync</span>
+                      <span className="text-sm font-bold text-white">{syncStatusLabel}</span>
+                    </div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
+                      <div
+                        className="h-full rounded-full bg-[var(--color-accent)]"
+                        style={{ width: `${syncConfidencePct}%` }}
+                        aria-hidden
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.55fr)]">
@@ -691,6 +694,14 @@ export default function ProfilPage() {
                     <Link href="#personal" className="races-page-hero__cta">
                       Éditer le profil
                     </Link>
+                    {nextPriorityAnchor ? (
+                      <a
+                        href={nextPriorityAnchor}
+                        className="inline-flex flex-1 items-center justify-center rounded-full border border-white/24 bg-black/20 px-5 py-3 text-sm font-semibold text-white transition hover:bg-black/30 sm:flex-none"
+                      >
+                        Continuer le setup
+                      </a>
+                    ) : null}
                     <Link
                       href="/profil/integrations"
                       className="inline-flex flex-1 items-center justify-center rounded-full border border-white/24 bg-white/[0.09] px-5 py-3 text-sm font-semibold text-white shadow-[0_3px_14px_rgba(0,0,0,0.18)] backdrop-blur-md transition hover:bg-white/[0.14] sm:flex-none"
@@ -1393,97 +1404,42 @@ export default function ProfilPage() {
                       </div>
                     </div>
 
-                    <DashboardTile
-                      icon={<ShieldCheck className="h-5 w-5" aria-hidden />}
-                      eyebrow="État du profil"
-                      title="Vue synthèse"
-                      body="Les chiffres clés pour piloter rapidement ton setup athlète."
-                    >
-                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                        <StatPill
-                          value={profile.weightKg ?? "—"}
-                          unit={typeof profile.weightKg === "number" ? "kg" : undefined}
-                          label="Poids"
+                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                        Readiness athlète
+                      </p>
+                      <p className="mt-2 text-xl font-black text-[var(--color-text)]">{completion}%</p>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--color-border)]">
+                        <div
+                          className="h-full rounded-full bg-[linear-gradient(90deg,var(--color-primary),var(--color-energy))]"
+                          style={{ width: `${completion}%` }}
+                          aria-hidden
                         />
-                        <StatPill
-                          value={profile.heightCm ?? "—"}
-                          unit={typeof profile.heightCm === "number" ? "cm" : undefined}
-                          label="Taille"
-                        />
-                        <StatPill value={profile.age ?? "—"} label="Âge" />
-                        <StatPill value={seasonTotal} label="Courses" />
                       </div>
-                      <div className="mt-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-[var(--color-text)]">Progression du setup</p>
-                            <p className="text-xs text-[var(--color-text-muted)]">Compléter les champs augmente la précision.</p>
-                          </div>
-                          <span className="text-lg font-extrabold text-[var(--color-primary)]">{completion}%</span>
+                      <div className="mt-3 grid gap-2">
+                        <div className="flex items-center justify-between rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2 text-xs">
+                          <span className="text-[var(--color-text-muted)]">Sport principal</span>
+                          <span className="font-semibold text-[var(--color-text)]">
+                            {sportObj ? `${sportObj.emoji} ${sportObj.label}` : "À définir"}
+                          </span>
                         </div>
-                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-border)]">
-                          <div
-                            className="h-full rounded-full"
-                            style={{
-                              width: `${completion}%`,
-                              background: "linear-gradient(90deg, var(--color-primary) 0%, #6ee7b7 100%)",
-                            }}
-                          />
+                        <div className="flex items-center justify-between rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2 text-xs">
+                          <span className="text-[var(--color-text-muted)]">Métrique clé</span>
+                          <span className="font-semibold text-[var(--color-text)]">{primaryPerformanceStat}</span>
                         </div>
-                      </div>
-                    </DashboardTile>
-
-                    <DashboardTile
-                      icon={<Medal className="h-5 w-5" aria-hidden />}
-                      eyebrow="Identité sportive"
-                      title={sportObj ? `${sportObj.label} · ${levelObj?.short ?? "Profil"}` : "Profil athlète"}
-                      body={
-                        sports.length > 0
-                          ? `Sports cochés : ${sports.join(", ")}`
-                          : "Ajoute tes disciplines pour adapter les recommandations."
-                      }
-                    >
-                      <div className="flex flex-wrap gap-2">
-                        {sports.length > 0 ? (
-                          sports.map((sport) => (
-                            <span
-                              key={sport}
-                              className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-1 text-xs font-semibold text-[var(--color-text)]"
-                            >
-                              {sport}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-sm text-[var(--color-text-muted)]">Aucun sport secondaire renseigné.</span>
-                        )}
-                      </div>
-                    </DashboardTile>
-
-                    <DashboardTile
-                      icon={<Droplets className="h-5 w-5" aria-hidden />}
-                      eyebrow="Carburant & eau"
-                      title="Tolérance à l’effort"
-                      body="Hydratation, sodium et texture favorite."
-                    >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3">
-                          <span className="text-sm text-[var(--color-text-muted)]">Hydratation</span>
-                          <span className="text-sm font-bold text-[var(--color-text)]">
+                        <div className="flex items-center justify-between rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2 text-xs">
+                          <span className="text-[var(--color-text-muted)]">Hydratation</span>
+                          <span className="font-semibold text-[var(--color-text)]">
                             {typeof profile.sweatRateMlPerH === "number" ? `${profile.sweatRateMlPerH} ml/h` : "À calibrer"}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3">
-                          <span className="text-sm text-[var(--color-text-muted)]">Sodium</span>
-                          <span className="text-sm font-bold text-[var(--color-text)]">
-                            {typeof profile.sodiumLossMgPerH === "number" ? `${profile.sodiumLossMgPerH} mg/h` : "À calibrer"}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3">
-                          <span className="text-sm text-[var(--color-text-muted)]">Texture favorite</span>
-                          <span className="text-sm font-bold text-[var(--color-text)]">{nutritionMode}</span>
-                        </div>
                       </div>
-                    </DashboardTile>
+                      <p className="mt-3 text-[11px] text-[var(--color-text-muted)]">
+                        {pendingChecklist.length === 0
+                          ? "Prêt pour les recommandations avancées."
+                          : `${pendingChecklist.length} priorité${pendingChecklist.length > 1 ? "s" : ""} avant la pleine personnalisation.`}
+                      </p>
+                    </div>
 
                     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
                       <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
