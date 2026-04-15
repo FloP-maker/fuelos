@@ -17,7 +17,6 @@ import {
   Library,
   Link2,
   Settings,
-  Target,
   User,
   Zap,
 } from "lucide-react";
@@ -74,6 +73,8 @@ const INTEGRATIONS: {
 const GREEN = "#1B4332";
 const GREEN_LIGHT = "#4B7F52";
 const GREEN_MUTED = "#22543D";
+const PROFILE_COMPLETION_RING_R = 46;
+const PROFILE_COMPLETION_RING_C = 2 * Math.PI * PROFILE_COMPLETION_RING_R;
 
 type ProfilDashboardTab = "overview" | "memory" | "insights";
 type ProfilDensityMode = "auto" | "standard" | "compact";
@@ -490,8 +491,6 @@ export default function ProfilPage() {
             ? 55
             : 45
           : 100;
-  const heroPrimaryHref = nextPriorityAnchor ?? "#personal";
-  const heroPrimaryLabel = nextPriorityAnchor ? "Continuer le setup" : "Éditer le profil";
 
   useEffect(() => {
     if (!autoSaveEnabled || !hasPendingSync || !syncedProfileSnapshot) return;
@@ -511,130 +510,97 @@ export default function ProfilPage() {
           .join(" ")}
       >
         <section className="races-page-hero profil-hero" aria-labelledby="profil-hero-title">
+          <svg viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden>
+            <path
+              fill="#0f1f0f"
+              d="M0 200 L0 120 L180 40 L320 95 L480 25 L620 80 L780 15 L920 70 L1080 30 L1200 90 L1200 200 Z"
+            />
+            <path
+              fill="#0f1f0f"
+              d="M0 200 L0 150 L220 85 L400 130 L560 60 L720 110 L900 50 L1040 95 L1200 75 L1200 200 Z"
+            />
+          </svg>
           <div className="races-page-hero__inner">
-            <div className="profil-hero-shell">
-              <div className="profil-hero-head">
-                <div className="races-page-hero__copy max-w-none">
-                  <span className="inline-flex items-center rounded-full border border-white/14 bg-white/[0.07] px-3 py-1 text-[11px] font-medium text-white/80">
-                    Profil
-                  </span>
-                  <h1 id="profil-hero-title" className="mt-3 max-w-none">
-                    Un profil clair. Des décisions plus rapides.
-                  </h1>
-                  <p className="mt-3 max-w-[68ch] text-base text-white/84">
-                    Renseigne l'essentiel puis passe à l'action.
-                  </p>
-                </div>
-                <div className="grid w-full gap-2 sm:grid-cols-3 lg:max-w-[520px]">
-                  <div className="profil-hero-stat">
-                    <div className="flex items-center justify-between gap-2">
-                      <span>Complétude</span>
-                      <strong>{completion}%</strong>
-                    </div>
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
-                      <div className="h-full rounded-full bg-[var(--color-energy)]" style={{ width: `${completion}%` }} />
-                    </div>
-                  </div>
-                  <div className="profil-hero-stat">
-                    <div className="flex items-center justify-between gap-2">
-                      <span>Priorités</span>
-                      <strong>{pendingChecklist.length}</strong>
-                    </div>
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
-                      <div className="h-full rounded-full bg-[var(--color-primary)]" style={{ width: `${setupProgressPct}%` }} />
-                    </div>
-                  </div>
-                  <div className="profil-hero-stat">
-                    <div className="flex items-center justify-between gap-2">
-                      <span>Sync</span>
-                      <strong>{syncStatusLabel}</strong>
-                    </div>
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
-                      <div className="h-full rounded-full bg-[var(--color-accent)]" style={{ width: `${syncConfidencePct}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="profil-hero-body">
-                <label className="group relative shrink-0 cursor-pointer">
-                  <div className="relative h-[4.25rem] w-[4.25rem] overflow-hidden rounded-2xl border border-white/22 bg-white/10">
-                    {profile.avatarDataUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={profile.avatarDataUrl} alt={displayName} className="h-full w-full object-cover" />
-                    ) : (
-                      <div
-                        className="flex h-full w-full items-center justify-center font-display text-2xl font-black text-white"
-                        style={{
-                          background: `linear-gradient(145deg, ${GREEN_MUTED} 0%, ${GREEN_LIGHT} 55%, color-mix(in srgb, var(--color-energy) 35%, ${GREEN_LIGHT}) 100%)`,
-                        }}
-                        aria-hidden
-                      >
-                        {initials(profile.firstName, profile.lastName)}
-                      </div>
-                    )}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/35 opacity-0 transition-opacity group-hover:opacity-100">
-                      <span className="text-[11px] font-semibold text-white">Photo</span>
-                    </div>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    onChange={(e) => onAvatarFile(e.target.files?.[0] ?? null)}
-                  />
-                </label>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-end gap-2">
-                    <h2 className="font-display text-[clamp(1.45rem,3.6vw,2rem)] font-black leading-none tracking-tight text-white">
-                      {displayName}
-                    </h2>
-                    {seasonTotal > 0 ? (
-                      <span className="mb-0.5 rounded-full border border-white/20 bg-black/18 px-2.5 py-0.5 text-[11px] font-semibold text-white/88">
-                        {seasonTotal} course{seasonTotal > 1 ? "s" : ""}
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {sportObj ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/16 bg-black/14 px-3 py-1 text-xs font-semibold text-white">
-                        <span aria-hidden>{sportObj.emoji}</span>
-                        {sportObj.label}
-                      </span>
-                    ) : null}
-                    {levelObj ? (
-                      <span
-                        className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-white shadow-sm"
-                        style={{ backgroundColor: levelObj.color }}
-                      >
-                        {levelObj.label}
-                      </span>
-                    ) : null}
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/16 bg-black/14 px-3 py-1 text-xs font-semibold text-white/92">
-                      {primaryPerformanceStat}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/16 bg-black/14 px-3 py-1 text-xs font-semibold text-white/92">
-                      {nutritionMode}
-                    </span>
-                    {goalObj ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/16 bg-black/14 px-3 py-1 text-xs font-semibold text-white/92">
-                        <Target className="h-3.5 w-3.5 text-[var(--color-energy)]" aria-hidden />
-                        {goalObj.label}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="flex w-full flex-wrap gap-2 md:w-auto md:justify-end">
-                  <a href={heroPrimaryHref} className="races-page-hero__cta">
-                    {heroPrimaryLabel}
-                  </a>
-                </div>
+            <div className="races-page-hero__left">
+              <div className="races-page-hero__copy">
+                <h1 id="profil-hero-title">Profil athlète</h1>
               </div>
             </div>
           </div>
         </section>
+
+        <div className="profil-hero-floating-card relative z-10 -mt-16 mx-4 rounded-2xl bg-white p-5 shadow-xl md:mx-10 md:p-6">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
+              <label className="group relative block shrink-0 cursor-pointer">
+                <div className="relative h-20 w-20 overflow-hidden rounded-full border-4 border-white bg-[#e6efe6] shadow">
+                  {profile.avatarDataUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={profile.avatarDataUrl} alt={displayName} className="h-full w-full object-cover" />
+                  ) : (
+                    <div
+                      className="flex h-full w-full items-center justify-center text-xl font-black text-[#1f3a1f]"
+                      style={{
+                        background: `linear-gradient(145deg, ${GREEN_MUTED} 0%, ${GREEN_LIGHT} 55%, color-mix(in srgb, var(--color-energy) 35%, ${GREEN_LIGHT}) 100%)`,
+                      }}
+                      aria-hidden
+                    >
+                      {initials(profile.firstName, profile.lastName)}
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={(e) => onAvatarFile(e.target.files?.[0] ?? null)}
+                />
+              </label>
+
+              <div className="min-w-0">
+                <h2 className="truncate text-2xl font-bold text-[#142214]">{displayName}</h2>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {sportObj ? (
+                    <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
+                      {sportObj.label}
+                    </span>
+                  ) : null}
+                  {levelObj ? (
+                    <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
+                      {levelObj.label}
+                    </span>
+                  ) : null}
+                  {goalObj ? (
+                    <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
+                      {goalObj.label}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            <div className="races-next-milestone-card__ring profil-hero-completion-ring self-end md:self-auto" aria-label={`${completion}% de complétude du profil`}>
+              <svg viewBox="0 0 120 120" aria-hidden>
+                <circle cx="60" cy="60" r={PROFILE_COMPLETION_RING_R} fill="none" stroke="currentColor" strokeWidth="5" />
+                <circle
+                  cx="60"
+                  cy="60"
+                  r={PROFILE_COMPLETION_RING_R}
+                  fill="none"
+                  stroke="#2d6a4f"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  strokeDasharray={PROFILE_COMPLETION_RING_C}
+                  strokeDashoffset={PROFILE_COMPLETION_RING_C * (1 - completion / 100)}
+                />
+              </svg>
+              <div className="races-next-milestone-card__ring-inner">
+                <span className="races-next-milestone-card__ring-days">{completion}</span>
+                <span className="races-next-milestone-card__ring-unit">%</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {saveHint ? (
           <div className="relative z-10 px-6 pb-3 pt-4 md:px-10" role="status">

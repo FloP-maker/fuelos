@@ -509,93 +509,30 @@ textarea:focus {
     opacity: 0.38;
   }
 
-  /* Profil hero: cleaner, higher readability */
   .races-page-hero.profil-hero {
-    background:
-      linear-gradient(
-        125deg,
-        color-mix(in srgb, var(--color-energy) 10%, transparent) 0%,
-        transparent 52%
-      ),
-      linear-gradient(180deg, rgba(25, 53, 39, 0.22) 0%, transparent 46%),
-      linear-gradient(165deg, #0c120f 0%, #14241d 34%, #1a3026 62%, #1a2532 100%);
+    background: linear-gradient(to bottom, #1a2e1a, #2d4a2d);
   }
 
-  .races-page-hero.profil-hero::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 3;
-    pointer-events: none;
-    opacity: 0.08;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 64%);
+  .races-page.profil-page .races-page-hero.profil-hero {
+    min-height: 190px;
   }
 
-  .races-page-hero.profil-hero .races-page-hero__inner {
-    z-index: 5;
+  .races-page.profil-page .races-page-hero.profil-hero .races-page-hero__inner {
+    padding-top: max(18px, calc(12px + env(safe-area-inset-top, 0px)));
+    padding-bottom: 56px;
   }
 
-  .races-page-hero.profil-hero .races-page-hero__copy {
-    max-width: none;
+  .races-page.profil-page .races-page-hero.profil-hero h1 {
+    font-size: clamp(1.7rem, 4.6vw, 2.15rem);
   }
 
-  .races-page-hero.profil-hero .profil-hero-shell {
-    border: 1px solid color-mix(in srgb, #ffffff 10%, transparent);
-    border-radius: clamp(18px, 2.8vw, 28px);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 100%);
-    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.16);
-    padding: clamp(16px, 2vw, 24px);
+  .races-page.profil-page .profil-hero-floating-card {
+    max-width: 1400px;
   }
 
-  .races-page-hero.profil-hero .profil-hero-head {
-    display: grid;
-    gap: clamp(14px, 2vw, 22px);
-  }
-
-  .races-page-hero.profil-hero .profil-hero-stat {
-    border: 1px solid color-mix(in srgb, #ffffff 14%, transparent);
-    border-radius: 0.8rem;
-    background: color-mix(in srgb, #000000 14%, transparent);
-    padding: 0.62rem 0.78rem;
-    color: rgba(255, 255, 255, 0.78);
-    font-size: 0.72rem;
-    font-weight: 500;
-  }
-
-  .races-page-hero.profil-hero .profil-hero-stat strong {
-    color: #fff;
-    font-size: 0.82rem;
-    font-weight: 700;
-  }
-
-  .races-page-hero.profil-hero .profil-hero-body {
-    margin-top: clamp(14px, 2vw, 20px);
-    padding-top: clamp(12px, 1.8vw, 16px);
-    border-top: 1px solid color-mix(in srgb, #ffffff 10%, transparent);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.9rem;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .races-page-hero.profil-hero h1,
-  .races-page-hero.profil-hero .races-page-hero__copy h1 {
-    font-size: clamp(2rem, 5.4vw, 3.15rem);
-    line-height: 1.02;
-    letter-spacing: -0.035em;
-    text-wrap: balance;
-  }
-
-  html.dark .races-page-hero.profil-hero {
-    background:
-      linear-gradient(
-        125deg,
-        color-mix(in srgb, var(--color-energy) 14%, transparent) 0%,
-        transparent 54%
-      ),
-      linear-gradient(180deg, rgba(30, 70, 48, 0.16) 0%, transparent 44%),
-      linear-gradient(165deg, #060907 0%, #101811 34%, #163028 62%, #101822 100%);
+  .races-page.profil-page .profil-hero-completion-ring {
+    width: 112px;
+    height: 112px;
   }
 
   /* Prochain objectif : sous le hero (air hero → carte via padding-top .races-layout) */
@@ -1233,7 +1170,7 @@ textarea:focus {
     max-width: none;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--profil-space-main);
-    padding: clamp(72px, 8vw, 98px) clamp(20px, 3.2vw, 56px) clamp(64px, 9vw, 110px);
+    padding: clamp(64px, 7.2vw, 88px) clamp(20px, 3.2vw, 56px) clamp(64px, 9vw, 110px);
   }
 
   .races-page.profil-page .races-layout__main {
@@ -1380,11 +1317,6 @@ textarea:focus {
     .races-page.profil-page .profil-tabs-shell {
       position: static;
       backdrop-filter: none;
-    }
-
-    .races-page-hero.profil-hero .profil-hero-shell {
-      border-radius: 16px;
-      padding: 14px;
     }
   }
 
