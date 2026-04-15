@@ -620,14 +620,14 @@ export default function ProfilPage() {
         <div className="profil-hero-floating-card relative z-10 -mt-16 mx-4 rounded-2xl bg-white p-5 shadow-xl md:mx-10 md:p-6">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="flex min-w-0 items-center gap-4">
-              <label className="group relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full">
-                <div className="relative h-20 w-20 overflow-hidden rounded-full border-4 border-white bg-[#e6efe6] shadow">
+              <label className="group relative h-14 w-14 shrink-0 cursor-pointer overflow-hidden rounded-full">
+                <div className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-white bg-[#e6efe6] shadow">
                   {profile.avatarDataUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={profile.avatarDataUrl} alt={displayName} className="h-full w-full object-cover" />
                   ) : (
                     <div
-                      className="flex h-full w-full items-center justify-center text-xl font-black text-[#1f3a1f]"
+                      className="flex h-full w-full items-center justify-center text-base font-black text-[#1f3a1f]"
                       style={{
                         background: `linear-gradient(145deg, ${GREEN_MUTED} 0%, ${GREEN_LIGHT} 55%, color-mix(in srgb, var(--color-energy) 35%, ${GREEN_LIGHT}) 100%)`,
                       }}
