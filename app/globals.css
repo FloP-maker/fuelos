@@ -541,10 +541,16 @@ textarea:focus {
     z-index: 5;
   }
 
+  .races-page-hero.profil-hero .races-page-hero__copy {
+    max-width: none;
+  }
+
   .races-page-hero.profil-hero h1,
   .races-page-hero.profil-hero .races-page-hero__copy h1 {
-    font-size: clamp(1.75rem, 4.8vw, 2.35rem);
-    letter-spacing: -0.03em;
+    font-size: clamp(2rem, 5.4vw, 3.15rem);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
   }
 
   html.dark .races-page-hero.profil-hero {
@@ -1179,6 +1185,10 @@ textarea:focus {
 
   .races-page.profil-page .races-layout__main {
     gap: clamp(30px, 3.8vw, 52px);
+  }
+
+  .races-page.profil-page .races-next-milestone {
+    margin-inline: 0;
   }
 
   .races-layout__calendar {

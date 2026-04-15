@@ -275,9 +275,9 @@ function SectionAccordion({
       {open ? (
         <div
           id={`section-${id}-body`}
-          className="border-t border-[var(--color-border-subtle)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_40%,var(--color-bg-card))] px-4 py-5 md:px-6 md:py-6"
+          className="border-t border-[var(--color-border-subtle)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_40%,var(--color-bg-card))] px-5 py-6 md:px-7 md:py-8"
         >
-          {children}
+          <div className="space-y-8">{children}</div>
         </div>
       ) : null}
     </section>
@@ -355,13 +355,6 @@ export default function ProfilPage() {
       : profile.digestiveLiquidSolidPct >= 70
         ? "Solide dominant"
         : "Mix équilibré";
-  const brands = [
-    profile.brandMaurten && "Maurten",
-    profile.brandSis && "SiS",
-    profile.brandTailwind && "Tailwind",
-    profile.brandNaak && "Näak",
-    profile.brandOther && "Autres",
-  ].filter(Boolean) as string[];
   const primaryPerformanceStat =
     typeof profile.ftpWatts === "number"
       ? `${profile.ftpWatts} W FTP`
@@ -405,22 +398,22 @@ export default function ProfilPage() {
             />
           </svg>
           <div className="races-page-hero__inner">
-            <div className="races-page-hero__left w-full max-w-[1400px] gap-6">
-              <div className="races-page-hero__copy max-w-3xl">
+            <div className="races-page-hero__left w-full max-w-[1400px] gap-8">
+              <div className="races-page-hero__copy max-w-none">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/[0.09] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/80 backdrop-blur-md">
                   <Sparkles className="h-3.5 w-3.5 text-[var(--color-energy)]" aria-hidden />
                   Profil athlète
                 </span>
-                <h1 id="profil-hero-title" className="mt-4">
+                <h1 id="profil-hero-title" className="mt-4 max-w-none">
                   Là où ton corps rencontre le plan nutrition.
                 </h1>
-                <p className="mt-3 max-w-2xl text-sm text-white/75">
+                <p className="mt-4 max-w-[72ch] text-base text-white/75">
                   Un tableau de bord clair : identité, carburant, hydratation et connexions — le même fil conducteur
                   que tes courses, tes analyses et ton calculateur.
                 </p>
               </div>
 
-              <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(260px,0.65fr)]">
+              <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.55fr)]">
                 <div className="rounded-[28px] border border-white/14 bg-[linear-gradient(155deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.07)_45%,rgba(255,255,255,0.03)_100%)] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl md:rounded-[32px] md:p-6">
                   <div className="flex flex-col gap-6 md:flex-row md:items-start">
                     <label className="group relative mx-auto shrink-0 cursor-pointer md:mx-0">
@@ -561,7 +554,7 @@ export default function ProfilPage() {
 
         <div className="races-layout">
           <div className="races-layout__main min-w-0">
-            <nav className="mb-6 scroll-mt-6" aria-label="Sections du profil">
+            <nav className="mb-8 scroll-mt-6" aria-label="Sections du profil">
               <div className="flex gap-1 rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_88%,var(--color-bg))] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 {PROFIL_TABS.map((tab) => {
                   const active = profilTab === tab.id;
@@ -595,7 +588,7 @@ export default function ProfilPage() {
 
             {profilTab === "overview" ? (
               <>
-                <div className="grid gap-8 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
+                <div className="grid gap-10 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
                   <div>
                     <RacesNextMilestone nextRace={nextRace} />
                   </div>
@@ -751,7 +744,7 @@ export default function ProfilPage() {
                       </div>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                       <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-4 md:rounded-3xl">
                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
                           Objectif saison
@@ -761,17 +754,6 @@ export default function ProfilPage() {
                         </p>
                         <p className="mt-1 text-sm text-[var(--color-text-muted)]">
                           {goalObj?.cue ?? "Choisis un axe pour prioriser les reco nutrition."}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-4 md:rounded-3xl">
-                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
-                          Marques
-                        </p>
-                        <p className="mt-2 font-display text-lg font-black text-[var(--color-text)]">
-                          {brands.length > 0 ? brands.length : "0"}
-                        </p>
-                        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                          {brands.length > 0 ? brands.join(", ") : "Sélectionne les marques que tu utilises."}
                         </p>
                       </div>
                       <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-4 md:rounded-3xl">
