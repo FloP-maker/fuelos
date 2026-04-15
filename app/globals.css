@@ -1195,6 +1195,17 @@ textarea:focus {
     align-self: start;
   }
 
+  .races-page.profil-page .profil-tabs-shell {
+    position: sticky;
+    top: 4.7rem;
+    z-index: 18;
+    backdrop-filter: blur(6px);
+  }
+
+  .races-page.profil-page .profil-tabs-shell > div {
+    box-shadow: 0 8px 24px color-mix(in srgb, #000 8%, transparent);
+  }
+
   @media (min-width: 1280px) {
     .races-page.profil-page .profil-sticky-rail {
       position: sticky;
@@ -1203,6 +1214,55 @@ textarea:focus {
       overflow-y: auto;
       padding-right: 2px;
     }
+  }
+
+  @media (max-width: 1023px) {
+    .races-page.profil-page .profil-tabs-shell {
+      position: static;
+      backdrop-filter: none;
+    }
+  }
+
+  /* Mode compact : même contenu, densité plus haute pour lecture rapide */
+  .races-page.profil-page.profil-density-compact .races-layout {
+    gap: clamp(20px, 2.6vw, 34px);
+    padding-top: clamp(72px, 7vw, 92px);
+  }
+
+  .races-page.profil-page.profil-density-compact .races-layout__main,
+  .races-page.profil-page.profil-density-compact .space-y-10 {
+    gap: clamp(18px, 2.2vw, 28px);
+    --tw-space-y-reverse: 0;
+    margin-top: 0 !important;
+  }
+
+  .races-page.profil-page.profil-density-compact .space-y-5 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0.875rem;
+  }
+
+  .races-page.profil-page.profil-density-compact .fuel-races-main-panel,
+  .races-page.profil-page.profil-density-compact article,
+  .races-page.profil-page.profil-density-compact section[aria-labelledby^="section-"] {
+    border-radius: 1rem;
+  }
+
+  .races-page.profil-page.profil-density-compact .fuel-races-main-panel .p-6,
+  .races-page.profil-page.profil-density-compact .fuel-races-main-panel .p-5,
+  .races-page.profil-page.profil-density-compact .profil-sticky-rail .p-5,
+  .races-page.profil-page.profil-density-compact .profil-sticky-rail .p-4 {
+    padding: 0.95rem !important;
+  }
+
+  .races-page.profil-page.profil-density-compact .profil-sticky-rail {
+    gap: 0.875rem;
+  }
+
+  .races-page.profil-page.profil-density-compact .profil-sticky-rail .text-lg {
+    font-size: 1rem;
+  }
+
+  .races-page.profil-page.profil-density-compact .profil-tabs-shell {
+    margin-bottom: 1rem;
   }
 
   .races-layout__calendar {

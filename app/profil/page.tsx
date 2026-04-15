@@ -77,6 +77,7 @@ const GREEN_LIGHT = "#4B7F52";
 const GREEN_MUTED = "#22543D";
 
 type ProfilDashboardTab = "overview" | "memory" | "insights";
+type ProfilDensityMode = "auto" | "standard" | "compact";
 
 const PROFIL_TABS: {
   id: ProfilDashboardTab;
@@ -95,11 +96,11 @@ function initials(first: string, last: string): string {
 }
 
 function inputClass() {
-  return "mt-1.5 w-full rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-card)_74%,var(--color-bg-elevated))] px-4 py-3 text-sm text-[var(--color-text)] outline-none transition focus:border-[var(--color-accent)]";
+  return "mt-1.5 w-full rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-card)_82%,var(--color-bg-elevated))] px-4 py-3 text-sm text-[var(--color-text)] outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition duration-200 focus:border-[color-mix(in_srgb,var(--color-energy)_55%,var(--color-accent))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-energy)_24%,transparent)]";
 }
 
 function selectClass() {
-  return "mt-1.5 w-full rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-card)_74%,var(--color-bg-elevated))] px-4 py-3 text-sm text-[var(--color-text)] outline-none transition focus:border-[var(--color-accent)]";
+  return "mt-1.5 w-full rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-card)_82%,var(--color-bg-elevated))] px-4 py-3 text-sm text-[var(--color-text)] outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition duration-200 focus:border-[color-mix(in_srgb,var(--color-energy)_55%,var(--color-accent))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-energy)_24%,transparent)]";
 }
 
 function profileCompletion(profile: FuelOsUserProfile) {
@@ -321,6 +322,8 @@ export default function ProfilPage() {
   const [saveHint, setSaveHint] = useState<string | null>(null);
   const [openSection, setOpenSection] = useState<string | null>("personal");
   const [profilTab, setProfilTab] = useState<ProfilDashboardTab>("overview");
+  const [densityMode, setDensityMode] = useState<ProfilDensityMode>("auto");
+  const [isAutoCompactViewport, setIsAutoCompactViewport] = useState(false);
 
   const toggleSection = (id: string) => setOpenSection((prev) => (prev === id ? null : id));
   const refreshRaces = useCallback(() => setRaces(loadRaces()), []);
@@ -337,6 +340,36 @@ export default function ProfilPage() {
       window.removeEventListener("storage", onStorage);
     };
   }, [refreshRaces]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("fuelos_profile_density");
+      if (saved === "compact" || saved === "standard" || saved === "auto") {
+        setDensityMode(saved);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (typeof window === "undefined") return;
+      // Compact auto pour desktop "resserré" (tablettes paysage + petits laptops)
+      setIsAutoCompactViewport(window.innerWidth >= 1024 && window.innerWidth < 1520);
+    };
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("fuelos_profile_density", densityMode);
+    } catch {
+      /* ignore */
+    }
+  }, [densityMode]);
 
   const { upcoming, past } = useMemo(() => partitionRacesByUpcoming(races), [races]);
   const nextRace = upcoming[0] ?? null;
@@ -381,11 +414,21 @@ export default function ProfilPage() {
     setSaveHint("Profil enregistré dans le calculateur ✓");
     window.setTimeout(() => setSaveHint(null), 4000);
   };
+  const effectiveCompactDensity =
+    densityMode === "compact" ||
+    (densityMode === "auto" && isAutoCompactViewport && profilTab === "overview");
 
   return (
     <>
       <Header />
-      <main className="fuel-main races-page profil-page">
+      <main
+        className={[
+          "fuel-main races-page profil-page",
+          effectiveCompactDensity ? "profil-density-compact" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
         <section className="races-page-hero profil-hero" aria-labelledby="profil-hero-title">
           <svg viewBox="0 0 1200 220" preserveAspectRatio="none" aria-hidden>
             <path
@@ -554,35 +597,78 @@ export default function ProfilPage() {
 
         <div className="races-layout">
           <div className="races-layout__main min-w-0">
-            <nav className="mb-8 scroll-mt-6" aria-label="Sections du profil">
-              <div className="flex gap-1 rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_88%,var(--color-bg))] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                {PROFIL_TABS.map((tab) => {
-                  const active = profilTab === tab.id;
-                  const Icon = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setProfilTab(tab.id)}
-                      className={[
-                        "relative flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl px-2 py-2 text-sm font-bold transition-all sm:min-h-[50px] sm:flex-none sm:px-5",
-                        active
-                          ? "bg-[var(--color-bg-card)] text-[var(--color-text)] shadow-[0_4px_20px_color-mix(in_srgb,#000_12%,transparent),0_0_0_1px_color-mix(in_srgb,var(--color-energy)_35%,transparent)]"
-                          : "text-[var(--color-text-muted)] hover:bg-[color-mix(in_srgb,var(--color-bg-card)_55%,transparent)] hover:text-[var(--color-text)]",
-                      ].join(" ")}
-                      aria-current={active ? "page" : undefined}
-                    >
-                      <Icon
-                        className={["h-4 w-4 shrink-0", active ? "text-[var(--color-energy)]" : "opacity-75"].join(
-                          " "
-                        )}
-                        aria-hidden
-                      />
-                      <span className="hidden sm:inline">{tab.label}</span>
-                      <span className="sm:hidden">{tab.short}</span>
-                    </button>
-                  );
-                })}
+            <nav className="profil-tabs-shell mb-8 scroll-mt-6" aria-label="Sections du profil">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-end gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                    Densité
+                  </span>
+                  <div className="inline-flex rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] p-1">
+                    {(
+                      [
+                        ["auto", "Auto"],
+                        ["standard", "Standard"],
+                        ["compact", "Compact"],
+                      ] as const
+                    ).map(([id, label]) => {
+                      const active = densityMode === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => setDensityMode(id)}
+                          className={[
+                            "rounded-full px-3 py-1 text-xs font-bold transition-colors",
+                            active
+                              ? "bg-[var(--color-energy)] text-white"
+                              : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
+                          ].join(" ")}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {densityMode === "auto" ? (
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+                      {effectiveCompactDensity
+                        ? "Auto: compact actif (aperçu)"
+                        : isAutoCompactViewport
+                          ? "Auto: standard actif (mémoire/analyses)"
+                          : "Auto: standard actif"}
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="flex gap-1 rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_88%,var(--color-bg))] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                  {PROFIL_TABS.map((tab) => {
+                    const active = profilTab === tab.id;
+                    const Icon = tab.icon;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setProfilTab(tab.id)}
+                        className={[
+                          "relative flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl px-2 py-2 text-sm font-bold transition-all sm:min-h-[50px] sm:flex-none sm:px-5",
+                          active
+                            ? "bg-[var(--color-bg-card)] text-[var(--color-text)] shadow-[0_4px_20px_color-mix(in_srgb,#000_12%,transparent),0_0_0_1px_color-mix(in_srgb,var(--color-energy)_35%,transparent)]"
+                            : "text-[var(--color-text-muted)] hover:bg-[color-mix(in_srgb,var(--color-bg-card)_55%,transparent)] hover:text-[var(--color-text)]",
+                        ].join(" ")}
+                        aria-current={active ? "page" : undefined}
+                      >
+                        <Icon
+                          className={["h-4 w-4 shrink-0", active ? "text-[var(--color-energy)]" : "opacity-75"].join(
+                            " "
+                          )}
+                          aria-hidden
+                        />
+                        <span className="hidden sm:inline">{tab.label}</span>
+                        <span className="sm:hidden">{tab.short}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </nav>
 
@@ -869,7 +955,7 @@ export default function ProfilPage() {
                     accentColor="#1D4ED8"
                   >
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
-                      <div>
+                      <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                         <div className="mb-3 flex items-center gap-2">
                           <Gauge className="h-4 w-4 text-[var(--color-text-muted)]" />
                           <span className="text-sm font-bold text-[var(--color-text)]">Données de performance</span>
@@ -940,7 +1026,7 @@ export default function ProfilPage() {
                       </div>
                     </div>
 
-                    <div className="mt-6 border-t border-[var(--color-border-subtle)] pt-5">
+                    <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                       <div className="mb-3 flex items-center gap-2">
                         <Droplets className="h-4 w-4 text-[var(--color-text-muted)]" />
                         <span className="text-sm font-bold text-[var(--color-text)]">Hydratation & sudation</span>
@@ -981,7 +1067,7 @@ export default function ProfilPage() {
                       </div>
                     </div>
 
-                    <div className="mt-6 border-t border-[var(--color-border-subtle)] pt-5">
+                    <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                       <span className="text-sm font-bold text-[var(--color-text)]">Tolérance digestive</span>
                       <div className="mt-3 flex justify-between text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
                         <span>100 % liquide</span>
@@ -1000,7 +1086,7 @@ export default function ProfilPage() {
                       />
                     </div>
 
-                    <div className="mt-6 border-t border-[var(--color-border-subtle)] pt-5">
+                    <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                       <span className="text-sm font-bold text-[var(--color-text)]">Régimes & restrictions</span>
                       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                         {(
@@ -1032,20 +1118,20 @@ export default function ProfilPage() {
                       </div>
                     </div>
 
-                    <label className="mt-6 block text-sm font-semibold text-[var(--color-text)]">
+                    <label className="block text-sm font-semibold text-[var(--color-text)]">
                       Allergènes (texte libre)
                       <textarea
                         rows={3}
-                        className="mt-1.5 w-full rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-card)_74%,var(--color-bg-elevated))] px-4 py-3 text-sm text-[var(--color-text)] outline-none transition focus:border-[var(--color-accent)]"
+                        className="mt-1.5 w-full rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-card)_82%,var(--color-bg-elevated))] px-4 py-3 text-sm text-[var(--color-text)] outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition duration-200 focus:border-[color-mix(in_srgb,var(--color-energy)_55%,var(--color-accent))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-energy)_24%,transparent)]"
                         value={profile.allergenNotes}
                         onChange={(e) => updateProfile({ allergenNotes: e.target.value })}
                         placeholder="Ex. fruits à coque, arachides…"
                       />
                     </label>
 
-                    <div className="mt-6">
+                    <div>
                       <span className="text-sm font-semibold text-[var(--color-text)]">Marques favorites</span>
-                      <div className="mt-3 flex flex-wrap gap-4">
+                      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                         {(
                           [
                             ["brandMaurten", "Maurten"],
@@ -1055,9 +1141,17 @@ export default function ProfilPage() {
                             ["brandOther", "Autres"],
                           ] as const
                         ).map(([key, label]) => (
-                          <label key={key} className="flex cursor-pointer items-center gap-2 text-sm">
+                          <label
+                            key={key}
+                            className={`flex cursor-pointer items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-medium transition-colors ${
+                              profile[key]
+                                ? "border-[var(--color-accent)] bg-[var(--color-accent-muted)] text-[var(--color-text)]"
+                                : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]"
+                            }`}
+                          >
                             <input
                               type="checkbox"
+                              className="sr-only"
                               checked={profile[key]}
                               onChange={(e) => updateProfile({ [key]: e.target.checked })}
                             />
