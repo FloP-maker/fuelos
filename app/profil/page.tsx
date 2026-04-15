@@ -14,7 +14,9 @@ import {
   Leaf,
   Library,
   Link2,
+  Mountain,
   Settings,
+  Target,
   User,
   Zap,
 } from "lucide-react";
@@ -71,8 +73,6 @@ const INTEGRATIONS: {
 const GREEN = "#1B4332";
 const GREEN_LIGHT = "#4B7F52";
 const GREEN_MUTED = "#22543D";
-const PROFILE_COMPLETION_RING_R = 46;
-const PROFILE_COMPLETION_RING_C = 2 * Math.PI * PROFILE_COMPLETION_RING_R;
 
 type ProfilDashboardTab = "overview" | "memory" | "insights";
 type ProfilDensityMode = "auto" | "standard" | "compact";
@@ -98,19 +98,19 @@ function initials(first: string, last: string): string {
 }
 
 function inputClass() {
-  return "mt-1.5 w-full rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-card)_82%,var(--color-bg-elevated))] px-4 py-3 text-sm text-[var(--color-text)] outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition duration-200 focus:border-[color-mix(in_srgb,var(--color-energy)_55%,var(--color-accent))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-energy)_24%,transparent)]";
+  return "mt-1.5 w-full rounded-xl border border-[rgba(0,0,0,0.1)] bg-white px-[14px] py-[10px] text-sm text-[var(--color-text)] outline-none transition duration-200 focus:border-[color-mix(in_srgb,var(--color-primary)_52%,rgba(0,0,0,0.1))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_20%,transparent)]";
 }
 
 function selectClass() {
-  return "mt-1.5 w-full rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-card)_82%,var(--color-bg-elevated))] px-4 py-3 text-sm text-[var(--color-text)] outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition duration-200 focus:border-[color-mix(in_srgb,var(--color-energy)_55%,var(--color-accent))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-energy)_24%,transparent)]";
+  return "mt-1.5 w-full appearance-none rounded-xl border border-[rgba(0,0,0,0.1)] bg-white bg-[url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%236b7280' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")] bg-[position:right_10px_center] bg-no-repeat px-[14px] py-[10px] pr-10 text-sm text-[var(--color-text)] outline-none transition duration-200 focus:border-[color-mix(in_srgb,var(--color-primary)_52%,rgba(0,0,0,0.1))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_20%,transparent)]";
 }
 
 function floatingInputClass() {
-  return "peer w-full rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-card)_86%,var(--color-bg-elevated))] px-4 pb-2 pt-6 text-sm text-[var(--color-text)] outline-none transition duration-200 focus:border-[color-mix(in_srgb,var(--color-energy)_55%,var(--color-accent))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-energy)_24%,transparent)] placeholder:text-transparent";
+  return "w-full rounded-xl border border-[rgba(0,0,0,0.1)] bg-white px-[14px] py-[10px] text-sm text-[var(--color-text)] outline-none transition duration-200 focus:border-[color-mix(in_srgb,var(--color-primary)_52%,rgba(0,0,0,0.1))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_20%,transparent)]";
 }
 
 function floatingLabelClass() {
-  return "pointer-events-none absolute left-4 top-2 text-sm font-medium text-gray-500 transition-all duration-200 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold peer-focus:text-[var(--color-energy)]";
+  return "pointer-events-none absolute left-3.5 -top-2 z-[1] rounded px-1 text-[12px] font-medium text-[var(--color-text-muted)] bg-[color-mix(in_srgb,var(--color-bg-card)_92%,white)]";
 }
 
 function SemiGauge({
@@ -237,15 +237,15 @@ function SectionAccordion({
     >
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left md:px-6 md:py-5"
+        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
         onClick={onToggle}
         aria-expanded={open}
         aria-controls={`section-${id}-body`}
         id={`section-${id}-title`}
       >
-        <div className="flex min-w-0 items-center gap-3.5 md:gap-4">
+        <div className="flex min-w-0 items-center gap-3">
           <span
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-md ring-2 ring-white/10"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white shadow-sm [&_svg]:h-5 [&_svg]:w-5"
             style={{
               background: `linear-gradient(145deg, ${accent} 0%, color-mix(in srgb, ${accent} 55%, #0f172a) 100%)`,
             }}
@@ -253,10 +253,10 @@ function SectionAccordion({
             {icon}
           </span>
           <div className="min-w-0">
-            <p className="font-display text-base font-black tracking-tight text-[var(--color-text)] md:text-lg">
+            <p className="font-display text-base font-semibold tracking-tight text-[var(--color-text)]">
               {title}
             </p>
-            <p className="mt-1 text-sm leading-relaxed text-[color-mix(in_srgb,var(--color-text-muted)_92%,var(--color-text))]">
+            <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
               {subtitle}
             </p>
           </div>
@@ -274,7 +274,7 @@ function SectionAccordion({
       {open ? (
         <div
           id={`section-${id}-body`}
-          className="border-t border-[var(--color-border-subtle)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_40%,var(--color-bg-card))] px-5 py-6 md:px-7 md:py-8"
+          className="border-t border-[var(--color-border-subtle)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_40%,var(--color-bg-card))] px-5 py-6"
         >
           <div className="space-y-8">{children}</div>
         </div>
@@ -617,20 +617,23 @@ export default function ProfilPage() {
           </div>
         </section>
 
-        <div className="profil-hero-floating-card relative z-10 -mt-16 mx-4 rounded-2xl bg-white p-5 shadow-xl md:mx-10 md:p-6">
+        <div className="profil-hero-floating-card relative z-10 -mt-16 mx-4 rounded-2xl bg-white px-5 pb-4 pt-4 shadow-xl md:mx-10 md:px-6 md:pb-4 md:pt-5">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="flex min-w-0 items-center gap-4">
               <label
-                style={{ width: "56px", height: "56px", minWidth: "56px", maxWidth: "56px", flexShrink: 0 }}
-                className="group relative cursor-pointer overflow-hidden rounded-full"
+                style={{ width: "72px", height: "72px", minWidth: "72px", maxWidth: "72px", flexShrink: 0 }}
+                className="group relative -mt-10 cursor-pointer overflow-hidden rounded-full"
               >
-                <div className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-white bg-[#e6efe6] shadow">
+                <div
+                  className="relative h-full w-full overflow-hidden rounded-full bg-[#e6efe6]"
+                  style={{ border: "3px solid #fff", boxShadow: "0 8px 24px rgba(0,0,0,0.18)" }}
+                >
                   {profile.avatarDataUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={profile.avatarDataUrl} alt={displayName} className="h-full w-full object-cover" />
                   ) : (
                     <div
-                      className="flex h-full w-full items-center justify-center text-base font-black text-[#1f3a1f]"
+                      className="flex h-full w-full items-center justify-center text-lg font-black text-[#1f3a1f]"
                       style={{
                         background: `linear-gradient(145deg, ${GREEN_MUTED} 0%, ${GREEN_LIGHT} 55%, color-mix(in srgb, var(--color-energy) 35%, ${GREEN_LIGHT}) 100%)`,
                       }}
@@ -652,52 +655,39 @@ export default function ProfilPage() {
                 <h2 className="truncate text-2xl font-bold text-[#142214]">{displayName}</h2>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {sportObj ? (
-                    <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
+                    <span className="rounded-[999px] bg-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-bg-card))] px-3 py-1 text-[12px] font-medium text-[var(--color-primary)]">
                       {sportObj.label}
                     </span>
                   ) : null}
                   {levelObj ? (
-                    <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
+                    <span className="rounded-[999px] bg-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-bg-card))] px-3 py-1 text-[12px] font-medium text-[var(--color-primary)]">
                       {levelObj.label}
                     </span>
                   ) : null}
                   {goalObj ? (
-                    <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
+                    <span className="rounded-[999px] bg-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-bg-card))] px-3 py-1 text-[12px] font-medium text-[var(--color-primary)]">
                       {goalObj.label}
                     </span>
                   ) : null}
                 </div>
               </div>
             </div>
-
-            <div className="races-next-milestone-card__ring profil-hero-completion-ring self-end md:self-auto" aria-label={`${completion}% de complétude du profil`}>
-              <svg viewBox="0 0 120 120" aria-hidden>
-                <circle cx="60" cy="60" r={PROFILE_COMPLETION_RING_R} fill="none" stroke="currentColor" strokeWidth="5" />
-                <circle
-                  cx="60"
-                  cy="60"
-                  r={PROFILE_COMPLETION_RING_R}
-                  fill="none"
-                  stroke="#2d6a4f"
-                  strokeWidth="5"
-                  strokeLinecap="round"
-                  strokeDasharray={PROFILE_COMPLETION_RING_C}
-                  strokeDashoffset={PROFILE_COMPLETION_RING_C * (1 - completion / 100)}
-                />
-              </svg>
-              <div className="races-next-milestone-card__ring-inner">
-                <span className="races-next-milestone-card__ring-days">{completion}</span>
-                <span className="races-next-milestone-card__ring-unit">%</span>
-              </div>
-            </div>
           </div>
         </div>
 
         <section className="relative z-10 mx-4 mt-3 md:mx-10" aria-label="Stats rapides">
-          <div className="grid grid-cols-3 gap-3">
-            <article className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Complétude profil</p>
-              <p className="mt-2 text-2xl font-bold text-gray-900">{completion}%</p>
+          <div
+            className="fuel-race-kpis-grid"
+            style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}
+          >
+            <article className="rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white p-[18px] shadow-[0_1px_2px_rgba(26,26,26,0.08)]">
+              <p
+                className="font-semibold uppercase"
+                style={{ fontSize: "11px", letterSpacing: "0.08em", color: "var(--color-muted, var(--color-text-muted))" }}
+              >
+                Complétude profil
+              </p>
+              <p className="mt-2 text-[20px] font-bold text-gray-900">{completion}%</p>
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--color-border)]">
                 <div
                   className="h-full rounded-full bg-[var(--color-primary)]"
@@ -707,9 +697,14 @@ export default function ProfilPage() {
               </div>
             </article>
 
-            <article className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Priorités</p>
-              <p className="mt-2 text-2xl font-bold text-gray-900">{pendingChecklist.length} items</p>
+            <article className="rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white p-[18px] shadow-[0_1px_2px_rgba(26,26,26,0.08)]">
+              <p
+                className="font-semibold uppercase"
+                style={{ fontSize: "11px", letterSpacing: "0.08em", color: "var(--color-muted, var(--color-text-muted))" }}
+              >
+                Priorités
+              </p>
+              <p className="mt-2 text-[20px] font-bold text-gray-900">{pendingChecklist.length} items</p>
               <p className="mt-2 text-xs text-[var(--color-text-muted)]">
                 {pendingChecklist.length > 0
                   ? pendingChecklist
@@ -720,9 +715,14 @@ export default function ProfilPage() {
               </p>
             </article>
 
-            <article className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Sync</p>
-              <p className="mt-2 text-2xl font-bold text-gray-900">
+            <article className="rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white p-[18px] shadow-[0_1px_2px_rgba(26,26,26,0.08)]">
+              <p
+                className="font-semibold uppercase"
+                style={{ fontSize: "11px", letterSpacing: "0.08em", color: "var(--color-muted, var(--color-text-muted))" }}
+              >
+                Sync
+              </p>
+              <p className="mt-2 text-[20px] font-bold text-gray-900">
                 {autoSaveStatus === "error" ? "Erreur" : hasPendingSync ? "En attente" : "✓ À jour"}
               </p>
               <p className="mt-2 text-xs text-[var(--color-text-muted)]">
@@ -743,12 +743,13 @@ export default function ProfilPage() {
         <div className="races-layout max-w-4xl mx-auto px-4">
           <div className="races-layout__main min-w-0">
             <nav className="profil-tabs-shell mb-1 scroll-mt-6" aria-label="Sections du profil">
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
-                    Affichage
-                  </span>
-                  <div className="inline-flex rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] p-1">
+              <div className="relative">
+                <details className="absolute right-0 top-0 z-10">
+                  <summary className="cursor-pointer list-none rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1 text-[11px] font-semibold text-[var(--color-text-muted)]">
+                    Options
+                  </summary>
+                  <div className="mt-2 min-w-[180px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-2 shadow-sm">
+                    <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Affichage</p>
                     {(
                       [
                         ["auto", "Auto"],
@@ -763,10 +764,10 @@ export default function ProfilPage() {
                           type="button"
                           onClick={() => setDensityMode(id)}
                           className={[
-                            "profil-density-btn rounded-full px-3 py-1 text-xs font-semibold transition-colors",
+                            "profil-density-btn flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
                             active
-                              ? "bg-[var(--color-energy)] text-white"
-                              : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
+                              ? "bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-bg-card))] text-[var(--color-text)]"
+                              : "text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)]",
                           ].join(" ")}
                         >
                           {label}
@@ -774,18 +775,9 @@ export default function ProfilPage() {
                       );
                     })}
                   </div>
-                  {densityMode === "auto" ? (
-                    <span className="rounded-full bg-[var(--color-bg-subtle)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-text-muted)]">
-                      {effectiveCompactDensity
-                        ? "Auto - Focus actif (Aperçu)"
-                        : isAutoCompactViewport
-                          ? "Auto - Confort actif (Mémoire/Analyses)"
-                          : "Auto - Confort actif"}
-                    </span>
-                  ) : null}
-                </div>
+                </details>
 
-                <div className="flex gap-1 rounded-2xl border border-[var(--color-border)] bg-transparent p-1">
+                <div className="flex rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-1 pr-20 sm:pr-24">
                   {PROFIL_TABS.map((tab) => {
                     const active = profilTab === tab.id;
                     const Icon = tab.icon;
@@ -795,10 +787,10 @@ export default function ProfilPage() {
                         type="button"
                         onClick={() => setProfilTab(tab.id)}
                         className={[
-                          "profil-tab-btn relative flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl px-2 py-2 text-sm font-semibold transition-all sm:min-h-[50px] sm:flex-none sm:px-5",
+                          "profil-tab-btn relative flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-all sm:min-h-[46px] sm:flex-none sm:px-5",
                           active
                             ? "bg-white text-[#1b3a23] shadow-sm ring-1 ring-[color-mix(in_srgb,#1b3a23_10%,var(--color-border))]"
-                            : "bg-transparent text-[var(--color-text-muted)] hover:bg-[color-mix(in_srgb,var(--color-bg-card)_45%,transparent)] hover:text-[var(--color-text)]",
+                            : "bg-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
                         ].join(" ")}
                         aria-current={active ? "page" : undefined}
                       >
@@ -840,53 +832,48 @@ export default function ProfilPage() {
                     >
                       <div className="grid gap-8 border-b border-[var(--color-border-subtle)] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--color-energy)_10%,var(--color-bg-card))_0%,var(--color-bg-card)_55%,var(--color-bg-card)_100%)] p-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)] lg:p-8">
                         <div>
-                          <p className="text-xs font-semibold text-[var(--color-energy)]">
-                            Activité
-                          </p>
-                          <h2 className="mt-2 font-display text-2xl font-black tracking-tight text-[var(--color-text)] md:text-[1.65rem]">
+                          <h2 className="font-display text-2xl font-black tracking-tight text-[var(--color-text)] md:text-[1.65rem]">
                             Passe du profil à la ligne de départ.
                           </h2>
-                          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)]">
-                            Raccourcis vers les outils FuelOS : plan nutrition, jour J, charge autour de la course et
-                            calendrier — sans quitter ton espace athlète.
-                          </p>
+                          <p className="mt-1 text-sm text-[var(--color-text-muted)]">Accès rapide aux modules clés.</p>
 
-                          <div className="mt-6 rounded-2xl bg-[color-mix(in_srgb,var(--color-energy)_7%,var(--color-bg-card))] p-3">
-                            <div className="mt-4 grid grid-cols-2 gap-3">
-                              <Link
-                                href="/plan"
-                                className="flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm transition hover:shadow-md"
-                              >
-                                <span className="text-2xl" aria-hidden>⚡</span>
-                                <span className="text-sm font-medium text-[var(--color-text)]">Plan nutrition</span>
-                              </Link>
-                              <Link
-                                href="/race"
-                                className="flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm transition hover:shadow-md"
-                              >
-                                <span className="text-2xl" aria-hidden>🏃</span>
-                                <span className="text-sm font-medium text-[var(--color-text)]">Mode course</span>
-                              </Link>
-                              <Link
-                                href="/prep"
-                                className="flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm transition hover:shadow-md"
-                              >
-                                <span className="text-2xl" aria-hidden>🌿</span>
-                                <span className="text-sm font-medium text-[var(--color-text)]">Pré / post</span>
-                              </Link>
-                              <Link
-                                href="/races"
-                                className="flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm transition hover:shadow-md"
-                              >
-                                <span className="text-2xl" aria-hidden>📅</span>
-                                <span className="text-sm font-medium text-[var(--color-text)]">Mes courses</span>
-                              </Link>
-                            </div>
+                          <div className="mt-4 grid grid-cols-2 gap-3">
+                            <Link
+                              href="/plan"
+                              className="flex items-center gap-3 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-4 py-[14px] transition duration-200 hover:-translate-y-[1px] hover:shadow-md"
+                            >
+                              <span className="text-2xl" aria-hidden>⚡</span>
+                              <span className="text-sm font-medium text-[var(--color-text)]">Plan nutrition</span>
+                            </Link>
+                            <Link
+                              href="/race"
+                              className="flex items-center gap-3 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-4 py-[14px] transition duration-200 hover:-translate-y-[1px] hover:shadow-md"
+                            >
+                              <span className="text-2xl" aria-hidden>🏃</span>
+                              <span className="text-sm font-medium text-[var(--color-text)]">Mode course</span>
+                            </Link>
+                            <Link
+                              href="/prep"
+                              className="flex items-center gap-3 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-4 py-[14px] transition duration-200 hover:-translate-y-[1px] hover:shadow-md"
+                            >
+                              <span className="text-2xl" aria-hidden>🌿</span>
+                              <span className="text-sm font-medium text-[var(--color-text)]">Pré / post</span>
+                            </Link>
+                            <Link
+                              href="/races"
+                              className="flex items-center gap-3 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-4 py-[14px] transition duration-200 hover:-translate-y-[1px] hover:shadow-md"
+                            >
+                              <span className="text-2xl" aria-hidden>📅</span>
+                              <span className="text-sm font-medium text-[var(--color-text)]">Mes courses</span>
+                            </Link>
                           </div>
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                          <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-[18px] md:rounded-3xl">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div className="rounded-[16px] border border-[var(--color-border)] bg-white p-[18px] shadow-sm">
+                            <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-bg-card))]">
+                              <Target className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
+                            </div>
                             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
                               Objectif saison
                             </p>
@@ -897,7 +884,10 @@ export default function ProfilPage() {
                               {goalObj?.cue ?? "Choisis un axe pour prioriser les reco nutrition."}
                             </p>
                           </div>
-                          <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-[18px] md:rounded-3xl">
+                          <div className="rounded-[16px] border border-[var(--color-border)] bg-white p-[18px] shadow-sm">
+                            <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-bg-card))]">
+                              <Mountain className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
+                            </div>
                             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
                               Prochaine course
                             </p>
@@ -1010,7 +1000,7 @@ export default function ProfilPage() {
                         </span>
                       </label>
                       <div>
-                        <span className="block text-sm font-semibold text-[var(--color-text)]">Sexe</span>
+                        <span className="block text-[12px] font-medium text-[var(--color-text-muted)]">Sexe</span>
                         <div className="mt-3 flex flex-wrap gap-3">
                           {(["M", "F", "other"] as const).map((sex) => (
                             <label
@@ -1018,7 +1008,7 @@ export default function ProfilPage() {
                               className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all ${
                                 profile.sex === sex
                                   ? "border-[color-mix(in_srgb,var(--color-energy)_45%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-energy)_12%,var(--color-bg-card))] text-[var(--color-text)] shadow-sm"
-                                  : "border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] hover:border-[var(--color-energy)]"
+                                  : "border-[rgba(0,0,0,0.18)] bg-transparent text-[var(--color-text-muted)] hover:border-[var(--color-energy)]"
                               }`}
                             >
                               <input
@@ -1053,7 +1043,7 @@ export default function ProfilPage() {
                             className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-all ${
                               profile.sports[key]
                                 ? "border-[color-mix(in_srgb,var(--color-energy)_45%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-energy)_12%,var(--color-bg-card))] text-[var(--color-text)] shadow-sm"
-                                : "border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] hover:border-[var(--color-energy)]"
+                                : "border-[rgba(0,0,0,0.18)] bg-transparent text-[var(--color-text-muted)] hover:border-[var(--color-energy)]"
                             }`}
                           >
                             <input
@@ -1071,10 +1061,10 @@ export default function ProfilPage() {
                     </div>
 
                     <div className="mt-6 rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid grid-cols-2 gap-4">
                       <label className="relative block">
                         <select
-                          className={floatingInputClass()}
+                          className={selectClass()}
                           value={profile.mainSport}
                           onChange={(e) => updateProfile({ mainSport: e.target.value as FuelOsMainSport })}
                         >
@@ -1084,13 +1074,13 @@ export default function ProfilPage() {
                             </option>
                           ))}
                         </select>
-                        <span className="pointer-events-none absolute left-4 top-2 text-sm font-medium text-gray-500">
+                        <span className={floatingLabelClass()}>
                           Sport principal
                         </span>
                       </label>
                       <label className="relative block">
                         <select
-                          className={floatingInputClass()}
+                          className={selectClass()}
                           value={profile.athleticLevel}
                           onChange={(e) => updateProfile({ athleticLevel: e.target.value as FuelOsAthleticLevel })}
                         >
@@ -1100,13 +1090,13 @@ export default function ProfilPage() {
                             </option>
                           ))}
                         </select>
-                        <span className="pointer-events-none absolute left-4 top-2 text-sm font-medium text-gray-500">
+                        <span className={floatingLabelClass()}>
                           Niveau athlétique
                         </span>
                       </label>
                       <label className="relative block sm:col-span-2">
                         <select
-                          className={floatingInputClass()}
+                          className={selectClass()}
                           value={profile.mainGoal}
                           onChange={(e) => updateProfile({ mainGoal: e.target.value as FuelOsUserProfile["mainGoal"] })}
                         >
@@ -1116,7 +1106,7 @@ export default function ProfilPage() {
                             </option>
                           ))}
                         </select>
-                        <span className="pointer-events-none absolute left-4 top-2 text-sm font-medium text-gray-500">
+                        <span className={floatingLabelClass()}>
                           Objectif principal
                         </span>
                       </label>
@@ -1127,7 +1117,7 @@ export default function ProfilPage() {
                       <button
                         type="button"
                         onClick={handleSave}
-                        className="w-full rounded-xl bg-[#2d4a2d] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#233b23]"
+                        className="w-full rounded-xl bg-[var(--color-primary)] px-[14px] py-[14px] text-sm font-semibold text-white transition hover:brightness-95"
                       >
                         Sauvegarder le profil
                       </button>
@@ -1377,7 +1367,7 @@ export default function ProfilPage() {
                       <button
                         type="button"
                         onClick={handleSave}
-                        className="w-full rounded-xl bg-[#2d4a2d] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#233b23]"
+                        className="w-full rounded-xl bg-[var(--color-primary)] px-[14px] py-[14px] text-sm font-semibold text-white transition hover:brightness-95"
                       >
                         Enregistrer dans le calculateur
                       </button>
