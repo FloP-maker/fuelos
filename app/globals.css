@@ -527,7 +527,7 @@ textarea:focus {
     inset: 0;
     z-index: 3;
     pointer-events: none;
-    opacity: 0.55;
+    opacity: 0.22;
     background: repeating-linear-gradient(
       -17deg,
       transparent,
@@ -1160,8 +1160,27 @@ textarea:focus {
     margin-top: 0 !important;
   }
 
-  /* Profil : desktop plein écran + respiration plus généreuse */
+  /* Profil Design Tokens
+   * - radius: shape system for cards/panels
+   * - shadow: depth scale (soft / strong)
+   * - border: subtle separators for premium UI
+   * - space: vertical rhythm per density mode
+   * - type: kicker tracking + compact title scale
+   */
   .races-page.profil-page {
+    --profil-radius-panel: 1.25rem;
+    --profil-radius-panel-lg: 1.5rem;
+    --profil-shadow-soft: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
+    --profil-shadow-soft-strong: 0 8px 24px color-mix(in srgb, #000 6%, transparent);
+    --profil-border-soft: color-mix(in srgb, var(--color-border) 86%, transparent);
+    --profil-space-main: clamp(30px, 3.8vw, 52px);
+    --profil-space-main-compact: clamp(20px, 2.6vw, 34px);
+    --profil-letter-kicker: 0.12em;
+    --profil-tabs-top: 4.7rem;
+    --profil-rail-top: 6.25rem;
+    --profil-rail-max-height: calc(100vh - 7rem);
+    --profil-tabs-blur: blur(6px);
+    --profil-quick-jump-bg: color-mix(in srgb, var(--color-energy) 10%, var(--color-bg-card));
     width: 100% !important;
     max-width: none;
   }
@@ -1179,12 +1198,12 @@ textarea:focus {
   .races-page.profil-page .races-layout {
     max-width: none;
     grid-template-columns: minmax(0, 1fr);
-    gap: clamp(30px, 3.8vw, 52px);
+    gap: var(--profil-space-main);
     padding: clamp(86px, 9vw, 116px) clamp(20px, 3.2vw, 56px) clamp(64px, 9vw, 110px);
   }
 
   .races-page.profil-page .races-layout__main {
-    gap: clamp(30px, 3.8vw, 52px);
+    gap: var(--profil-space-main);
   }
 
   .races-page.profil-page .races-next-milestone {
@@ -1197,20 +1216,65 @@ textarea:focus {
 
   .races-page.profil-page .profil-tabs-shell {
     position: sticky;
-    top: 4.7rem;
+    top: var(--profil-tabs-top);
     z-index: 18;
-    backdrop-filter: blur(6px);
+    backdrop-filter: var(--profil-tabs-blur);
   }
 
   .races-page.profil-page .profil-tabs-shell > div {
-    box-shadow: 0 8px 24px color-mix(in srgb, #000 8%, transparent);
+    box-shadow: var(--profil-shadow-soft);
+  }
+
+  /* Profil premium: calmer les effets visuels pour un rendu plus mature */
+  .races-page.profil-page article,
+  .races-page.profil-page .fuel-races-main-panel,
+  .races-page.profil-page section[aria-labelledby^="section-"],
+  .races-page.profil-page .profil-sticky-rail > div {
+    border-radius: var(--profil-radius-panel);
+    box-shadow: var(--profil-shadow-soft);
+    border-color: var(--profil-border-soft);
+  }
+
+  .races-page.profil-page .profil-tabs-shell button {
+    letter-spacing: 0.01em;
+  }
+
+  /* Generic Theme Panel (reusable across sections/pages) */
+  .races-page .fuel-theme-panel {
+    border-radius: var(--profil-radius-panel);
+    border: 1px solid var(--profil-border-soft);
+    background: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-subtle));
+    box-shadow: var(--profil-shadow-soft);
+  }
+
+  .races-page .fuel-theme-panel__inner {
+    padding: clamp(14px, 2vw, 20px);
+  }
+
+  .races-page.profil-page .profil-quick-jump:hover {
+    border-color: color-mix(in srgb, var(--color-energy) 45%, var(--color-border));
+    color: var(--color-text);
+    background: var(--profil-quick-jump-bg);
+  }
+
+  html.dark .races-page.profil-page article,
+  html.dark .races-page.profil-page .fuel-races-main-panel,
+  html.dark .races-page.profil-page section[aria-labelledby^="section-"],
+  html.dark .races-page.profil-page .profil-sticky-rail > div,
+  html.dark .races-page .fuel-theme-panel {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+    border-color: color-mix(in srgb, var(--color-border) 82%, #ffffff);
+  }
+
+  .races-page.profil-page .profil-sticky-rail .text-\[10px\].font-black {
+    letter-spacing: var(--profil-letter-kicker);
   }
 
   @media (min-width: 1280px) {
     .races-page.profil-page .profil-sticky-rail {
       position: sticky;
-      top: 6.25rem;
-      max-height: calc(100vh - 7rem);
+      top: var(--profil-rail-top);
+      max-height: var(--profil-rail-max-height);
       overflow-y: auto;
       padding-right: 2px;
     }
@@ -1225,7 +1289,7 @@ textarea:focus {
 
   /* Mode compact : même contenu, densité plus haute pour lecture rapide */
   .races-page.profil-page.profil-density-compact .races-layout {
-    gap: clamp(20px, 2.6vw, 34px);
+    gap: var(--profil-space-main-compact);
     padding-top: clamp(72px, 7vw, 92px);
   }
 
@@ -1242,8 +1306,13 @@ textarea:focus {
 
   .races-page.profil-page.profil-density-compact .fuel-races-main-panel,
   .races-page.profil-page.profil-density-compact article,
-  .races-page.profil-page.profil-density-compact section[aria-labelledby^="section-"] {
-    border-radius: 1rem;
+  .races-page.profil-page.profil-density-compact section[aria-labelledby^="section-"],
+  .races-page.profil-page.profil-density-compact .fuel-theme-panel {
+    border-radius: calc(var(--profil-radius-panel) - 0.25rem);
+  }
+
+  .races-page.profil-page.profil-density-compact .fuel-theme-panel__inner {
+    padding: 0.95rem;
   }
 
   .races-page.profil-page.profil-density-compact .fuel-races-main-panel .p-6,
@@ -1257,8 +1326,17 @@ textarea:focus {
     gap: 0.875rem;
   }
 
+  @media (min-width: 1280px) {
+    .races-page.profil-page .fuel-races-main-panel,
+    .races-page.profil-page section[aria-labelledby^="section-"],
+    .races-page.profil-page .fuel-theme-panel {
+      border-radius: var(--profil-radius-panel-lg);
+    }
+  }
+
   .races-page.profil-page.profil-density-compact .profil-sticky-rail .text-lg {
     font-size: 1rem;
+    line-height: 1.2;
   }
 
   .races-page.profil-page.profil-density-compact .profil-tabs-shell {

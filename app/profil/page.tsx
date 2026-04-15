@@ -6,6 +6,8 @@ import {
   Activity,
   BarChart3,
   CalendarDays,
+  Circle,
+  CircleCheckBig,
   ChevronDown,
   Droplets,
   Footprints,
@@ -141,9 +143,9 @@ function ProfileHeroMetric({
   help: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/14 bg-white/[0.07] px-4 py-3.5 shadow-[0_12px_40px_rgba(0,0,0,0.18)] backdrop-blur-md">
+    <div className="relative overflow-hidden rounded-2xl border border-white/16 bg-white/[0.06] px-4 py-3.5 shadow-[0_4px_18px_rgba(0,0,0,0.14)] backdrop-blur-sm">
       <div
-        className="pointer-events-none absolute inset-y-2 left-0 w-0.5 rounded-full bg-gradient-to-b from-[var(--color-energy)] to-[var(--color-accent)]"
+        className="pointer-events-none absolute inset-y-3 left-0 w-px rounded-full bg-gradient-to-b from-[var(--color-energy)] to-[var(--color-accent)] opacity-75"
         aria-hidden
       />
       <p className="pl-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/55">{label}</p>
@@ -167,7 +169,7 @@ function DashboardTile({
   children?: ReactNode;
 }) {
   return (
-    <article className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5 shadow-[0_2px_16px_color-mix(in_srgb,#000_4%,transparent)] transition-[box-shadow,transform] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-[0_12px_36px_color-mix(in_srgb,#000_8%,transparent)] md:rounded-3xl">
+    <article className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5 shadow-[0_2px_14px_color-mix(in_srgb,#000_3%,transparent)] transition-[box-shadow,border-color] duration-200 hover:border-[color-mix(in_srgb,var(--color-energy)_25%,var(--color-border))] hover:shadow-[0_8px_24px_color-mix(in_srgb,#000_6%,transparent)] md:rounded-3xl">
       <div
         className="pointer-events-none absolute inset-y-3 left-0 w-[3px] rounded-full bg-gradient-to-b from-[var(--color-energy)] via-[var(--color-accent)] to-[var(--color-primary)] opacity-90"
         aria-hidden
@@ -231,6 +233,7 @@ function SectionAccordion({
   const accent = accentColor ?? GREEN;
   return (
     <section
+      id={id}
       className={[
         "overflow-hidden rounded-2xl border bg-[var(--color-bg-card)] shadow-sm transition-[border-color,box-shadow] duration-200 md:rounded-3xl",
         open
@@ -308,7 +311,7 @@ function ToggleSwitch({
       }
     >
       <span
-        className="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform"
+        className="inline-block h-5 w-5 rounded-full bg-[var(--color-bg-card)] shadow-[0_1px_4px_rgba(0,0,0,0.18)] transition-transform"
         style={{ transform: checked ? "translateX(1.45rem)" : "translateX(0.2rem)" }}
       />
     </button>
@@ -394,6 +397,47 @@ export default function ProfilPage() {
       : typeof profile.runnerVmaKmh === "number"
         ? `${profile.runnerVmaKmh} km/h VMA`
         : "À renseigner";
+  const setupChecklist = useMemo(
+    () => [
+      { id: "identity", label: "Nom + sport principal", done: Boolean(profile.firstName && profile.mainSport), anchor: "#personal" },
+      {
+        id: "morpho",
+        label: "Poids + taille renseignés",
+        done: typeof profile.weightKg === "number" && typeof profile.heightCm === "number",
+        anchor: "#personal",
+      },
+      {
+        id: "performance",
+        label: "FTP ou VMA définie",
+        done: typeof profile.ftpWatts === "number" || typeof profile.runnerVmaKmh === "number",
+        anchor: "#nutrition",
+      },
+      {
+        id: "hydration",
+        label: "Hydratation + sodium calibrés",
+        done: typeof profile.sweatRateMlPerH === "number" && typeof profile.sodiumLossMgPerH === "number",
+        anchor: "#nutrition",
+      },
+      {
+        id: "integrations",
+        label: "Au moins une intégration active",
+        done: connectedCount > 0,
+        anchor: "#integrations",
+      },
+    ],
+    [
+      connectedCount,
+      profile.firstName,
+      profile.mainSport,
+      profile.weightKg,
+      profile.heightCm,
+      profile.ftpWatts,
+      profile.runnerVmaKmh,
+      profile.sweatRateMlPerH,
+      profile.sodiumLossMgPerH,
+    ]
+  );
+  const pendingChecklist = setupChecklist.filter((item) => !item.done);
 
   const onAvatarFile = (file: File | null) => {
     if (!file || !file.type.startsWith("image/")) return;
@@ -575,7 +619,7 @@ export default function ProfilPage() {
                     </Link>
                     <Link
                       href="/profil/integrations"
-                      className="inline-flex flex-1 items-center justify-center rounded-full border border-white/22 bg-[color-mix(in_srgb,var(--color-energy)_22%,rgba(255,255,255,0.08))] px-5 py-3 text-sm font-bold text-white shadow-lg backdrop-blur-md transition hover:bg-[color-mix(in_srgb,var(--color-energy)_32%,rgba(255,255,255,0.12))] sm:flex-none"
+                      className="inline-flex flex-1 items-center justify-center rounded-full border border-white/24 bg-white/[0.09] px-5 py-3 text-sm font-semibold text-white shadow-[0_3px_14px_rgba(0,0,0,0.18)] backdrop-blur-md transition hover:bg-white/[0.14] sm:flex-none"
                     >
                       <Link2 className="mr-2 h-4 w-4" aria-hidden />
                       Intégrations
@@ -599,16 +643,16 @@ export default function ProfilPage() {
           <div className="races-layout__main min-w-0">
             <nav className="profil-tabs-shell mb-8 scroll-mt-6" aria-label="Sections du profil">
               <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-end gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
-                    Densité
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <span className="text-xs font-semibold text-[var(--color-text-muted)]">
+                    Affichage
                   </span>
                   <div className="inline-flex rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] p-1">
                     {(
                       [
                         ["auto", "Auto"],
-                        ["standard", "Standard"],
-                        ["compact", "Compact"],
+                        ["standard", "Confort"],
+                        ["compact", "Focus"],
                       ] as const
                     ).map(([id, label]) => {
                       const active = densityMode === id;
@@ -618,7 +662,7 @@ export default function ProfilPage() {
                           type="button"
                           onClick={() => setDensityMode(id)}
                           className={[
-                            "rounded-full px-3 py-1 text-xs font-bold transition-colors",
+                            "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
                             active
                               ? "bg-[var(--color-energy)] text-white"
                               : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
@@ -630,12 +674,12 @@ export default function ProfilPage() {
                     })}
                   </div>
                   {densityMode === "auto" ? (
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+                    <span className="rounded-full bg-[var(--color-bg-subtle)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-text-muted)]">
                       {effectiveCompactDensity
-                        ? "Auto: compact actif (aperçu)"
+                        ? "Auto - Focus actif (Aperçu)"
                         : isAutoCompactViewport
-                          ? "Auto: standard actif (mémoire/analyses)"
-                          : "Auto: standard actif"}
+                          ? "Auto - Confort actif (Mémoire/Analyses)"
+                          : "Auto - Confort actif"}
                     </span>
                   ) : null}
                 </div>
@@ -1245,6 +1289,25 @@ export default function ProfilPage() {
                   </div>
 
                   <aside className="profil-sticky-rail space-y-5">
+                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-3.5 shadow-sm md:rounded-3xl">
+                      <p className="text-[11px] font-semibold text-[var(--color-text-muted)]">Navigation rapide</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {[
+                          ["#personal", "Identité"],
+                          ["#nutrition", "Nutrition"],
+                          ["#integrations", "Connexions"],
+                        ].map(([href, label]) => (
+                          <a
+                            key={href}
+                            href={href}
+                            className="profil-quick-jump inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] transition"
+                          >
+                            {label}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+
                     <DashboardTile
                       icon={<ShieldCheck className="h-5 w-5" aria-hidden />}
                       eyebrow="État du profil"
@@ -1354,20 +1417,65 @@ export default function ProfilPage() {
                         </Button>
                       </div>
                     </div>
+
+                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                        Priorités profil
+                      </p>
+                      <div className="mt-3 space-y-2">
+                        {setupChecklist.map((item) => (
+                          <div
+                            key={item.id}
+                            className={[
+                              "flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-xs",
+                              item.done
+                                ? "border-[color-mix(in_srgb,var(--color-primary)_28%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-bg-card))]"
+                                : "border-[var(--color-border)] bg-[var(--color-bg-subtle)]",
+                            ].join(" ")}
+                          >
+                            <span className="inline-flex items-center gap-2 text-[var(--color-text)]">
+                              {item.done ? (
+                                <CircleCheckBig className="h-3.5 w-3.5 text-[var(--color-primary)]" aria-hidden />
+                              ) : (
+                                <Circle className="h-3.5 w-3.5 text-[var(--color-text-muted)]" aria-hidden />
+                              )}
+                              {item.label}
+                            </span>
+                            {!item.done ? (
+                              <a
+                                href={item.anchor}
+                                className="rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--color-text-muted)]"
+                              >
+                                Aller
+                              </a>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+                        {pendingChecklist.length === 0
+                          ? "Profil prêt : base complète pour plans et analyses."
+                          : `${pendingChecklist.length} point${pendingChecklist.length > 1 ? "s" : ""} à compléter en priorité.`}
+                      </p>
+                    </div>
                   </aside>
                 </div>
               </>
             ) : null}
 
             {profilTab === "memory" ? (
-              <div className="min-w-0 pb-2">
-                <ProfileMemoryTabContent />
+              <div className="fuel-theme-panel min-w-0 pb-2">
+                <div className="fuel-theme-panel__inner">
+                  <ProfileMemoryTabContent />
+                </div>
               </div>
             ) : null}
 
             {profilTab === "insights" ? (
-              <div className="min-w-0 pb-2">
-                <ProfileAnalysesTabContent />
+              <div className="fuel-theme-panel min-w-0 pb-2">
+                <div className="fuel-theme-panel__inner">
+                  <ProfileAnalysesTabContent />
+                </div>
               </div>
             ) : null}
           </div>
