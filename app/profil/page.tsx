@@ -736,7 +736,7 @@ export default function ProfilPage() {
                           type="button"
                           onClick={() => setDensityMode(id)}
                           className={[
-                            "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
+                            "profil-density-btn rounded-full px-3 py-1 text-xs font-semibold transition-colors",
                             active
                               ? "bg-[var(--color-energy)] text-white"
                               : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
@@ -768,7 +768,7 @@ export default function ProfilPage() {
                         type="button"
                         onClick={() => setProfilTab(tab.id)}
                         className={[
-                          "relative flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl px-2 py-2 text-sm font-bold transition-all sm:min-h-[50px] sm:flex-none sm:px-5",
+                          "profil-tab-btn relative flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl px-2 py-2 text-sm font-bold transition-all sm:min-h-[50px] sm:flex-none sm:px-5",
                           active
                             ? "bg-[var(--color-bg-card)] text-[var(--color-text)] shadow-[0_4px_20px_color-mix(in_srgb,#000_12%,transparent),0_0_0_1px_color-mix(in_srgb,var(--color-energy)_35%,transparent)]"
                             : "text-[var(--color-text-muted)] hover:bg-[color-mix(in_srgb,var(--color-bg-card)_55%,transparent)] hover:text-[var(--color-text)]",
@@ -1524,7 +1524,7 @@ export default function ProfilPage() {
                       <div className="mt-3 grid gap-2">
                         <Link
                           href="/profil/integrations"
-                          className="inline-flex items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text)]"
+                          className="profil-soft-action inline-flex items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text)]"
                         >
                           <Link2 className="mr-2 h-4 w-4" aria-hidden />
                           Gérer les intégrations
@@ -1573,7 +1573,7 @@ export default function ProfilPage() {
                             {!item.done ? (
                               <a
                                 href={item.anchor}
-                                className="rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--color-text-muted)]"
+                                className="profil-priority-jump rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--color-text-muted)]"
                               >
                                 Aller
                               </a>
@@ -1589,7 +1589,7 @@ export default function ProfilPage() {
                       {nextPriorityAnchor ? (
                         <a
                           href={nextPriorityAnchor}
-                          className="mt-3 inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text)]"
+                          className="profil-continue-setup mt-3 inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text)]"
                         >
                           Continuer le setup
                         </a>
