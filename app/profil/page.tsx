@@ -17,7 +17,6 @@ import {
   Library,
   Link2,
   Settings,
-  Sparkles,
   Target,
   User,
   Zap,
@@ -491,6 +490,8 @@ export default function ProfilPage() {
             ? 55
             : 45
           : 100;
+  const heroPrimaryHref = nextPriorityAnchor ?? "#personal";
+  const heroPrimaryLabel = nextPriorityAnchor ? "Continuer le setup" : "Éditer le profil";
 
   useEffect(() => {
     if (!autoSaveEnabled || !hasPendingSync || !syncedProfileSnapshot) return;
@@ -514,15 +515,14 @@ export default function ProfilPage() {
             <div className="profil-hero-shell">
               <div className="profil-hero-head">
                 <div className="races-page-hero__copy max-w-none">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/[0.07] px-3 py-1 text-[11px] font-medium text-white/80">
-                    <Sparkles className="h-3.5 w-3.5 text-[var(--color-energy)]" aria-hidden />
-                    Profil athlète
+                  <span className="inline-flex items-center rounded-full border border-white/14 bg-white/[0.07] px-3 py-1 text-[11px] font-medium text-white/80">
+                    Profil
                   </span>
                   <h1 id="profil-hero-title" className="mt-3 max-w-none">
                     Un profil clair. Des décisions plus rapides.
                   </h1>
                   <p className="mt-3 max-w-[68ch] text-base text-white/84">
-                    Renseigne l'essentiel, synchronise, puis passe sur Plan ou Mode course.
+                    Renseigne l'essentiel puis passe à l'action.
                   </p>
                 </div>
                 <div className="grid w-full gap-2 sm:grid-cols-3 lg:max-w-[520px]">
@@ -627,17 +627,9 @@ export default function ProfilPage() {
                 </div>
 
                 <div className="flex w-full flex-wrap gap-2 md:w-auto md:justify-end">
-                  <Link href="#personal" className="races-page-hero__cta">
-                    Éditer le profil
-                  </Link>
-                  {nextPriorityAnchor ? (
-                    <a
-                      href={nextPriorityAnchor}
-                      className="inline-flex items-center justify-center rounded-full border border-white/22 bg-black/18 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black/28"
-                    >
-                      Continuer
-                    </a>
-                  ) : null}
+                  <a href={heroPrimaryHref} className="races-page-hero__cta">
+                    {heroPrimaryLabel}
+                  </a>
                 </div>
               </div>
             </div>

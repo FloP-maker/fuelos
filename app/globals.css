@@ -540,10 +540,10 @@ textarea:focus {
   }
 
   .races-page-hero.profil-hero .profil-hero-shell {
-    border: 1px solid color-mix(in srgb, #ffffff 14%, transparent);
+    border: 1px solid color-mix(in srgb, #ffffff 10%, transparent);
     border-radius: clamp(18px, 2.8vw, 28px);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 100%);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.16);
     padding: clamp(16px, 2vw, 24px);
   }
 
@@ -553,9 +553,9 @@ textarea:focus {
   }
 
   .races-page-hero.profil-hero .profil-hero-stat {
-    border: 1px solid color-mix(in srgb, #ffffff 18%, transparent);
+    border: 1px solid color-mix(in srgb, #ffffff 14%, transparent);
     border-radius: 0.8rem;
-    background: color-mix(in srgb, #000000 20%, transparent);
+    background: color-mix(in srgb, #000000 14%, transparent);
     padding: 0.62rem 0.78rem;
     color: rgba(255, 255, 255, 0.78);
     font-size: 0.72rem;
@@ -571,7 +571,7 @@ textarea:focus {
   .races-page-hero.profil-hero .profil-hero-body {
     margin-top: clamp(14px, 2vw, 20px);
     padding-top: clamp(12px, 1.8vw, 16px);
-    border-top: 1px solid color-mix(in srgb, #ffffff 14%, transparent);
+    border-top: 1px solid color-mix(in srgb, #ffffff 10%, transparent);
     display: flex;
     flex-wrap: wrap;
     gap: 0.9rem;
