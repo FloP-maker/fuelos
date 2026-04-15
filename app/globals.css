@@ -1191,6 +1191,20 @@ textarea:focus {
     margin-inline: 0;
   }
 
+  .races-page.profil-page .profil-sticky-rail {
+    align-self: start;
+  }
+
+  @media (min-width: 1280px) {
+    .races-page.profil-page .profil-sticky-rail {
+      position: sticky;
+      top: 6.25rem;
+      max-height: calc(100vh - 7rem);
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+  }
+
   .races-layout__calendar {
     min-width: 0;
     min-height: 0;

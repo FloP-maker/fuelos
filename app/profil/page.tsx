@@ -588,192 +588,89 @@ export default function ProfilPage() {
 
             {profilTab === "overview" ? (
               <>
-                <div className="grid gap-10 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
-                  <div>
+                <div className="grid items-start gap-10 xl:grid-cols-[minmax(0,1fr)_360px]">
+                  <div className="space-y-10">
                     <RacesNextMilestone nextRace={nextRace} />
-                  </div>
 
-                  <DashboardTile
-                    icon={<ShieldCheck className="h-5 w-5" aria-hidden />}
-                    eyebrow="État du profil"
-                    title="Vue synthèse"
-                    body="Les chiffres qui pilotent ton calculateur : morpho, saison et progression du remplissage."
-                  >
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <StatPill
-                        value={profile.weightKg ?? "—"}
-                        unit={typeof profile.weightKg === "number" ? "kg" : undefined}
-                        label="Poids"
-                      />
-                      <StatPill
-                        value={profile.heightCm ?? "—"}
-                        unit={typeof profile.heightCm === "number" ? "cm" : undefined}
-                        label="Taille"
-                      />
-                      <StatPill value={profile.age ?? "—"} label="Âge" />
-                      <StatPill value={seasonTotal} label="Courses" />
-                    </div>
-                    <div className="mt-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-4">
-                      <div className="flex items-center justify-between gap-3">
+                    <div
+                      className="fuel-races-main-panel overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--color-energy)_22%,var(--color-border))] shadow-[0_8px_40px_color-mix(in_srgb,#000_6%,transparent)] md:rounded-[28px]"
+                      id="personal"
+                    >
+                      <div className="grid gap-8 border-b border-[var(--color-border-subtle)] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--color-energy)_10%,var(--color-bg-card))_0%,var(--color-bg-card)_55%,var(--color-bg-card)_100%)] p-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)] lg:p-8">
                         <div>
-                          <p className="text-sm font-semibold text-[var(--color-text)]">Progression du setup</p>
-                          <p className="text-xs text-[var(--color-text-muted)]">
-                            Plus le profil est complet, plus FuelOS peut personnaliser.
+                          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--color-energy)]">
+                            Activité
                           </p>
+                          <h2 className="mt-2 font-display text-2xl font-black tracking-tight text-[var(--color-text)] md:text-[1.65rem]">
+                            Passe du profil à la ligne de départ.
+                          </h2>
+                          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)]">
+                            Raccourcis vers les outils FuelOS : plan nutrition, jour J, charge autour de la course et
+                            calendrier — sans quitter ton espace athlète.
+                          </p>
+
+                          <div className="mt-6 flex flex-wrap gap-2.5">
+                            <Link
+                              href="/plan"
+                              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[var(--color-energy)] to-[color-mix(in_srgb,var(--color-energy)_75%,var(--color-accent))] px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:brightness-105"
+                            >
+                              <Zap className="h-4 w-4" aria-hidden />
+                              Plan nutrition
+                            </Link>
+                            <Link
+                              href="/race"
+                              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-bold text-[var(--color-text)] shadow-sm transition hover:border-[color-mix(in_srgb,var(--color-energy)_40%,var(--color-border))]"
+                            >
+                              <Footprints className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
+                              Mode course
+                            </Link>
+                            <Link
+                              href="/prep"
+                              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-bold text-[var(--color-text)] shadow-sm transition hover:border-[color-mix(in_srgb,var(--color-energy)_40%,var(--color-border))]"
+                            >
+                              <Leaf className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
+                              Pré / post
+                            </Link>
+                            <Link
+                              href="/races"
+                              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-bold text-[var(--color-text)] shadow-sm transition hover:border-[color-mix(in_srgb,var(--color-energy)_40%,var(--color-border))]"
+                            >
+                              <CalendarDays className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
+                              Mes courses
+                            </Link>
+                          </div>
                         </div>
-                        <span className="text-lg font-extrabold text-[var(--color-primary)]">{completion}%</span>
-                      </div>
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-border)]">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${completion}%`,
-                            background: "linear-gradient(90deg, var(--color-primary) 0%, #6ee7b7 100%)",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </DashboardTile>
-                </div>
 
-                <div className="grid gap-8 lg:grid-cols-2">
-                  <DashboardTile
-                    icon={<Medal className="h-5 w-5" aria-hidden />}
-                    eyebrow="Identité sportive"
-                    title={sportObj ? `${sportObj.label} · ${levelObj?.short ?? "Profil"}` : "Profil athlète"}
-                    body={
-                      sports.length > 0
-                        ? `Sports cochés : ${sports.join(", ")}`
-                        : "Indique les disciplines pratiquées pour caler les repères nutrition."
-                    }
-                  >
-                    <div className="flex flex-wrap gap-2">
-                      {sports.length > 0 ? (
-                        sports.map((sport) => (
-                          <span
-                            key={sport}
-                            className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-1 text-xs font-semibold text-[var(--color-text)]"
-                          >
-                            {sport}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-sm text-[var(--color-text-muted)]">Aucun sport secondaire renseigné.</span>
-                      )}
-                    </div>
-                  </DashboardTile>
-
-                  <DashboardTile
-                    icon={<Droplets className="h-5 w-5" aria-hidden />}
-                    eyebrow="Carburant & eau"
-                    title="Tolérance à l’effort"
-                    body="Sueur, sodium et mix liquide / solide : la base des longues sorties."
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3">
-                        <span className="text-sm text-[var(--color-text-muted)]">Hydratation</span>
-                        <span className="text-sm font-bold text-[var(--color-text)]">
-                          {typeof profile.sweatRateMlPerH === "number"
-                            ? `${profile.sweatRateMlPerH} ml/h`
-                            : "À calibrer"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3">
-                        <span className="text-sm text-[var(--color-text-muted)]">Sodium</span>
-                        <span className="text-sm font-bold text-[var(--color-text)]">
-                          {typeof profile.sodiumLossMgPerH === "number"
-                            ? `${profile.sodiumLossMgPerH} mg/h`
-                            : "À calibrer"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3">
-                        <span className="text-sm text-[var(--color-text-muted)]">Texture favorite</span>
-                        <span className="text-sm font-bold text-[var(--color-text)]">{nutritionMode}</span>
-                      </div>
-                    </div>
-                  </DashboardTile>
-
-                </div>
-
-                <div
-                  className="fuel-races-main-panel overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--color-energy)_22%,var(--color-border))] shadow-[0_8px_40px_color-mix(in_srgb,#000_6%,transparent)] md:rounded-[28px]"
-                  id="personal"
-                >
-                  <div className="grid gap-8 border-b border-[var(--color-border-subtle)] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--color-energy)_10%,var(--color-bg-card))_0%,var(--color-bg-card)_55%,var(--color-bg-card)_100%)] p-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)] lg:p-8">
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--color-energy)]">
-                        Activité
-                      </p>
-                      <h2 className="mt-2 font-display text-2xl font-black tracking-tight text-[var(--color-text)] md:text-[1.65rem]">
-                        Passe du profil à la ligne de départ.
-                      </h2>
-                      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)]">
-                        Raccourcis vers les outils FuelOS : plan nutrition, jour J, charge autour de la course et
-                        calendrier — sans quitter ton espace athlète.
-                      </p>
-
-                      <div className="mt-6 flex flex-wrap gap-2.5">
-                        <Link
-                          href="/plan"
-                          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[var(--color-energy)] to-[color-mix(in_srgb,var(--color-energy)_75%,var(--color-accent))] px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:brightness-105"
-                        >
-                          <Zap className="h-4 w-4" aria-hidden />
-                          Plan nutrition
-                        </Link>
-                        <Link
-                          href="/race"
-                          className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-bold text-[var(--color-text)] shadow-sm transition hover:border-[color-mix(in_srgb,var(--color-energy)_40%,var(--color-border))]"
-                        >
-                          <Footprints className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
-                          Mode course
-                        </Link>
-                        <Link
-                          href="/prep"
-                          className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-bold text-[var(--color-text)] shadow-sm transition hover:border-[color-mix(in_srgb,var(--color-energy)_40%,var(--color-border))]"
-                        >
-                          <Leaf className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
-                          Pré / post
-                        </Link>
-                        <Link
-                          href="/races"
-                          className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-bold text-[var(--color-text)] shadow-sm transition hover:border-[color-mix(in_srgb,var(--color-energy)_40%,var(--color-border))]"
-                        >
-                          <CalendarDays className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
-                          Mes courses
-                        </Link>
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                          <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-4 md:rounded-3xl">
+                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                              Objectif saison
+                            </p>
+                            <p className="mt-2 font-display text-lg font-black text-[var(--color-text)]">
+                              {goalObj?.label ?? "À définir"}
+                            </p>
+                            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                              {goalObj?.cue ?? "Choisis un axe pour prioriser les reco nutrition."}
+                            </p>
+                          </div>
+                          <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-4 md:rounded-3xl">
+                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                              Prochaine course
+                            </p>
+                            <p className="mt-2 line-clamp-2 font-display text-lg font-black text-[var(--color-text)]">
+                              {nextRace ? nextRace.name : "—"}
+                            </p>
+                            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                              {nextRace
+                                ? "Contexte pris en compte pour tes plans."
+                                : "Ajoute un objectif dans Mes courses."}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                      <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-4 md:rounded-3xl">
-                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
-                          Objectif saison
-                        </p>
-                        <p className="mt-2 font-display text-lg font-black text-[var(--color-text)]">
-                          {goalObj?.label ?? "À définir"}
-                        </p>
-                        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                          {goalObj?.cue ?? "Choisis un axe pour prioriser les reco nutrition."}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_50%,var(--color-bg-card))] p-4 md:rounded-3xl">
-                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
-                          Prochaine course
-                        </p>
-                        <p className="mt-2 line-clamp-2 font-display text-lg font-black text-[var(--color-text)]">
-                          {nextRace ? nextRace.name : "—"}
-                        </p>
-                        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                          {nextRace
-                            ? "Contexte pris en compte pour tes plans."
-                            : "Ajoute un objectif dans Mes courses."}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
+                    <div className="space-y-5">
                   <SectionAccordion
                     id="personal"
                     icon={<User className="h-5 w-5" />}
@@ -1250,6 +1147,120 @@ export default function ProfilPage() {
                       })}
                     </div>
                   </SectionAccordion>
+                    </div>
+                  </div>
+
+                  <aside className="profil-sticky-rail space-y-5">
+                    <DashboardTile
+                      icon={<ShieldCheck className="h-5 w-5" aria-hidden />}
+                      eyebrow="État du profil"
+                      title="Vue synthèse"
+                      body="Les chiffres clés pour piloter rapidement ton setup athlète."
+                    >
+                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                        <StatPill
+                          value={profile.weightKg ?? "—"}
+                          unit={typeof profile.weightKg === "number" ? "kg" : undefined}
+                          label="Poids"
+                        />
+                        <StatPill
+                          value={profile.heightCm ?? "—"}
+                          unit={typeof profile.heightCm === "number" ? "cm" : undefined}
+                          label="Taille"
+                        />
+                        <StatPill value={profile.age ?? "—"} label="Âge" />
+                        <StatPill value={seasonTotal} label="Courses" />
+                      </div>
+                      <div className="mt-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-[var(--color-text)]">Progression du setup</p>
+                            <p className="text-xs text-[var(--color-text-muted)]">Compléter les champs augmente la précision.</p>
+                          </div>
+                          <span className="text-lg font-extrabold text-[var(--color-primary)]">{completion}%</span>
+                        </div>
+                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-border)]">
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${completion}%`,
+                              background: "linear-gradient(90deg, var(--color-primary) 0%, #6ee7b7 100%)",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </DashboardTile>
+
+                    <DashboardTile
+                      icon={<Medal className="h-5 w-5" aria-hidden />}
+                      eyebrow="Identité sportive"
+                      title={sportObj ? `${sportObj.label} · ${levelObj?.short ?? "Profil"}` : "Profil athlète"}
+                      body={
+                        sports.length > 0
+                          ? `Sports cochés : ${sports.join(", ")}`
+                          : "Ajoute tes disciplines pour adapter les recommandations."
+                      }
+                    >
+                      <div className="flex flex-wrap gap-2">
+                        {sports.length > 0 ? (
+                          sports.map((sport) => (
+                            <span
+                              key={sport}
+                              className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-1 text-xs font-semibold text-[var(--color-text)]"
+                            >
+                              {sport}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-sm text-[var(--color-text-muted)]">Aucun sport secondaire renseigné.</span>
+                        )}
+                      </div>
+                    </DashboardTile>
+
+                    <DashboardTile
+                      icon={<Droplets className="h-5 w-5" aria-hidden />}
+                      eyebrow="Carburant & eau"
+                      title="Tolérance à l’effort"
+                      body="Hydratation, sodium et texture favorite."
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3">
+                          <span className="text-sm text-[var(--color-text-muted)]">Hydratation</span>
+                          <span className="text-sm font-bold text-[var(--color-text)]">
+                            {typeof profile.sweatRateMlPerH === "number" ? `${profile.sweatRateMlPerH} ml/h` : "À calibrer"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3">
+                          <span className="text-sm text-[var(--color-text-muted)]">Sodium</span>
+                          <span className="text-sm font-bold text-[var(--color-text)]">
+                            {typeof profile.sodiumLossMgPerH === "number" ? `${profile.sodiumLossMgPerH} mg/h` : "À calibrer"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3">
+                          <span className="text-sm text-[var(--color-text-muted)]">Texture favorite</span>
+                          <span className="text-sm font-bold text-[var(--color-text)]">{nutritionMode}</span>
+                        </div>
+                      </div>
+                    </DashboardTile>
+
+                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                        Actions rapides
+                      </p>
+                      <div className="mt-3 grid gap-2">
+                        <Link
+                          href="/profil/integrations"
+                          className="inline-flex items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text)]"
+                        >
+                          <Link2 className="mr-2 h-4 w-4" aria-hidden />
+                          Gérer les intégrations
+                        </Link>
+                        <Button type="button" variant="primary" size="md" onClick={handleSave}>
+                          Enregistrer maintenant
+                        </Button>
+                      </div>
+                    </div>
+                  </aside>
                 </div>
               </>
             ) : null}
