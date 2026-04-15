@@ -1240,14 +1240,14 @@ textarea:focus {
   }
 
   /* Generic Theme Panel (reusable across sections/pages) */
-  .races-page .fuel-theme-panel {
-    border-radius: var(--profil-radius-panel);
-    border: 1px solid var(--profil-border-soft);
-    background: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-subtle));
-    box-shadow: var(--profil-shadow-soft);
+  .fuel-theme-panel {
+    border-radius: var(--fuel-theme-panel-radius, 1.25rem);
+    border: 1px solid var(--fuel-theme-panel-border, color-mix(in srgb, var(--color-border) 86%, transparent));
+    background: var(--fuel-theme-panel-bg, color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-subtle)));
+    box-shadow: var(--fuel-theme-panel-shadow, 0 3px 14px color-mix(in srgb, #000 4%, transparent));
   }
 
-  .races-page .fuel-theme-panel__inner {
+  .fuel-theme-panel__inner {
     padding: clamp(14px, 2vw, 20px);
   }
 
@@ -1261,7 +1261,7 @@ textarea:focus {
   html.dark .races-page.profil-page .fuel-races-main-panel,
   html.dark .races-page.profil-page section[aria-labelledby^="section-"],
   html.dark .races-page.profil-page .profil-sticky-rail > div,
-  html.dark .races-page .fuel-theme-panel {
+  html.dark .fuel-theme-panel {
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
     border-color: color-mix(in srgb, var(--color-border) 82%, #ffffff);
   }

@@ -590,6 +590,7 @@ export default function PrepPage() {
 
         {!hasActivePlan && (
           <div
+            className="fuel-theme-panel"
             style={{
               ...S.card,
               borderColor: 'color-mix(in srgb, #fb923c 35%, var(--color-border))',
@@ -652,6 +653,7 @@ export default function PrepPage() {
         {section === 'carb' && (
           <>
             <div
+              className="fuel-theme-panel"
               style={{
                 ...S.card,
                 display: 'flex',
@@ -681,7 +683,7 @@ export default function PrepPage() {
               </span>
             </div>
 
-            <div style={S.card}>
+            <div className="fuel-theme-panel" style={S.card}>
               <h2 style={S.h2}>Fenêtre de charge</h2>
               <p style={S.muted}>
                 Charge courte (J−3 à J−1) ou semaine complète (J−7 à J−1) selon votre calendrier et l’avis de votre entourage
@@ -706,7 +708,7 @@ export default function PrepPage() {
               </div>
             </div>
 
-              <div className="fuel-prep-day-sticky-nav" style={{ ...S.card, padding: '12px 14px', marginBottom: 16 }}>
+              <div className="fuel-theme-panel fuel-prep-day-sticky-nav" style={{ ...S.card, padding: '12px 14px', marginBottom: 16 }}>
               <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8 }}>Accès rapide par journée</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {carbDaysVisible.map((d) => (
@@ -717,7 +719,7 @@ export default function PrepPage() {
               </div>
             </div>
 
-            <div style={S.card}>
+            <div className="fuel-theme-panel" style={S.card}>
               <h2 style={S.h2}>Objectifs glucides (g CHO / kg / jour)</h2>
               <p style={S.muted}>
                 Repères usuels en charge : ~6–10 g/kg selon tolérance digestive et volume d’entraînement. Ajustez avec votre
@@ -1251,7 +1253,7 @@ export default function PrepPage() {
                   <details
                     key={d.key}
                     id={`prep-day-${d.key}`}
-                    className="fuel-prep-details"
+                    className="fuel-prep-details fuel-theme-panel"
                     style={{ ...S.card }}
                     {...({ defaultOpen: false } as { defaultOpen?: boolean })}
                   >
@@ -1276,7 +1278,7 @@ export default function PrepPage() {
               }
 
               return (
-                <div id={`prep-day-${d.key}`} key={d.key} style={S.card}>
+                <div id={`prep-day-${d.key}`} key={d.key} className="fuel-theme-panel" style={S.card}>
                   {dayHeaderAndControls}
                   {mealGrid}
                   {shoppingDetails}
@@ -1285,7 +1287,7 @@ export default function PrepPage() {
               );
             })}
 
-            <div style={S.card}>
+            <div className="fuel-theme-panel" style={S.card}>
               <h2 style={S.h2}>
                 Progression charge ({prep.carbWindow === '7' ? 'J−7 → J−1' : 'J−3 → J−1'})
               </h2>
@@ -1302,7 +1304,7 @@ export default function PrepPage() {
         {section === 'race' && (
           <>
             {plan && (
-              <div style={S.card}>
+              <div className="fuel-theme-panel" style={S.card}>
                 <h2 style={S.h2}>Repères depuis le plan actif</h2>
                 <ul style={{ ...S.muted, paddingLeft: 18, margin: 0 }}>
                   <li>
@@ -1316,7 +1318,7 @@ export default function PrepPage() {
               </div>
             )}
 
-            <div style={S.card}>
+            <div className="fuel-theme-panel" style={S.card}>
               <h2 style={S.h2}>Checklist matériel nutrition</h2>
               <p style={S.muted}>Valide chaque point avant de partir — la liste reste stockée sur cet appareil.</p>
               <ul style={{ listStyle: 'none', padding: 0, margin: '12px 0 0' }}>
@@ -1352,7 +1354,7 @@ export default function PrepPage() {
               </div>
             </div>
 
-            <div style={S.card}>
+            <div className="fuel-theme-panel" style={S.card}>
               <h2 style={S.h2}>Petit-déjeuner jour J</h2>
               <div style={{ display: 'grid', gap: 14, maxWidth: 520 }}>
                 <div>
@@ -1389,7 +1391,7 @@ export default function PrepPage() {
               </div>
             </div>
 
-            <div style={S.card}>
+            <div className="fuel-theme-panel" style={S.card}>
               <h2 style={S.h2}>Protocole pré-départ</h2>
               <p style={S.muted}>
                 Hydratation, gel d’échauffement, caféine : personnalisez selon ce que vous avez testé. Gardez la même structure que
@@ -1405,7 +1407,7 @@ export default function PrepPage() {
         )}
 
         {section === 'drop' && (
-          <div style={S.card}>
+          <div className="fuel-theme-panel" style={S.card}>
             <h2 style={S.h2}>Drop bag builder (ultras & ravitos avancés)</h2>
             <p style={S.muted}>
               Pour chaque point : notez le contenu (vêtements, réserves gels, barres, stick lubrifiant, frontale, etc.). Les CP
@@ -1548,7 +1550,7 @@ export default function PrepPage() {
 
         {section === 'post' && (
           <>
-            <div style={S.card}>
+            <div className="fuel-theme-panel" style={S.card}>
               <h2 style={S.h2}>Préférences récupération</h2>
               <p style={S.muted}>
                 Cochez ce que vous utilisez déjà ou souhaitez voir dans le protocole. Rien n’est obligatoire — contenu indicatif
@@ -1614,7 +1616,7 @@ export default function PrepPage() {
               </ul>
             </div>
 
-            <div style={S.card}>
+            <div className="fuel-theme-panel" style={S.card}>
               <h2 style={S.h2}>Protocole post-course</h2>
               <p style={S.muted}>
                 Nutrition de récupération, hydratation et repères temporels. Le ton digestif s’adapte si votre profil indique une

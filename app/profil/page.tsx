@@ -323,10 +323,14 @@ export default function ProfilPage() {
   const { profile, updateProfile, syncToAthleteCalculator } = useProfile();
   const [races, setRaces] = useState<RaceEntry[]>(() => loadRaces());
   const [saveHint, setSaveHint] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [openSection, setOpenSection] = useState<string | null>("personal");
   const [profilTab, setProfilTab] = useState<ProfilDashboardTab>("overview");
   const [densityMode, setDensityMode] = useState<ProfilDensityMode>("auto");
   const [isAutoCompactViewport, setIsAutoCompactViewport] = useState(false);
+  const [syncedProfileSnapshot, setSyncedProfileSnapshot] = useState<string>("");
 
   const toggleSection = (id: string) => setOpenSection((prev) => (prev === id ? null : id));
   const refreshRaces = useCallback(() => setRaces(loadRaces()), []);
@@ -350,6 +354,8 @@ export default function ProfilPage() {
       if (saved === "compact" || saved === "standard" || saved === "auto") {
         setDensityMode(saved);
       }
+      const autoSaveStored = localStorage.getItem("fuelos_profile_autosave");
+      if (autoSaveStored === "0") setAutoSaveEnabled(false);
     } catch {
       /* ignore */
     }
@@ -374,6 +380,14 @@ export default function ProfilPage() {
     }
   }, [densityMode]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem("fuelos_profile_autosave", autoSaveEnabled ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [autoSaveEnabled]);
+
   const { upcoming, past } = useMemo(() => partitionRacesByUpcoming(races), [races]);
   const nextRace = upcoming[0] ?? null;
   const seasonTotal = past.length + upcoming.length;
@@ -397,6 +411,7 @@ export default function ProfilPage() {
       : typeof profile.runnerVmaKmh === "number"
         ? `${profile.runnerVmaKmh} km/h VMA`
         : "À renseigner";
+  const profileSnapshot = useMemo(() => JSON.stringify(profile), [profile]);
   const setupChecklist = useMemo(
     () => [
       { id: "identity", label: "Nom + sport principal", done: Boolean(profile.firstName && profile.mainSport), anchor: "#personal" },
@@ -453,14 +468,46 @@ export default function ProfilPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleSave = () => {
-    syncToAthleteCalculator();
-    setSaveHint("Profil enregistré dans le calculateur ✓");
-    window.setTimeout(() => setSaveHint(null), 4000);
-  };
+  useEffect(() => {
+    if (!syncedProfileSnapshot) {
+      setSyncedProfileSnapshot(profileSnapshot);
+    }
+  }, [profileSnapshot, syncedProfileSnapshot]);
+
+  const runSync = useCallback(
+    (mode: "manual" | "auto") => {
+      try {
+        setAutoSaveStatus("saving");
+        syncToAthleteCalculator();
+        setSyncedProfileSnapshot(profileSnapshot);
+        setLastSyncedAt(new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }));
+        setAutoSaveStatus("saved");
+        if (mode === "manual") {
+          setSaveHint("Profil enregistré dans le calculateur ✓");
+          window.setTimeout(() => setSaveHint(null), 4000);
+        }
+      } catch {
+        setAutoSaveStatus("error");
+        if (mode === "manual") {
+          setSaveHint("Échec de synchronisation. Réessaie dans quelques secondes.");
+          window.setTimeout(() => setSaveHint(null), 5000);
+        }
+      }
+    },
+    [profileSnapshot, syncToAthleteCalculator]
+  );
+
+  const handleSave = useCallback(() => runSync("manual"), [runSync]);
   const effectiveCompactDensity =
     densityMode === "compact" ||
     (densityMode === "auto" && isAutoCompactViewport && profilTab === "overview");
+  const hasPendingSync = Boolean(syncedProfileSnapshot) && syncedProfileSnapshot !== profileSnapshot;
+
+  useEffect(() => {
+    if (!autoSaveEnabled || !hasPendingSync || !syncedProfileSnapshot) return;
+    const timeoutId = window.setTimeout(() => runSync("auto"), 1400);
+    return () => window.clearTimeout(timeoutId);
+  }, [autoSaveEnabled, hasPendingSync, runSync, syncedProfileSnapshot]);
 
   return (
     <>
@@ -718,6 +765,17 @@ export default function ProfilPage() {
 
             {profilTab === "overview" ? (
               <>
+                {hasPendingSync ? (
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-energy)_32%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-energy)_8%,var(--color-bg-card))] px-4 py-3 text-sm">
+                    <span className="font-medium text-[var(--color-text)]">
+                      Modifications non synchronisées avec le calculateur.
+                    </span>
+                    <Button type="button" variant="primary" size="md" onClick={handleSave}>
+                      Synchroniser maintenant
+                    </Button>
+                  </div>
+                ) : null}
+
                 <div className="grid items-start gap-10 xl:grid-cols-[minmax(0,1fr)_360px]">
                   <div className="space-y-10">
                     <RacesNextMilestone nextRace={nextRace} />
@@ -1404,6 +1462,38 @@ export default function ProfilPage() {
                       <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
                         Actions rapides
                       </p>
+                      <div className="mt-2 mb-2 flex items-center justify-between gap-3 rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2">
+                        <div>
+                          <p className="text-xs font-semibold text-[var(--color-text)]">Autosave intelligent</p>
+                          <p className="text-[11px] text-[var(--color-text-muted)]">
+                            {autoSaveEnabled ? "Actif (délai ~1.4 s)" : "Désactivé (synchro manuelle)"}
+                          </p>
+                        </div>
+                        <ToggleSwitch checked={autoSaveEnabled} onChange={() => setAutoSaveEnabled((v) => !v)} />
+                      </div>
+                      <div className="mt-2 mb-1 flex items-center justify-between gap-2 rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2 text-xs">
+                        <span className="text-[var(--color-text-muted)]">Synchronisation calculateur</span>
+                        <span
+                          className={[
+                            "rounded-full px-2 py-0.5 font-semibold",
+                            autoSaveStatus === "error"
+                              ? "bg-[color-mix(in_srgb,var(--color-danger)_18%,var(--color-bg-card))] text-[var(--color-danger)]"
+                              : hasPendingSync
+                              ? "bg-[color-mix(in_srgb,var(--color-energy)_18%,var(--color-bg-card))] text-[var(--color-energy)]"
+                              : "bg-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-bg-card))] text-[var(--color-primary)]",
+                          ].join(" ")}
+                        >
+                          {autoSaveStatus === "saving"
+                            ? "Synchronisation..."
+                            : autoSaveStatus === "error"
+                              ? "Erreur"
+                              : hasPendingSync
+                                ? autoSaveEnabled
+                                  ? "En attente (auto)"
+                                  : "En attente"
+                                : "À jour"}
+                        </span>
+                      </div>
                       <div className="mt-3 grid gap-2">
                         <Link
                           href="/profil/integrations"
@@ -1413,9 +1503,12 @@ export default function ProfilPage() {
                           Gérer les intégrations
                         </Link>
                         <Button type="button" variant="primary" size="md" onClick={handleSave}>
-                          Enregistrer maintenant
+                          {hasPendingSync ? "Synchroniser" : "Forcer la synchro"}
                         </Button>
                       </div>
+                      {lastSyncedAt ? (
+                        <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">Dernière synchro: {lastSyncedAt}</p>
+                      ) : null}
                     </div>
 
                     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm md:rounded-3xl">
