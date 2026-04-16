@@ -56,11 +56,7 @@ export function ProfileGuidedWizard({
   const [primaryDiscipline, setPrimaryDiscipline] = useState<PrimaryDiscipline>(profile.primaryDiscipline);
   const [seasonGoal, setSeasonGoal] = useState<SeasonGoal>(profile.seasonGoal);
   const [weight, setWeight] = useState(profile.weight);
-  const [sweatKey, setSweatKey] = useState<"low" | "mid" | "high">(
-    profile.sweatRate <= 0.65 ? "low" : profile.sweatRate >= 1.2 ? "high" : "mid"
-  );
-
-  const sweatRate = sweatKey === "low" ? 0.8 : sweatKey === "high" ? 1.3 : 1.0;
+  const [giTolerance, setGiTolerance] = useState<"sensitive" | "normal" | "robust">(profile.giTolerance ?? "normal");
 
   const finish = useCallback(() => {
     setProfile((prev) => ({
@@ -68,13 +64,12 @@ export function ProfileGuidedWizard({
       primaryDiscipline,
       seasonGoal,
       weight,
-      sweatRate,
-      giTolerance: "normal",
+      giTolerance,
       profileGuidedOnboardingDone: true,
     }));
-  }, [primaryDiscipline, seasonGoal, setProfile, sweatRate, weight]);
+  }, [giTolerance, primaryDiscipline, seasonGoal, setProfile, weight]);
 
-  const title = ["Discipline", "Objectif", "Poids", "Transpiration"][step] ?? "";
+  const title = ["Discipline", "Objectif", "Poids", "Tolérance digestive"][step] ?? "";
 
   return (
     <div style={card}>
@@ -149,13 +144,13 @@ export function ProfileGuidedWizard({
 
       {step === 3 && (
         <div>
-          <label style={label}>À l’effort, tu transpires plutôt…</label>
+          <label style={label}>Ton estomac en course est plutôt…</label>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {(
               [
-                { k: "low" as const, t: "Peu — je reste souvent sec·che" },
-                { k: "mid" as const, t: "Normalement" },
-                { k: "high" as const, t: "Beaucoup — traces de sel, tee-shirt trempé vite" },
+                { k: "sensitive" as const, t: "Sensible — inconfort digestif fréquent" },
+                { k: "normal" as const, t: "Normal — tolérance moyenne" },
+                { k: "robust" as const, t: "Robuste — je tolère bien les apports" },
               ] as const
             ).map(({ k, t }) => (
               <label
@@ -166,18 +161,20 @@ export function ProfileGuidedWizard({
                   gap: 10,
                   padding: "12px 14px",
                   borderRadius: 10,
-                  border: `1px solid ${sweatKey === k ? "var(--color-accent)" : "var(--color-border)"}`,
+                  border: `1px solid ${giTolerance === k ? "var(--color-accent)" : "var(--color-border)"}`,
                   background:
-                    sweatKey === k ? "color-mix(in srgb, var(--color-accent) 12%, var(--color-bg))" : "var(--color-bg)",
+                    giTolerance === k
+                      ? "color-mix(in srgb, var(--color-accent) 12%, var(--color-bg))"
+                      : "var(--color-bg)",
                   cursor: "pointer",
                   fontSize: 14,
                 }}
               >
                 <input
                   type="radio"
-                  name="sweat"
-                  checked={sweatKey === k}
-                  onChange={() => setSweatKey(k)}
+                  name="giTolerance"
+                  checked={giTolerance === k}
+                  onChange={() => setGiTolerance(k)}
                   style={{ accentColor: "var(--color-accent)" }}
                 />
                 {t}

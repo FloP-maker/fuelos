@@ -1133,8 +1133,8 @@ function PlanPageMainContent() {
                     />
                   </div>
                   <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "10px 0 0", lineHeight: 1.5 }}>
-                    Les champs obligatoires structurent ton plan ; les options avancées (FTP, sodium dans la sueur, notes
-                    terrain…) affinent le suivi sur la durée.
+                    Obligatoire pour démarrer : poids, discipline, objectif et tolérance digestive. Le reste est optionnel
+                    et se règle plus bas dans les paramètres avancés.
                   </p>
                 </div>
 
@@ -1191,30 +1191,9 @@ function PlanPageMainContent() {
                 <span>🧭</span> Parcours & objectifs
               </div>
               <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 0, marginBottom: 16, lineHeight: 1.5 }}>
-                Niveau, discipline et objectif influencent l’interface, les cibles CHO (ambition de saison) et, avec FTP /
-                VO2max, l’estimation d’intensité pour le plan.
+                Deux réglages essentiels au premier lancement : discipline principale et objectif de saison.
               </p>
-              <div style={S.grid3}>
-                <div>
-                  <label style={S.label}>Niveau d’expérience</label>
-                  <select
-                    style={S.select}
-                    value={profile.experienceLevel}
-                    onChange={(e) => {
-                      const v = e.target.value as ExperienceLevel;
-                      setProfile((p) => ({
-                        ...p,
-                        experienceLevel: v,
-                        ...(v === "beginner" ? { profileGuidedOnboardingDone: false } : {}),
-                      }));
-                    }}
-                  >
-                    <option value="beginner">Débutant</option>
-                    <option value="intermediate">Intermédiaire</option>
-                    <option value="advanced">Confirmé</option>
-                    <option value="elite">Élite</option>
-                  </select>
-                </div>
+              <div style={S.grid2}>
                 <div>
                   <label style={S.label}>Discipline principale</label>
                   <select
@@ -1269,9 +1248,9 @@ function PlanPageMainContent() {
 
             <div style={S.card}>
               <div style={S.sectionTitle}>
-                <span>🏃</span> Données physiques <span style={{ fontWeight: 500, opacity: 0.85 }}>(obligatoires)</span>
+                <span>🏃</span> Données physiques <span style={{ fontWeight: 500, opacity: 0.85 }}>(obligatoire)</span>
               </div>
-              <div style={S.grid3}>
+              <div style={S.grid2}>
                 <div>
                   <label style={S.label}>Poids (kg)</label>
                   <input
@@ -1283,124 +1262,34 @@ function PlanPageMainContent() {
                     max={120}
                   />
                 </div>
-                <div>
-                  <label style={S.label}>Age</label>
-                  <input
-                    style={S.input}
-                    type="number"
-                    value={profile.age}
-                    onChange={(e) => setProfile({ ...profile, age: +e.target.value })}
-                    min={16}
-                    max={80}
-                  />
-                </div>
-                <div>
-                  <label style={S.label}>Genre</label>
-                  <select
-                    style={S.select}
-                    value={profile.gender}
-                    onChange={(e) => setProfile({ ...profile, gender: e.target.value as "M" | "F" })}
-                  >
-                    <option value="M">Homme</option>
-                    <option value="F">Femme</option>
-                  </select>
-                </div>
               </div>
             </div>
 
             <div style={S.card}>
               <div style={S.sectionTitle}>
-                <span>💧</span> {profileIsBeginner ? "Eau & confort digestif" : "Hydratation & tolérance"}
+                <span>🫃</span> Tolérance digestive <span style={{ fontWeight: 500, opacity: 0.85 }}>(obligatoire)</span>
               </div>
-              {profileIsBeginner ? (
-                <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 0, marginBottom: 14, lineHeight: 1.5 }}>
-                  Deux réglages simples pour sécuriser ton plan : combien tu transpires à l’effort, et comment ton estomac
-                  supporte l’alimentation en course. Tu peux commencer avec les valeurs par défaut et ajuster après
-                  quelques sorties.
-                </p>
-              ) : (
-                <>
-                  <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 0, marginBottom: 14, lineHeight: 1.5 }}>
-                    Les abréviations du plan nutrition (CHO, GI, etc.) sont expliquées ci-dessous. Passe en revue chaque
-                    encart avant de choisir tes réglages.
-                  </p>
-                  <div style={{ marginBottom: 16 }}>
-                    <GlossaryHint term="cho" inlineLabel="Qu’est-ce que « CHO » ?" />
-                  </div>
-                </>
-              )}
-              <div style={S.grid2}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
-                    <label style={{ ...S.label, marginBottom: 0 }}>Taux de sudation (L/h)</label>
-                    <GlossaryHint term="sweat_rate" />
-                  </div>
-                  <select
-                    style={S.select}
-                    value={profile.sweatRate}
-                    onChange={(e) => setProfile({ ...profile, sweatRate: +e.target.value })}
-                  >
-                    <option value={0.5}>Faible (0.5 L/h)</option>
-                    <option value={0.8}>Modéré (0.8 L/h)</option>
-                    <option value={1.0}>Normal (1.0 L/h)</option>
-                    <option value={1.3}>Élevé (1.3 L/h)</option>
-                    <option value={1.6}>Très élevé (1.6 L/h)</option>
-                  </select>
-                  <p style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 4 }}>
-                    Un test de sudation (pesée avant/après sortie) permet d’affiner ce réglage.
-                  </p>
-                </div>
-
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
-                    <label style={{ ...S.label, marginBottom: 0 }}>
-                      {profileIsBeginner ? "Confort digestif en effort" : "Tolérance digestive (GI)"}
-                    </label>
-                    <GlossaryHint term="gi_tolerance" />
-                  </div>
-
-                  <select
-                    style={S.select}
-                    value={profile.giTolerance}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        giTolerance: e.target.value as "sensitive" | "normal" | "robust",
-                      })
-                    }
-                  >
-                    {profileIsBeginner ? (
-                      <>
-                        <option value="sensitive">Plutôt sensible (estomac fragile)</option>
-                        <option value="normal">Équilibré</option>
-                        <option value="robust">Très à l’aise avec l’alimentation en course</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="sensitive">Sensible (≤45g CHO/h)</option>
-                        <option value="normal">Normal (≤60g CHO/h)</option>
-                        <option value="robust">Robuste (≤90g CHO/h)</option>
-                      </>
-                    )}
-                  </select>
-                  <p style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 4, lineHeight: 1.45 }}>
-                    {profileIsBeginner
-                      ? "En cas de doute, reste sur « équilibré » : le plan restera prudent."
-                      : "Sensible = inconfort digestif plus probable; robuste = capacité plus élevée. Commence bas et ajuste selon tes retours d'entraînement."}
-                  </p>
-                </div>
+              <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 0, marginBottom: 14, lineHeight: 1.5 }}>
+                Choisis simplement ton niveau de tolérance. Tu pourras affiner ensuite si besoin.
+              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+                <label style={{ ...S.label, marginBottom: 0 }}>Tolérance digestive (GI)</label>
+                <GlossaryHint term="gi_tolerance" />
               </div>
-              {profileIsBeginner && profile.primaryDiscipline === "trail" && (
-                <div style={{ marginTop: 14 }}>
-                  <button
-                    type="button"
-                    style={S.btnOutline}
-                    onClick={() => setProfile({ ...profile, giTolerance: "normal", sweatRate: 0.8 })}
-                  >
-                    Suggestion prudente trail débutant : sudation modérée & digestion équilibrée
-                  </button>
-                </div>
-              )}
+              <select
+                style={S.select}
+                value={profile.giTolerance}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    giTolerance: e.target.value as "sensitive" | "normal" | "robust",
+                  })
+                }
+              >
+                <option value="sensitive">Sensible</option>
+                <option value="normal">Normal</option>
+                <option value="robust">Robuste</option>
+              </select>
             </div>
 
             <details
@@ -1430,6 +1319,69 @@ function PlanPageMainContent() {
                 FTP / VO2max affinent l’intensité relative (science + cibles CHO). Le sodium dans la sueur (mg/L) recale
                 les apports Na⁺ du plan. Garmin reste à brancher ; Strava peut préremplir poids et discipline ci-dessous.
               </p>
+              <div style={S.grid2}>
+                <div>
+                  <label style={S.label}>Niveau d’expérience</label>
+                  <select
+                    style={S.select}
+                    value={profile.experienceLevel}
+                    onChange={(e) => {
+                      const v = e.target.value as ExperienceLevel;
+                      setProfile((p) => ({
+                        ...p,
+                        experienceLevel: v,
+                        ...(v === "beginner" ? { profileGuidedOnboardingDone: false } : {}),
+                      }));
+                    }}
+                  >
+                    <option value="beginner">Débutant</option>
+                    <option value="intermediate">Intermédiaire</option>
+                    <option value="advanced">Confirmé</option>
+                    <option value="elite">Élite</option>
+                  </select>
+                </div>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+                    <label style={{ ...S.label, marginBottom: 0 }}>Taux de sudation (L/h)</label>
+                    <GlossaryHint term="sweat_rate" />
+                  </div>
+                  <select
+                    style={S.select}
+                    value={profile.sweatRate}
+                    onChange={(e) => setProfile({ ...profile, sweatRate: +e.target.value })}
+                  >
+                    <option value={0.5}>Faible (0.5 L/h)</option>
+                    <option value={0.8}>Modéré (0.8 L/h)</option>
+                    <option value={1.0}>Normal (1.0 L/h)</option>
+                    <option value={1.3}>Élevé (1.3 L/h)</option>
+                    <option value={1.6}>Très élevé (1.6 L/h)</option>
+                  </select>
+                </div>
+              </div>
+              <div style={S.grid2}>
+                <div>
+                  <label style={S.label}>Age</label>
+                  <input
+                    style={S.input}
+                    type="number"
+                    value={profile.age}
+                    onChange={(e) => setProfile({ ...profile, age: +e.target.value })}
+                    min={16}
+                    max={80}
+                  />
+                </div>
+                <div>
+                  <label style={S.label}>Genre</label>
+                  <select
+                    style={S.select}
+                    value={profile.gender}
+                    onChange={(e) => setProfile({ ...profile, gender: e.target.value as "M" | "F" })}
+                  >
+                    <option value="M">Homme</option>
+                    <option value="F">Femme</option>
+                  </select>
+                </div>
+              </div>
               {profileIsBeginner && (
                 <div style={{ marginBottom: 18 }}>
                   <p style={{ fontSize: 12, fontWeight: 700, margin: "0 0 8px", color: "var(--color-text)" }}>
@@ -1550,10 +1502,23 @@ function PlanPageMainContent() {
               <ProfileStravaPanel setProfile={setProfile} />
             </details>
 
-            <div style={S.card}>
-              <div style={S.sectionTitle}>
-                <span>⭐</span> Préférences produits
-              </div>
+            <details style={{ ...S.card, marginBottom: 20 }}>
+              <summary
+                style={{
+                  cursor: "pointer",
+                  fontWeight: 800,
+                  fontSize: 17,
+                  listStyle: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  fontFamily: "var(--font-display, inherit)",
+                }}
+              >
+                <span aria-hidden>⭐</span>
+                Préférences produits
+                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--color-text-muted)" }}>(optionnel)</span>
+              </summary>
               <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 16 }}>
                 Sélectionne tes produits préférés pour un plan personnalisé
               </p>
@@ -1833,7 +1798,7 @@ function PlanPageMainContent() {
                   ]}
                 />
               </div>
-            </div>
+            </details>
 
             <Button
               variant="primary"
