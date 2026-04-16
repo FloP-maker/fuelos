@@ -6,9 +6,7 @@ import {
   Activity,
   BarChart3,
   CalendarDays,
-  CheckCircle2,
   ChevronDown,
-  Circle,
   Droplets,
   Expand,
   Footprints,
@@ -733,6 +731,7 @@ export default function ProfilPage() {
     densityMode === "compact" ||
     (densityMode === "auto" && isAutoCompactViewport && profilTab === "overview");
   const hasPendingSync = Boolean(syncedProfileSnapshot) && syncedProfileSnapshot !== profileSnapshot;
+  const hasConnectedSources = connectedCount > 0;
   const syncStatusLabel =
     autoSaveStatus === "saving"
       ? "Sync en cours"
@@ -743,6 +742,16 @@ export default function ProfilPage() {
             ? "En attente auto"
             : "En attente"
           : "À jour";
+  const quickSyncStatusLabel = !hasConnectedSources
+    ? "Aucune source connectée"
+    : autoSaveStatus === "error"
+      ? "Erreur"
+      : hasPendingSync
+        ? "En attente"
+        : "✓ À jour";
+  const quickSyncSubtitle = !hasConnectedSources
+    ? "Connecte Strava, Garmin ou TrainingPeaks pour activer la synchro."
+    : `Dernière synchro: ${formatRelativeSyncDate(lastSyncedAt)}`;
   const syncConfidencePct =
     autoSaveStatus === "error"
       ? 20
@@ -925,13 +934,14 @@ export default function ProfilPage() {
                   {completionVisual.label}
                 </span>
               </div>
-              <div className="mt-3 h-3 overflow-hidden rounded-full bg-[var(--color-border)]">
+              <div className="mt-3 h-3 overflow-hidden rounded-full bg-[var(--color-border)] ring-1 ring-[color-mix(in_srgb,var(--color-border)_80%,#fff)]">
                 <div
                   className={`h-full rounded-full transition-all ${completionVisual.barClass}`}
                   style={{ width: `${completion}%` }}
                   aria-hidden
                 />
               </div>
+              <p className="mt-1 text-[11px] font-semibold text-[var(--color-text-muted)]">Progression globale du profil</p>
               <p className="profil-subtitle mt-2">
                 {completion < 50
                   ? "Complète les champs clés pour débloquer des recommandations fiables."
@@ -957,11 +967,14 @@ export default function ProfilPage() {
                     onClick={() => setOpenSection(item.anchor.replace("#", ""))}
                     className="group flex items-center gap-2 rounded-lg px-1 py-1 text-sm text-[var(--color-text)] transition hover:bg-[var(--color-bg-subtle)]"
                   >
-                    {item.done ? (
-                      <CheckCircle2 size={15} className="shrink-0 text-[#16a34a]" aria-hidden />
-                    ) : (
-                      <Circle size={15} className="shrink-0 text-[#d97706]" aria-hidden />
-                    )}
+                    <input
+                      type="checkbox"
+                      checked={item.done}
+                      readOnly
+                      tabIndex={-1}
+                      className="h-4 w-4 shrink-0 rounded border-[var(--color-border)] text-[#16a34a] accent-[#16a34a]"
+                      aria-hidden
+                    />
                     <span className={item.done ? "text-[var(--color-text-muted)] line-through" : "group-hover:underline"}>
                       {item.label}
                     </span>
@@ -977,11 +990,9 @@ export default function ProfilPage() {
               >
                 Sync
               </p>
-              <p className="profil-value mt-2">
-                {autoSaveStatus === "error" ? "Erreur" : hasPendingSync ? "En attente" : "✓ À jour"}
-              </p>
+              <p className="profil-value mt-2">{quickSyncStatusLabel}</p>
               <p className="profil-subtitle mt-2">
-                Dernière synchro: {formatRelativeSyncDate(lastSyncedAt)}
+                {quickSyncSubtitle}
               </p>
             </article>
           </div>
