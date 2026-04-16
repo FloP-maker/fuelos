@@ -912,6 +912,19 @@ export default function ProfilPage() {
             </article>
           </div>
         </section>
+        {nextPriorityAnchor ? (
+          <div className="relative z-10 mx-4 mt-3 md:mx-10">
+            <a
+              href={nextPriorityAnchor}
+              className="inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-energy)_45%,#f59e0b)] bg-[color-mix(in_srgb,#f59e0b_14%,var(--color-bg-card))] px-4 py-3 text-sm font-semibold text-[#b45309] shadow-sm transition hover:brightness-[0.98]"
+            >
+              <span>Complète ton profil pour des plans personnalisés</span>
+              <span className="rounded-full border border-[#fdba74] bg-white/70 px-2 py-0.5 text-xs">
+                {pendingChecklist.length} priorité{pendingChecklist.length > 1 ? "s" : ""}
+              </span>
+            </a>
+          </div>
+        ) : null}
 
         {saveHint ? (
           <div className="relative z-10 px-6 pb-3 pt-4 md:px-10" role="status">
@@ -1617,25 +1630,6 @@ export default function ProfilPage() {
 
                   <aside className="profil-sticky-rail space-y-8 lg:sticky lg:top-[80px] lg:self-start">
                     <div className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
-                      <p className="profil-kicker">Navigation rapide</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {[
-                          ["#personal", "Identité"],
-                          ["#nutrition", "Nutrition"],
-                          ["#integrations", "Connexions"],
-                        ].map(([href, label]) => (
-                          <a
-                            key={href}
-                            href={href}
-                            className="profil-quick-jump inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] transition"
-                          >
-                            {label}
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
                       <p className="profil-kicker">
                         Readiness athlète
                       </p>
@@ -1665,72 +1659,6 @@ export default function ProfilPage() {
                         {pendingChecklist.length === 0
                           ? "Prêt pour les recommandations avancées."
                           : `${pendingChecklist.length} priorité${pendingChecklist.length > 1 ? "s" : ""} avant la pleine personnalisation.`}
-                      </p>
-                    </div>
-
-                    <div className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
-                      <p className="profil-kicker">
-                        Actions rapides
-                      </p>
-                      <div className="mt-2 mb-2 flex items-center justify-between gap-3 rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2">
-                        <div>
-                          <p className="text-xs font-semibold text-[var(--color-text)]">Autosave intelligent</p>
-                          <p className="profil-subtitle">
-                            {autoSaveEnabled ? "Actif (délai ~1.4 s)" : "Désactivé (synchro manuelle)"}
-                          </p>
-                        </div>
-                        <ToggleSwitch checked={autoSaveEnabled} onChange={() => setAutoSaveEnabled((v) => !v)} />
-                      </div>
-                      <div className="mt-2 mb-1 flex items-center justify-between gap-2 rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2 text-xs">
-                        <span className="text-[var(--color-text-muted)]">Synchronisation calculateur</span>
-                        <span
-                          className={[
-                            "rounded-full px-2 py-0.5 font-semibold",
-                            autoSaveStatus === "error"
-                              ? "bg-[color-mix(in_srgb,var(--color-danger)_18%,var(--color-bg-card))] text-[var(--color-danger)]"
-                              : hasPendingSync
-                              ? "bg-[color-mix(in_srgb,var(--color-energy)_18%,var(--color-bg-card))] text-[var(--color-energy)]"
-                              : "bg-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-bg-card))] text-[var(--color-primary)]",
-                          ].join(" ")}
-                        >
-                          {autoSaveStatus === "saving"
-                            ? "Synchronisation..."
-                            : autoSaveStatus === "error"
-                              ? "Erreur"
-                              : hasPendingSync
-                                ? autoSaveEnabled
-                                  ? "En attente (auto)"
-                                  : "En attente"
-                                : "À jour"}
-                        </span>
-                      </div>
-                      <div className="mt-3 grid gap-2">
-                        <Link
-                          href="/profil/integrations"
-                          className="profil-soft-action inline-flex items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text)]"
-                        >
-                          <Link2 className="mr-2 h-4 w-4" aria-hidden />
-                          Gérer les intégrations
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={handleSave}
-                          className="w-full rounded-xl border border-[var(--color-primary)] bg-transparent px-4 py-2.5 text-sm font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,white)]"
-                        >
-                          {hasPendingSync ? "Synchroniser" : "Forcer la synchro"}
-                        </button>
-                      </div>
-                      {lastSyncedAt ? (
-                        <p className="profil-subtitle mt-2">Dernière synchro: {lastSyncedAt}</p>
-                      ) : null}
-                      <p className="profil-subtitle mt-1" aria-live="polite">
-                        {autoSaveStatus === "saving"
-                          ? "Synchronisation en cours..."
-                          : autoSaveStatus === "error"
-                            ? "La dernière synchronisation a échoué."
-                            : hasPendingSync
-                              ? "Des changements attendent une synchronisation."
-                              : "Toutes les modifications sont synchronisées."}
                       </p>
                     </div>
 
@@ -1777,14 +1705,6 @@ export default function ProfilPage() {
                           ? "Profil prêt : base complète pour plans et analyses."
                           : `${pendingChecklist.length} point${pendingChecklist.length > 1 ? "s" : ""} à compléter en priorité.`}
                       </p>
-                      {nextPriorityAnchor ? (
-                        <a
-                          href={nextPriorityAnchor}
-                          className="profil-continue-setup mt-3 inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-energy)_45%,#f59e0b)] bg-[color-mix(in_srgb,#f59e0b_14%,var(--color-bg-card))] px-3.5 py-1.5 text-xs font-semibold text-[#b45309]"
-                        >
-                          Continuer le setup
-                        </a>
-                      ) : null}
                     </div>
                   </aside>
                 </div>
