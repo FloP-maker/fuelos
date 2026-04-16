@@ -475,6 +475,18 @@ export default function ProfilPage() {
     if (sportObj?.label) return `Saison ${sportObj.label} en cours`;
     return "Profil en cours de personnalisation";
   }, [goalObj?.label, nextRace, sportObj?.label]);
+  const nextRaceCountdownLabel = useMemo(() => {
+    if (!nextRace) return null;
+    const dayDelta = daysUntil(nextRace.date);
+    if (dayDelta === null) return null;
+    if (dayDelta > 0) return `J-${dayDelta}`;
+    if (dayDelta === 0) return "Jour J";
+    return null;
+  }, [nextRace]);
+  const profilePreparationLabel = useMemo(() => {
+    if (nextRace) return `En préparation pour ${nextRace.name}`;
+    return profileContextSubtitle;
+  }, [nextRace, profileContextSubtitle]);
   const profileHeaderChips = useMemo(
     () =>
       [
@@ -821,12 +833,26 @@ export default function ProfilPage() {
           </div>
         </section>
 
-        <div className="profil-hero-floating-card relative z-10 -mt-16 mx-4 rounded-2xl bg-white px-5 pb-4 pt-4 shadow-xl md:mx-10 md:px-6 md:pb-4 md:pt-5">
-          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-            <div className="flex min-w-0 items-center gap-4">
+        <div className="profil-hero-floating-card relative z-10 -mt-16 mx-4 rounded-2xl bg-white px-5 pb-4 pt-4 shadow-xl md:mx-10 md:px-6 md:pb-5 md:pt-5">
+          <button
+            type="button"
+            onClick={() => avatarInputRef.current?.click()}
+            className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white text-[var(--color-text-muted)] shadow-sm transition hover:text-[var(--color-text)]"
+            aria-label="Modifier l'avatar"
+          >
+            <Pencil size={14} aria-hidden />
+          </button>
+          {nextRaceCountdownLabel ? (
+            <div className="absolute right-16 top-4 inline-flex animate-pulse items-center rounded-full border border-[#fdba74] bg-[linear-gradient(135deg,#fff7ed,#ffedd5)] px-3 py-1 text-xs font-black tracking-[0.08em] text-[#c2410c] shadow-sm">
+              {nextRaceCountdownLabel}
+            </div>
+          ) : null}
+          <div className="grid gap-4 md:grid-cols-[88px_minmax(0,1fr)] md:items-center">
+            <div className="flex min-w-0 items-center gap-4 md:contents">
               <label
-                style={{ width: "72px", height: "72px", minWidth: "72px", maxWidth: "72px", flexShrink: 0 }}
-                className="group relative -mt-10 overflow-hidden rounded-full"
+                style={{ width: "88px", height: "88px", minWidth: "88px", maxWidth: "88px", flexShrink: 0 }}
+                className="group relative -mt-8 cursor-pointer overflow-hidden rounded-full md:-mt-10"
+                onClick={() => avatarInputRef.current?.click()}
               >
                 <div
                   className="relative h-full w-full overflow-hidden rounded-full bg-[#e6efe6]"
@@ -843,7 +869,7 @@ export default function ProfilPage() {
                     />
                   ) : (
                     <div
-                      className="flex h-full w-full items-center justify-center text-lg font-black text-[#1f3a1f]"
+                      className="flex h-full w-full items-center justify-center text-xl font-black text-[#1f3a1f]"
                       style={{
                         background: `linear-gradient(145deg, ${GREEN_MUTED} 0%, ${GREEN_LIGHT} 55%, color-mix(in srgb, var(--color-energy) 35%, ${GREEN_LIGHT}) 100%)`,
                       }}
@@ -862,39 +888,35 @@ export default function ProfilPage() {
                 />
               </label>
 
-              <div className="min-w-0">
+              <div className="min-w-0 pr-24">
                 <h2 className="truncate text-2xl font-bold text-[#142214]">{displayName}</h2>
-                <p className="mt-1 truncate text-sm font-medium text-[var(--color-text-muted)]">{profileContextSubtitle}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <p className="truncate text-sm font-medium text-[var(--color-text-muted)]">{profilePreparationLabel}</p>
+                  {nextRaceCountdownLabel ? (
+                    <span className="inline-flex items-center rounded-full border border-[#fed7aa] bg-[#fff7ed] px-2 py-0.5 text-[11px] font-bold text-[#c2410c]">
+                      {nextRaceCountdownLabel}
+                    </span>
+                  ) : null}
+                </div>
                 {nextRaceIdentity ? (
                   <p className="mt-1 text-xs font-semibold text-[var(--color-text-muted)]">{nextRaceIdentity}</p>
                 ) : null}
-                <div className="mt-2 flex flex-wrap gap-3">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   {profileHeaderChips.map((chip) => {
                     const Icon = chip.icon;
                     return (
-                      <div key={chip.id} className="flex flex-col gap-1">
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
-                          {chip.category}
-                        </span>
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-semibold ${chip.className}`}
-                        >
-                          <Icon size={13} strokeWidth={2.2} aria-hidden />
-                          {chip.label}
-                        </span>
-                      </div>
+                      <span
+                        key={chip.id}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-semibold ${chip.className}`}
+                        title={chip.category}
+                      >
+                        <Icon size={13} strokeWidth={2.2} aria-hidden />
+                        {chip.label}
+                      </span>
                     );
                   })}
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => avatarInputRef.current?.click()}
-                    className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-text)]"
-                  >
-                    <Pencil size={12} aria-hidden />
-                    Modifier
-                  </button>
                   {profile.avatarDataUrl ? (
                     <button
                       type="button"
