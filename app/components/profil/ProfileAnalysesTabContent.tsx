@@ -15,6 +15,17 @@ export function ProfileAnalysesTabContent() {
   const { status } = useSession();
   const { profile: nutritionProfile, isComputing: isNutritionProfileComputing, refresh: refreshNutritionProfile } =
     useNutritionProfile();
+  const nextInsightsThreshold = nutritionProfile
+    ? nutritionProfile.debriefCount < 3
+      ? 3
+      : nutritionProfile.debriefCount < 5
+        ? 5
+        : nutritionProfile.debriefCount < 8
+          ? 8
+          : null
+    : 3;
+  const insightsRemaining =
+    nutritionProfile && nextInsightsThreshold != null ? Math.max(0, nextInsightsThreshold - nutritionProfile.debriefCount) : null;
 
   if (status === "unauthenticated") {
     return (
@@ -76,7 +87,20 @@ export function ProfileAnalysesTabContent() {
         {isNutritionProfileComputing ? (
           <NutritionProfileSkeleton />
         ) : nutritionProfile && nutritionProfile.debriefCount >= 1 ? (
-          <NutritionProfileCard profile={nutritionProfile} />
+          <div className="space-y-3">
+            <NutritionProfileCard profile={nutritionProfile} />
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3 text-sm">
+              <p className="font-semibold text-[var(--color-text)]">
+                {nutritionProfile.insights.length} insight{nutritionProfile.insights.length > 1 ? "s" : ""} debloque
+                {nutritionProfile.insights.length > 1 ? "s" : ""}
+              </p>
+              <p className="mt-1 text-[var(--color-text-muted)]">
+                {insightsRemaining && insightsRemaining > 0
+                  ? `${insightsRemaining} course${insightsRemaining > 1 ? "s" : ""} de plus pour debloquer l'analyse suivante.`
+                  : "Continue a enregistrer tes courses pour enrichir les analyses hydratation, tolerance digestive et regularite glucidique."}
+              </p>
+            </div>
+          </div>
         ) : (
           <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-6 text-center text-sm text-[var(--color-text-muted)]">
             Pas encore assez de débriefs pour une synthèse complète. Termine une course en{" "}

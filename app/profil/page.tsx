@@ -527,12 +527,18 @@ export default function ProfilPage() {
       : profile.digestiveLiquidSolidPct >= 70
         ? "Solide dominant"
         : "Mix équilibré";
-  const primaryPerformanceStat =
-    typeof profile.ftpWatts === "number"
-      ? `${profile.ftpWatts} W FTP`
+  const contextualMetricLabel =
+    profile.mainSport === "velo"
+      ? "FTP cible"
+      : profile.mainSport === "triathlon"
+        ? "Repère course"
+        : "Repère running";
+  const contextualMetricValue =
+    profile.mainSport === "velo"
+      ? (typeof profile.ftpWatts === "number" ? `${profile.ftpWatts} W FTP` : "FTP à renseigner")
       : typeof profile.runnerVmaKmh === "number"
         ? `${profile.runnerVmaKmh} km/h VMA`
-        : "À renseigner";
+        : "VMA à renseigner";
   const bmi =
     typeof profile.weightKg === "number" && typeof profile.heightCm === "number" && profile.heightCm > 0
       ? profile.weightKg / Math.pow(profile.heightCm / 100, 2)
@@ -560,6 +566,7 @@ export default function ProfilPage() {
     });
     return counts;
   }, [races]);
+  const hasWeeklyProgressData = weeklySparkline.some((count) => count > 0);
   const sparkMax = Math.max(1, ...weeklySparkline);
   const sparkPoints = weeklySparkline
     .map((v, i) => {
@@ -615,13 +622,6 @@ export default function ProfilPage() {
   const firstIncompleteSectionId = nextPriorityAnchor?.replace("#", "") ?? "personal";
   const nutritionPendingCount = setupChecklist.filter((item) => ["performance", "hydration"].includes(item.id) && !item.done).length;
   const integrationsPendingCount = setupChecklist.filter((item) => item.id === "integrations" && !item.done).length;
-  const quickPriorityItems = useMemo(
-    () =>
-      ["performance", "hydration", "integrations"]
-        .map((id) => setupChecklist.find((item) => item.id === id))
-        .filter(Boolean) as typeof setupChecklist,
-    [setupChecklist]
-  );
   const quickAccessCards = useMemo(
     () => [
       {
@@ -938,22 +938,9 @@ export default function ProfilPage() {
           </div>
         ) : null}
 
-        {nextPriorityAnchor ? (
-          <div className="relative z-10 mx-4 mt-3 md:mx-10">
-            <a
-              href={nextPriorityAnchor}
-              className="inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-energy)_45%,#f59e0b)] bg-[color-mix(in_srgb,#f59e0b_14%,var(--color-bg-card))] px-4 py-3 text-sm font-semibold text-[#b45309] shadow-sm transition hover:brightness-[0.98]"
-            >
-              <span>Complète ton profil pour des plans personnalisés</span>
-              <span className="rounded-full border border-[#fdba74] bg-white/70 px-2 py-0.5 text-xs">
-                {pendingChecklist.length} priorité{pendingChecklist.length > 1 ? "s" : ""}
-              </span>
-            </a>
-          </div>
-        ) : null}
         <section className="relative z-10 mx-4 mt-3 md:mx-10" aria-label="Stats rapides">
           <div
-            className="fuel-race-kpis-grid grid grid-cols-1 gap-3 md:grid-cols-3"
+            className="fuel-race-kpis-grid grid grid-cols-1 gap-3 md:grid-cols-2"
           >
             <article className="rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white p-[18px] shadow-[0_1px_2px_rgba(26,26,26,0.08)]">
               <p
@@ -983,38 +970,6 @@ export default function ProfilPage() {
                     ? "Bon rythme: encore quelques infos pour fiabiliser les plans."
                     : "Profil robuste, les recommandations sont bien calibrées."}
               </p>
-            </article>
-
-            <article className="rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white p-[18px] shadow-[0_1px_2px_rgba(26,26,26,0.08)]">
-              <p
-                className="font-semibold uppercase"
-                style={{ fontSize: "11px", letterSpacing: "0.08em", color: "var(--color-muted, var(--color-text-muted))" }}
-              >
-                Priorités
-              </p>
-              <p className="profil-value mt-2">{pendingChecklist.length} items</p>
-              <div className="mt-2 space-y-1.5">
-                {quickPriorityItems.map((item) => (
-                  <a
-                    key={item.id}
-                    href={item.anchor}
-                    onClick={() => setOpenSection(item.anchor.replace("#", ""))}
-                    className="group flex items-center gap-2 rounded-lg px-1 py-1 text-sm text-[var(--color-text)] transition hover:bg-[var(--color-bg-subtle)]"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={item.done}
-                      readOnly
-                      tabIndex={-1}
-                      className="h-4 w-4 shrink-0 rounded border-[var(--color-border)] text-[#16a34a] accent-[#16a34a]"
-                      aria-hidden
-                    />
-                    <span className={item.done ? "text-[var(--color-text-muted)] line-through" : "group-hover:underline"}>
-                      {item.label}
-                    </span>
-                  </a>
-                ))}
-              </div>
             </article>
 
             <article className="rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white p-[18px] shadow-[0_1px_2px_rgba(26,26,26,0.08)]">
@@ -1707,7 +1662,7 @@ export default function ProfilPage() {
                   <aside className="profil-sticky-rail space-y-6 lg:sticky lg:top-[80px] lg:self-start">
                     <div className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
                       <p className="profil-kicker">
-                        Readiness athlète
+                        Readiness terrain
                       </p>
                       <p className="profil-value mt-2">{completion}%</p>
                       <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--color-border)]">
@@ -1721,8 +1676,8 @@ export default function ProfilPage() {
                           </span>
                         </div>
                         <div className="flex items-center justify-between rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2 text-xs">
-                          <span className="text-[var(--color-text-muted)]">Métrique clé</span>
-                          <span className="font-semibold text-[var(--color-text)]">{primaryPerformanceStat}</span>
+                          <span className="text-[var(--color-text-muted)]">{contextualMetricLabel}</span>
+                          <span className="font-semibold text-[var(--color-text)]">{contextualMetricValue}</span>
                         </div>
                         <div className="flex items-center justify-between rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2 text-xs">
                           <span className="text-[var(--color-text-muted)]">Hydratation</span>
@@ -1733,8 +1688,8 @@ export default function ProfilPage() {
                       </div>
                       <p className="profil-subtitle mt-3">
                         {pendingChecklist.length === 0
-                          ? "Prêt pour les recommandations avancées."
-                          : `${pendingChecklist.length} priorité${pendingChecklist.length > 1 ? "s" : ""} avant la pleine personnalisation.`}
+                          ? "Base profil complète pour préparer la performance."
+                          : `Indice basé sur la complétude du profil et les repères utiles au terrain.`}
                       </p>
                     </div>
 
@@ -1801,22 +1756,35 @@ export default function ProfilPage() {
                   <div className="fuel-theme-panel__inner">
                     <p className="profil-kicker">Progression 4 semaines</p>
                     <div className="mt-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-4">
-                      <svg viewBox="0 0 120 44" className="h-12 w-full" aria-label="Sparkline progression 4 semaines">
-                        <polyline
-                          fill="none"
-                          stroke="#d97706"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          points={sparkPoints}
-                        />
-                      </svg>
-                      <div className="mt-2 grid grid-cols-4 text-[11px] text-gray-500">
-                        <span>S-3</span>
-                        <span className="text-center">S-2</span>
-                        <span className="text-center">S-1</span>
-                        <span className="text-right">Cette semaine</span>
-                      </div>
+                      {hasWeeklyProgressData ? (
+                        <>
+                          <svg viewBox="0 0 120 44" className="h-12 w-full" aria-label="Sparkline progression 4 semaines">
+                            <polyline
+                              fill="none"
+                              stroke="#d97706"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              points={sparkPoints}
+                            />
+                          </svg>
+                          <div className="mt-2 grid grid-cols-4 text-[11px] text-gray-500">
+                            <span>S-3</span>
+                            <span className="text-center">S-2</span>
+                            <span className="text-center">S-1</span>
+                            <span className="text-right">Cette semaine</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center">
+                          <p className="text-sm font-semibold text-[var(--color-text)]">
+                            Pas encore assez de donnees
+                          </p>
+                          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                            Connecte Strava ou saisis une course pour alimenter la progression 4 semaines.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

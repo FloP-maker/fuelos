@@ -9,7 +9,6 @@ import type { RaceEvent, RaceSport } from "@/types/race";
 import { aggregateRaceHistory } from "@/lib/nutrition/raceHistoryStats";
 import { raceEventFromJson } from "@/lib/nutrition/raceHistory";
 import {
-  clearRaceHistoryDraft,
   flushRaceHistoryOutbox,
 } from "@/lib/raceHistoryLocal";
 
@@ -115,7 +114,17 @@ export function ProfileMemoryTabContent() {
       </div>
 
       {error === "load" ? (
-        <p className="text-sm text-[var(--color-danger)]">Impossible de charger l&apos;historique.</p>
+        <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_28%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-danger)_6%,var(--color-bg-card))] p-6 shadow-sm">
+          <p className="text-[15px] font-semibold text-[var(--color-text)]">Impossible de charger l&apos;historique</p>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+            La mémoire nutritionnelle n&apos;a pas pu etre recuperee pour le moment.
+          </p>
+          <div className="mt-4">
+            <Button type="button" variant="secondary" className="min-h-11 px-5" onClick={() => void load()}>
+              Reessayer
+            </Button>
+          </div>
+        </div>
       ) : null}
 
       {agg ? (
@@ -133,11 +142,14 @@ export function ProfileMemoryTabContent() {
         </section>
       ) : null}
 
-      {races && races.length === 0 ? (
+      {error == null && races && races.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg-card)] p-8 text-center shadow-sm">
-          <p className="text-[15px] font-semibold text-[var(--color-text)]">Aucune course pour l&apos;instant</p>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,white)] text-3xl" aria-hidden>
+            🏁
+          </div>
+          <p className="mt-4 text-[15px] font-semibold text-[var(--color-text)]">Ta premiere course alimentera ta memoire nutritionnelle</p>
           <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-            Enregistre une sortie après l&apos;arrivée pour commencer la mémoire nutritionnelle.
+            Enregistre une sortie apres l&apos;arrivee pour commencer a construire des reperes utiles pour tes prochains objectifs d&apos;endurance.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link href="/history/new">
@@ -145,17 +157,6 @@ export function ProfileMemoryTabContent() {
                 Saisir une course
               </Button>
             </Link>
-            <Button
-              type="button"
-              variant="secondary"
-              className="min-h-11 px-5"
-              onClick={() => {
-                clearRaceHistoryDraft();
-                void load();
-              }}
-            >
-              Effacer le brouillon local
-            </Button>
           </div>
         </div>
       ) : null}
