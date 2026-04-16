@@ -94,7 +94,15 @@ const PROFIL_TABS: {
 
 function initials(first: string, last: string): string {
   const value = `${first.trim().charAt(0)}${last.trim().charAt(0)}`.toUpperCase();
-  return value || "?";
+  return value || "FP";
+}
+
+function daysUntil(dateIso: string): number | null {
+  const target = new Date(`${dateIso}T00:00:00`);
+  if (Number.isNaN(target.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
 }
 
 function inputClass() {
@@ -327,6 +335,7 @@ export default function ProfilPage() {
   const [isAutoCompactViewport, setIsAutoCompactViewport] = useState(false);
   const [syncedProfileSnapshot, setSyncedProfileSnapshot] = useState<string>("");
   const saveHintTimeoutRef = useRef<number | null>(null);
+  const [avatarImageError, setAvatarImageError] = useState(false);
 
   const toggleSection = (id: string) => setOpenSection((prev) => (prev === id ? null : id));
   const refreshRaces = useCallback(() => setRaces(loadRaces()), []);
@@ -408,6 +417,51 @@ export default function ProfilPage() {
   const connectedCount = Object.values(profile.integrationConnected).filter(Boolean).length;
   const completion = profileCompletion(profile);
   const sports = activeSports(profile);
+  const profileContextSubtitle = useMemo(() => {
+    if (nextRace) {
+      const dayDelta = daysUntil(nextRace.date);
+      if (dayDelta === null) return `En préparation pour ${nextRace.name}`;
+      if (dayDelta > 0) return `En préparation pour ${nextRace.name} — J-${dayDelta}`;
+      if (dayDelta === 0) return `Objectif du jour: ${nextRace.name}`;
+      return `Dernière course: ${nextRace.name}`;
+    }
+    if (goalObj?.label) return `Cap actuel: ${goalObj.label}`;
+    if (sportObj?.label) return `Saison ${sportObj.label} en cours`;
+    return "Profil en cours de personnalisation";
+  }, [goalObj?.label, nextRace, sportObj?.label]);
+  const profileHeaderChips = useMemo(
+    () =>
+      [
+        sportObj
+          ? {
+              id: "sport",
+              label: sportObj.label,
+              icon: Mountain,
+              className:
+                "border-[color-mix(in_srgb,var(--color-primary)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_12%,white)] text-[var(--color-primary)]",
+            }
+          : null,
+        levelObj
+          ? {
+              id: "level",
+              label: levelObj.label,
+              icon: BarChart3,
+              className:
+                "border-[color-mix(in_srgb,#2563EB_35%,transparent)] bg-[color-mix(in_srgb,#2563EB_12%,white)] text-[#1D4ED8]",
+            }
+          : null,
+        goalObj
+          ? {
+              id: "goal",
+              label: goalObj.label,
+              icon: Target,
+              className:
+                "border-[color-mix(in_srgb,#D97706_35%,transparent)] bg-[color-mix(in_srgb,#D97706_12%,white)] text-[#B45309]",
+            }
+          : null,
+      ].filter(Boolean) as { id: string; label: string; icon: typeof Mountain; className: string }[],
+    [goalObj, levelObj, sportObj]
+  );
   const nutritionMode =
     profile.digestiveLiquidSolidPct <= 35
       ? "Liquide dominant"
@@ -526,6 +580,10 @@ export default function ProfilPage() {
     }
   }, [profileSnapshot, syncedProfileSnapshot]);
 
+  useEffect(() => {
+    setAvatarImageError(false);
+  }, [profile.avatarDataUrl]);
+
   useEffect(
     () => () => {
       if (saveHintTimeoutRef.current !== null) {
@@ -634,9 +692,14 @@ export default function ProfilPage() {
                   className="relative h-full w-full overflow-hidden rounded-full bg-[#e6efe6]"
                   style={{ border: "3px solid #fff", boxShadow: "0 8px 24px rgba(0,0,0,0.18)" }}
                 >
-                  {profile.avatarDataUrl ? (
+                  {profile.avatarDataUrl && !avatarImageError ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={profile.avatarDataUrl} alt={displayName} className="h-full w-full object-cover" />
+                    <img
+                      src={profile.avatarDataUrl}
+                      alt={displayName}
+                      className="h-full w-full object-cover object-center"
+                      onError={() => setAvatarImageError(true)}
+                    />
                   ) : (
                     <div
                       className="flex h-full w-full items-center justify-center text-lg font-black text-[#1f3a1f]"
@@ -659,22 +722,20 @@ export default function ProfilPage() {
 
               <div className="min-w-0">
                 <h2 className="truncate text-2xl font-bold text-[#142214]">{displayName}</h2>
+                <p className="mt-1 truncate text-sm font-medium text-[var(--color-text-muted)]">{profileContextSubtitle}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {sportObj ? (
-                    <span className="rounded-[999px] bg-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-bg-card))] px-3 py-1 text-[12px] font-medium text-[var(--color-primary)]">
-                      {sportObj.label}
-                    </span>
-                  ) : null}
-                  {levelObj ? (
-                    <span className="rounded-[999px] bg-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-bg-card))] px-3 py-1 text-[12px] font-medium text-[var(--color-primary)]">
-                      {levelObj.label}
-                    </span>
-                  ) : null}
-                  {goalObj ? (
-                    <span className="rounded-[999px] bg-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-bg-card))] px-3 py-1 text-[12px] font-medium text-[var(--color-primary)]">
-                      {goalObj.label}
-                    </span>
-                  ) : null}
+                  {profileHeaderChips.map((chip) => {
+                    const Icon = chip.icon;
+                    return (
+                      <span
+                        key={chip.id}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-semibold ${chip.className}`}
+                      >
+                        <Icon size={13} strokeWidth={2.2} aria-hidden />
+                        {chip.label}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             </div>
