@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Mountain } from "lucide-react";
+import { Droplets, Mountain } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { RaceEntry } from "@/lib/types/race";
 import { getDaysUntilRace, getRaceApproachProgress, getRacePrepWindowDays } from "@/lib/races";
@@ -42,6 +42,13 @@ function accentForDaysLeft(daysLeft: number): string {
   return `rgb(${r},${g},${b})`;
 }
 
+function phaseForDaysLeft(daysLeft: number): { label: string; color: string } {
+  if (daysLeft > 56) return { label: "Base", color: "#2563eb" };
+  if (daysLeft > 28) return { label: "Build", color: "#eab308" };
+  if (daysLeft > 10) return { label: "Peak", color: "#dc2626" };
+  return { label: "Taper", color: "#16a34a" };
+}
+
 function PrepCountdownRing({
   daysRemaining,
   progress,
@@ -65,7 +72,8 @@ function PrepCountdownRing({
 
   const p = Math.max(0, Math.min(1, progress));
   const dashOffset = drawn ? RING_C * (1 - p) : RING_C;
-  const stroke = accentForDaysLeft(daysRemaining);
+  const phase = phaseForDaysLeft(daysRemaining);
+  const stroke = phase.color;
   const displayDays = Math.max(0, daysRemaining);
 
   return (
@@ -93,6 +101,9 @@ function PrepCountdownRing({
       <div className="races-next-milestone-card__ring-inner">
         <span className="races-next-milestone-card__ring-days">{displayDays}</span>
         <span className="races-next-milestone-card__ring-unit">jours</span>
+        <span className="races-next-milestone-card__ring-phase" style={{ color: phase.color }}>
+          {phase.label}
+        </span>
       </div>
     </div>
   );
@@ -103,7 +114,7 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
   const approach = nextRace ? getRaceApproachProgress(nextRace) : 0;
   const windowDays = nextRace ? getRacePrepWindowDays(nextRace) : 120;
   const daysRem = days != null ? Math.max(0, days) : 0;
-  const barFill = accentForDaysLeft(daysRem);
+  const prepProgressPct = Math.round(approach * 100);
 
   return (
     <div className="races-next-milestone">
@@ -121,11 +132,12 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
             <div className="races-next-milestone-card__progress-block">
               <p className="races-next-milestone-card__prep-caption">
                 Progression préparation · {daysRem}j restants sur ~{windowDays}j
+                <span className="races-next-milestone-card__prep-percent">{prepProgressPct}%</span>
               </p>
               <div
                 className="races-next-milestone-card__prep-track"
                 role="progressbar"
-                aria-valuenow={Math.round(approach * 100)}
+                aria-valuenow={prepProgressPct}
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-label="Progression préparation"
@@ -133,14 +145,19 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
                 <div
                   className="races-next-milestone-card__prep-fill"
                   style={{
-                    width: `${Math.round(approach * 100)}%`,
-                    backgroundColor: barFill,
+                    width: `${prepProgressPct}%`,
                   }}
                 />
               </div>
             </div>
 
-            <p className="races-next-milestone-card__reco">{heroNutritionRecommendation(days)}</p>
+            <div className="races-next-milestone-card__reco">
+              <Droplets size={16} aria-hidden />
+              <div>
+                <p className="races-next-milestone-card__reco-title">Conseil du moment</p>
+                <p className="races-next-milestone-card__reco-copy">{heroNutritionRecommendation(days)}</p>
+              </div>
+            </div>
             <Link href={`/races/${nextRace.id}`} className="races-next-milestone-card__link">
               Voir mon plan nutritionnel →
             </Link>

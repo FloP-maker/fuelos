@@ -684,6 +684,10 @@ textarea:focus {
     font-weight: 500;
     line-height: 1.55;
     color: #5a6a5a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
   }
 
   html.dark .races-page .races-next-milestone-card__prep-caption {
@@ -696,8 +700,14 @@ textarea:focus {
     }
   }
 
+  .races-page .races-next-milestone-card__prep-percent {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1f3a1f;
+  }
+
   .races-page .races-next-milestone-card__prep-track {
-    height: 6px;
+    height: 9px;
     width: 100%;
     overflow: hidden;
     border-radius: 9999px;
@@ -712,13 +722,41 @@ textarea:focus {
     height: 100%;
     border-radius: 9999px;
     transition: width 300ms ease-out;
+    background: linear-gradient(90deg, #2563eb 0%, #2563eb 25%, #eab308 25%, #eab308 55%, #dc2626 55%, #dc2626 80%, #16a34a 80%, #16a34a 100%);
   }
 
   .races-page .races-next-milestone-card__reco {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
     margin: 0;
+    border: 1px solid color-mix(in srgb, var(--color-energy) 35%, transparent);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--color-energy) 10%, #fff);
+    padding: 10px 12px;
+    color: var(--color-text);
+  }
+
+  .races-page .races-next-milestone-card__reco svg {
+    margin-top: 2px;
+    flex-shrink: 0;
+    color: var(--color-energy);
+  }
+
+  .races-page .races-next-milestone-card__reco-title {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  .races-page .races-next-milestone-card__reco-copy {
+    margin: 2px 0 0;
     font-size: 0.875rem;
-    line-height: 1.55;
-    color: var(--color-text-secondary);
+    line-height: 1.45;
+    color: var(--color-text);
   }
 
   .races-page .races-next-milestone-card__link {
@@ -754,6 +792,18 @@ textarea:focus {
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: var(--color-text-secondary);
+  }
+
+  .races-page .races-next-milestone-card__ring-phase {
+    margin-top: 3px;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: color-mix(in srgb, currentColor 14%, transparent);
   }
 
   html.dark .races-page .races-next-milestone-card__ring-unit {
@@ -1257,14 +1307,14 @@ textarea:focus {
   }
 
   .races-page.profil-page .races-next-milestone-card__prep-track {
-    height: 6px;
+    height: 9px;
     border-radius: 999px;
   }
 
   .races-page.profil-page .races-next-milestone-card__prep-fill {
-    background-color: var(--color-primary) !important;
+    background: linear-gradient(90deg, #2563eb 0%, #2563eb 25%, #eab308 25%, #eab308 55%, #dc2626 55%, #dc2626 80%, #16a34a 80%, #16a34a 100%) !important;
     border-radius: 999px;
-    height: 6px;
+    height: 9px;
   }
 
   .races-page.profil-page .profil-sticky-rail {
