@@ -725,6 +725,29 @@ textarea:focus {
     background: linear-gradient(90deg, #2563eb 0%, #2563eb 25%, #eab308 25%, #eab308 55%, #dc2626 55%, #dc2626 80%, #16a34a 80%, #16a34a 100%);
   }
 
+  .races-page .races-next-milestone-card__prep-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .races-page .races-next-milestone-card__prep-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  .races-page .races-next-milestone-card__prep-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+
   .races-page .races-next-milestone-card__reco {
     display: flex;
     align-items: flex-start;
@@ -757,6 +780,15 @@ textarea:focus {
     font-size: 0.875rem;
     line-height: 1.45;
     color: var(--color-text);
+  }
+
+  .races-page .races-next-milestone-card__reco-link {
+    display: inline-flex;
+    margin-top: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-decoration: none;
   }
 
   .races-page .races-next-milestone-card__link {
