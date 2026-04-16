@@ -236,6 +236,7 @@ function SectionAccordion({
   icon,
   title,
   subtitle,
+  alertBadge,
   open,
   onToggle,
   children,
@@ -245,6 +246,7 @@ function SectionAccordion({
   icon: ReactNode;
   title: string;
   subtitle: string;
+  alertBadge?: string;
   open: boolean;
   onToggle: () => void;
   children: ReactNode;
@@ -283,9 +285,14 @@ function SectionAccordion({
             <p className="font-display text-base font-semibold tracking-tight text-[var(--color-text)]">
               {title}
             </p>
-            <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-text-muted)]">
-              {subtitle}
-            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <p className="text-[13px] leading-relaxed text-[var(--color-text-muted)]">{subtitle}</p>
+              {alertBadge ? (
+                <span className="rounded-full border border-[#fdba74] bg-[#fff7ed] px-2 py-0.5 text-[11px] font-semibold text-[#b45309]">
+                  {alertBadge}
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
         <ChevronDown
@@ -572,6 +579,9 @@ export default function ProfilPage() {
   const pendingChecklist = setupChecklist.filter((item) => !item.done);
   const setupProgressPct = Math.round(((setupChecklist.length - pendingChecklist.length) / setupChecklist.length) * 100);
   const nextPriorityAnchor = pendingChecklist[0]?.anchor ?? null;
+  const firstIncompleteSectionId = nextPriorityAnchor?.replace("#", "") ?? "personal";
+  const nutritionPendingCount = setupChecklist.filter((item) => ["performance", "hydration"].includes(item.id) && !item.done).length;
+  const integrationsPendingCount = setupChecklist.filter((item) => item.id === "integrations" && !item.done).length;
   const quickPriorityItems = useMemo(
     () =>
       ["performance", "hydration", "integrations"]
@@ -656,6 +666,11 @@ export default function ProfilPage() {
       setSyncedProfileSnapshot(profileSnapshot);
     }
   }, [profileSnapshot, syncedProfileSnapshot]);
+
+  useEffect(() => {
+    const savedSection = safeStorageGet(PROFILE_LAST_SECTION_KEY);
+    if (!savedSection) setOpenSection(firstIncompleteSectionId);
+  }, [firstIncompleteSectionId]);
 
   useEffect(() => {
     setAvatarImageError(false);
@@ -1273,6 +1288,11 @@ export default function ProfilPage() {
                     icon={<Activity className="h-5 w-5" />}
                     title="Performance & nutrition"
                     subtitle="Les réglages qui rendent les plans plus pertinents sur effort long."
+                    alertBadge={
+                      nutritionPendingCount > 0
+                        ? `⚠️ ${nutritionPendingCount} item${nutritionPendingCount > 1 ? "s" : ""} à compléter`
+                        : undefined
+                    }
                     open={openSection === "nutrition"}
                     onToggle={() => toggleSection("nutrition")}
                     accentColor="#D97706"
@@ -1523,6 +1543,7 @@ export default function ProfilPage() {
                     icon={<Settings className="h-5 w-5" />}
                     title="Connexions"
                     subtitle="Active ou coupe chaque source pour refléter ton écosystème réel."
+                    alertBadge={integrationsPendingCount > 0 ? "⚠️ 1 item à compléter" : undefined}
                     open={openSection === "integrations"}
                     onToggle={() => toggleSection("integrations")}
                     accentColor="#64748B"
