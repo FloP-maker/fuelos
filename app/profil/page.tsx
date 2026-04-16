@@ -130,7 +130,7 @@ function inputClass() {
 }
 
 function selectClass() {
-  return "mt-1.5 w-full appearance-none rounded-xl border border-[rgba(0,0,0,0.1)] bg-white bg-[url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%236b7280' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")] bg-[position:right_10px_center] bg-no-repeat px-[14px] py-[10px] pr-10 text-sm text-[var(--color-text)] outline-none transition duration-200 focus:border-[color-mix(in_srgb,var(--color-primary)_52%,rgba(0,0,0,0.1))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_20%,transparent)]";
+  return "mt-1.5 w-full appearance-none rounded-xl border border-[color-mix(in_srgb,var(--color-border)_90%,#cbd5e1)] bg-[color-mix(in_srgb,var(--color-bg-card)_88%,white)] bg-[url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%23475569' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")] bg-[position:right_12px_center] bg-no-repeat px-[14px] py-[10px] pr-10 text-sm text-[var(--color-text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] outline-none transition duration-200 focus:border-[color-mix(in_srgb,var(--color-primary)_52%,rgba(0,0,0,0.1))] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_20%,transparent)]";
 }
 
 function floatingInputClass() {
@@ -254,6 +254,12 @@ function SectionAccordion({
   accentColor?: string;
 }) {
   const accent = accentColor ?? GREEN;
+  const [hasOpenedOnce, setHasOpenedOnce] = useState(open);
+
+  useEffect(() => {
+    if (open) setHasOpenedOnce(true);
+  }, [open]);
+
   return (
     <section
       id={id}
@@ -311,7 +317,18 @@ function SectionAccordion({
           id={`section-${id}-body`}
           className="border-t border-[var(--color-border-subtle)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_40%,var(--color-bg-card))] px-5 py-6"
         >
-          <div className="space-y-6">{children}</div>
+          {hasOpenedOnce ? (
+            <div className="space-y-6">{children}</div>
+          ) : (
+            <div className="space-y-3" aria-hidden>
+              <div className="h-4 w-40 animate-pulse rounded bg-[var(--color-bg-subtle)]" />
+              <div className="h-24 animate-pulse rounded-2xl bg-[var(--color-bg-subtle)]" />
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="h-20 animate-pulse rounded-2xl bg-[var(--color-bg-subtle)]" />
+                <div className="h-20 animate-pulse rounded-2xl bg-[var(--color-bg-subtle)]" />
+              </div>
+            </div>
+          )}
         </div>
       ) : null}
     </section>
@@ -1197,27 +1214,24 @@ export default function ProfilPage() {
 
                     <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <label className="relative block">
+                      <label className="block">
+                        <span className="block text-[12px] font-semibold text-[var(--color-text-muted)]">Prénom</span>
                         <input
                           className={floatingInputClass()}
                           value={profile.firstName}
                           onChange={(e) => updateProfile({ firstName: e.target.value })}
                         />
-                        <span className={floatingLabelClass()}>
-                          Prénom
-                        </span>
                       </label>
-                      <label className="relative block">
+                      <label className="block">
+                        <span className="block text-[12px] font-semibold text-[var(--color-text-muted)]">Nom</span>
                         <input
                           className={floatingInputClass()}
                           value={profile.lastName}
                           onChange={(e) => updateProfile({ lastName: e.target.value })}
                         />
-                        <span className={floatingLabelClass()}>
-                          Nom
-                        </span>
                       </label>
-                      <label className="relative block">
+                      <label className="block">
+                        <span className="block text-[12px] font-semibold text-[var(--color-text-muted)]">Poids (kg)</span>
                         <input
                           type="number"
                           min={30}
@@ -1229,11 +1243,9 @@ export default function ProfilPage() {
                             updateProfile({ weightKg: e.target.value === "" ? null : Number(e.target.value) })
                           }
                         />
-                        <span className={floatingLabelClass()}>
-                          Poids (kg)
-                        </span>
                       </label>
-                      <label className="relative block">
+                      <label className="block">
+                        <span className="block text-[12px] font-semibold text-[var(--color-text-muted)]">Taille (cm)</span>
                         <input
                           type="number"
                           min={120}
@@ -1244,11 +1256,9 @@ export default function ProfilPage() {
                             updateProfile({ heightCm: e.target.value === "" ? null : Number(e.target.value) })
                           }
                         />
-                        <span className={floatingLabelClass()}>
-                          Taille (cm)
-                        </span>
                       </label>
-                      <label className="relative block">
+                      <label className="block">
+                        <span className="block text-[12px] font-semibold text-[var(--color-text-muted)]">Âge</span>
                         <input
                           type="number"
                           min={10}
@@ -1259,20 +1269,17 @@ export default function ProfilPage() {
                             updateProfile({ age: e.target.value === "" ? null : Number(e.target.value) })
                           }
                         />
-                        <span className={floatingLabelClass()}>
-                          Âge
-                        </span>
                       </label>
                       <div>
                         <span className="block text-[12px] font-medium text-[var(--color-text-muted)]">Sexe</span>
-                        <div className="mt-3 inline-flex rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-1">
+                        <div className="mt-3 inline-flex rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
                           {(["M", "F", "other"] as const).map((sex) => (
                             <label
                               key={sex}
-                              className={`flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-all ${
                                 profile.sex === sex
-                                  ? "bg-white text-[var(--color-text)] shadow-sm"
-                                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                                  ? "border-[color-mix(in_srgb,var(--color-primary)_32%,var(--color-border))] bg-white text-[var(--color-text)] shadow-sm"
+                                  : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
                               }`}
                             >
                               <input
@@ -1292,7 +1299,8 @@ export default function ProfilPage() {
 
                     <div className="mt-6 rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <label className="relative block">
+                      <label className="block">
+                        <span className="block text-[12px] font-semibold text-[var(--color-text-muted)]">Sport principal</span>
                         <select
                           className={selectClass()}
                           value={profile.mainSport}
@@ -1304,11 +1312,9 @@ export default function ProfilPage() {
                             </option>
                           ))}
                         </select>
-                        <span className={floatingLabelClass()}>
-                          Sport principal
-                        </span>
                       </label>
-                      <label className="relative block">
+                      <label className="block">
+                        <span className="block text-[12px] font-semibold text-[var(--color-text-muted)]">Niveau athlétique</span>
                         <select
                           className={selectClass()}
                           value={profile.athleticLevel}
@@ -1320,11 +1326,9 @@ export default function ProfilPage() {
                             </option>
                           ))}
                         </select>
-                        <span className={floatingLabelClass()}>
-                          Niveau athlétique
-                        </span>
                       </label>
-                      <label className="relative block md:col-span-2">
+                      <label className="block md:col-span-2">
+                        <span className="block text-[12px] font-semibold text-[var(--color-text-muted)]">Type d'effort</span>
                         <select
                           className={selectClass()}
                           value={profile.mainGoal}
@@ -1336,9 +1340,6 @@ export default function ProfilPage() {
                             </option>
                           ))}
                         </select>
-                        <span className={floatingLabelClass()}>
-                          Objectif principal
-                        </span>
                       </label>
                     </div>
                     </div>
@@ -1362,8 +1363,8 @@ export default function ProfilPage() {
                             key={key}
                             className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-all ${
                               profile.sports[key]
-                                ? "border-[color-mix(in_srgb,var(--color-energy)_45%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-energy)_12%,var(--color-bg-card))] text-[var(--color-text)] shadow-sm"
-                                : "border-[rgba(0,0,0,0.18)] bg-transparent text-[var(--color-text-muted)] hover:border-[var(--color-energy)]"
+                                ? "border-[color-mix(in_srgb,var(--color-primary)_42%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-bg-card))] text-[var(--color-text)] shadow-sm"
+                                : "border-[rgba(0,0,0,0.14)] bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)]"
                             }`}
                           >
                             <input
@@ -1663,20 +1664,9 @@ export default function ProfilPage() {
                                 {integration.logo}
                               </span>
                               <div className="min-w-0">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <p className="truncate text-sm font-semibold text-[var(--color-text)]">
-                                    {integration.name}
-                                  </p>
-                                  <span
-                                    className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                                    style={{
-                                      color: connected ? integration.color : "var(--color-text-muted)",
-                                      backgroundColor: connected ? `${integration.color}18` : "var(--color-bg-subtle)",
-                                    }}
-                                  >
-                                    {connected ? "Connectée" : "Déconnectée"}
-                                  </span>
-                                </div>
+                                <p className="truncate text-sm font-semibold text-[var(--color-text)]">
+                                  {integration.name}
+                                </p>
                                 <p className="profil-subtitle mt-1">
                                   {integration.description}
                                 </p>
@@ -1684,14 +1674,15 @@ export default function ProfilPage() {
                             </div>
 
                             <div className="flex items-center gap-4">
-                              <div className="text-right">
-                                <p className="text-xs font-medium text-[var(--color-text-muted)]">
-                                  État
-                                </p>
-                                <p className="mt-1 text-sm font-semibold text-[var(--color-text)]">
-                                  {connected ? "Activée" : "Inactive"}
-                                </p>
-                              </div>
+                              <span
+                                className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                                style={{
+                                  color: connected ? integration.color : "var(--color-text-muted)",
+                                  backgroundColor: connected ? `${integration.color}18` : "var(--color-bg-subtle)",
+                                }}
+                              >
+                                {connected ? "Connectée" : "Déconnectée"}
+                              </span>
                               <ToggleSwitch
                                 checked={connected}
                                 accentColor={integration.color}
