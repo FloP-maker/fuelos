@@ -310,7 +310,7 @@ function SectionAccordion({
           id={`section-${id}-body`}
           className="border-t border-[var(--color-border-subtle)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_40%,var(--color-bg-card))] px-5 py-6"
         >
-          <div className="space-y-8">{children}</div>
+          <div className="space-y-6">{children}</div>
         </div>
       ) : null}
     </section>
@@ -1029,15 +1029,15 @@ export default function ProfilPage() {
                   </div>
                 ) : null}
 
-                <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
-                  <div className="space-y-8">
+                <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+                  <div className="space-y-6">
                     <RacesNextMilestone nextRace={nextRace} />
 
                     <div
                       className="fuel-races-main-panel overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--color-energy)_22%,var(--color-border))] shadow-[0_8px_40px_color-mix(in_srgb,#000_6%,transparent)] md:rounded-[28px]"
                       id="personal"
                     >
-                      <div className="grid gap-8 border-b border-[var(--color-border-subtle)] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--color-energy)_10%,var(--color-bg-card))_0%,var(--color-bg-card)_55%,var(--color-bg-card)_100%)] p-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)] lg:p-8">
+                      <div className="grid gap-6 border-b border-[var(--color-border-subtle)] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--color-energy)_10%,var(--color-bg-card))_0%,var(--color-bg-card)_55%,var(--color-bg-card)_100%)] p-5 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)] lg:p-6">
                         <div>
                           <h2 className="font-display text-2xl font-black tracking-tight text-[var(--color-text)] md:text-[1.65rem]">
                             Accès rapide
@@ -1072,7 +1072,7 @@ export default function ProfilPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-8">
+                    <div className="space-y-6">
                   <SectionAccordion
                     id="personal"
                     icon={<User className="h-5 w-5" />}
@@ -1540,15 +1540,6 @@ export default function ProfilPage() {
                       </div>
                     </div>
 
-                    <div className="mt-8">
-                      <button
-                        type="button"
-                        onClick={handleSave}
-                        className="w-full rounded-xl bg-[var(--color-primary)] px-[14px] py-[14px] text-sm font-semibold text-white transition hover:brightness-95"
-                      >
-                        Enregistrer dans le calculateur
-                      </button>
-                    </div>
                   </SectionAccordion>
 
                   <SectionAccordion
@@ -1628,7 +1619,7 @@ export default function ProfilPage() {
                     </div>
                   </div>
 
-                  <aside className="profil-sticky-rail space-y-8 lg:sticky lg:top-[80px] lg:self-start">
+                  <aside className="profil-sticky-rail space-y-6 lg:sticky lg:top-[80px] lg:self-start">
                     <div className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
                       <p className="profil-kicker">
                         Readiness athlète
@@ -1720,7 +1711,7 @@ export default function ProfilPage() {
             ) : null}
 
             {profilTab === "insights" ? (
-              <div className="space-y-8">
+              <div className="space-y-6">
                 <div className="fuel-theme-panel min-w-0">
                   <div className="fuel-theme-panel__inner">
                     <p className="profil-kicker">Progression 4 semaines</p>

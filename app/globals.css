@@ -1194,8 +1194,8 @@ textarea:focus {
     --profil-shadow-soft: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
     --profil-shadow-soft-strong: 0 8px 24px color-mix(in srgb, #000 6%, transparent);
     --profil-border-soft: color-mix(in srgb, var(--color-border) 86%, transparent);
-    --profil-space-main: clamp(36px, 4.4vw, 64px);
-    --profil-space-main-compact: clamp(20px, 2.6vw, 34px);
+    --profil-space-main: clamp(20px, 2.8vw, 32px);
+    --profil-space-main-compact: clamp(12px, 1.8vw, 20px);
     --profil-letter-kicker: 0.12em;
     --profil-tabs-top: 4.7rem;
     --profil-rail-top: 6.25rem;
@@ -1238,8 +1238,8 @@ textarea:focus {
     margin-inline: auto;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--profil-space-main);
-    padding-top: clamp(34px, 4.4vw, 48px);
-    padding-bottom: clamp(64px, 9vw, 110px);
+    padding-top: clamp(12px, 1.8vw, 20px);
+    padding-bottom: clamp(28px, 5vw, 56px);
     padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
@@ -1484,7 +1484,7 @@ textarea:focus {
   /* Mode compact : même contenu, densité plus haute pour lecture rapide */
   .races-page.profil-page.profil-density-compact .races-layout {
     gap: var(--profil-space-main-compact);
-    padding-top: clamp(72px, 7vw, 92px);
+    padding-top: clamp(8px, 1.4vw, 14px);
   }
 
   .races-page.profil-page.profil-density-compact .races-layout__main,
