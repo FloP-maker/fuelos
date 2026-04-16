@@ -962,36 +962,66 @@ export default function ProfilPage() {
 
         <section className="relative z-10 mx-4 mt-3 md:mx-10" aria-label="Stats rapides">
           <div
-            className="fuel-race-kpis-grid grid grid-cols-1 gap-3 md:grid-cols-2"
+            className="fuel-race-kpis-grid grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_280px]"
           >
             <article className="rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white p-[18px] shadow-[0_1px_2px_rgba(26,26,26,0.08)]">
               <p
                 className="font-semibold uppercase"
                 style={{ fontSize: "11px", letterSpacing: "0.08em", color: "var(--color-muted, var(--color-text-muted))" }}
               >
-                Complétude profil
+                Profil à compléter
               </p>
-              <div className="mt-2 flex items-end justify-between gap-3">
-                <p className="profil-value">{completion}%</p>
-                <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${completionVisual.softClass}`}>
-                  {completionVisual.label}
-                </span>
+              <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="profil-value">{setupProgressPct}%</p>
+                  <p className="mt-1 text-[11px] font-semibold text-[var(--color-text-muted)]">
+                    {pendingChecklist.length === 0 ? "Profil complet" : `${pendingChecklist.length} champ${pendingChecklist.length > 1 ? "s" : ""} restant${pendingChecklist.length > 1 ? "s" : ""}`}
+                  </p>
+                </div>
+                {nextPriorityAnchor ? (
+                  <a
+                    href={nextPriorityAnchor}
+                    className="inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-energy)_42%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-energy)_10%,var(--color-bg-card))] px-3 py-1.5 text-xs font-semibold text-[#b45309]"
+                  >
+                    Compléter
+                  </a>
+                ) : null}
               </div>
-              <div className="mt-3 h-3 overflow-hidden rounded-full bg-[var(--color-border)] ring-1 ring-[color-mix(in_srgb,var(--color-border)_80%,#fff)]">
-                <div
-                  className={`h-full rounded-full transition-all ${completionVisual.barClass}`}
-                  style={{ width: `${completion}%` }}
-                  aria-hidden
-                />
+              <div className="mt-3 grid grid-cols-5 gap-2">
+                {setupChecklist.map((item) => (
+                  <a
+                    key={item.id}
+                    href={item.anchor}
+                    onClick={() => setOpenSection(item.anchor.replace("#", ""))}
+                    className={[
+                      "h-3 rounded-full transition-all",
+                      item.done
+                        ? `${completionVisual.barClass}`
+                        : "border border-dashed border-[color-mix(in_srgb,var(--color-energy)_45%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-energy)_8%,var(--color-bg-card))]",
+                    ].join(" ")}
+                    title={item.label}
+                    aria-label={item.label}
+                  />
+                ))}
               </div>
-              <p className="mt-1 text-[11px] font-semibold text-[var(--color-text-muted)]">Progression globale du profil</p>
-              <p className="profil-subtitle mt-2">
-                {completion < 50
-                  ? "Complète les champs clés pour débloquer des recommandations fiables."
-                  : completion <= 80
-                    ? "Bon rythme: encore quelques infos pour fiabiliser les plans."
-                    : "Profil robuste, les recommandations sont bien calibrées."}
-              </p>
+              <div className="mt-3 space-y-2">
+                {pendingChecklist.length > 0 ? (
+                  pendingChecklist.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2 text-sm">
+                      <span className="text-[var(--color-text)]">{item.label}</span>
+                      <a
+                        href={item.anchor}
+                        onClick={() => setOpenSection(item.anchor.replace("#", ""))}
+                        className="rounded-full border border-[var(--color-border)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-text-muted)]"
+                      >
+                        → Renseigner
+                      </a>
+                    </div>
+                  ))
+                ) : (
+                  <p className="profil-subtitle">Tout est rempli, les recommandations peuvent se baser sur un profil complet.</p>
+                )}
+              </div>
             </article>
 
             <article className="rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white p-[18px] shadow-[0_1px_2px_rgba(26,26,26,0.08)]">
@@ -1715,50 +1745,6 @@ export default function ProfilPage() {
                       </p>
                     </div>
 
-                    <div className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 shadow-sm">
-                      <p className="profil-kicker">
-                        Priorités profil
-                      </p>
-                      <div className="mt-3 space-y-2">
-                        {setupChecklist.map((item) => (
-                          <div
-                            key={item.id}
-                            className={[
-                              "flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-xs",
-                              item.done
-                                ? "border-[color-mix(in_srgb,var(--color-primary)_28%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-bg-card))]"
-                                : "border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]",
-                            ].join(" ")}
-                          >
-                            <span className={["inline-flex items-center gap-2", item.done ? "text-[var(--color-text)]" : "text-[var(--color-text-muted)]"].join(" ")}>
-                              <span
-                                className={[
-                                  "inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px]",
-                                  item.done ? "bg-green-100 text-green-700" : "border border-gray-300 bg-transparent text-gray-400",
-                                ].join(" ")}
-                                aria-hidden
-                              >
-                                {item.done ? "✅" : "○"}
-                              </span>
-                              {item.label}
-                            </span>
-                            {!item.done ? (
-                              <a
-                                href={item.anchor}
-                                className="profil-priority-jump rounded-full border border-[var(--color-border)] px-2.5 py-1 text-[10px] font-semibold text-[var(--color-text-muted)]"
-                              >
-                                → Renseigner
-                              </a>
-                            ) : null}
-                          </div>
-                        ))}
-                      </div>
-                      <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-                        {pendingChecklist.length === 0
-                          ? "Profil prêt : base complète pour plans et analyses."
-                          : `${pendingChecklist.length} point${pendingChecklist.length > 1 ? "s" : ""} à compléter en priorité.`}
-                      </p>
-                    </div>
                   </aside>
                 </div>
               </>
