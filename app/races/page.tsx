@@ -53,7 +53,7 @@ function formatFrenchWeekCalendarTitle(weekMondayKey: string): string {
 }
 
 export default function RacesPage() {
-  usePageTitle("Mes courses");
+  usePageTitle("Ma course");
   const { status } = useSession();
   const { profile: fuelProfile } = useProfile();
   const [races, setRaces] = useState<RaceEntry[]>([]);
