@@ -1054,23 +1054,29 @@ export default function ProfilPage() {
                     onToggle={() => toggleSection("personal")}
                     accentColor={GREEN}
                   >
-                    <div className="mb-4 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-[var(--color-bg-subtle)] px-3 py-1 text-sm font-semibold text-gray-900">
-                        {typeof profile.weightKg === "number" ? `${profile.weightKg}kg` : "Poids —"}
-                      </span>
-                      <span className="rounded-full bg-[var(--color-bg-subtle)] px-3 py-1 text-sm font-semibold text-gray-900">
-                        {typeof profile.heightCm === "number" ? `${profile.heightCm}cm` : "Taille —"}
-                      </span>
-                      <span className="rounded-full bg-[var(--color-bg-subtle)] px-3 py-1 text-sm font-semibold text-gray-900">
-                        IMC {bmi == null ? "—" : bmi.toFixed(1)}
-                      </span>
+                    <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-2.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">Poids</p>
+                        <p className="mt-1 text-base font-bold text-[var(--color-text)]">
+                          {typeof profile.weightKg === "number" ? `${profile.weightKg} kg` : "—"}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-2.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">Taille</p>
+                        <p className="mt-1 text-base font-bold text-[var(--color-text)]">
+                          {typeof profile.heightCm === "number" ? `${profile.heightCm} cm` : "—"}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-2.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">IMC</p>
+                        <p className="mt-1 text-base font-bold text-[var(--color-text)]">{bmi == null ? "—" : bmi.toFixed(1)}</p>
+                      </div>
                     </div>
 
                     <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <label className="relative block">
                         <input
-                          placeholder="Prénom"
                           className={floatingInputClass()}
                           value={profile.firstName}
                           onChange={(e) => updateProfile({ firstName: e.target.value })}
@@ -1081,7 +1087,6 @@ export default function ProfilPage() {
                       </label>
                       <label className="relative block">
                         <input
-                          placeholder="Nom"
                           className={floatingInputClass()}
                           value={profile.lastName}
                           onChange={(e) => updateProfile({ lastName: e.target.value })}
@@ -1096,7 +1101,6 @@ export default function ProfilPage() {
                           min={30}
                           max={200}
                           step={0.1}
-                          placeholder="Poids (kg)"
                           className={floatingInputClass()}
                           value={profile.weightKg ?? ""}
                           onChange={(e) =>
@@ -1112,7 +1116,6 @@ export default function ProfilPage() {
                           type="number"
                           min={120}
                           max={230}
-                          placeholder="Taille (cm)"
                           className={floatingInputClass()}
                           value={profile.heightCm ?? ""}
                           onChange={(e) =>
@@ -1128,7 +1131,6 @@ export default function ProfilPage() {
                           type="number"
                           min={10}
                           max={99}
-                          placeholder="Âge"
                           className={floatingInputClass()}
                           value={profile.age ?? ""}
                           onChange={(e) =>
@@ -1141,14 +1143,14 @@ export default function ProfilPage() {
                       </label>
                       <div>
                         <span className="block text-[12px] font-medium text-[var(--color-text-muted)]">Sexe</span>
-                        <div className="mt-3 flex flex-wrap gap-3">
+                        <div className="mt-3 inline-flex rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-1">
                           {(["M", "F", "other"] as const).map((sex) => (
                             <label
                               key={sex}
-                              className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all ${
+                              className={`flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
                                 profile.sex === sex
-                                  ? "border-[color-mix(in_srgb,var(--color-energy)_45%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-energy)_12%,var(--color-bg-card))] text-[var(--color-text)] shadow-sm"
-                                  : "border-[rgba(0,0,0,0.18)] bg-transparent text-[var(--color-text-muted)] hover:border-[var(--color-energy)]"
+                                  ? "bg-white text-[var(--color-text)] shadow-sm"
+                                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
                               }`}
                             >
                               <input
@@ -1164,40 +1166,6 @@ export default function ProfilPage() {
                         </div>
                       </div>
                     </div>
-                    </div>
-
-                    <div className="mt-6 rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
-                      <span className="text-sm font-semibold text-[var(--color-text)]">Sports pratiqués</span>
-                      <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
-                        {(
-                          [
-                            ["trail", "🏔️ Trail"],
-                            ["running", "🏃 Running"],
-                            ["veloRoute", "🚴 Vélo route"],
-                            ["vtt", "🚵 VTT"],
-                            ["triathlon", "🏊 Triathlon"],
-                          ] as const
-                        ).map(([key, label]) => (
-                          <label
-                            key={key}
-                            className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-all ${
-                              profile.sports[key]
-                                ? "border-[color-mix(in_srgb,var(--color-energy)_45%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-energy)_12%,var(--color-bg-card))] text-[var(--color-text)] shadow-sm"
-                                : "border-[rgba(0,0,0,0.18)] bg-transparent text-[var(--color-text-muted)] hover:border-[var(--color-energy)]"
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              className="sr-only"
-                              checked={profile.sports[key]}
-                              onChange={(e) =>
-                                updateProfile({ sports: { ...profile.sports, [key]: e.target.checked } })
-                              }
-                            />
-                            {label}
-                          </label>
-                        ))}
-                      </div>
                     </div>
 
                     <div className="mt-6 rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
@@ -1253,14 +1221,50 @@ export default function ProfilPage() {
                     </div>
                     </div>
 
-                    <div className="mt-6">
-                      <button
-                        type="button"
-                        onClick={handleSave}
-                        className="w-full rounded-xl bg-[var(--color-primary)] px-[14px] py-[14px] text-sm font-semibold text-white transition hover:brightness-95"
-                      >
-                        Sauvegarder le profil
-                      </button>
+                    <div className="mt-6 rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-[var(--color-text)]">Sports secondaires</span>
+                        <span className="text-xs text-[var(--color-text-muted)]">Le sport principal est défini au-dessus</span>
+                      </div>
+                      <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
+                        {(
+                          [
+                            ["trail", "🏔️ Trail"],
+                            ["running", "🏃 Running"],
+                            ["veloRoute", "🚴 Vélo route"],
+                            ["vtt", "🚵 VTT"],
+                            ["triathlon", "🏊 Triathlon"],
+                          ] as const
+                        ).map(([key, label]) => (
+                          <label
+                            key={key}
+                            className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-all ${
+                              profile.sports[key]
+                                ? "border-[color-mix(in_srgb,var(--color-energy)_45%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-energy)_12%,var(--color-bg-card))] text-[var(--color-text)] shadow-sm"
+                                : "border-[rgba(0,0,0,0.18)] bg-transparent text-[var(--color-text-muted)] hover:border-[var(--color-energy)]"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="sr-only"
+                              checked={profile.sports[key]}
+                              onChange={(e) =>
+                                updateProfile({ sports: { ...profile.sports, [key]: e.target.checked } })
+                              }
+                            />
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-2.5">
+                      <p className="text-sm font-semibold text-[var(--color-text)]">
+                        Autosave intelligent: {hasPendingSync ? "Synchronisation en attente" : "Sauvegardé ✓"}
+                      </p>
+                      <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                        {autoSaveEnabled ? "Les changements sont enregistrés automatiquement." : "Active l'autosave dans la colonne de droite."}
+                      </p>
                     </div>
                   </SectionAccordion>
 
