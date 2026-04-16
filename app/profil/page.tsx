@@ -917,6 +917,19 @@ export default function ProfilPage() {
           </div>
         ) : null}
 
+        {nextPriorityAnchor ? (
+          <div className="relative z-10 mx-4 mt-3 md:mx-10">
+            <a
+              href={nextPriorityAnchor}
+              className="inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-energy)_45%,#f59e0b)] bg-[color-mix(in_srgb,#f59e0b_14%,var(--color-bg-card))] px-4 py-3 text-sm font-semibold text-[#b45309] shadow-sm transition hover:brightness-[0.98]"
+            >
+              <span>Complète ton profil pour des plans personnalisés</span>
+              <span className="rounded-full border border-[#fdba74] bg-white/70 px-2 py-0.5 text-xs">
+                {pendingChecklist.length} priorité{pendingChecklist.length > 1 ? "s" : ""}
+              </span>
+            </a>
+          </div>
+        ) : null}
         <section className="relative z-10 mx-4 mt-3 md:mx-10" aria-label="Stats rapides">
           <div
             className="fuel-race-kpis-grid grid grid-cols-1 gap-3 md:grid-cols-3"
@@ -997,20 +1010,6 @@ export default function ProfilPage() {
             </article>
           </div>
         </section>
-        {nextPriorityAnchor ? (
-          <div className="relative z-10 mx-4 mt-3 md:mx-10">
-            <a
-              href={nextPriorityAnchor}
-              className="inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-energy)_45%,#f59e0b)] bg-[color-mix(in_srgb,#f59e0b_14%,var(--color-bg-card))] px-4 py-3 text-sm font-semibold text-[#b45309] shadow-sm transition hover:brightness-[0.98]"
-            >
-              <span>Complète ton profil pour des plans personnalisés</span>
-              <span className="rounded-full border border-[#fdba74] bg-white/70 px-2 py-0.5 text-xs">
-                {pendingChecklist.length} priorité{pendingChecklist.length > 1 ? "s" : ""}
-              </span>
-            </a>
-          </div>
-        ) : null}
-
         {saveHint ? (
           <div className="relative z-10 px-6 pb-3 pt-4 md:px-10" role="status">
             <div className="rounded-2xl border border-[var(--color-accent)] bg-[var(--color-accent-muted)] px-4 py-3 text-sm font-medium text-[var(--color-text)] shadow-sm">
@@ -1025,10 +1024,11 @@ export default function ProfilPage() {
               <div className="relative">
                 <details className="absolute right-0 top-0 z-10">
                   <summary
-                    className="cursor-pointer list-none rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1 text-[11px] font-semibold text-[var(--color-text-muted)]"
+                    className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] text-[var(--color-text-muted)]"
                     title="Mode d'affichage: Auto adapte la densité, Confort affiche toutes les sections, Focus compacte l'interface et met en avant les priorités."
+                    aria-label="Réglages d'affichage"
                   >
-                    Mode d'affichage
+                    <Settings className="h-4 w-4" aria-hidden />
                   </summary>
                   <div className="mt-2 min-w-[180px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-2 shadow-sm">
                     <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Affichage</p>
@@ -1063,7 +1063,7 @@ export default function ProfilPage() {
                   </div>
                 </details>
 
-                <div className="flex rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-1 pr-20 sm:pr-24">
+                <div className="flex rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-1 pr-12">
                   {PROFIL_TABS.map((tab) => {
                     const active = profilTab === tab.id;
                     const Icon = tab.icon;
@@ -1075,7 +1075,7 @@ export default function ProfilPage() {
                         className={[
                           "profil-tab-btn relative flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-all sm:min-h-[46px] sm:flex-none sm:px-5",
                           active
-                            ? "bg-white text-[#1b3a23] shadow-sm ring-1 ring-[color-mix(in_srgb,#1b3a23_16%,var(--color-border))]"
+                            ? "bg-[color-mix(in_srgb,var(--color-primary)_10%,white)] text-[#16351f] shadow-sm ring-1 ring-[color-mix(in_srgb,#1b3a23_22%,var(--color-border))]"
                             : "bg-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
                         ].join(" ")}
                         aria-current={active ? "page" : undefined}

@@ -1332,6 +1332,14 @@ textarea:focus {
     box-shadow: var(--profil-shadow-soft);
   }
 
+  .races-page.profil-page .profil-tabs-shell details > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .races-page.profil-page .profil-tabs-shell details > summary {
+    list-style: none;
+  }
+
   /* Profil premium: calmer les effets visuels pour un rendu plus mature */
   .races-page.profil-page article,
   .races-page.profil-page .fuel-races-main-panel,
