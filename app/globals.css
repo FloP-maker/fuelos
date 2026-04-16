@@ -514,12 +514,12 @@ textarea:focus {
   }
 
   .races-page.profil-page .races-page-hero.profil-hero {
-    min-height: 174px;
+    min-height: 104px;
   }
 
   .races-page.profil-page .races-page-hero.profil-hero .races-page-hero__inner {
     padding-top: max(16px, calc(10px + env(safe-area-inset-top, 0px)));
-    padding-bottom: 50px;
+    padding-bottom: 22px;
   }
 
   .races-page.profil-page .races-page-hero.profil-hero h1 {
@@ -1456,11 +1456,11 @@ textarea:focus {
     }
 
     .races-page.profil-page .races-page-hero.profil-hero {
-      min-height: 160px;
+      min-height: 92px;
     }
 
     .races-page.profil-page .races-page-hero.profil-hero .races-page-hero__inner {
-      padding-bottom: 44px;
+      padding-bottom: 18px;
     }
 
     .races-page.profil-page .profil-hero-completion-ring {

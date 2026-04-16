@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Circle,
   Droplets,
+  Expand,
   Footprints,
   Gauge,
   LayoutGrid,
@@ -17,8 +18,10 @@ import {
   Library,
   Link2,
   Mountain,
+  Pencil,
   Settings,
   Target,
+  Trash2,
   User,
   Zap,
 } from "lucide-react";
@@ -362,6 +365,8 @@ export default function ProfilPage() {
   const [syncedProfileSnapshot, setSyncedProfileSnapshot] = useState<string>("");
   const saveHintTimeoutRef = useRef<number | null>(null);
   const [avatarImageError, setAvatarImageError] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const [avatarLightboxOpen, setAvatarLightboxOpen] = useState(false);
 
   const toggleSection = (id: string) => setOpenSection((prev) => (prev === id ? null : id));
   const refreshRaces = useCallback(() => setRaces(loadRaces()), []);
@@ -461,6 +466,7 @@ export default function ProfilPage() {
         sportObj
           ? {
               id: "sport",
+              category: "Sport",
               label: sportObj.label,
               icon: Mountain,
               className:
@@ -470,6 +476,7 @@ export default function ProfilPage() {
         levelObj
           ? {
               id: "level",
+              category: "Niveau",
               label: levelObj.label,
               icon: BarChart3,
               className:
@@ -479,15 +486,26 @@ export default function ProfilPage() {
         goalObj
           ? {
               id: "goal",
+              category: "Objectif",
               label: goalObj.label,
               icon: Target,
               className:
                 "border-[color-mix(in_srgb,#D97706_35%,transparent)] bg-[color-mix(in_srgb,#D97706_12%,white)] text-[#B45309]",
             }
           : null,
-      ].filter(Boolean) as { id: string; label: string; icon: typeof Mountain; className: string }[],
+      ].filter(Boolean) as { id: string; category: string; label: string; icon: typeof Mountain; className: string }[],
     [goalObj, levelObj, sportObj]
   );
+  const nextRaceIdentity = useMemo(() => {
+    if (!nextRace) return null;
+    const distance = typeof nextRace.distance === "number" && nextRace.distance > 0 ? `${nextRace.distance} km` : null;
+    const elevation =
+      typeof nextRace.elevationGain === "number" && nextRace.elevationGain > 0
+        ? `${Math.round(nextRace.elevationGain).toLocaleString("fr-FR")} D+`
+        : null;
+    if (!distance && !elevation) return null;
+    return [distance, elevation].filter(Boolean).join(" · ");
+  }, [nextRace]);
   const nutritionMode =
     profile.digestiveLiquidSolidPct <= 35
       ? "Liquide dominant"
@@ -778,7 +796,7 @@ export default function ProfilPage() {
             <div className="flex min-w-0 items-center gap-4">
               <label
                 style={{ width: "72px", height: "72px", minWidth: "72px", maxWidth: "72px", flexShrink: 0 }}
-                className="group relative -mt-10 cursor-pointer overflow-hidden rounded-full"
+                className="group relative -mt-10 overflow-hidden rounded-full"
               >
                 <div
                   className="relative h-full w-full overflow-hidden rounded-full bg-[#e6efe6]"
@@ -789,8 +807,9 @@ export default function ProfilPage() {
                     <img
                       src={profile.avatarDataUrl}
                       alt={displayName}
-                      className="h-full w-full object-cover object-center"
+                      className="h-full w-full cursor-zoom-in object-cover object-center"
                       onError={() => setAvatarImageError(true)}
+                      onClick={() => setAvatarLightboxOpen(true)}
                     />
                   ) : (
                     <div
@@ -808,6 +827,7 @@ export default function ProfilPage() {
                   type="file"
                   accept="image/*"
                   className="sr-only"
+                  ref={avatarInputRef}
                   onChange={(e) => onAvatarFile(e.target.files?.[0] ?? null)}
                 />
               </label>
@@ -815,24 +835,78 @@ export default function ProfilPage() {
               <div className="min-w-0">
                 <h2 className="truncate text-2xl font-bold text-[#142214]">{displayName}</h2>
                 <p className="mt-1 truncate text-sm font-medium text-[var(--color-text-muted)]">{profileContextSubtitle}</p>
-                <div className="mt-2 flex flex-wrap gap-2">
+                {nextRaceIdentity ? (
+                  <p className="mt-1 text-xs font-semibold text-[var(--color-text-muted)]">{nextRaceIdentity}</p>
+                ) : null}
+                <div className="mt-2 flex flex-wrap gap-3">
                   {profileHeaderChips.map((chip) => {
                     const Icon = chip.icon;
                     return (
-                      <span
-                        key={chip.id}
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-semibold ${chip.className}`}
-                      >
-                        <Icon size={13} strokeWidth={2.2} aria-hidden />
-                        {chip.label}
-                      </span>
+                      <div key={chip.id} className="flex flex-col gap-1">
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
+                          {chip.category}
+                        </span>
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-semibold ${chip.className}`}
+                        >
+                          <Icon size={13} strokeWidth={2.2} aria-hidden />
+                          {chip.label}
+                        </span>
+                      </div>
                     );
                   })}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-text)]"
+                  >
+                    <Pencil size={12} aria-hidden />
+                    Modifier
+                  </button>
+                  {profile.avatarDataUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => setAvatarLightboxOpen(true)}
+                      className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-text)]"
+                    >
+                      <Expand size={12} aria-hidden />
+                      Agrandir
+                    </button>
+                  ) : null}
+                  {profile.avatarDataUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => updateProfile({ avatarDataUrl: null })}
+                      className="inline-flex items-center gap-1 rounded-full border border-[#fecaca] bg-[#fef2f2] px-2.5 py-1 text-[11px] font-semibold text-[#b91c1c]"
+                    >
+                      <Trash2 size={12} aria-hidden />
+                      Supprimer
+                    </button>
+                  ) : null}
                 </div>
               </div>
             </div>
           </div>
         </div>
+        {avatarLightboxOpen && profile.avatarDataUrl ? (
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Aperçu avatar"
+            onClick={() => setAvatarLightboxOpen(false)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={profile.avatarDataUrl}
+              alt={displayName}
+              className="max-h-[85vh] max-w-[85vw] rounded-2xl border-2 border-white/80 object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        ) : null}
 
         <section className="relative z-10 mx-4 mt-3 md:mx-10" aria-label="Stats rapides">
           <div
