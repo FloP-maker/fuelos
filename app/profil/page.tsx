@@ -6,7 +6,9 @@ import {
   Activity,
   BarChart3,
   CalendarDays,
+  CheckCircle2,
   ChevronDown,
+  Circle,
   Droplets,
   Footprints,
   Gauge,
@@ -103,6 +105,23 @@ function daysUntil(dateIso: string): number | null {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
+}
+
+function formatRelativeSyncDate(value: string | null): string {
+  if (!value) return "Jamais synchronisé";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  const now = new Date();
+  const diffMs = now.getTime() - parsed.getTime();
+  if (diffMs < 60_000) return "À l'instant";
+  if (diffMs < 3_600_000) return `il y a ${Math.floor(diffMs / 60_000)} min`;
+  if (diffMs < 86_400_000) return `il y a ${Math.floor(diffMs / 3_600_000)}h`;
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (parsed.toDateString() === yesterday.toDateString()) {
+    return `hier à ${parsed.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
+  }
+  return parsed.toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
 function inputClass() {
@@ -523,7 +542,7 @@ export default function ProfilPage() {
         id: "performance",
         label: "FTP ou VMA définie",
         done: typeof profile.ftpWatts === "number" || typeof profile.runnerVmaKmh === "number",
-        anchor: "#nutrition",
+        anchor: "#performance",
       },
       {
         id: "hydration",
@@ -553,6 +572,18 @@ export default function ProfilPage() {
   const pendingChecklist = setupChecklist.filter((item) => !item.done);
   const setupProgressPct = Math.round(((setupChecklist.length - pendingChecklist.length) / setupChecklist.length) * 100);
   const nextPriorityAnchor = pendingChecklist[0]?.anchor ?? null;
+  const quickPriorityItems = useMemo(
+    () =>
+      ["performance", "hydration", "integrations"]
+        .map((id) => setupChecklist.find((item) => item.id === id))
+        .filter(Boolean) as typeof setupChecklist,
+    [setupChecklist]
+  );
+  const completionVisual = completion < 50
+    ? { barClass: "bg-[#dc2626]", softClass: "bg-[#fef2f2] text-[#b91c1c]", label: "À renforcer" }
+    : completion <= 80
+      ? { barClass: "bg-[#d97706]", softClass: "bg-[#fff7ed] text-[#b45309]", label: "En progression" }
+      : { barClass: "bg-[#16a34a]", softClass: "bg-[#f0fdf4] text-[#15803d]", label: "Solide" };
   const readinessFillClass =
     completion > 70
       ? "bg-[var(--color-primary)]"
@@ -599,7 +630,7 @@ export default function ProfilPage() {
         setAutoSaveStatus("saving");
         syncToAthleteCalculator();
         setSyncedProfileSnapshot(profileSnapshot);
-        setLastSyncedAt(new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }));
+        setLastSyncedAt(new Date().toISOString());
         setAutoSaveStatus("saved");
         if (mode === "manual") {
           setSaveHint("Profil enregistré dans le calculateur ✓");
@@ -753,14 +784,26 @@ export default function ProfilPage() {
               >
                 Complétude profil
               </p>
-              <p className="profil-value mt-2">{completion}%</p>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--color-border)]">
+              <div className="mt-2 flex items-end justify-between gap-3">
+                <p className="profil-value">{completion}%</p>
+                <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${completionVisual.softClass}`}>
+                  {completionVisual.label}
+                </span>
+              </div>
+              <div className="mt-3 h-3 overflow-hidden rounded-full bg-[var(--color-border)]">
                 <div
-                  className="h-full rounded-full bg-[var(--color-primary)]"
+                  className={`h-full rounded-full transition-all ${completionVisual.barClass}`}
                   style={{ width: `${completion}%` }}
                   aria-hidden
                 />
               </div>
+              <p className="profil-subtitle mt-2">
+                {completion < 50
+                  ? "Complète les champs clés pour débloquer des recommandations fiables."
+                  : completion <= 80
+                    ? "Bon rythme: encore quelques infos pour fiabiliser les plans."
+                    : "Profil robuste, les recommandations sont bien calibrées."}
+              </p>
             </article>
 
             <article className="rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white p-[18px] shadow-[0_1px_2px_rgba(26,26,26,0.08)]">
@@ -771,14 +814,25 @@ export default function ProfilPage() {
                 Priorités
               </p>
               <p className="profil-value mt-2">{pendingChecklist.length} items</p>
-              <p className="profil-subtitle mt-2">
-                {pendingChecklist.length > 0
-                  ? pendingChecklist
-                      .slice(0, 3)
-                      .map((item) => item.label)
-                      .join(" · ")
-                  : "Aucune priorité restante"}
-              </p>
+              <div className="mt-2 space-y-1.5">
+                {quickPriorityItems.map((item) => (
+                  <a
+                    key={item.id}
+                    href={item.anchor}
+                    onClick={() => setOpenSection(item.anchor.replace("#", ""))}
+                    className="group flex items-center gap-2 rounded-lg px-1 py-1 text-sm text-[var(--color-text)] transition hover:bg-[var(--color-bg-subtle)]"
+                  >
+                    {item.done ? (
+                      <CheckCircle2 size={15} className="shrink-0 text-[#16a34a]" aria-hidden />
+                    ) : (
+                      <Circle size={15} className="shrink-0 text-[#d97706]" aria-hidden />
+                    )}
+                    <span className={item.done ? "text-[var(--color-text-muted)] line-through" : "group-hover:underline"}>
+                      {item.label}
+                    </span>
+                  </a>
+                ))}
+              </div>
             </article>
 
             <article className="rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white p-[18px] shadow-[0_1px_2px_rgba(26,26,26,0.08)]">
@@ -792,7 +846,7 @@ export default function ProfilPage() {
                 {autoSaveStatus === "error" ? "Erreur" : hasPendingSync ? "En attente" : "✓ À jour"}
               </p>
               <p className="profil-subtitle mt-2">
-                {lastSyncedAt ? `Dernière synchro: ${lastSyncedAt}` : "Dernière synchro: —"}
+                Dernière synchro: {formatRelativeSyncDate(lastSyncedAt)}
               </p>
             </article>
           </div>
@@ -1200,7 +1254,7 @@ export default function ProfilPage() {
                     accentColor="#D97706"
                   >
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
-                      <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
+                      <div id="performance" className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                         <div className="mb-3 flex items-center gap-2">
                           <Gauge className="h-4 w-4 text-[var(--color-text-muted)]" />
                           <span className="text-sm font-bold text-[var(--color-text)]">Données de performance</span>
