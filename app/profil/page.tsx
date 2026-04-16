@@ -1041,38 +1041,6 @@ export default function ProfilPage() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                          <div className="rounded-[16px] border border-[var(--color-border)] bg-white p-[18px] shadow-sm">
-                            <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-bg-card))]">
-                              <Target className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
-                            </div>
-                            <p className="profil-kicker">
-                              Objectif saison
-                            </p>
-                            <p className="mt-2 font-display text-lg font-black text-[var(--color-text)]">
-                              {goalObj?.label ?? "À définir"}
-                            </p>
-                            <p className="profil-subtitle mt-1">
-                              {goalObj?.cue ?? "Choisis un axe pour prioriser les reco nutrition."}
-                            </p>
-                          </div>
-                          <div className="rounded-[16px] border border-[var(--color-border)] bg-white p-[18px] shadow-sm">
-                            <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-bg-card))]">
-                              <Mountain className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
-                            </div>
-                            <p className="profil-kicker">
-                              Prochaine course
-                            </p>
-                            <p className="mt-2 line-clamp-2 font-display text-lg font-black text-[var(--color-text)]">
-                              {nextRace ? nextRace.name : "—"}
-                            </p>
-                            <p className="profil-subtitle mt-1">
-                              {nextRace
-                                ? "Contexte pris en compte pour tes plans."
-                                : "Ajoute un objectif dans Mes courses."}
-                            </p>
-                          </div>
-                        </div>
                       </div>
                     </div>
 
