@@ -579,6 +579,52 @@ export default function ProfilPage() {
         .filter(Boolean) as typeof setupChecklist,
     [setupChecklist]
   );
+  const quickAccessCards = useMemo(
+    () => [
+      {
+        id: "plan",
+        href: "/plan",
+        title: "Plan nutrition",
+        description: "Plan personnalisé pour tes entraînements.",
+        icon: Zap,
+        status: completion >= 60 ? "Actif" : "À compléter",
+        statusTone:
+          completion >= 60
+            ? "text-[#166534] bg-[#f0fdf4] border-[#86efac]"
+            : "text-[#b45309] bg-[#fff7ed] border-[#fed7aa]",
+      },
+      {
+        id: "race",
+        href: "/race",
+        title: "Mode course",
+        description: "Checklist et stratégie pour le jour J.",
+        icon: Footprints,
+        status: nextRace ? "Configuré" : "Non configuré",
+        statusTone: nextRace ? "text-[#166534] bg-[#f0fdf4] border-[#86efac]" : "text-[#991b1b] bg-[#fef2f2] border-[#fecaca]",
+      },
+      {
+        id: "prep",
+        href: "/prep",
+        title: "Pré / post",
+        description: "Protocoles nutritionnels avant et après effort.",
+        icon: Leaf,
+        status: pendingChecklist.some((item) => item.id === "hydration") ? "À paramétrer" : "Prêt",
+        statusTone: pendingChecklist.some((item) => item.id === "hydration")
+          ? "text-[#b45309] bg-[#fff7ed] border-[#fed7aa]"
+          : "text-[#166534] bg-[#f0fdf4] border-[#86efac]",
+      },
+      {
+        id: "races",
+        href: "/races",
+        title: "Mes courses",
+        description: "Calendrier et objectifs de la saison.",
+        icon: CalendarDays,
+        status: nextRace ? "1 objectif à venir" : "Aucun objectif",
+        statusTone: nextRace ? "text-[#1d4ed8] bg-[#eff6ff] border-[#bfdbfe]" : "text-[#991b1b] bg-[#fef2f2] border-[#fecaca]",
+      },
+    ],
+    [completion, nextRace, pendingChecklist]
+  );
   const completionVisual = completion < 50
     ? { barClass: "bg-[#dc2626]", softClass: "bg-[#fef2f2] text-[#b91c1c]", label: "À renforcer" }
     : completion <= 80
@@ -966,39 +1012,32 @@ export default function ProfilPage() {
                       <div className="grid gap-8 border-b border-[var(--color-border-subtle)] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--color-energy)_10%,var(--color-bg-card))_0%,var(--color-bg-card)_55%,var(--color-bg-card)_100%)] p-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)] lg:p-8">
                         <div>
                           <h2 className="font-display text-2xl font-black tracking-tight text-[var(--color-text)] md:text-[1.65rem]">
-                            Passe du profil à la ligne de départ.
+                            Accès rapide
                           </h2>
-                          <p className="profil-subtitle mt-1">Accès rapide aux modules clés.</p>
+                          <p className="profil-subtitle mt-1">Tes outils clés avec leur état actuel.</p>
 
                           <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                            <Link
-                              href="/plan"
-                              className="flex items-center gap-3 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-4 py-[14px] transition duration-200 hover:-translate-y-[1px] hover:shadow-md"
-                            >
-                              <span className="text-2xl" aria-hidden>⚡</span>
-                              <span className="text-sm font-medium text-[var(--color-text)]">Plan nutrition</span>
-                            </Link>
-                            <Link
-                              href="/race"
-                              className="flex items-center gap-3 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-4 py-[14px] transition duration-200 hover:-translate-y-[1px] hover:shadow-md"
-                            >
-                              <span className="text-2xl" aria-hidden>🏃</span>
-                              <span className="text-sm font-medium text-[var(--color-text)]">Mode course</span>
-                            </Link>
-                            <Link
-                              href="/prep"
-                              className="flex items-center gap-3 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-4 py-[14px] transition duration-200 hover:-translate-y-[1px] hover:shadow-md"
-                            >
-                              <span className="text-2xl" aria-hidden>🌿</span>
-                              <span className="text-sm font-medium text-[var(--color-text)]">Pré / post</span>
-                            </Link>
-                            <Link
-                              href="/races"
-                              className="flex items-center gap-3 rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-4 py-[14px] transition duration-200 hover:-translate-y-[1px] hover:shadow-md"
-                            >
-                              <span className="text-2xl" aria-hidden>📅</span>
-                              <span className="text-sm font-medium text-[var(--color-text)]">Mes courses</span>
-                            </Link>
+                            {quickAccessCards.map((card) => {
+                              const Icon = card.icon;
+                              return (
+                                <Link
+                                  key={card.id}
+                                  href={card.href}
+                                  className="rounded-[12px] border border-[rgba(0,0,0,0.06)] bg-white px-4 py-3 transition duration-200 hover:-translate-y-[1px] hover:shadow-md"
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_12%,white)]">
+                                      <Icon className="h-4.5 w-4.5 text-[var(--color-primary)]" aria-hidden />
+                                    </div>
+                                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${card.statusTone}`}>
+                                      {card.status}
+                                    </span>
+                                  </div>
+                                  <p className="mt-2 text-sm font-semibold text-[var(--color-text)]">{card.title}</p>
+                                  <p className="mt-0.5 line-clamp-1 text-xs text-[var(--color-text-muted)]">{card.description}</p>
+                                </Link>
+                              );
+                            })}
                           </div>
                         </div>
 
