@@ -117,12 +117,19 @@ export function ProfileMemoryTabContent() {
         <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_28%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-danger)_6%,var(--color-bg-card))] p-6 shadow-sm">
           <p className="text-[15px] font-semibold text-[var(--color-text)]">Impossible de charger l&apos;historique</p>
           <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-            La mémoire nutritionnelle n&apos;a pas pu etre recuperee pour le moment.
+            Ton historique se construit à chaque course enregistrée. Connecte Strava ou ajoute une course manuellement pour commencer.
           </p>
-          <div className="mt-4">
-            <Button type="button" variant="secondary" className="min-h-11 px-5" onClick={() => void load()}>
-              Reessayer
-            </Button>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link href="/profil/integrations">
+              <Button type="button" variant="secondary" className="min-h-11 px-5">
+                Connecter Strava
+              </Button>
+            </Link>
+            <Link href="/history/new">
+              <Button type="button" variant="primary" className="min-h-11 px-5">
+                Ajouter une course
+              </Button>
+            </Link>
           </div>
         </div>
       ) : null}
@@ -147,9 +154,9 @@ export function ProfileMemoryTabContent() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,white)] text-3xl" aria-hidden>
             🏁
           </div>
-          <p className="mt-4 text-[15px] font-semibold text-[var(--color-text)]">Ta premiere course alimentera ta memoire nutritionnelle</p>
+          <p className="mt-4 text-[15px] font-semibold text-[var(--color-text)]">Ta première course alimentera ta mémoire nutritionnelle</p>
           <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-            Enregistre une sortie apres l&apos;arrivee pour commencer a construire des reperes utiles pour tes prochains objectifs d&apos;endurance.
+            Enregistre une sortie après l&apos;arrivée pour commencer à construire des repères utiles pour tes prochains objectifs d&apos;endurance.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link href="/history/new">

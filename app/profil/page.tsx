@@ -238,6 +238,7 @@ function SectionAccordion({
   title,
   subtitle,
   alertBadge,
+  successBadge,
   open,
   onToggle,
   children,
@@ -248,6 +249,7 @@ function SectionAccordion({
   title: string;
   subtitle: string;
   alertBadge?: string;
+  successBadge?: string;
   open: boolean;
   onToggle: () => void;
   children: ReactNode;
@@ -297,6 +299,11 @@ function SectionAccordion({
               {alertBadge ? (
                 <span className="rounded-full border border-[#fdba74] bg-[#fff7ed] px-2 py-0.5 text-[11px] font-semibold text-[#b45309]">
                   {alertBadge}
+                </span>
+              ) : null}
+              {successBadge ? (
+                <span className="rounded-full border border-[#86efac] bg-[#f0fdf4] px-2 py-0.5 text-[11px] font-semibold text-[#166534]">
+                  {successBadge}
                 </span>
               ) : null}
             </div>
@@ -373,7 +380,7 @@ export default function ProfilPage() {
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [openSection, setOpenSection] = useState<string | null>("personal");
+  const [openSection, setOpenSection] = useState<string | null>(null);
   const [profilTab, setProfilTab] = useState<ProfilDashboardTab>("overview");
   const [densityMode, setDensityMode] = useState<ProfilDensityMode>("auto");
   const [isAutoCompactViewport, setIsAutoCompactViewport] = useState(false);
@@ -382,8 +389,13 @@ export default function ProfilPage() {
   const [avatarImageError, setAvatarImageError] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [avatarLightboxOpen, setAvatarLightboxOpen] = useState(false);
+  const [nutritionPanelState, setNutritionPanelState] = useState<"idle" | "loading" | "ready" | "error">("idle");
 
   const toggleSection = (id: string) => setOpenSection((prev) => (prev === id ? null : id));
+  const toggleNutritionSection = () => {
+    setOpenSection((prev) => (prev === "nutrition" ? null : "nutrition"));
+    if (nutritionPanelState !== "ready") setNutritionPanelState("loading");
+  };
   const refreshRaces = useCallback(() => setRaces(loadRaces()), []);
 
   useEffect(() => {
@@ -408,8 +420,6 @@ export default function ProfilPage() {
     if (savedTab === "overview" || savedTab === "memory" || savedTab === "insights") {
       setProfilTab(savedTab);
     }
-    const savedSection = safeStorageGet(PROFILE_LAST_SECTION_KEY);
-    if (savedSection) setOpenSection(savedSection);
     if (safeStorageGet(PROFILE_AUTOSAVE_KEY) === "0") {
       setAutoSaveEnabled(false);
     }
@@ -631,9 +641,17 @@ export default function ProfilPage() {
   const pendingChecklist = setupChecklist.filter((item) => !item.done);
   const setupProgressPct = Math.round(((setupChecklist.length - pendingChecklist.length) / setupChecklist.length) * 100);
   const nextPriorityAnchor = pendingChecklist[0]?.anchor ?? null;
-  const firstIncompleteSectionId = nextPriorityAnchor?.replace("#", "") ?? "personal";
+  const personalPendingCount = setupChecklist.filter((item) => ["identity", "morpho"].includes(item.id) && !item.done).length;
   const nutritionPendingCount = setupChecklist.filter((item) => ["performance", "hydration"].includes(item.id) && !item.done).length;
   const integrationsPendingCount = setupChecklist.filter((item) => item.id === "integrations" && !item.done).length;
+  const firstIncompleteSectionId =
+    nutritionPendingCount > 0
+      ? "nutrition"
+      : integrationsPendingCount > 0
+        ? "integrations"
+        : personalPendingCount > 0
+          ? "personal"
+          : "personal";
   const quickAccessCards = useMemo(
     () => [
       {
@@ -656,8 +674,8 @@ export default function ProfilPage() {
         description: "Checklist et stratégie pour le jour J.",
         icon: Footprints,
         status: nextRace ? "Configuré" : "Non configuré",
-        statusTone: nextRace ? "text-[#1d4ed8] bg-[#dbeafe] border-[#60a5fa]" : "text-[#991b1b] bg-[#fef2f2] border-[#fecaca]",
-        dotTone: nextRace ? "bg-[#2563eb]" : "bg-[#ef4444]",
+        statusTone: nextRace ? "text-[#166534] bg-[#dcfce7] border-[#4ade80]" : "text-[#475569] bg-[#f1f5f9] border-[#cbd5e1]",
+        dotTone: nextRace ? "bg-[#16a34a]" : "bg-[#94a3b8]",
       },
       {
         id: "prep",
@@ -678,24 +696,83 @@ export default function ProfilPage() {
         description: "Calendrier et objectifs de la saison.",
         icon: CalendarDays,
         status: nextRace ? "1 objectif à venir" : "Aucun objectif",
-        statusTone: nextRace ? "text-[#1d4ed8] bg-[#dbeafe] border-[#60a5fa]" : "text-[#991b1b] bg-[#fef2f2] border-[#fecaca]",
-        dotTone: nextRace ? "bg-[#2563eb]" : "bg-[#ef4444]",
+        statusTone: nextRace ? "text-[#166534] bg-[#dcfce7] border-[#4ade80]" : "text-[#475569] bg-[#f1f5f9] border-[#cbd5e1]",
+        dotTone: nextRace ? "bg-[#16a34a]" : "bg-[#94a3b8]",
       },
     ],
     [completion, nextRace, pendingChecklist]
   );
+  const readinessAxes = useMemo(
+    () => [
+      {
+        key: "morphology",
+        label: "Morphologie",
+        complete: typeof profile.weightKg === "number" && typeof profile.heightCm === "number" && typeof profile.age === "number",
+      },
+      {
+        key: "performance",
+        label: "Performance",
+        complete: typeof profile.ftpWatts === "number" || typeof profile.runnerVmaKmh === "number",
+      },
+      {
+        key: "nutrition",
+        label: "Nutrition",
+        complete: !!profile.mainGoal && profile.digestiveLiquidSolidPct >= 0,
+      },
+      {
+        key: "hydration",
+        label: "Hydratation",
+        complete: typeof profile.sweatRateMlPerH === "number" && typeof profile.sodiumLossMgPerH === "number",
+      },
+      {
+        key: "integrations",
+        label: "Connexions",
+        complete: connectedCount > 0,
+      },
+    ],
+    [
+      connectedCount,
+      profile.age,
+      profile.digestiveLiquidSolidPct,
+      profile.ftpWatts,
+      profile.heightCm,
+      profile.mainGoal,
+      profile.runnerVmaKmh,
+      profile.sodiumLossMgPerH,
+      profile.sweatRateMlPerH,
+      profile.weightKg,
+    ]
+  );
+  const readinessRadar = useMemo(() => {
+    const center = 60;
+    const radius = 44;
+    const total = readinessAxes.length;
+    const point = (index: number, ratio: number) => {
+      const angle = -Math.PI / 2 + (index / total) * Math.PI * 2;
+      const r = radius * ratio;
+      return {
+        x: center + Math.cos(angle) * r,
+        y: center + Math.sin(angle) * r,
+      };
+    };
+    const polygon = readinessAxes
+      .map((axis, i) => {
+        const p = point(i, axis.complete ? 1 : 0.45);
+        return `${p.x},${p.y}`;
+      })
+      .join(" ");
+    const axes = readinessAxes.map((axis, i) => {
+      const end = point(i, 1);
+      const labelPos = point(i, 1.18);
+      return { ...axis, end, labelPos };
+    });
+    return { polygon, axes };
+  }, [readinessAxes]);
   const completionVisual = completion < 50
     ? { barClass: "bg-[#dc2626]", softClass: "bg-[#fef2f2] text-[#b91c1c]", label: "À renforcer" }
     : completion <= 80
       ? { barClass: "bg-[#d97706]", softClass: "bg-[#fff7ed] text-[#b45309]", label: "En progression" }
       : { barClass: "bg-[#16a34a]", softClass: "bg-[#f0fdf4] text-[#15803d]", label: "Solide" };
-  const readinessFillClass =
-    completion > 70
-      ? "bg-[var(--color-primary)]"
-      : completion >= 50
-        ? "bg-[#d97706]"
-        : "bg-[#dc2626]";
-
   const onAvatarFile = (file: File | null) => {
     if (!file || !file.type.startsWith("image/")) return;
     if (file.size > 900_000) {
@@ -717,9 +794,22 @@ export default function ProfilPage() {
   }, [profileSnapshot, syncedProfileSnapshot]);
 
   useEffect(() => {
-    const savedSection = safeStorageGet(PROFILE_LAST_SECTION_KEY);
-    if (!savedSection) setOpenSection(firstIncompleteSectionId);
-  }, [firstIncompleteSectionId]);
+    if (openSection === null) setOpenSection(firstIncompleteSectionId);
+  }, [firstIncompleteSectionId, openSection]);
+
+  useEffect(() => {
+    if (openSection !== "nutrition") return;
+    if (nutritionPanelState === "ready") return;
+    setNutritionPanelState("loading");
+    const readyId = window.setTimeout(() => setNutritionPanelState("ready"), 180);
+    const failId = window.setTimeout(() => {
+      setNutritionPanelState((prev) => (prev === "ready" ? prev : "error"));
+    }, 5000);
+    return () => {
+      window.clearTimeout(readyId);
+      window.clearTimeout(failId);
+    };
+  }, [nutritionPanelState, openSection]);
 
   useEffect(() => {
     setAvatarImageError(false);
@@ -964,7 +1054,7 @@ export default function ProfilPage() {
           <div
             className="fuel-race-kpis-grid grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_280px]"
           >
-            <article className="rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white p-[18px] shadow-[0_1px_2px_rgba(26,26,26,0.08)]">
+            <article className="rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white p-4 shadow-[0_1px_2px_rgba(26,26,26,0.08)]">
               <p
                 className="font-semibold uppercase"
                 style={{ fontSize: "11px", letterSpacing: "0.08em", color: "var(--color-muted, var(--color-text-muted))" }}
@@ -1024,17 +1114,54 @@ export default function ProfilPage() {
               </div>
             </article>
 
-            <article className="rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white p-[18px] shadow-[0_1px_2px_rgba(26,26,26,0.08)]">
+            <article className="rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white p-4 shadow-[0_1px_2px_rgba(26,26,26,0.08)]">
               <p
                 className="font-semibold uppercase"
                 style={{ fontSize: "11px", letterSpacing: "0.08em", color: "var(--color-muted, var(--color-text-muted))" }}
               >
                 Sync
               </p>
-              <p className="profil-value mt-2">{quickSyncStatusLabel}</p>
+              <p className="profil-value mt-2">{hasConnectedSources ? quickSyncStatusLabel : "Connecte tes sources"}</p>
               <p className="profil-subtitle mt-2">
-                {quickSyncSubtitle}
+                {hasConnectedSources
+                  ? quickSyncSubtitle
+                  : "Synchronise tes sorties pour alimenter tes analyses automatiquement."}
               </p>
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {INTEGRATIONS.filter((integration) =>
+                  ["strava", "garmin", "trainingpeaks"].includes(integration.id)
+                ).map((integration) => {
+                  const connected = !!profile.integrationConnected[integration.id];
+                  return (
+                    <a
+                      key={integration.id}
+                      href="#integrations"
+                      onClick={() => setOpenSection("integrations")}
+                      className={[
+                        "rounded-xl border px-3 py-3 text-left transition hover:shadow-sm",
+                        connected
+                          ? "border-[color-mix(in_srgb,var(--color-primary)_35%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-primary)_9%,white)]"
+                          : "border-[var(--color-border)] bg-[var(--color-bg-subtle)]",
+                      ].join(" ")}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full text-sm" style={{ backgroundColor: `${integration.color}18` }}>
+                          {integration.logo}
+                        </span>
+                        <span
+                          className={[
+                            "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                            connected ? "bg-[#dcfce7] text-[#166534]" : "bg-white text-[var(--color-text-muted)]",
+                          ].join(" ")}
+                        >
+                          {connected ? "✓ Connecté" : "Connecter"}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm font-semibold text-[var(--color-text)]">{integration.name}</p>
+                    </a>
+                  );
+                })}
+              </div>
             </article>
           </div>
         </section>
@@ -1049,49 +1176,8 @@ export default function ProfilPage() {
         <div className="races-layout mx-auto">
           <div className="races-layout__main min-w-0">
             <nav className="profil-tabs-shell mb-1 scroll-mt-6" aria-label="Sections du profil">
-              <div className="relative">
-                <details className="absolute right-0 top-0 z-10">
-                  <summary
-                    className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] text-[var(--color-text-muted)]"
-                    title="Mode d'affichage: Auto adapte la densité, Confort affiche toutes les sections, Focus compacte l'interface et met en avant les priorités."
-                    aria-label="Réglages d'affichage"
-                  >
-                    <Settings className="h-4 w-4" aria-hidden />
-                  </summary>
-                  <div className="mt-2 min-w-[180px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-2 shadow-sm">
-                    <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Affichage</p>
-                    {(
-                      [
-                        ["auto", "Auto", "Ajuste automatiquement la densité selon l'écran."],
-                        ["standard", "Confort", "Affiche toutes les sections avec espacement standard."],
-                        ["compact", "Focus", "Masque les sections non prioritaires pour aller à l'essentiel."],
-                      ] as const
-                    ).map(([id, label, description]) => {
-                      const active = densityMode === id;
-                      return (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => setDensityMode(id)}
-                          title={description}
-                          className={[
-                            "profil-density-btn flex w-full items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors",
-                            active
-                              ? "bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-bg-card))] text-[var(--color-text)]"
-                              : "text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)]",
-                          ].join(" ")}
-                        >
-                          <span className="flex flex-col">
-                            <span>{label}</span>
-                            <span className="text-[10px] font-normal text-[var(--color-text-muted)]">{description}</span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </details>
-
-                <div className="flex rounded-full border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-1 pr-12">
+              <div className="relative border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-card)_92%,white)]">
+                <div className="flex gap-1">
                   {PROFIL_TABS.map((tab) => {
                     const active = profilTab === tab.id;
                     const Icon = tab.icon;
@@ -1101,9 +1187,9 @@ export default function ProfilPage() {
                         type="button"
                         onClick={() => setProfilTab(tab.id)}
                         className={[
-                          "profil-tab-btn relative flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-all sm:min-h-[46px] sm:flex-none sm:px-5",
+                          "profil-tab-btn relative flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-none px-3 py-2 text-sm font-semibold transition-all sm:min-h-[46px] sm:flex-none sm:px-5",
                           active
-                            ? "bg-[color-mix(in_srgb,var(--color-primary)_10%,white)] text-[#16351f] shadow-sm ring-1 ring-[color-mix(in_srgb,#1b3a23_22%,var(--color-border))]"
+                            ? "bg-transparent text-[#16351f]"
                             : "bg-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
                         ].join(" ")}
                         aria-current={active ? "page" : undefined}
@@ -1118,7 +1204,7 @@ export default function ProfilPage() {
                         <span className="sm:hidden">{tab.short}</span>
                         {active ? (
                           <span
-                            className="absolute bottom-[3px] left-1/2 h-[3px] w-8 -translate-x-1/2 rounded-full bg-[var(--color-energy)]"
+                            className="absolute bottom-0 left-0 h-[3px] w-full rounded-full bg-[var(--color-energy)]"
                             aria-hidden
                           />
                         ) : null}
@@ -1196,6 +1282,12 @@ export default function ProfilPage() {
                     icon={<User className="h-5 w-5" />}
                     title="Identité & morphologie"
                     subtitle="Le socle du profil: physique, sport principal et objectif."
+                    alertBadge={
+                      personalPendingCount > 0
+                        ? `⚠️ ${personalPendingCount} item${personalPendingCount > 1 ? "s" : ""} à compléter`
+                        : undefined
+                    }
+                    successBadge={personalPendingCount === 0 ? "✅ Complet" : undefined}
                     open={openSection === "personal"}
                     onToggle={() => toggleSection("personal")}
                     accentColor={GREEN}
@@ -1220,6 +1312,10 @@ export default function ProfilPage() {
                     </div>
 
                     <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
+                    <div className="mb-3 flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-2">
+                      <h3 className="text-sm font-bold text-[var(--color-text)]">Physique</h3>
+                      <span className="text-[11px] font-semibold text-[var(--color-text-muted)]">Profil athlète</span>
+                    </div>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <label className="block">
                         <span className="block text-[12px] font-semibold text-[var(--color-text-muted)]">Prénom</span>
@@ -1305,6 +1401,10 @@ export default function ProfilPage() {
                     </div>
 
                     <div className="mt-6 rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
+                    <div className="mb-3 flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-2">
+                      <h3 className="text-sm font-bold text-[var(--color-text)]">Sport</h3>
+                      <span className="text-[11px] font-semibold text-[var(--color-text-muted)]">Contexte d’entraînement</span>
+                    </div>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <label className="block">
                         <span className="block text-[12px] font-semibold text-[var(--color-text-muted)]">Sport principal</span>
@@ -1408,10 +1508,28 @@ export default function ProfilPage() {
                         ? `⚠️ ${nutritionPendingCount} item${nutritionPendingCount > 1 ? "s" : ""} à compléter`
                         : undefined
                     }
+                    successBadge={nutritionPendingCount === 0 ? "✅ Complet" : undefined}
                     open={openSection === "nutrition"}
-                    onToggle={() => toggleSection("nutrition")}
+                    onToggle={toggleNutritionSection}
                     accentColor="#D97706"
                   >
+                    {nutritionPanelState === "error" ? (
+                      <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_35%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-danger)_8%,var(--color-bg-card))] p-4">
+                        <p className="text-sm font-semibold text-[var(--color-text)]">
+                          Chargement de la section trop long.
+                        </p>
+                        <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                          Réessaie sans recharger la page.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setNutritionPanelState("loading")}
+                          className="mt-3 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text)]"
+                        >
+                          Réessayer
+                        </button>
+                      </div>
+                    ) : null}
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
                       <div id="performance" className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4 md:p-5">
                         <div className="mb-3 flex items-center gap-2">
@@ -1424,7 +1542,7 @@ export default function ProfilPage() {
                               type="number"
                               min={50}
                               max={650}
-                              placeholder="FTP (W)"
+                              placeholder="Ex: 250 W"
                               className={floatingInputClass()}
                               value={profile.ftpWatts ?? ""}
                               onChange={(e) =>
@@ -1441,7 +1559,7 @@ export default function ProfilPage() {
                               min={8}
                               max={25}
                               step={0.1}
-                              placeholder="VMA (km/h)"
+                              placeholder="Ex: 15 km/h"
                               className={floatingInputClass()}
                               value={profile.runnerVmaKmh ?? ""}
                               onChange={(e) =>
@@ -1519,7 +1637,7 @@ export default function ProfilPage() {
                             max={3500}
                             className={inputClass()}
                             value={profile.sweatRateMlPerH ?? ""}
-                            placeholder="ex. 900"
+                            placeholder="Ex: 1300 ml/h"
                             onChange={(e) =>
                               updateProfile({
                                 sweatRateMlPerH: e.target.value === "" ? null : Number(e.target.value),
@@ -1535,7 +1653,7 @@ export default function ProfilPage() {
                             max={4000}
                             className={inputClass()}
                             value={profile.sodiumLossMgPerH ?? ""}
-                            placeholder="ex. 600"
+                            placeholder="Ex: 800 mg/L (~1000 mg/h)"
                             onChange={(e) =>
                               updateProfile({
                                 sodiumLossMgPerH: e.target.value === "" ? null : Number(e.target.value),
@@ -1650,6 +1768,7 @@ export default function ProfilPage() {
                     title="Connexions"
                     subtitle="Active ou coupe chaque source pour refléter ton écosystème réel."
                     alertBadge={integrationsPendingCount > 0 ? "⚠️ 1 item à compléter" : undefined}
+                    successBadge={integrationsPendingCount === 0 ? "✅ Complet" : undefined}
                     open={openSection === "integrations"}
                     onToggle={() => toggleSection("integrations")}
                     accentColor="#64748B"
@@ -1717,25 +1836,59 @@ export default function ProfilPage() {
                         Readiness terrain
                       </p>
                       <p className="profil-value mt-2">{completion}%</p>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--color-border)]">
-                        <div className={`h-full rounded-full ${readinessFillClass}`} style={{ width: `${completion}%` }} aria-hidden />
-                      </div>
-                      <div className="mt-3 grid gap-2">
-                        <div className="flex items-center justify-between rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2 text-xs">
-                          <span className="text-[var(--color-text-muted)]">Sport principal</span>
-                          <span className="font-semibold text-[var(--color-text)]">
-                            {sportObj ? `${sportObj.emoji} ${sportObj.label}` : "À définir"}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2 text-xs">
-                          <span className="text-[var(--color-text-muted)]">{contextualMetricLabel}</span>
-                          <span className="font-semibold text-[var(--color-text)]">{contextualMetricValue}</span>
-                        </div>
-                        <div className="flex items-center justify-between rounded-xl bg-[var(--color-bg-subtle)] px-3 py-2 text-xs">
-                          <span className="text-[var(--color-text-muted)]">Hydratation</span>
-                          <span className="font-semibold text-[var(--color-text)]">
-                            {typeof profile.sweatRateMlPerH === "number" ? `${profile.sweatRateMlPerH} ml/h` : "À calibrer"}
-                          </span>
+                      <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-3">
+                        <svg viewBox="0 0 120 120" className="mx-auto h-40 w-40" aria-label="Radar readiness terrain">
+                          <polygon
+                            points="60,16 102,42 88,96 32,96 18,42"
+                            fill="none"
+                            stroke="rgba(148,163,184,0.35)"
+                            strokeWidth="1"
+                          />
+                          <polygon
+                            points="60,28 90,46 80,84 40,84 30,46"
+                            fill="none"
+                            stroke="rgba(148,163,184,0.28)"
+                            strokeWidth="1"
+                          />
+                          {readinessRadar.axes.map((axis) => (
+                            <g key={axis.key}>
+                              <line
+                                x1="60"
+                                y1="60"
+                                x2={axis.end.x}
+                                y2={axis.end.y}
+                                stroke={axis.complete ? "rgba(22,163,74,0.55)" : "rgba(249,115,22,0.65)"}
+                                strokeDasharray={axis.complete ? undefined : "3 3"}
+                                strokeWidth="1.2"
+                              />
+                              <text
+                                x={axis.labelPos.x}
+                                y={axis.labelPos.y}
+                                textAnchor="middle"
+                                className="fill-[var(--color-text-muted)] text-[7px] font-semibold"
+                              >
+                                {axis.label}
+                              </text>
+                            </g>
+                          ))}
+                          <polygon
+                            points={readinessRadar.polygon}
+                            fill="rgba(22,163,74,0.18)"
+                            stroke="rgba(21,128,61,0.9)"
+                            strokeWidth="2"
+                          />
+                        </svg>
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
+                          <div className="rounded-lg bg-white/70 px-2 py-1">
+                            <span className="text-[var(--color-text-muted)]">{contextualMetricLabel}</span>
+                            <p className="font-semibold text-[var(--color-text)]">{contextualMetricValue}</p>
+                          </div>
+                          <div className="rounded-lg bg-white/70 px-2 py-1">
+                            <span className="text-[var(--color-text-muted)]">Hydratation</span>
+                            <p className="font-semibold text-[var(--color-text)]">
+                              {typeof profile.sweatRateMlPerH === "number" ? `${profile.sweatRateMlPerH} ml/h` : "À calibrer"}
+                            </p>
+                          </div>
                         </div>
                       </div>
                       <p className="profil-subtitle mt-3">
@@ -1762,7 +1915,8 @@ export default function ProfilPage() {
               <div className="space-y-6">
                 <div className="fuel-theme-panel min-w-0">
                   <div className="fuel-theme-panel__inner">
-                    <p className="profil-kicker">Progression 4 semaines</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-muted)]">Analyse hebdomadaire</p>
+                    <h3 className="mt-1 text-base font-bold text-[var(--color-text)]">Progression 4 semaines</h3>
                     <div className="mt-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-4">
                       {hasWeeklyProgressData ? (
                         <>
@@ -1786,7 +1940,7 @@ export default function ProfilPage() {
                       ) : (
                         <div className="text-center">
                           <p className="text-sm font-semibold text-[var(--color-text)]">
-                            Pas encore assez de donnees
+                            Pas encore assez de données
                           </p>
                           <p className="mt-1 text-xs text-[var(--color-text-muted)]">
                             Connecte Strava ou saisis une course pour alimenter la progression 4 semaines.

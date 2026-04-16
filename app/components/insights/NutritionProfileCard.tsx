@@ -74,6 +74,16 @@ export function NutritionProfileCard({ profile }: { profile: LearnedNutritionPro
     profile.avgStomachScore != null ? stomachEmojiFromRoundedScore(profile.avgStomachScore) : '—';
 
   const showInsightsCol = profile.insights.length > 0 || profile.nextRaceRecommendation != null;
+  const choPlan = profile.avgPlanChoPerHour ?? 0;
+  const choReal = profile.avgActualChoPerHour ?? 0;
+  const choGapPct = choPlan > 0 ? Math.max(0, Math.min(100, Math.round((choReal / choPlan) * 100))) : 0;
+  const choSparklinePoints =
+    profile.choComplianceRatio != null
+      ? [
+          Math.max(20, Math.round(profile.choComplianceRatio * 100) - 10),
+          Math.max(20, Math.round(profile.choComplianceRatio * 100)),
+        ]
+      : undefined;
 
   return (
     <div style={{ marginBottom: 22 }}>
@@ -136,6 +146,30 @@ export function NutritionProfileCard({ profile }: { profile: LearnedNutritionPro
               planifié :{' '}
               {profile.avgPlanChoPerHour != null ? `${Math.round(profile.avgPlanChoPerHour)}g/h` : '—'}
             </div>
+            {profile.avgPlanChoPerHour != null && profile.avgActualChoPerHour != null ? (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ display: 'grid', gap: 6 }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--color-text-muted)' }}>
+                      <span>Planifié</span>
+                      <strong style={{ color: 'var(--color-text)' }}>{Math.round(choPlan)} g/h</strong>
+                    </div>
+                    <div style={{ marginTop: 3, height: 6, borderRadius: 999, background: 'var(--color-border)' }}>
+                      <div style={{ width: '100%', height: '100%', borderRadius: 999, background: '#94a3b8' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--color-text-muted)' }}>
+                      <span>Réel</span>
+                      <strong style={{ color: choColor }}>{Math.round(choReal)} g/h</strong>
+                    </div>
+                    <div style={{ marginTop: 3, height: 6, borderRadius: 999, background: 'var(--color-border)' }}>
+                      <div style={{ width: `${choGapPct}%`, height: '100%', borderRadius: 999, background: choColor }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div
@@ -193,7 +227,11 @@ export function NutritionProfileCard({ profile }: { profile: LearnedNutritionPro
                 </p>
                 <div style={{ display: 'grid', gap: 10 }}>
                   {profile.insights.map((insight) => (
-                    <InsightCard key={insight.id + insight.generatedAt} insight={insight} />
+                    <InsightCard
+                      key={insight.id + insight.generatedAt}
+                      insight={insight}
+                      sparklinePoints={insight.title.toLowerCase().includes('cho') ? choSparklinePoints : undefined}
+                    />
                   ))}
                 </div>
               </>

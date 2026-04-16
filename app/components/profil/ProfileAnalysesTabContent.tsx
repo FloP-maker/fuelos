@@ -91,13 +91,13 @@ export function ProfileAnalysesTabContent() {
             <NutritionProfileCard profile={nutritionProfile} />
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3 text-sm">
               <p className="font-semibold text-[var(--color-text)]">
-                {nutritionProfile.insights.length} insight{nutritionProfile.insights.length > 1 ? "s" : ""} debloque
+                {nutritionProfile.insights.length} insight{nutritionProfile.insights.length > 1 ? "s" : ""} débloqué
                 {nutritionProfile.insights.length > 1 ? "s" : ""}
               </p>
               <p className="mt-1 text-[var(--color-text-muted)]">
                 {insightsRemaining && insightsRemaining > 0
-                  ? `${insightsRemaining} course${insightsRemaining > 1 ? "s" : ""} de plus pour debloquer l'analyse suivante.`
-                  : "Continue a enregistrer tes courses pour enrichir les analyses hydratation, tolerance digestive et regularite glucidique."}
+                  ? `${insightsRemaining} course${insightsRemaining > 1 ? "s" : ""} de plus pour débloquer l'analyse suivante.`
+                  : "Continue à enregistrer tes courses pour enrichir les analyses hydratation, tolérance digestive et régularité glucidique."}
               </p>
             </div>
           </div>

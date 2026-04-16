@@ -15,9 +15,26 @@ const ICON: Record<InsightCardModel['type'], string> = {
   suggestion: '💡',
 };
 
-export function InsightCard({ insight }: { insight: InsightCardModel }) {
+export function InsightCard({
+  insight,
+  sparklinePoints,
+}: {
+  insight: InsightCardModel;
+  sparklinePoints?: number[];
+}) {
   const border = BORDER[insight.type];
   const icon = ICON[insight.type];
+  const sparklineMax = sparklinePoints && sparklinePoints.length > 0 ? Math.max(1, ...sparklinePoints) : 1;
+  const sparklinePath =
+    sparklinePoints && sparklinePoints.length > 1
+      ? sparklinePoints
+          .map((v, i) => {
+            const x = (i / (sparklinePoints.length - 1)) * 72;
+            const y = 22 - (v / sparklineMax) * 16;
+            return `${x},${y}`;
+          })
+          .join(' ')
+      : null;
 
   return (
     <div
@@ -61,6 +78,23 @@ export function InsightCard({ insight }: { insight: InsightCardModel }) {
             </Link>
           ) : null}
         </div>
+        {sparklinePath ? (
+          <div style={{ marginTop: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 4 }}>
+              Évolution récente
+            </div>
+            <svg viewBox="0 0 72 24" width="100%" height="24" aria-label="Évolution de l'insight">
+              <polyline
+                fill="none"
+                stroke={border}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                points={sparklinePath}
+              />
+            </svg>
+          </div>
+        ) : null}
       </div>
     </div>
   );

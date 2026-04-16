@@ -49,6 +49,26 @@ function phaseForDaysLeft(daysLeft: number): { label: string; color: string } {
   return { label: "Taper", color: "#16a34a" };
 }
 
+function phaseKeyForDaysLeft(daysLeft: number): "base" | "build" | "peak" | "taper" {
+  if (daysLeft > 56) return "base";
+  if (daysLeft > 28) return "build";
+  if (daysLeft > 10) return "peak";
+  return "taper";
+}
+
+function estimateTargetHours(race: RaceEntry): number | null {
+  const d = typeof race.distance === "number" ? race.distance : 0;
+  if (d <= 0) return null;
+  const elev = typeof race.elevationGain === "number" ? race.elevationGain : 0;
+  const sport = race.sport.toLowerCase();
+  let h = d / 9.5;
+  if (sport.includes("trail") || sport.includes("ultra")) h = d / 7 + elev / 700;
+  else if (sport.includes("triathlon")) h = d / 8.5 + elev / 1200;
+  else if (sport.includes("velo")) h = d / 25 + elev / 1500;
+  if (!Number.isFinite(h) || h <= 0) return null;
+  return Math.max(1, Math.round(h));
+}
+
 function estimateSessionsRemaining(daysRemaining: number): number {
   return Math.max(1, Math.round(daysRemaining / 3));
 }
@@ -113,6 +133,19 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
   const windowDays = nextRace ? getRacePrepWindowDays(nextRace) : 120;
   const daysRem = days != null ? Math.max(0, days) : 0;
   const prepProgressPct = Math.round(approach * 100);
+  const phaseKey = phaseKeyForDaysLeft(daysRem);
+  const estimatedHours = nextRace ? estimateTargetHours(nextRace) : null;
+  const metricsLine = nextRace
+    ? [
+        typeof nextRace.distance === "number" && nextRace.distance > 0 ? `${nextRace.distance} km` : null,
+        typeof nextRace.elevationGain === "number" && nextRace.elevationGain > 0
+          ? `${Math.round(nextRace.elevationGain).toLocaleString("fr-FR")} D+`
+          : null,
+        estimatedHours ? `~${estimatedHours}h estimées` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
 
   return (
     <div className="races-next-milestone">
@@ -123,7 +156,10 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
               <div className="races-section-eyebrow">Prochain objectif</div>
               <div className="races-next-milestone-card__title-row">
                 <Mountain className="races-next-milestone-card__title-icon" strokeWidth={2.25} aria-hidden />
-                <div className="races-next-milestone-card__title">{nextRace.name}</div>
+                <div>
+                  <div className="races-next-milestone-card__title">{nextRace.name}</div>
+                  {metricsLine ? <p className="races-next-milestone-card__metrics">{metricsLine}</p> : null}
+                </div>
               </div>
             </div>
 
@@ -167,8 +203,8 @@ export function RacesNextMilestone({ nextRace }: RacesNextMilestoneProps) {
               <div>
                 <p className="races-next-milestone-card__reco-title">Conseil du moment</p>
                 <p className="races-next-milestone-card__reco-copy">{heroNutritionRecommendation(days)}</p>
-                <Link href={`/races/${nextRace.id}`} className="races-next-milestone-card__reco-link">
-                  Voir le détail
+                <Link href={`/plan?phase=${phaseKey}&raceId=${nextRace.id}`} className="races-next-milestone-card__reco-link">
+                  Voir mon plan nutrition pour cette phase →
                 </Link>
               </div>
             </div>

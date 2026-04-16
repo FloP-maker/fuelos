@@ -52,13 +52,38 @@ export function NutritionPatternsSection() {
   if (status !== 'authenticated') return null;
 
   if (raceCountWithTimeline < 3) {
+    const progressPct = Math.max(0, Math.min(100, Math.round((raceCountWithTimeline / 3) * 100)));
     return (
       <div
         className="mb-6 rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 text-[13px] leading-relaxed text-[var(--color-text-muted)]"
         style={{ minWidth: 0 }}
       >
-        <div className="mb-1 font-extrabold text-[var(--color-text)]">Tes patterns nutritionnels</div>
-        Complète 3 courses avec suivi détaillé des prises pour débloquer ton analyse de patterns.
+        <div className="relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-subtle)_60%,var(--color-bg-card))] p-4">
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(15,23,42,0.06),rgba(15,23,42,0.02))]" aria-hidden />
+          <div className="relative">
+            <div className="mb-1 flex items-center gap-2 font-extrabold text-[var(--color-text)]">
+              <span aria-hidden>🔒</span>
+              <span>Tes patterns nutritionnels</span>
+            </div>
+            <p className="m-0">
+              Complète 3 courses avec suivi détaillé des prises pour débloquer ton analyse de patterns.
+            </p>
+            <div className="mt-3">
+              <div className="mb-1 flex items-center justify-between text-[11px] font-semibold">
+                <span>Progression</span>
+                <span>
+                  {raceCountWithTimeline}/3 courses
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-[var(--color-border)]">
+                <div
+                  className="h-full rounded-full bg-[linear-gradient(90deg,#16a34a,#22c55e)]"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
