@@ -865,32 +865,39 @@ export default function ProfilPage() {
             <nav className="profil-tabs-shell mb-1 scroll-mt-6" aria-label="Sections du profil">
               <div className="relative">
                 <details className="absolute right-0 top-0 z-10">
-                  <summary className="cursor-pointer list-none rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1 text-[11px] font-semibold text-[var(--color-text-muted)]">
-                    Options
+                  <summary
+                    className="cursor-pointer list-none rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1 text-[11px] font-semibold text-[var(--color-text-muted)]"
+                    title="Mode d'affichage: Auto adapte la densité, Confort affiche toutes les sections, Focus compacte l'interface et met en avant les priorités."
+                  >
+                    Mode d'affichage
                   </summary>
                   <div className="mt-2 min-w-[180px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-2 shadow-sm">
                     <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Affichage</p>
                     {(
                       [
-                        ["auto", "Auto"],
-                        ["standard", "Confort"],
-                        ["compact", "Focus"],
+                        ["auto", "Auto", "Ajuste automatiquement la densité selon l'écran."],
+                        ["standard", "Confort", "Affiche toutes les sections avec espacement standard."],
+                        ["compact", "Focus", "Masque les sections non prioritaires pour aller à l'essentiel."],
                       ] as const
-                    ).map(([id, label]) => {
+                    ).map(([id, label, description]) => {
                       const active = densityMode === id;
                       return (
                         <button
                           key={id}
                           type="button"
                           onClick={() => setDensityMode(id)}
+                          title={description}
                           className={[
-                            "profil-density-btn flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
+                            "profil-density-btn flex w-full items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors",
                             active
                               ? "bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-bg-card))] text-[var(--color-text)]"
                               : "text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)]",
                           ].join(" ")}
                         >
-                          {label}
+                          <span className="flex flex-col">
+                            <span>{label}</span>
+                            <span className="text-[10px] font-normal text-[var(--color-text-muted)]">{description}</span>
+                          </span>
                         </button>
                       );
                     })}
@@ -909,7 +916,7 @@ export default function ProfilPage() {
                         className={[
                           "profil-tab-btn relative flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-all sm:min-h-[46px] sm:flex-none sm:px-5",
                           active
-                            ? "bg-white text-[#1b3a23] shadow-sm ring-1 ring-[color-mix(in_srgb,#1b3a23_10%,var(--color-border))]"
+                            ? "bg-white text-[#1b3a23] shadow-sm ring-1 ring-[color-mix(in_srgb,#1b3a23_16%,var(--color-border))]"
                             : "bg-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]",
                         ].join(" ")}
                         aria-current={active ? "page" : undefined}
@@ -922,6 +929,12 @@ export default function ProfilPage() {
                         />
                         <span className="hidden sm:inline">{tab.label}</span>
                         <span className="sm:hidden">{tab.short}</span>
+                        {active ? (
+                          <span
+                            className="absolute bottom-[3px] left-1/2 h-[3px] w-8 -translate-x-1/2 rounded-full bg-[var(--color-energy)]"
+                            aria-hidden
+                          />
+                        ) : null}
                       </button>
                     );
                   })}
