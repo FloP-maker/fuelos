@@ -48,6 +48,7 @@ export function Header({ activePage: activePageProp, sticky, tall, extra }: Head
   const [authGateReturnTo, setAuthGateReturnTo] = useState<string>('/races');
 
   const guestLocked = status === 'unauthenticated';
+  const showNavigation = status === 'authenticated';
 
   const openAuthGate = useCallback((returnTo: string) => {
     setAuthGateReturnTo(returnTo);
@@ -161,29 +162,35 @@ export function Header({ activePage: activePageProp, sticky, tall, extra }: Head
             >
               <FuelLogo size={34} withWordmark wordmarkClassName="fuel-header-wordmark" />
             </Link>
-            <button
-              type="button"
-              className="fuel-header-menu-btn"
-              aria-expanded={mobileNavOpen}
-              aria-controls="fuel-header-nav-drawer"
-              onClick={() => setMobileNavOpen((o) => !o)}
-            >
-              {mobileNavOpen ? (
-                <X size={22} strokeWidth={2.25} aria-hidden />
-              ) : (
-                <Menu size={22} strokeWidth={2.25} aria-hidden />
-              )}
-              <span className="fuel-sr-only">{mobileNavOpen ? 'Fermer le menu' : 'Ouvrir le menu'}</span>
-            </button>
-            <nav className="fuel-header-text-nav" aria-label="Sections principales">
-              {NAV_SECTIONS.map((item, index) => renderDesktopNavItem(item, index))}
-            </nav>
+            {showNavigation ? (
+              <>
+                <button
+                  type="button"
+                  className="fuel-header-menu-btn"
+                  aria-expanded={mobileNavOpen}
+                  aria-controls="fuel-header-nav-drawer"
+                  onClick={() => setMobileNavOpen((o) => !o)}
+                >
+                  {mobileNavOpen ? (
+                    <X size={22} strokeWidth={2.25} aria-hidden />
+                  ) : (
+                    <Menu size={22} strokeWidth={2.25} aria-hidden />
+                  )}
+                  <span className="fuel-sr-only">{mobileNavOpen ? 'Fermer le menu' : 'Ouvrir le menu'}</span>
+                </button>
+                <nav className="fuel-header-text-nav" aria-label="Sections principales">
+                  {NAV_SECTIONS.map((item, index) => renderDesktopNavItem(item, index))}
+                </nav>
+              </>
+            ) : null}
           </div>
 
           <div className="fuel-header-tail">
-            <div className="fuel-header-search-column">
-              <SiteSearch />
-            </div>
+            {showNavigation ? (
+              <div className="fuel-header-search-column">
+                <SiteSearch />
+              </div>
+            ) : null}
             <div className="fuel-header-right">
               {extra}
               <AuthMenu />
@@ -191,7 +198,7 @@ export function Header({ activePage: activePageProp, sticky, tall, extra }: Head
             </div>
           </div>
         </div>
-        {mobileNavOpen && (
+        {showNavigation && mobileNavOpen && (
           <>
             <div
               className="fuel-header-nav-backdrop"
@@ -231,7 +238,9 @@ export function Header({ activePage: activePageProp, sticky, tall, extra }: Head
         )}
       </header>
 
-      <RacesAuthGateModal open={authGateOpen} onClose={() => setAuthGateOpen(false)} returnTo={authGateReturnTo} />
+      {showNavigation ? (
+        <RacesAuthGateModal open={authGateOpen} onClose={() => setAuthGateOpen(false)} returnTo={authGateReturnTo} />
+      ) : null}
     </>
   );
 }

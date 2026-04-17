@@ -1,4 +1,3 @@
-import { pathnameRequiresAuthentication } from "@/lib/authRequiredRoutes";
 import { hasLikelySessionCookie } from "@/lib/middlewareSessionCookie";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
@@ -9,26 +8,37 @@ import type { NextRequest } from "next/server";
  */
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  if (!pathnameRequiresAuthentication(pathname)) {
+
+  // Auth endpoints and public legal pages stay accessible without session.
+  if (
+    pathname.startsWith("/api/auth") ||
+    pathname === "/legal" ||
+    pathname === "/privacy"
+  ) {
     return NextResponse.next();
   }
-  if (hasLikelySessionCookie(req)) {
+
+  const hasSession = hasLikelySessionCookie(req);
+
+  // Logged user: root path is just an entrypoint to race plans.
+  if (pathname === "/" && hasSession) {
+    return NextResponse.redirect(new URL("/races", req.nextUrl.origin));
+  }
+
+  // Guest can only stay on root login page (plus legal/privacy handled above).
+  if (pathname === "/" && !hasSession) {
     return NextResponse.next();
   }
-  const signIn = new URL("/api/auth/signin", req.nextUrl.origin);
-  signIn.searchParams.set("callbackUrl", `${pathname}${req.nextUrl.search}`);
-  return NextResponse.redirect(signIn);
+
+  if (hasSession) {
+    return NextResponse.next();
+  }
+
+  return NextResponse.redirect(new URL("/", req.nextUrl.origin));
 }
 
 export const config = {
   matcher: [
-    "/prep",
-    "/prep/:path*",
-    "/race",
-    "/race/:path*",
-    "/history",
-    "/history/:path*",
-    "/races",
-    "/races/:path*",
+    "/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icons/|api/).*)",
   ],
 };
