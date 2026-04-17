@@ -22,7 +22,7 @@ export function middleware(req: NextRequest) {
 
   // Logged user: root path is just an entrypoint to race plans.
   if (pathname === "/" && hasSession) {
-    return NextResponse.redirect(new URL("/races", req.nextUrl.origin));
+    return NextResponse.redirect(new URL("/mes-plans-courses", req.nextUrl.origin));
   }
 
   // Guest can only stay on root login page (plus legal/privacy handled above).

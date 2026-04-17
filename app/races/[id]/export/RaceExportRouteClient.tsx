@@ -94,7 +94,7 @@ export function RaceExportRouteClient({ raceId }: Props) {
               Se connecter
             </Link>
             <Link
-              href="/races"
+              href="/mes-plans-courses"
               className="text-sm font-semibold text-[#16a34a] underline hover:no-underline"
             >
               Retour à mes courses

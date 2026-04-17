@@ -34,8 +34,7 @@ export const NAV_ACCOUNT_REQUIRED_HINT = 'Accessible avec un compte FuelOS';
  */
 export const NAV_SECTIONS: NavSectionItem[] = [
   { href: '/produits', label: 'Produits', page: 'shop', group: 'discover', requiresAccount: false },
-  { href: '/races', label: 'Ma course', page: 'races', group: 'athlete', requiresAccount: true },
-  { href: '/prep', label: 'Pré / post', page: 'prep', group: 'athlete', requiresAccount: true },
+  { href: '/mes-plans-courses', label: 'Mes plans courses', page: 'races', group: 'athlete', requiresAccount: true },
   { href: '/race', label: 'Mode course', page: 'race', group: 'athlete', requiresAccount: true },
   { href: '/profil', label: 'Profil', page: 'profile', group: 'athlete', requiresAccount: false },
 ];
@@ -70,9 +69,9 @@ export function authGateCopyForReturnPath(returnPath: string): { title: string; 
         'Connecte-toi pour synchroniser tes protocoles pré et post-course avec ton profil et les retrouver sur chaque appareil.',
     };
   }
-  if (path.startsWith('/races')) {
+  if (path.startsWith('/mes-plans-courses') || path.startsWith('/races')) {
     return {
-      title: 'Ma course',
+      title: 'Mes plans courses',
       description:
         'Connecte-toi pour synchroniser ton calendrier de courses sur ton compte et activer les actions liées au cloud (ajout de course, suivi multi-appareils).',
     };
@@ -103,6 +102,7 @@ export function pathnameToHeaderPage(pathname: string | null): HeaderActivePage 
   if (pathname === '/') return 'home';
   if (pathname.startsWith('/plan')) return 'races';
   if (pathname.startsWith('/shop') || pathname.startsWith('/produits')) return 'shop';
+  if (pathname.startsWith('/mes-plans-courses')) return 'races';
   if (pathname.startsWith('/races')) return 'races';
   if (pathname.startsWith('/race')) return 'race';
   if (pathname.startsWith('/prep')) return 'prep';

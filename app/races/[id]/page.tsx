@@ -74,7 +74,7 @@ export default function RaceDetailPage() {
         <Header />
         <main className="fuel-main mx-auto max-w-2xl px-4 py-8">
           <p className="text-[var(--color-text-muted)]">Course introuvable.</p>
-          <Link href="/races" className="mt-4 inline-block font-semibold text-[#16a34a] underline">
+          <Link href="/mes-plans-courses" className="mt-4 inline-block font-semibold text-[#16a34a] underline">
             Retour à mes courses
           </Link>
         </main>
@@ -86,7 +86,7 @@ export default function RaceDetailPage() {
     <>
       <Header />
       <main className="fuel-main mx-auto w-full max-w-2xl px-4 py-8 md:px-6">
-        <Link href="/races" className="mb-6 inline-block text-sm font-semibold text-[#16a34a] hover:underline">
+        <Link href="/mes-plans-courses" className="mb-6 inline-block text-sm font-semibold text-[#16a34a] hover:underline">
           ← Mes courses
         </Link>
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">

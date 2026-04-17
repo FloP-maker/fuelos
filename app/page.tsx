@@ -6,7 +6,7 @@ import { LandingAuthPanel } from "./components/LandingAuthPanel";
 export default async function Home() {
   const session = await auth();
   if (session?.user) {
-    redirect("/races");
+    redirect("/mes-plans-courses");
   }
 
   return (
@@ -34,7 +34,7 @@ export default async function Home() {
         <LandingAuthPanel
           title="Connexion"
           subtitle="L'acces au site est reserve aux utilisateurs connectes."
-          callbackPath="/races"
+          callbackPath="/mes-plans-courses"
         />
       </main>
     </div>

@@ -30,7 +30,7 @@ function toAbsoluteCallbackUrl(returnTo: string | undefined): string {
 }
 
 function pathForCopy(returnTo: string | undefined): string {
-  if (!returnTo?.trim()) return "/races";
+  if (!returnTo?.trim()) return "/mes-plans-courses";
   try {
     if (returnTo.startsWith("http://") || returnTo.startsWith("https://")) {
       return new URL(returnTo).pathname;

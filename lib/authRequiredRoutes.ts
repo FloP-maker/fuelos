@@ -9,6 +9,7 @@ export const AUTH_REQUIRED_PATH_PREFIXES = [
   "/prep",
   "/race",
   "/history",
+  "/mes-plans-courses",
   "/races",
 ] as const;
 

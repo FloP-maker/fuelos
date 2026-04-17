@@ -45,7 +45,7 @@ export function Header({ activePage: activePageProp, sticky, tall, extra }: Head
   const resolvedActive = activePageProp ?? pathnameToHeaderPage(pathname);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [authGateOpen, setAuthGateOpen] = useState(false);
-  const [authGateReturnTo, setAuthGateReturnTo] = useState<string>('/races');
+  const [authGateReturnTo, setAuthGateReturnTo] = useState<string>('/mes-plans-courses');
 
   const guestLocked = status === 'unauthenticated';
   const showNavigation = status === 'authenticated';

@@ -700,8 +700,8 @@ function ProfilPageContent() {
       },
       {
         id: "races",
-        href: "/races",
-        title: "Mes courses",
+        href: "/mes-plans-courses",
+        title: "Mes plans courses",
         description: "Calendrier et objectifs de la saison.",
         icon: CalendarDays,
         status: nextRace ? "1 objectif à venir" : "Aucun objectif",

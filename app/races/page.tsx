@@ -298,7 +298,7 @@ export default function RacesPage() {
         </div>
       </main>
 
-      <RacesAuthGateModal open={authGateOpen} onClose={() => setAuthGateOpen(false)} returnTo="/races" />
+      <RacesAuthGateModal open={authGateOpen} onClose={() => setAuthGateOpen(false)} returnTo="/mes-plans-courses" />
       <AddRaceModal open={addOpen} onClose={() => setAddOpen(false)} onSaved={onRaceSaved} />
       <RacePlanFollowupModal
         open={planNudgeOpen}
