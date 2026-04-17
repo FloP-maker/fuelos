@@ -107,7 +107,7 @@ export default async function Home() {
           >
             <p style={{ margin: 0, fontSize: 11, letterSpacing: ".08em", fontWeight: 900, opacity: 0.8 }}>MES PLANS COURSES</p>
             <p style={{ margin: "6px 0 0", fontSize: 13, lineHeight: 1.5 }}>
-              Construis ta saison, clique chaque event et prépare ton nutrition training autour du GPX.
+              Construis ton calendrier objectif par objectif, avec plan nutrition et check matériel liés à chaque parcours.
             </p>
           </div>
         </section>
@@ -127,13 +127,45 @@ export default async function Home() {
         >
           <div style={{ textAlign: "center", marginBottom: 4 }}>
             <h1 className="font-display" style={{ margin: 0, fontSize: "clamp(1.7rem, 4vw, 2.3rem)", lineHeight: 1.05, fontWeight: 900 }}>
-              FuelOS, prêt pour
+              FuelOS, la plateforme
               <br />
-              ton prochain objectif
+              nutrition de l&apos;athlète
             </h1>
             <p style={{ margin: "8px 0 0", color: "var(--color-text-muted)", fontSize: 13, lineHeight: 1.5 }}>
-              Profil, plans courses, mode race et catalogue produits dans une seule plateforme.
+              Profil physiologique, plans courses, mode race live et catalogue produits orienté performance.
             </p>
+          </div>
+
+          <div
+            className="fuel-landing-v2__kpis"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+              gap: 8,
+              marginBottom: 2,
+            }}
+            aria-label="Repères FuelOS"
+          >
+            {[
+              { k: "CHO/h", v: "60-90g", t: "ciblage course" },
+              { k: "Hydratation", v: "ml/h", t: "ajustée météo" },
+              { k: "Sodium", v: "mg/h", t: "pertes perso" },
+            ].map((item) => (
+              <div
+                key={item.k}
+                style={{
+                  border: "1px solid var(--color-border)",
+                  borderRadius: 10,
+                  padding: "8px 6px",
+                  textAlign: "center",
+                  background: "color-mix(in srgb, var(--color-bg-subtle) 45%, var(--color-bg-card))",
+                }}
+              >
+                <p style={{ margin: 0, fontSize: 10, fontWeight: 800, letterSpacing: ".06em", color: "var(--color-text-muted)" }}>{item.k}</p>
+                <p style={{ margin: "4px 0 0", fontSize: 13, fontWeight: 900, color: "var(--color-text)" }}>{item.v}</p>
+                <p style={{ margin: "2px 0 0", fontSize: 10, color: "var(--color-text-muted)" }}>{item.t}</p>
+              </div>
+            ))}
           </div>
 
           <LandingAuthPanel
@@ -186,7 +218,7 @@ export default async function Home() {
           >
             <p style={{ margin: 0, fontSize: 11, letterSpacing: ".08em", fontWeight: 900, opacity: 0.8 }}>MODE COURSE</p>
             <p style={{ margin: "6px 0 0", fontSize: 13, lineHeight: 1.5 }}>
-              Pilote tes prises nutrition avec topographie, allure, physiologie et historique.
+              Pilote tes prises en live selon topographie, vitesse, fréquence cardiaque et historique digestif.
             </p>
           </div>
         </section>
@@ -209,7 +241,7 @@ export default async function Home() {
             FUELOS
           </p>
           <p style={{ margin: "5px 0 0", fontSize: 11, color: "var(--color-text-muted)" }}>
-            Athlete nutrition OS
+            Endurance nutrition system
           </p>
         </div>
         <div>

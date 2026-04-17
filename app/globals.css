@@ -3353,6 +3353,9 @@ textarea:focus {
 }
 
 @media (max-width: 780px) {
+  .fuel-landing-v2__kpis {
+    grid-template-columns: 1fr !important;
+  }
   .fuel-landing-v2__nav {
     display: none !important;
   }
