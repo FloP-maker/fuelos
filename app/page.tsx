@@ -87,7 +87,7 @@ export default async function Home() {
             position: "relative",
             overflow: "hidden",
             backgroundImage:
-              "linear-gradient(180deg, rgba(15,23,42,.25), rgba(15,23,42,.45)), url('https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=1600&q=80')",
+              "linear-gradient(165deg, rgba(16,42,26,.42), rgba(15,23,42,.5)), url('https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1800&q=80')",
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -182,7 +182,7 @@ export default async function Home() {
             position: "relative",
             overflow: "hidden",
             backgroundImage:
-              "linear-gradient(180deg, rgba(15,23,42,.18), rgba(15,23,42,.42)), url('https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=1600&q=80')",
+              "linear-gradient(160deg, rgba(89,36,7,.26), rgba(15,23,42,.45)), url('https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1800&q=80')",
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
