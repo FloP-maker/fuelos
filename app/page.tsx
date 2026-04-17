@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/auth";
-import { Header } from "./components/Header";
 import { LandingAuthPanel } from "./components/LandingAuthPanel";
 
 export default async function Home() {
@@ -11,105 +10,368 @@ export default async function Home() {
   }
 
   return (
-    <div className="fuel-page">
-      <Header sticky />
-      <main className="fuel-main" style={{ paddingTop: 28 }}>
-        <section className="fuel-card" style={{ padding: 18, marginBottom: 14 }} aria-label="Présentation FuelOS">
-          <h1
-            className="font-display"
-            style={{
-              margin: 0,
-              marginBottom: 6,
-              fontSize: "clamp(1.8rem, 4.5vw, 2.6rem)",
-              fontWeight: 900,
-              lineHeight: 1.08,
-            }}
-          >
-            FuelOS
-          </h1>
-          <p style={{ margin: 0, color: "var(--color-text-muted)", lineHeight: 1.5 }}>
-            Planifie ta saison, pilote ta nutrition en course et retrouve les meilleurs produits en un seul endroit.
-          </p>
-        </section>
-
-        <section
-          className="fuel-card"
-          style={{ padding: 18, marginBottom: 14 }}
-          aria-label="Modules FuelOS"
-        >
-          <h2 className="font-display" style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800 }}>
-            Les 4 menus de l&apos;app
-          </h2>
-          <p style={{ margin: "6px 0 14px", color: "var(--color-text-muted)" }}>
-            Découvre les modules clés avant de te connecter.
-          </p>
-
-          <div
-            style={{
-              display: "grid",
-              gap: 10,
-              gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-            }}
-          >
+    <div
+      className="fuel-landing-v2"
+      style={{
+        minHeight: "100dvh",
+        display: "grid",
+        gridTemplateRows: "56px minmax(0,1fr) auto",
+        background: "var(--color-bg)",
+      }}
+    >
+      <header
+        className="fuel-landing-v2__header"
+        style={{
+          height: 56,
+          borderBottom: "1px solid var(--color-border)",
+          background: "var(--color-bg-card)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 16px",
+          gap: 16,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+          <Link href="/" className="font-display" style={{ fontWeight: 900, fontSize: 24, color: "#1B4332", textDecoration: "none" }}>
+            FUELOS
+          </Link>
+          <nav className="fuel-landing-v2__nav" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }} aria-label="Menus principaux">
             {[
-              {
-                href: "/profil",
-                title: "Profil",
-                emoji: "👤",
-                description:
-                  "Objectif à venir, analyses nutrition, connexions Garmin/Strava/Nolio et données morpho + perf.",
-              },
-              {
-                href: "/mes-plans-courses",
-                title: "Mes plans courses",
-                emoji: "🗓️",
-                description:
-                  "Calendrier de saison, événements cliquables, détail course, GPX et shopping list selon la stratégie.",
-              },
-              {
-                href: "/race",
-                title: "Mode course",
-                emoji: "🏁",
-                description:
-                  "Suivi nutritif en direct basé sur le GPX, la topographie, la vitesse et les données physiologiques.",
-              },
-              {
-                href: "/produits",
-                title: "Produits",
-                emoji: "🧃",
-                description:
-                  "Catalogue des produits utiles avec image et lien vers les sites des marques.",
-              },
+              { href: "/profil", label: "Profil" },
+              { href: "/mes-plans-courses", label: "Mes plans courses" },
+              { href: "/race", label: "Mode course" },
+              { href: "/produits", label: "Produits" },
             ].map((item) => (
               <Link
-                key={item.title}
+                key={item.href}
                 href={item.href}
-                className="fuel-card"
-                style={{
-                  padding: 12,
-                  textDecoration: "none",
-                  color: "inherit",
-                  borderColor: "var(--color-border)",
-                  transition: "transform .16s ease, box-shadow .16s ease",
-                }}
+                className="fuel-landing-v2__nav-link"
+                style={{ fontSize: 13, textDecoration: "none", color: "var(--color-text-muted)", fontWeight: 700 }}
               >
-                <p style={{ margin: 0, fontSize: 13, opacity: 0.9 }}>
-                  {item.emoji} {item.title}
-                </p>
-                <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.5 }}>
-                  {item.description}
-                </p>
+                {item.label}
               </Link>
             ))}
+          </nav>
+        </div>
+        <Link
+          href="/api/auth/signin"
+          className="fuel-landing-v2__login-btn"
+          style={{
+            textDecoration: "none",
+            border: "1px solid var(--color-border)",
+            borderRadius: 8,
+            padding: "8px 12px",
+            fontSize: 12,
+            fontWeight: 800,
+            color: "var(--color-text)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Connexion
+        </Link>
+      </header>
+
+      <main
+        className="fuel-landing-v2__main"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr minmax(360px, 430px) 1fr",
+          minHeight: 0,
+        }}
+      >
+        <section
+          className="fuel-landing-v2__visual fuel-landing-v2__visual--left"
+          aria-label="Visualisation saison"
+          style={{
+            position: "relative",
+            overflow: "hidden",
+            backgroundImage:
+              "linear-gradient(180deg, rgba(15,23,42,.25), rgba(15,23,42,.45)), url('https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=1600&q=80')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          <div
+            className="fuel-landing-v2__overlay-card fuel-landing-v2__overlay-card--left"
+            style={{
+              position: "absolute",
+              inset: "auto 20px 24px 20px",
+              borderRadius: 14,
+              border: "1px solid color-mix(in srgb, white 35%, transparent)",
+              background: "color-mix(in srgb, #0f172a 26%, transparent)",
+              backdropFilter: "blur(2px)",
+              color: "white",
+              padding: 14,
+            }}
+          >
+            <p style={{ margin: 0, fontSize: 11, letterSpacing: ".08em", fontWeight: 900, opacity: 0.8 }}>MES PLANS COURSES</p>
+            <p style={{ margin: "6px 0 0", fontSize: 13, lineHeight: 1.5 }}>
+              Construis ta saison, clique chaque event et prépare ton nutrition training autour du GPX.
+            </p>
           </div>
         </section>
 
-        <LandingAuthPanel
-          title="Connexion a FuelOS"
-          subtitle="Connecte-toi pour activer tes donnees, ta saison et le mode course."
-          callbackPath="/mes-plans-courses"
-        />
+        <section
+          className="fuel-landing-v2__center"
+          style={{
+            background: "var(--color-bg-card)",
+            borderLeft: "1px solid var(--color-border)",
+            borderRight: "1px solid var(--color-border)",
+            padding: "22px 20px",
+            display: "grid",
+            alignContent: "center",
+            gap: 14,
+          }}
+          aria-label="Connexion FuelOS"
+        >
+          <div style={{ textAlign: "center", marginBottom: 4 }}>
+            <h1 className="font-display" style={{ margin: 0, fontSize: "clamp(1.7rem, 4vw, 2.3rem)", lineHeight: 1.05, fontWeight: 900 }}>
+              FuelOS, prêt pour
+              <br />
+              ton prochain objectif
+            </h1>
+            <p style={{ margin: "8px 0 0", color: "var(--color-text-muted)", fontSize: 13, lineHeight: 1.5 }}>
+              Profil, plans courses, mode race et catalogue produits dans une seule plateforme.
+            </p>
+          </div>
+
+          <LandingAuthPanel
+            title="Créer ton compte FuelOS"
+            subtitle="Synchronise tes données et active tes 4 modules sur tous tes appareils."
+            callbackPath="/mes-plans-courses"
+          />
+        </section>
+
+        <section
+          className="fuel-landing-v2__visual fuel-landing-v2__visual--right"
+          aria-label="Visualisation mode course"
+          style={{
+            position: "relative",
+            overflow: "hidden",
+            backgroundImage:
+              "linear-gradient(180deg, rgba(15,23,42,.18), rgba(15,23,42,.42)), url('https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=1600&q=80')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          <svg
+            viewBox="0 0 1000 220"
+            aria-hidden
+            className="fuel-landing-v2__pulse-line"
+            style={{ position: "absolute", right: -20, bottom: 80, width: "92%", opacity: 0.95 }}
+          >
+            <path
+              className="fuel-landing-v2__pulse-line-path"
+              d="M0 160 C 120 40, 190 210, 300 130 C 395 60, 470 200, 560 120 C 665 30, 760 220, 860 130 C 920 80, 970 150, 1000 125"
+              fill="none"
+              stroke="#f97316"
+              strokeWidth="12"
+              strokeLinecap="round"
+            />
+          </svg>
+          <div
+            className="fuel-landing-v2__overlay-card fuel-landing-v2__overlay-card--right"
+            style={{
+              position: "absolute",
+              left: 22,
+              bottom: 24,
+              borderRadius: 14,
+              border: "1px solid color-mix(in srgb, white 38%, transparent)",
+              background: "color-mix(in srgb, #111827 30%, transparent)",
+              color: "white",
+              padding: 14,
+              maxWidth: 320,
+            }}
+          >
+            <p style={{ margin: 0, fontSize: 11, letterSpacing: ".08em", fontWeight: 900, opacity: 0.8 }}>MODE COURSE</p>
+            <p style={{ margin: "6px 0 0", fontSize: 13, lineHeight: 1.5 }}>
+              Pilote tes prises nutrition avec topographie, allure, physiologie et historique.
+            </p>
+          </div>
+        </section>
       </main>
+
+      <footer
+        className="fuel-landing-v2__footer"
+        style={{
+          borderTop: "1px solid var(--color-border)",
+          background: "var(--color-bg-card)",
+          padding: "12px 16px 14px",
+          display: "grid",
+          gap: 10,
+          gridTemplateColumns: "minmax(140px, 220px) repeat(4, minmax(120px, 1fr))",
+          alignItems: "start",
+        }}
+      >
+        <div>
+          <p className="font-display" style={{ margin: 0, fontWeight: 900, color: "#1B4332", fontSize: 26 }}>
+            FUELOS
+          </p>
+          <p style={{ margin: "5px 0 0", fontSize: 11, color: "var(--color-text-muted)" }}>
+            Athlete nutrition OS
+          </p>
+        </div>
+        <div>
+          <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)" }}>Modules</p>
+          <p style={{ margin: "6px 0 0", fontSize: 12 }}>Profil</p>
+          <p style={{ margin: "4px 0 0", fontSize: 12 }}>Mes plans courses</p>
+        </div>
+        <div>
+          <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)" }}>Performance</p>
+          <p style={{ margin: "6px 0 0", fontSize: 12 }}>Mode course</p>
+          <p style={{ margin: "4px 0 0", fontSize: 12 }}>Nutrition training</p>
+        </div>
+        <div>
+          <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)" }}>Produits</p>
+          <p style={{ margin: "6px 0 0", fontSize: 12 }}>Catalogue FuelOS</p>
+          <p style={{ margin: "4px 0 0", fontSize: 12 }}>Marques partenaires</p>
+        </div>
+        <div>
+          <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)" }}>Legal</p>
+          <p style={{ margin: "6px 0 0", fontSize: 12 }}>
+            <Link href="/legal" className="fuel-landing-v2__footer-link" style={{ color: "inherit", textDecoration: "none" }}>
+              Mentions légales
+            </Link>
+          </p>
+          <p style={{ margin: "4px 0 0", fontSize: 12 }}>
+            <Link href="/privacy" className="fuel-landing-v2__footer-link" style={{ color: "inherit", textDecoration: "none" }}>
+              Politique de confidentialité
+            </Link>
+          </p>
+        </div>
+      </footer>
+      <style jsx>{`
+        .fuel-landing-v2__nav-link {
+          transition: color 0.16s ease;
+        }
+        .fuel-landing-v2__nav-link:hover {
+          color: var(--color-text) !important;
+        }
+        .fuel-landing-v2__login-btn {
+          transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+        }
+        .fuel-landing-v2__login-btn:hover {
+          transform: translateY(-1px);
+          border-color: color-mix(in srgb, var(--color-primary) 36%, var(--color-border));
+          box-shadow: 0 8px 20px color-mix(in srgb, #000 10%, transparent);
+        }
+        .fuel-landing-v2__footer-link {
+          transition: color 0.16s ease;
+        }
+        .fuel-landing-v2__footer-link:hover {
+          color: var(--color-primary) !important;
+        }
+        .fuel-landing-v2__overlay-card {
+          opacity: 0;
+          transform: translateY(6px);
+          animation: fuelOverlayIn 520ms ease forwards;
+          will-change: transform, opacity;
+        }
+        .fuel-landing-v2__overlay-card--left {
+          animation-delay: 120ms;
+        }
+        .fuel-landing-v2__overlay-card--right {
+          animation-delay: 260ms;
+        }
+        .fuel-landing-v2__pulse-line {
+          animation: fuelPulseDrift 7s ease-in-out infinite;
+        }
+        .fuel-landing-v2__pulse-line-path {
+          animation: fuelPulseGlow 2.8s ease-in-out infinite;
+        }
+        .fuel-landing-v2 :global(.fuel-card) {
+          border-radius: 10px;
+        }
+        .fuel-landing-v2 :global(.fuel-card p),
+        .fuel-landing-v2 :global(.fuel-card div) {
+          font-size: 12px;
+        }
+        .fuel-landing-v2__footer p {
+          line-height: 1.35;
+        }
+        @keyframes fuelPulseDrift {
+          0%,
+          100% {
+            transform: translateX(0px);
+          }
+          50% {
+            transform: translateX(-8px);
+          }
+        }
+        @keyframes fuelPulseGlow {
+          0%,
+          100% {
+            opacity: 0.82;
+          }
+          50% {
+            opacity: 1;
+          }
+        }
+        @keyframes fuelOverlayIn {
+          from {
+            opacity: 0;
+            transform: translateY(6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .fuel-landing-v2__pulse-line,
+          .fuel-landing-v2__pulse-line-path,
+          .fuel-landing-v2__overlay-card {
+            animation: none !important;
+          }
+          .fuel-landing-v2__overlay-card {
+            opacity: 1 !important;
+            transform: none !important;
+          }
+        }
+        @media (max-width: 1080px) {
+          .fuel-landing-v2 {
+            grid-template-rows: 56px auto auto !important;
+          }
+          .fuel-landing-v2__main {
+            grid-template-columns: 1fr !important;
+          }
+          .fuel-landing-v2__visual {
+            min-height: 180px;
+          }
+          .fuel-landing-v2__center {
+            border-left: none !important;
+            border-right: none !important;
+            border-top: 1px solid var(--color-border);
+            border-bottom: 1px solid var(--color-border);
+            padding: 20px 14px !important;
+          }
+          .fuel-landing-v2__visual--left {
+            order: 1;
+          }
+          .fuel-landing-v2__center {
+            order: 2;
+          }
+          .fuel-landing-v2__visual--right {
+            order: 3;
+          }
+          .fuel-landing-v2__footer {
+            grid-template-columns: 1fr 1fr !important;
+          }
+        }
+        @media (max-width: 780px) {
+          .fuel-landing-v2__nav {
+            display: none !important;
+          }
+          .fuel-landing-v2__footer {
+            grid-template-columns: 1fr !important;
+            gap: 8px !important;
+          }
+          .fuel-landing-v2 :global(.fuel-card) {
+            padding: 14px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
