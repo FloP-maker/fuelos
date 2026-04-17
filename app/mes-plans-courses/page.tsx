@@ -1,9 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Header } from "../components/Header";
 import { parseGpxDocument, type ParsedGpx } from "../lib/gpx";
-import { useProfile } from "@/hooks/useProfile";
+import { calculateFuelPlan } from "../lib/fuelCalculator";
+import { mergeStoredAthleteProfile } from "../lib/athleteProfileData";
+import type { EventDetails, Product } from "../lib/types";
+import { defaultRaceStartLocal } from "../lib/meteo";
+
+const CUSTOM_PRODUCTS_STORAGE_KEY = "fuelos_custom_products";
 
 type CourseZone = {
   id: string;
@@ -11,115 +17,155 @@ type CourseZone = {
   startKm: number;
   endKm: number;
   avgSlopePct: number;
-  targetPaceMinPerKm: number;
   scienceWhy: string;
 };
 
-function paceLabel(value: number): string {
-  const mm = Math.floor(value);
-  const ss = Math.round((value - mm) * 60);
-  return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")} /km`;
+function suggestTargetHours(distance: number): number {
+  if (distance <= 10) return 1.0;
+  if (distance <= 21) return 2.5;
+  if (distance <= 42) return 4.5;
+  if (distance <= 50) return 6.0;
+  if (distance <= 80) return 10.0;
+  return 16.0;
 }
 
-function zoneLabel(type: CourseZone["type"]): string {
-  if (type === "climb") return "Montée";
-  if (type === "downhill") return "Descente";
-  return "Plat / roulant";
+function formatHours(hours: number): string {
+  if (hours < 1) return `${Math.round(hours * 60)} min`;
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return m === 0 ? `${h}h` : `${h}h${m}`;
 }
 
-function computeZones(gpx: ParsedGpx, baselinePaceMinPerKm: number): CourseZone[] {
+function computeZones(gpx: ParsedGpx): CourseZone[] {
   const km = gpx.geometry.cumulativeKm;
   const ele = gpx.geometry.elevationM;
   if (km.length < 3 || ele.length < 3) return [];
+  const segments: { type: CourseZone["type"]; startKm: number; endKm: number; slope: number }[] = [];
 
-  const points: { type: CourseZone["type"]; startKm: number; endKm: number; slope: number }[] = [];
   for (let i = 1; i < km.length; i += 1) {
     const dKm = km[i] - km[i - 1];
     if (dKm <= 0) continue;
-    const dM = ele[i] - ele[i - 1];
-    const slopePct = dM / (dKm * 1000) * 100;
+    const slopePct = ((ele[i] - ele[i - 1]) / (dKm * 1000)) * 100;
     const type: CourseZone["type"] = slopePct > 3 ? "climb" : slopePct < -2 ? "downhill" : "flat";
-    points.push({ type, startKm: km[i - 1], endKm: km[i], slope: slopePct });
+    segments.push({ type, startKm: km[i - 1], endKm: km[i], slope: slopePct });
   }
 
-  if (!points.length) return [];
-  const merged: CourseZone[] = [];
-  let current = { ...points[0], totalSlope: points[0].slope, count: 1 };
-
-  const pushCurrent = () => {
-    const avgSlope = current.totalSlope / current.count;
-    const paceFactor = current.type === "climb" ? 1.18 : current.type === "downhill" ? 0.92 : 1;
-    merged.push({
-      id: `${current.type}-${current.startKm.toFixed(1)}`,
-      type: current.type,
-      startKm: current.startKm,
-      endKm: current.endKm,
-      avgSlopePct: avgSlope,
-      targetPaceMinPerKm: baselinePaceMinPerKm * paceFactor,
+  if (!segments.length) return [];
+  const zones: CourseZone[] = [];
+  let cur = { ...segments[0], sumSlope: segments[0].slope, count: 1 };
+  const push = () => {
+    zones.push({
+      id: `${cur.type}-${cur.startKm.toFixed(1)}`,
+      type: cur.type,
+      startKm: cur.startKm,
+      endKm: cur.endKm,
+      avgSlopePct: cur.sumSlope / cur.count,
       scienceWhy:
-        current.type === "climb"
-          ? "En montée, le coût énergétique grimpe: ralentir l'allure limite la dérive cardiaque et préserve les glucides."
-          : current.type === "downhill"
-            ? "En descente, l'effort cardio baisse: on peut reprendre du temps sans surconsommation glucidique."
-            : "Sur le plat, une allure stable optimise l'économie de course et la régularité des apports nutritionnels.",
+        cur.type === "climb"
+          ? "En montée, réduire l'intensité limite la dérive cardiaque et économise les glucides."
+          : cur.type === "downhill"
+            ? "En descente, le coût cardio baisse: c'est une fenêtre pour stabiliser l'hydratation et les prises."
+            : "Sur le roulant, l'allure régulière améliore l'économie de course et la tolérance digestive.",
     });
   };
 
-  for (let i = 1; i < points.length; i += 1) {
-    const p = points[i];
-    if (p.type === current.type) {
-      current.endKm = p.endKm;
-      current.totalSlope += p.slope;
-      current.count += 1;
-      continue;
+  for (let i = 1; i < segments.length; i += 1) {
+    const s = segments[i];
+    if (s.type === cur.type) {
+      cur.endKm = s.endKm;
+      cur.sumSlope += s.slope;
+      cur.count += 1;
+    } else {
+      push();
+      cur = { ...s, sumSlope: s.slope, count: 1 };
     }
-    pushCurrent();
-    current = { ...p, totalSlope: p.slope, count: 1 };
   }
-  pushCurrent();
+  push();
 
-  return merged
-    .filter((z) => z.endKm - z.startKm >= 0.4)
-    .slice(0, 8);
+  return zones.filter((z) => z.endKm - z.startKm >= 0.5).slice(0, 8);
 }
 
-export default function SimpleRacePlanPage() {
-  const { profile } = useProfile();
-  const [uploadedGpx, setUploadedGpx] = useState<ParsedGpx | null>(null);
+function elevationLabelFromGain(elevationGain: number): string {
+  if (elevationGain <= 500) return "Plat (0-500m D+)";
+  if (elevationGain <= 1500) return "Vallonné (500-1500m D+)";
+  if (elevationGain <= 3000) return "Montagneux (1500-3000m D+)";
+  return "Alpin (>3000m D+)";
+}
+
+export default function MesPlansCoursesPage() {
+  const router = useRouter();
   const [status, setStatus] = useState<"idle" | "analyzing" | "ready">("idle");
   const [error, setError] = useState<string | null>(null);
-  const [planGenerated, setPlanGenerated] = useState(false);
+  const [gpx, setGpx] = useState<ParsedGpx | null>(null);
+  const [targetTimeHours, setTargetTimeHours] = useState<number>(6);
+  const [weightKg, setWeightKg] = useState<number>(70);
+  const [result, setResult] = useState<ReturnType<typeof calculateFuelPlan> | null>(null);
+  const [generatedEvent, setGeneratedEvent] = useState<EventDetails | null>(null);
 
-  const baselinePace = typeof profile.runnerThresholdPaceMinPerKm === "number"
-    ? profile.runnerThresholdPaceMinPerKm * 1.1
-    : 6.0;
+  const zones = useMemo(() => (gpx ? computeZones(gpx) : []), [gpx]);
 
-  const zones = useMemo(
-    () => (uploadedGpx ? computeZones(uploadedGpx, baselinePace) : []),
-    [uploadedGpx, baselinePace]
-  );
-
-  const onFile = async (file: File | null) => {
+  const onUploadGpx = async (file: File | null) => {
     if (!file) return;
     setError(null);
-    setPlanGenerated(false);
+    setResult(null);
+    setGeneratedEvent(null);
     setStatus("analyzing");
     try {
-      const text = await file.text();
-      const parsed = parseGpxDocument(text);
+      const parsed = parseGpxDocument(await file.text());
       if (!parsed) {
-        setError("GPX invalide: impossible de lire le parcours.");
         setStatus("idle");
+        setError("GPX invalide: impossible de lire ce fichier.");
         return;
       }
       window.setTimeout(() => {
-        setUploadedGpx(parsed);
+        setGpx(parsed);
+        setTargetTimeHours(suggestTargetHours(parsed.distanceKm));
         setStatus("ready");
       }, 2000);
     } catch {
-      setError("Erreur lors de la lecture du GPX.");
       setStatus("idle");
+      setError("Erreur de lecture du GPX.");
     }
+  };
+
+  const onGenerateNutritionPlan = () => {
+    if (!gpx) return;
+    let customProducts: Product[] = [];
+    try {
+      const raw = localStorage.getItem(CUSTOM_PRODUCTS_STORAGE_KEY);
+      if (raw) customProducts = JSON.parse(raw) as Product[];
+    } catch {
+      customProducts = [];
+    }
+
+    const baseProfile = mergeStoredAthleteProfile(undefined);
+    const profile = { ...baseProfile, weight: weightKg };
+    const event: EventDetails = {
+      sport: "Trail",
+      distance: gpx.distanceKm,
+      elevationGain: Math.round(gpx.elevationGainM),
+      targetTime: targetTimeHours,
+      weather: "Tempéré (10-20°C)",
+      elevation: elevationLabelFromGain(gpx.elevationGainM),
+      aidStations: [],
+      placeName: gpx.name ?? "Parcours GPX",
+      raceStartAt: defaultRaceStartLocal(),
+      courseGeometry: gpx.geometry,
+    };
+
+    const planResult = calculateFuelPlan(profile, event, customProducts);
+    const bundle = {
+      fuelPlan: planResult.mainPlan,
+      altFuelPlan: planResult.altPlan,
+      altPlanLabel: planResult.altPlanLabel,
+      altPlanExplanation: planResult.altPlanExplanation,
+      racePlanVariant: "main" as const,
+      profile,
+      event,
+    };
+    localStorage.setItem("fuelos_active_plan", JSON.stringify(bundle));
+    setResult(planResult);
+    setGeneratedEvent(event);
   };
 
   return (
@@ -127,51 +173,129 @@ export default function SimpleRacePlanPage() {
       <Header />
       <main className="fuel-main" style={{ paddingTop: 18 }}>
         <section className="fuel-card" style={{ padding: 20 }}>
-          <p className="fuel-badge" style={{ marginBottom: 10 }}>Workflow simplifié</p>
-          <h1 className="font-display" style={{ margin: 0, fontSize: "clamp(1.5rem, 3.7vw, 2rem)" }}>
-            Ton plan course en 3 actions
+          <h1 className="font-display" style={{ margin: 0, fontSize: "clamp(1.4rem, 3.6vw, 2rem)" }}>
+            Mes plans courses - Flow unique
           </h1>
-          <p style={{ marginTop: 8, color: "var(--color-text-muted)" }}>
-            Upload GPX, lecture du profil de course en 2 secondes, puis génération d&apos;un plan d&apos;allure par zone avec explications scientifiques.
+          <p style={{ marginTop: 8, color: "var(--color-text-muted)", lineHeight: 1.55 }}>
+            Upload GPX, paramètres minimaux, génération du plan nutrition, puis démarrage immédiat de la course.
           </p>
         </section>
 
         <section className="fuel-card" style={{ marginTop: 12, padding: 20 }}>
           <h2 className="font-display" style={{ margin: 0, fontSize: 18 }}>1) Upload GPX</h2>
-          <label style={{ display: "block", marginTop: 10 }}>
-            <input
-              type="file"
-              accept=".gpx,application/gpx+xml,application/xml,text/xml"
-              onChange={(e) => void onFile(e.target.files?.[0] ?? null)}
-              className="fuel-input-compact"
-              style={{ width: "100%", padding: "10px 12px" }}
-            />
-          </label>
+          <input
+            type="file"
+            accept=".gpx,application/gpx+xml,application/xml,text/xml"
+            onChange={(e) => void onUploadGpx(e.target.files?.[0] ?? null)}
+            className="fuel-input-compact"
+            style={{ marginTop: 10, width: "100%", padding: "10px 12px" }}
+          />
           {status === "analyzing" ? (
             <p style={{ marginTop: 10, fontWeight: 700, color: "var(--color-primary)" }}>
-              Analyse du profil de course... (2s)
+              Analyse du GPX en cours... (2s)
             </p>
           ) : null}
-          {error ? (
-            <p style={{ marginTop: 10, color: "var(--color-danger)", fontWeight: 700 }}>{error}</p>
-          ) : null}
+          {error ? <p style={{ marginTop: 10, color: "var(--color-danger)", fontWeight: 700 }}>{error}</p> : null}
         </section>
 
-        {status === "ready" && uploadedGpx ? (
+        {status === "ready" && gpx ? (
+          <>
+            <section className="fuel-card" style={{ marginTop: 12, padding: 20 }}>
+              <h2 className="font-display" style={{ margin: 0, fontSize: 18 }}>2) Paramètres minimaux</h2>
+              <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", marginTop: 12 }}>
+                <label>
+                  <span style={{ fontSize: 12, color: "var(--color-text-muted)", fontWeight: 700 }}>Objectif temps</span>
+                  <input
+                    type="number"
+                    min={0.5}
+                    step={0.1}
+                    value={targetTimeHours}
+                    onChange={(e) => setTargetTimeHours(Math.max(0.5, Number(e.target.value) || 0.5))}
+                    className="fuel-input-compact"
+                    style={{ width: "100%", marginTop: 6 }}
+                  />
+                </label>
+                <label>
+                  <span style={{ fontSize: 12, color: "var(--color-text-muted)", fontWeight: 700 }}>Poids (kg)</span>
+                  <input
+                    type="number"
+                    min={35}
+                    step={0.1}
+                    value={weightKg}
+                    onChange={(e) => setWeightKg(Math.max(35, Number(e.target.value) || 35))}
+                    className="fuel-input-compact"
+                    style={{ width: "100%", marginTop: 6 }}
+                  />
+                </label>
+              </div>
+              <button type="button" className="fuel-cta" style={{ marginTop: 14, width: "100%" }} onClick={onGenerateNutritionPlan}>
+                Générer mon plan de course
+              </button>
+            </section>
+
+            <section className="fuel-card" style={{ marginTop: 12, padding: 20 }}>
+              <h2 className="font-display" style={{ margin: 0, fontSize: 18 }}>Profil de parcours</h2>
+              <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", marginTop: 12 }}>
+                <div className="fuel-card" style={{ padding: 12 }}>
+                  <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)" }}>Distance</p>
+                  <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 900 }}>{gpx.distanceKm.toFixed(1)} km</p>
+                </div>
+                <div className="fuel-card" style={{ padding: 12 }}>
+                  <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)" }}>Dénivelé</p>
+                  <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 900 }}>{Math.round(gpx.elevationGainM)} m D+</p>
+                </div>
+                <div className="fuel-card" style={{ padding: 12 }}>
+                  <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)" }}>Objectif</p>
+                  <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 900 }}>{formatHours(targetTimeHours)}</p>
+                </div>
+              </div>
+              {!!zones.length && (
+                <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
+                  {zones.map((z) => (
+                    <article key={z.id} className="fuel-card" style={{ padding: 10 }}>
+                      <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)" }}>
+                        {z.type === "climb" ? "Montée" : z.type === "downhill" ? "Descente" : "Roulant"} · km {z.startKm.toFixed(1)} → {z.endKm.toFixed(1)} · pente {z.avgSlopePct.toFixed(1)}%
+                      </p>
+                      <p style={{ margin: "5px 0 0", fontSize: 13, color: "var(--color-text-muted)" }}>{z.scienceWhy}</p>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        ) : null}
+
+        {result && generatedEvent ? (
           <section className="fuel-card" style={{ marginTop: 12, padding: 20 }}>
-            <h2 className="font-display" style={{ margin: 0, fontSize: 18 }}>2) Profil de course détecté</h2>
-            <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", marginTop: 12 }}>
+            <h2 className="font-display" style={{ margin: 0, fontSize: 18 }}>Plan nutrition généré</h2>
+            <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", marginTop: 12 }}>
               <div className="fuel-card" style={{ padding: 12 }}>
-                <p style={{ margin: 0, color: "var(--color-text-muted)", fontSize: 12 }}>Distance</p>
-                <p style={{ margin: "4px 0 0", fontWeight: 900, fontSize: 20 }}>{uploadedGpx.distanceKm.toFixed(1)} km</p>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)" }}>CHO / h</p>
+                <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 900 }}>{result.mainPlan.choPerHour} g</p>
               </div>
               <div className="fuel-card" style={{ padding: 12 }}>
-                <p style={{ margin: 0, color: "var(--color-text-muted)", fontSize: 12 }}>Dénivelé positif</p>
-                <p style={{ margin: "4px 0 0", fontWeight: 900, fontSize: 20 }}>{Math.round(uploadedGpx.elevationGainM)} m D+</p>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)" }}>Hydratation / h</p>
+                <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 900 }}>{result.mainPlan.waterPerHour} ml</p>
               </div>
               <div className="fuel-card" style={{ padding: 12 }}>
-                <p style={{ margin: 0, color: "var(--color-text-muted)", fontSize: 12 }}>Zones clés</p>
-                <p style={{ margin: "4px 0 0", fontWeight: 900, fontSize: 20 }}>{zones.length}</p>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)" }}>Sodium / h</p>
+                <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 900 }}>{result.mainPlan.sodiumPerHour} mg</p>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: "var(--color-text-muted)" }}>Premières prises recommandées</p>
+              <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
+                {result.mainPlan.timeline.slice(0, 6).map((t, idx) => (
+                  <article key={`${t.productId}-${idx}`} className="fuel-card" style={{ padding: 10 }}>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>
+                      T+{t.timeMin} min · {t.product} · {t.quantity}
+                    </p>
+                    <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--color-text-muted)" }}>
+                      {t.cho}g CHO · {t.water ?? 0}ml · {t.sodium ?? 0}mg Na
+                    </p>
+                  </article>
+                ))}
               </div>
             </div>
 
@@ -179,33 +303,13 @@ export default function SimpleRacePlanPage() {
               type="button"
               className="fuel-cta"
               style={{ marginTop: 14, width: "100%" }}
-              onClick={() => setPlanGenerated(true)}
+              onClick={() => router.push("/race")}
             >
-              Générer mon plan de course
+              Démarrer la course
             </button>
-          </section>
-        ) : null}
-
-        {planGenerated && zones.length > 0 ? (
-          <section className="fuel-card" style={{ marginTop: 12, padding: 20 }}>
-            <h2 className="font-display" style={{ margin: 0, fontSize: 18 }}>
-              3) Résultat: allure cible par zone + science
-            </h2>
-            <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
-              {zones.map((zone) => (
-                <article key={zone.id} className="fuel-card" style={{ padding: 12 }}>
-                  <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)" }}>
-                    {zoneLabel(zone.type)} · km {zone.startKm.toFixed(1)} → {zone.endKm.toFixed(1)} · pente moyenne {zone.avgSlopePct.toFixed(1)}%
-                  </p>
-                  <p style={{ margin: "6px 0 0", fontSize: 18, fontWeight: 900 }}>
-                    Allure cible: {paceLabel(zone.targetPaceMinPerKm)}
-                  </p>
-                  <p style={{ margin: "6px 0 0", color: "var(--color-text-muted)", lineHeight: 1.5 }}>
-                    {zone.scienceWhy}
-                  </p>
-                </article>
-              ))}
-            </div>
+            <p style={{ marginTop: 8, fontSize: 12, color: "var(--color-text-muted)" }}>
+              Le plan actif est déjà synchronisé pour le mode course.
+            </p>
           </section>
         ) : null}
       </main>
