@@ -33,10 +33,10 @@ export const NAV_ACCOUNT_REQUIRED_HINT = 'Accessible avec un compte FuelOS';
  * `middleware.ts`, `lib/authRequiredRoutes.ts`, `lib/middlewareSessionCookie.ts`).
  */
 export const NAV_SECTIONS: NavSectionItem[] = [
-  { href: '/produits', label: 'Produits', page: 'shop', group: 'discover', requiresAccount: false },
+  { href: '/profil', label: 'Profil', page: 'profile', group: 'athlete', requiresAccount: false },
   { href: '/mes-plans-courses', label: 'Mes plans courses', page: 'races', group: 'athlete', requiresAccount: true },
   { href: '/race', label: 'Mode course', page: 'race', group: 'athlete', requiresAccount: true },
-  { href: '/profil', label: 'Profil', page: 'profile', group: 'athlete', requiresAccount: false },
+  { href: '/produits', label: 'Produits', page: 'shop', group: 'discover', requiresAccount: false },
 ];
 
 export const NAV_GROUP_LABELS: Record<NavGroupId, string> = {
