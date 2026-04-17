@@ -87,7 +87,7 @@ export default async function Home() {
             position: "relative",
             overflow: "hidden",
             backgroundImage:
-              "linear-gradient(165deg, rgba(16,42,26,.42), rgba(15,23,42,.5)), url('https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1800&q=80')",
+              "linear-gradient(165deg, rgba(16,42,26,.42), rgba(15,23,42,.5)), url('/landing-left.jpg')",
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -182,7 +182,7 @@ export default async function Home() {
             position: "relative",
             overflow: "hidden",
             backgroundImage:
-              "linear-gradient(160deg, rgba(89,36,7,.26), rgba(15,23,42,.45)), url('https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1800&q=80')",
+              "linear-gradient(160deg, rgba(89,36,7,.26), rgba(15,23,42,.45)), url('/landing-right.jpg')",
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
