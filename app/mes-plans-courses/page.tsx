@@ -1,88 +1,31 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "../components/Header";
 import { parseGpxDocument, type ParsedGpx } from "../lib/gpx";
 import { calculateFuelPlan } from "../lib/fuelCalculator";
 import { mergeStoredAthleteProfile } from "../lib/athleteProfileData";
-import type { EventDetails, Product } from "../lib/types";
-import { defaultRaceStartLocal } from "../lib/meteo";
+import type { EventDetails } from "../lib/types";
+import { defaultRaceStartLocal, reverseGeocodeClient, weatherCategoryFromTempC } from "../lib/meteo";
 
-const CUSTOM_PRODUCTS_STORAGE_KEY = "fuelos_custom_products";
-
-type CourseZone = {
-  id: string;
-  type: "climb" | "flat" | "downhill";
-  startKm: number;
-  endKm: number;
-  avgSlopePct: number;
-  scienceWhy: string;
-};
+type SportChoice = "trail" | "running" | "cycling";
 
 function suggestTargetHours(distance: number): number {
-  if (distance <= 10) return 1.0;
+  if (distance <= 10) return 1;
   if (distance <= 21) return 2.5;
   if (distance <= 42) return 4.5;
-  if (distance <= 50) return 6.0;
-  if (distance <= 80) return 10.0;
-  return 16.0;
+  if (distance <= 60) return 7;
+  if (distance <= 80) return 10;
+  return 14;
 }
 
 function formatHours(hours: number): string {
-  if (hours < 1) return `${Math.round(hours * 60)} min`;
-  const h = Math.floor(hours);
-  const m = Math.round((hours - h) * 60);
-  return m === 0 ? `${h}h` : `${h}h${m}`;
-}
-
-function computeZones(gpx: ParsedGpx): CourseZone[] {
-  const km = gpx.geometry.cumulativeKm;
-  const ele = gpx.geometry.elevationM;
-  if (km.length < 3 || ele.length < 3) return [];
-  const segments: { type: CourseZone["type"]; startKm: number; endKm: number; slope: number }[] = [];
-
-  for (let i = 1; i < km.length; i += 1) {
-    const dKm = km[i] - km[i - 1];
-    if (dKm <= 0) continue;
-    const slopePct = ((ele[i] - ele[i - 1]) / (dKm * 1000)) * 100;
-    const type: CourseZone["type"] = slopePct > 3 ? "climb" : slopePct < -2 ? "downhill" : "flat";
-    segments.push({ type, startKm: km[i - 1], endKm: km[i], slope: slopePct });
-  }
-
-  if (!segments.length) return [];
-  const zones: CourseZone[] = [];
-  let cur = { ...segments[0], sumSlope: segments[0].slope, count: 1 };
-  const push = () => {
-    zones.push({
-      id: `${cur.type}-${cur.startKm.toFixed(1)}`,
-      type: cur.type,
-      startKm: cur.startKm,
-      endKm: cur.endKm,
-      avgSlopePct: cur.sumSlope / cur.count,
-      scienceWhy:
-        cur.type === "climb"
-          ? "En montée, réduire l'intensité limite la dérive cardiaque et économise les glucides."
-          : cur.type === "downhill"
-            ? "En descente, le coût cardio baisse: c'est une fenêtre pour stabiliser l'hydratation et les prises."
-            : "Sur le roulant, l'allure régulière améliore l'économie de course et la tolérance digestive.",
-    });
-  };
-
-  for (let i = 1; i < segments.length; i += 1) {
-    const s = segments[i];
-    if (s.type === cur.type) {
-      cur.endKm = s.endKm;
-      cur.sumSlope += s.slope;
-      cur.count += 1;
-    } else {
-      push();
-      cur = { ...s, sumSlope: s.slope, count: 1 };
-    }
-  }
-  push();
-
-  return zones.filter((z) => z.endKm - z.startKm >= 0.5).slice(0, 8);
+  const whole = Math.floor(hours);
+  const mins = Math.round((hours - whole) * 60);
+  if (whole <= 0) return `${mins} min`;
+  if (mins === 0) return `${whole}h`;
+  return `${whole}h${String(mins).padStart(2, "0")}`;
 }
 
 function elevationLabelFromGain(elevationGain: number): string {
@@ -92,92 +35,166 @@ function elevationLabelFromGain(elevationGain: number): string {
   return "Alpin (>3000m D+)";
 }
 
+function isoDateFromLocalDateTime(localDateTime: string): string {
+  const m = /^(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}$/.exec(localDateTime);
+  return m?.[1] ?? new Date().toISOString().slice(0, 10);
+}
+
 export default function MesPlansCoursesPage() {
   const router = useRouter();
   const [status, setStatus] = useState<"idle" | "analyzing" | "ready">("idle");
   const [error, setError] = useState<string | null>(null);
-  const [gpx, setGpx] = useState<ParsedGpx | null>(null);
-  const [targetTimeHours, setTargetTimeHours] = useState<number>(6);
-  const [weightKg, setWeightKg] = useState<number>(70);
+  const [parsedGpx, setParsedGpx] = useState<ParsedGpx | null>(null);
+  const [targetTimeHours, setTargetTimeHours] = useState(6);
+  const [eventDate, setEventDate] = useState(isoDateFromLocalDateTime(defaultRaceStartLocal()));
+  const [sport, setSport] = useState<SportChoice>("trail");
+  const [detectedPlace, setDetectedPlace] = useState<string | null>(null);
+  const [detectedWeather, setDetectedWeather] = useState<{
+    tempC: number;
+    humidityPct: number | null;
+    category: string;
+  } | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
   const [result, setResult] = useState<ReturnType<typeof calculateFuelPlan> | null>(null);
-  const [generatedEvent, setGeneratedEvent] = useState<EventDetails | null>(null);
+  const [resultEvent, setResultEvent] = useState<EventDetails | null>(null);
 
-  const zones = useMemo(() => (gpx ? computeZones(gpx) : []), [gpx]);
+  const sportLabel = sport === "trail" ? "Trail" : sport === "running" ? "Course à pied" : "Cyclisme";
 
   const onUploadGpx = async (file: File | null) => {
     if (!file) return;
     setError(null);
-    setResult(null);
-    setGeneratedEvent(null);
     setStatus("analyzing");
+    setResult(null);
+    setResultEvent(null);
+    setDetectedWeather(null);
+    setDetectedPlace(null);
+
     try {
-      const parsed = parseGpxDocument(await file.text());
+      const text = await file.text();
+      const parsed = parseGpxDocument(text);
       if (!parsed) {
         setStatus("idle");
-        setError("GPX invalide: impossible de lire ce fichier.");
+        setError("GPX invalide: impossible de lire le parcours.");
         return;
       }
-      window.setTimeout(() => {
-        setGpx(parsed);
+
+      window.setTimeout(async () => {
+        setParsedGpx(parsed);
         setTargetTimeHours(suggestTargetHours(parsed.distanceKm));
         setStatus("ready");
+
+        const firstPoint = parsed.geometry.coordinates[0];
+        if (!firstPoint) return;
+        const [longitude, latitude] = firstPoint;
+        const place = await reverseGeocodeClient(latitude, longitude);
+        if (place) setDetectedPlace(place);
       }, 2000);
     } catch {
       setStatus("idle");
-      setError("Erreur de lecture du GPX.");
+      setError("Erreur lors de la lecture du GPX.");
     }
   };
 
-  const onGenerateNutritionPlan = () => {
-    if (!gpx) return;
-    let customProducts: Product[] = [];
-    try {
-      const raw = localStorage.getItem(CUSTOM_PRODUCTS_STORAGE_KEY);
-      if (raw) customProducts = JSON.parse(raw) as Product[];
-    } catch {
-      customProducts = [];
+  const onFetchWeather = async () => {
+    if (!parsedGpx) return;
+    const firstPoint = parsedGpx.geometry.coordinates[0];
+    if (!firstPoint) {
+      setError("Impossible de récupérer la position depuis ce GPX.");
+      return;
     }
+    const [longitude, latitude] = firstPoint;
 
-    const baseProfile = mergeStoredAthleteProfile(undefined);
-    const profile = { ...baseProfile, weight: weightKg };
+    setWeatherLoading(true);
+    setError(null);
+    try {
+      const raceStartAt = `${eventDate}T07:00`;
+      const query = new URLSearchParams({
+        latitude: String(latitude),
+        longitude: String(longitude),
+        raceStartAt,
+      });
+      const res = await fetch(`/api/meteo?${query.toString()}`);
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? "Météo indisponible");
+      }
+      const body = (await res.json()) as { tempC: number; humidityPct: number | null };
+      setDetectedWeather({
+        tempC: body.tempC,
+        humidityPct: body.humidityPct,
+        category: weatherCategoryFromTempC(body.tempC),
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur récupération météo.");
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!parsedGpx) return;
+    void onFetchWeather();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parsedGpx, eventDate]);
+
+  const onGeneratePlan = () => {
+    if (!parsedGpx) return;
+    const weather = detectedWeather?.category ?? "Tempéré (10-20°C)";
+    const profile = mergeStoredAthleteProfile(undefined);
     const event: EventDetails = {
-      sport: "Trail",
-      distance: gpx.distanceKm,
-      elevationGain: Math.round(gpx.elevationGainM),
+      sport: sportLabel,
+      distance: parsedGpx.distanceKm,
+      elevationGain: Math.round(parsedGpx.elevationGainM),
       targetTime: targetTimeHours,
-      weather: "Tempéré (10-20°C)",
-      elevation: elevationLabelFromGain(gpx.elevationGainM),
+      weather,
+      elevation: elevationLabelFromGain(parsedGpx.elevationGainM),
+      placeName: detectedPlace ?? parsedGpx.name ?? "Parcours GPX",
+      raceStartAt: `${eventDate}T07:00`,
+      courseGeometry: parsedGpx.geometry,
+      adjustIntakesToCourse: true,
       aidStations: [],
-      placeName: gpx.name ?? "Parcours GPX",
-      raceStartAt: defaultRaceStartLocal(),
-      courseGeometry: gpx.geometry,
     };
 
-    const planResult = calculateFuelPlan(profile, event, customProducts);
+    const generated = calculateFuelPlan(profile, event, undefined);
+    setResult(generated);
+    setResultEvent(event);
+
     const bundle = {
-      fuelPlan: planResult.mainPlan,
-      altFuelPlan: planResult.altPlan,
-      altPlanLabel: planResult.altPlanLabel,
-      altPlanExplanation: planResult.altPlanExplanation,
+      fuelPlan: generated.mainPlan,
+      altFuelPlan: generated.altPlan,
+      altPlanLabel: generated.altPlanLabel,
+      altPlanExplanation: generated.altPlanExplanation,
       racePlanVariant: "main" as const,
       profile,
       event,
     };
     localStorage.setItem("fuelos_active_plan", JSON.stringify(bundle));
-    setResult(planResult);
-    setGeneratedEvent(event);
   };
+
+  const canGenerate = status === "ready" && parsedGpx != null;
+
+  const summary = useMemo(
+    () =>
+      parsedGpx
+        ? {
+            distance: `${parsedGpx.distanceKm.toFixed(1)} km`,
+            dplus: `${Math.round(parsedGpx.elevationGainM)} m D+`,
+            elevation: elevationLabelFromGain(parsedGpx.elevationGainM),
+          }
+        : null,
+    [parsedGpx]
+  );
 
   return (
     <div className="fuel-page">
       <Header />
       <main className="fuel-main" style={{ paddingTop: 18 }}>
         <section className="fuel-card" style={{ padding: 20 }}>
-          <h1 className="font-display" style={{ margin: 0, fontSize: "clamp(1.4rem, 3.6vw, 2rem)" }}>
-            Mes plans courses - Flow unique
+          <h1 className="font-display" style={{ margin: 0, fontSize: "clamp(1.35rem, 3.3vw, 1.95rem)" }}>
+            GPX -&gt; Plan nutrition -&gt; Race mode
           </h1>
           <p style={{ marginTop: 8, color: "var(--color-text-muted)", lineHeight: 1.55 }}>
-            Upload GPX, paramètres minimaux, génération du plan nutrition, puis démarrage immédiat de la course.
+            Flow unique: upload GPX, 3 questions, résultat immédiat, puis démarrage de la course.
           </p>
         </section>
 
@@ -192,83 +209,117 @@ export default function MesPlansCoursesPage() {
           />
           {status === "analyzing" ? (
             <p style={{ marginTop: 10, fontWeight: 700, color: "var(--color-primary)" }}>
-              Analyse du GPX en cours... (2s)
+              Extraction distance / D+ / profil... (2s)
             </p>
           ) : null}
           {error ? <p style={{ marginTop: 10, color: "var(--color-danger)", fontWeight: 700 }}>{error}</p> : null}
         </section>
 
-        {status === "ready" && gpx ? (
+        {canGenerate && parsedGpx && summary ? (
           <>
             <section className="fuel-card" style={{ marginTop: 12, padding: 20 }}>
-              <h2 className="font-display" style={{ margin: 0, fontSize: 18 }}>2) Paramètres minimaux</h2>
-              <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", marginTop: 12 }}>
-                <label>
-                  <span style={{ fontSize: 12, color: "var(--color-text-muted)", fontWeight: 700 }}>Objectif temps</span>
-                  <input
-                    type="number"
-                    min={0.5}
-                    step={0.1}
-                    value={targetTimeHours}
-                    onChange={(e) => setTargetTimeHours(Math.max(0.5, Number(e.target.value) || 0.5))}
-                    className="fuel-input-compact"
-                    style={{ width: "100%", marginTop: 6 }}
-                  />
-                </label>
-                <label>
-                  <span style={{ fontSize: 12, color: "var(--color-text-muted)", fontWeight: 700 }}>Poids (kg)</span>
-                  <input
-                    type="number"
-                    min={35}
-                    step={0.1}
-                    value={weightKg}
-                    onChange={(e) => setWeightKg(Math.max(35, Number(e.target.value) || 35))}
-                    className="fuel-input-compact"
-                    style={{ width: "100%", marginTop: 6 }}
-                  />
-                </label>
-              </div>
-              <button type="button" className="fuel-cta" style={{ marginTop: 14, width: "100%" }} onClick={onGenerateNutritionPlan}>
-                Générer mon plan de course
-              </button>
-            </section>
+              <h2 className="font-display" style={{ margin: 0, fontSize: 18 }}>2) 3 questions</h2>
 
-            <section className="fuel-card" style={{ marginTop: 12, padding: 20 }}>
-              <h2 className="font-display" style={{ margin: 0, fontSize: 18 }}>Profil de parcours</h2>
-              <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", marginTop: 12 }}>
+              <div style={{ marginTop: 12, display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
                 <div className="fuel-card" style={{ padding: 12 }}>
                   <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)" }}>Distance</p>
-                  <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 900 }}>{gpx.distanceKm.toFixed(1)} km</p>
+                  <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 900 }}>{summary.distance}</p>
                 </div>
                 <div className="fuel-card" style={{ padding: 12 }}>
                   <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)" }}>Dénivelé</p>
-                  <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 900 }}>{Math.round(gpx.elevationGainM)} m D+</p>
+                  <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 900 }}>{summary.dplus}</p>
                 </div>
                 <div className="fuel-card" style={{ padding: 12 }}>
-                  <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)" }}>Objectif</p>
-                  <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 900 }}>{formatHours(targetTimeHours)}</p>
+                  <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)" }}>Catégorie</p>
+                  <p style={{ margin: "4px 0 0", fontSize: 15, fontWeight: 900 }}>{summary.elevation}</p>
                 </div>
               </div>
-              {!!zones.length && (
-                <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
-                  {zones.map((z) => (
-                    <article key={z.id} className="fuel-card" style={{ padding: 10 }}>
-                      <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)" }}>
-                        {z.type === "climb" ? "Montée" : z.type === "downhill" ? "Descente" : "Roulant"} · km {z.startKm.toFixed(1)} → {z.endKm.toFixed(1)} · pente {z.avgSlopePct.toFixed(1)}%
-                      </p>
-                      <p style={{ margin: "5px 0 0", fontSize: 13, color: "var(--color-text-muted)" }}>{z.scienceWhy}</p>
-                    </article>
-                  ))}
+
+              <div style={{ marginTop: 14 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 800, color: "var(--color-text-muted)" }}>
+                  Objectif temps: <span style={{ color: "var(--color-primary)" }}>{formatHours(targetTimeHours)}</span>
+                </label>
+                <input
+                  type="range"
+                  min={1}
+                  max={24}
+                  step={0.25}
+                  value={targetTimeHours}
+                  onChange={(e) => setTargetTimeHours(Number(e.target.value))}
+                  style={{ width: "100%", marginTop: 8, accentColor: "var(--color-primary)" }}
+                />
+              </div>
+
+              <div style={{ marginTop: 14, display: "grid", gap: 10, gridTemplateColumns: "1fr" }}>
+                <label>
+                  <span style={{ display: "block", fontSize: 12, fontWeight: 800, color: "var(--color-text-muted)" }}>
+                    Date de l&apos;event
+                  </span>
+                  <input
+                    type="date"
+                    value={eventDate}
+                    onChange={(e) => setEventDate(e.target.value)}
+                    className="fuel-input-compact"
+                    style={{ width: "100%", marginTop: 6 }}
+                  />
+                </label>
+              </div>
+              <p style={{ marginTop: 8, fontSize: 12, color: "var(--color-text-muted)" }}>
+                Lieu détecté via GPX: <strong>{detectedPlace ?? "en cours..."}</strong>
+                {detectedWeather ? (
+                  <>
+                    {" · "}
+                    Météo estimée: <strong>{detectedWeather.category}</strong> ({detectedWeather.tempC.toFixed(1)}°C
+                    {detectedWeather.humidityPct != null ? ` · ${Math.round(detectedWeather.humidityPct)}% hum.` : ""})
+                  </>
+                ) : weatherLoading ? (
+                  <> · Météo estimée: <strong>calcul en cours...</strong></>
+                ) : null}
+              </p>
+
+              <div style={{ marginTop: 14 }}>
+                <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: "var(--color-text-muted)" }}>Sport</p>
+                <div style={{ marginTop: 8, display: "grid", gap: 8, gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+                  {([
+                    { id: "trail", label: "Trail" },
+                    { id: "running", label: "Running" },
+                    { id: "cycling", label: "Vélo" },
+                  ] as { id: SportChoice; label: string }[]).map((item) => {
+                    const active = sport === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setSport(item.id)}
+                        className="fuel-btn-pill"
+                        style={{
+                          width: "100%",
+                          borderColor: active ? "var(--color-primary)" : "var(--color-border)",
+                          background: active
+                            ? "color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-card))"
+                            : "var(--color-bg-card)",
+                          color: active ? "var(--color-primary)" : "var(--color-text)",
+                          fontWeight: active ? 800 : 600,
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
+              </div>
+
+              <button type="button" className="fuel-cta" style={{ marginTop: 14, width: "100%" }} onClick={onGeneratePlan}>
+                Générer mon plan nutrition
+              </button>
             </section>
           </>
         ) : null}
 
-        {result && generatedEvent ? (
+        {result && resultEvent ? (
           <section className="fuel-card" style={{ marginTop: 12, padding: 20 }}>
-            <h2 className="font-display" style={{ margin: 0, fontSize: 18 }}>Plan nutrition généré</h2>
-            <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", marginTop: 12 }}>
+            <h2 className="font-display" style={{ margin: 0, fontSize: 18 }}>3) Résultat immédiat</h2>
+            <div style={{ marginTop: 12, display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
               <div className="fuel-card" style={{ padding: 12 }}>
                 <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)" }}>CHO / h</p>
                 <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 900 }}>{result.mainPlan.choPerHour} g</p>
@@ -283,33 +334,14 @@ export default function MesPlansCoursesPage() {
               </div>
             </div>
 
-            <div style={{ marginTop: 12 }}>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: "var(--color-text-muted)" }}>Premières prises recommandées</p>
-              <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
-                {result.mainPlan.timeline.slice(0, 6).map((t, idx) => (
-                  <article key={`${t.productId}-${idx}`} className="fuel-card" style={{ padding: 10 }}>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>
-                      T+{t.timeMin} min · {t.product} · {t.quantity}
-                    </p>
-                    <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--color-text-muted)" }}>
-                      {t.cho}g CHO · {t.water ?? 0}ml · {t.sodium ?? 0}mg Na
-                    </p>
-                  </article>
-                ))}
-              </div>
-            </div>
-
             <button
               type="button"
               className="fuel-cta"
               style={{ marginTop: 14, width: "100%" }}
               onClick={() => router.push("/race")}
             >
-              Démarrer la course
+              Démarrer
             </button>
-            <p style={{ marginTop: 8, fontSize: 12, color: "var(--color-text-muted)" }}>
-              Le plan actif est déjà synchronisé pour le mode course.
-            </p>
           </section>
         ) : null}
       </main>
