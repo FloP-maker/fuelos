@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Activity,
   BarChart3,
@@ -373,7 +373,7 @@ function ToggleSwitch({
   );
 }
 
-export default function ProfilPage() {
+function ProfilPageContent() {
   usePageTitle("Profil");
   const searchParams = useSearchParams();
   const { profile, updateProfile, syncToAthleteCalculator } = useProfile();
@@ -1970,5 +1970,13 @@ export default function ProfilPage() {
         </div>
       </main>
     </>
+  );
+}
+
+export default function ProfilPage() {
+  return (
+    <Suspense fallback={<><Header /><main className="fuel-main races-page profil-page" /></>}>
+      <ProfilPageContent />
+    </Suspense>
   );
 }
