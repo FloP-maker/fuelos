@@ -63,10 +63,10 @@ const ENTRIES: SiteSearchEntry[] = [
     keywords: 'course race timer jour j simulation',
   },
   {
-    href: '/analyses',
-    title: 'Analyses',
+    href: '/profil?tab=insights',
+    title: 'Analyses (Profil)',
     description: 'Débrief, suivi GI et apprentissage',
-    keywords: 'apprendre analyse learn retour débrief',
+    keywords: 'apprendre analyse learn retour débrief profil',
   },
 ];
 

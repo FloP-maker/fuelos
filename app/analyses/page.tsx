@@ -1,3 +1,5 @@
-'use client';
+import { redirect } from "next/navigation";
 
-export { default } from '../learn/page';
+export default function AnalysesPage() {
+  redirect("/profil?tab=insights");
+}

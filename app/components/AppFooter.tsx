@@ -27,7 +27,7 @@ export function AppFooter() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, fontSize: 13 }}>
           <Link href="/legal">Mentions legales</Link>
           <Link href="/privacy">Confidentialite</Link>
-          <Link href="/analyses">Bibliotheque</Link>
+          <Link href="/profil?tab=insights">Analyses (Profil)</Link>
           <Link href="/plan">Plan</Link>
           <Link href="/race">Mode course</Link>
         </div>

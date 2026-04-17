@@ -79,9 +79,9 @@ export function authGateCopyForReturnPath(returnPath: string): { title: string; 
   }
   if (path.startsWith('/analyses') || path.startsWith('/learn')) {
     return {
-      title: 'Analyses',
+      title: 'Profil',
       description:
-        'Connecte-toi pour accéder à tes analyses nutrition, les tendances liées à ton profil et les contenus sauvegardés sur ton compte.',
+        'Connecte-toi pour accéder à ton profil, ta mémoire de courses et tes analyses nutrition regroupées au même endroit.',
     };
   }
   if (path.startsWith('/profil')) {
@@ -107,7 +107,7 @@ export function pathnameToHeaderPage(pathname: string | null): HeaderActivePage 
   if (pathname.startsWith('/race')) return 'race';
   if (pathname.startsWith('/prep')) return 'prep';
   if (pathname.startsWith('/history')) return 'history';
-  if (pathname.startsWith('/learn') || pathname.startsWith('/analyses')) return 'learn';
+  if (pathname.startsWith('/learn') || pathname.startsWith('/analyses')) return 'profile';
   if (pathname.startsWith('/profil')) return 'profile';
   return undefined;
 }
@@ -119,6 +119,6 @@ export function sectionLabelForPathname(pathname: string | null): string | undef
   const fromNav = NAV_SECTIONS.find((s) => s.page === page)?.label;
   if (fromNav) return fromNav;
   if (page === 'history') return 'Mémoire';
-  if (page === 'learn') return 'Analyses';
+  if (page === 'learn') return 'Profil';
   return undefined;
 }

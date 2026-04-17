@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Activity,
@@ -374,6 +375,7 @@ function ToggleSwitch({
 
 export default function ProfilPage() {
   usePageTitle("Profil");
+  const searchParams = useSearchParams();
   const { profile, updateProfile, syncToAthleteCalculator } = useProfile();
   const [races, setRaces] = useState<RaceEntry[]>(() => loadRaces());
   const [saveHint, setSaveHint] = useState<string | null>(null);
@@ -424,6 +426,13 @@ export default function ProfilPage() {
       setAutoSaveEnabled(false);
     }
   }, []);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "overview" || tab === "memory" || tab === "insights") {
+      setProfilTab(tab);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     let rafId: number | null = null;

@@ -1,6 +1,6 @@
 // FuelOS Service Worker — Race Day: Offline + Push Notifications
-const CACHE_NAME = 'fuelos-v4';
-const STATIC_ASSETS = ['/', '/plan', '/race', '/prep', '/produits', '/analyses', '/manifest.json'];
+const CACHE_NAME = 'fuelos-v5';
+const STATIC_ASSETS = ['/', '/plan', '/race', '/prep', '/produits', '/profil', '/manifest.json'];
 
 // ============ INSTALL ============
 self.addEventListener('install', (event) => {
@@ -161,4 +161,4 @@ self.addEventListener('notificationclose', (event) => {
   console.log('[SW] Notification fermée:', event.notification.tag);
 });
 
-console.log('[SW] FuelOS Service Worker v4 charge ✅');
+console.log('[SW] FuelOS Service Worker v5 charge ✅');

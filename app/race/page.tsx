@@ -1945,7 +1945,7 @@ function RaceContent() {
               <Button type="button" onClick={() => setShowResetConfirm(true)} variant="secondary" size="lg" fullWidth>
                 Réinitialiser
               </Button>
-              <Link href="/analyses" style={{ textDecoration: 'none' }}>
+              <Link href="/profil?tab=insights" style={{ textDecoration: 'none' }}>
                 <Button type="button" variant="primary" size="lg" fullWidth>
                   Voir mon analyse
                 </Button>
@@ -2662,7 +2662,7 @@ function RaceContent() {
                   <Button type="button" variant="secondary" size="md" onClick={() => setShowDebriefModal(false)}>
                     Fermer
                   </Button>
-                  <Link href="/analyses" style={{ textDecoration: 'none' }}>
+                  <Link href="/profil?tab=insights" style={{ textDecoration: 'none' }}>
                     <Button type="button" variant="primary" size="md" fullWidth>
                       Voir mon analyse
                     </Button>

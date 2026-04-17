@@ -10,8 +10,6 @@ export const AUTH_REQUIRED_PATH_PREFIXES = [
   "/race",
   "/history",
   "/races",
-  "/analyses",
-  "/learn",
 ] as const;
 
 export function pathnameRequiresAuthentication(pathname: string): boolean {

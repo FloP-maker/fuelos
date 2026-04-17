@@ -30,9 +30,5 @@ export const config = {
     "/history/:path*",
     "/races",
     "/races/:path*",
-    "/analyses",
-    "/analyses/:path*",
-    "/learn",
-    "/learn/:path*",
   ],
 };

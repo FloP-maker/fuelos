@@ -115,10 +115,10 @@ export default function RaceDetailPage() {
           <p className="mt-1.5 text-xs italic text-gray-400 dark:text-zinc-500">
             Protocole basé sur les recommandations ACSM / IOC — charge glucidique : 8–12 g/kg sur J-3 à J-1 ·{" "}
             <Link
-              href="/analyses"
+              href="/profil?tab=insights"
               className="text-gray-500 underline-offset-2 hover:text-gray-600 hover:underline dark:text-zinc-400 dark:hover:text-zinc-300"
             >
-              Bibliothèque
+              Profil · Analyses
             </Link>
           </p>
           <p className="mt-2 text-sm text-[var(--color-text-muted)]">

@@ -43,8 +43,8 @@ export default function NotFound() {
             <Link href="/produits" className="fuel-btn-pill">
               Produits
             </Link>
-            <Link href="/analyses" className="fuel-btn-pill">
-              Analyses
+            <Link href="/profil?tab=insights" className="fuel-btn-pill">
+              Profil (Analyses)
             </Link>
           </div>
         </section>

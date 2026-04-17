@@ -8,9 +8,9 @@ const nextConfig: NextConfig = {
       { source: "/mode-course", destination: "/race", permanent: true },
       { source: "/modecourse", destination: "/race", permanent: true },
       { source: "/shop", destination: "/produits", permanent: true },
-      { source: "/learn", destination: "/analyses", permanent: true },
+      { source: "/learn", destination: "/profil?tab=insights", permanent: true },
       { source: "/products", destination: "/produits", permanent: true },
-      { source: "/analysis", destination: "/analyses", permanent: true },
+      { source: "/analysis", destination: "/profil?tab=insights", permanent: true },
     ];
   },
   async headers() {

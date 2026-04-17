@@ -58,10 +58,10 @@ export function ProfileAnalysesTabContent() {
             Synthèse issue de tes débriefs et de ton historique — comme un tableau de bord Strava, orienté carburant.
           </p>
         </div>
-        <Link href="/analyses">
+        <Link href="/race">
           <Button variant="secondary" size="md" className="inline-flex min-h-11 items-center gap-2">
             <LineChart className="h-4 w-4 opacity-80" aria-hidden />
-            Page Analyses
+            Ouvrir le mode course
           </Button>
         </Link>
       </div>
@@ -115,10 +115,7 @@ export function ProfileAnalysesTabContent() {
       <NutritionPatternsSection />
 
       <div className="rounded-xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg-elevated)_40%,var(--color-bg-card))] px-4 py-3 text-center text-xs text-[var(--color-text-muted)]">
-        Débriefs détaillés, bibliothèque de repères et exports :{" "}
-        <Link href="/analyses" className="font-semibold text-[var(--color-primary)] underline-offset-2 hover:underline dark:text-[var(--color-accent)]">
-          tout voir dans Analyses
-        </Link>
+        Débriefs détaillés, tendances nutrition et historique sont maintenant centralisés ici dans Profil.
       </div>
     </div>
   );
