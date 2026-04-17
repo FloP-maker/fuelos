@@ -1,1 +1,1 @@
-export { metadata, default } from "../../../../races/[id]/export/page";
+export { metadata, default } from "../../../races/[id]/export/page";
