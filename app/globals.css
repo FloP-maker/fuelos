@@ -1672,7 +1672,8 @@ textarea:focus {
     gap: clamp(16px, 2.5vw, 28px);
     min-height: 52px;
     padding-block: 0;
-    padding-inline: clamp(12px, 3.5vw, 22px);
+    /* Même gouttière horizontale que `.fuel-main` (repère page connexion / contenu) */
+    padding-inline: clamp(16px, 4vw, 28px);
     min-width: 0;
     --fuel-header-sticky-offset: 52px;
   }
@@ -1685,7 +1686,7 @@ textarea:focus {
 
   @media (min-width: 900px) {
     .fuel-header-inner {
-      padding-inline: clamp(20px, 4vw, 36px);
+      padding-inline: clamp(24px, 4.5vw, 40px);
     }
 
     .fuel-plan-wizard {

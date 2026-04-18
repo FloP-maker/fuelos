@@ -43,7 +43,7 @@ export function Header({ sticky, tall, extra }: HeaderProps) {
             className="fuel-header-logo-link shrink-0"
             aria-label="FuelOS — Accueil"
           >
-            <FuelBrandWordmark />
+            <FuelBrandWordmark size={24} />
           </Link>
         </div>
 
