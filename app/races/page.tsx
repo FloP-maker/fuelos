@@ -248,7 +248,7 @@ export default function RacesPage() {
 
   return (
     <>
-      <Header />
+      <Header sticky />
       <main className="fuel-main races-page">
         <RacesPageHero onAddRace={onRequestAddRace} />
         <div className="races-layout">

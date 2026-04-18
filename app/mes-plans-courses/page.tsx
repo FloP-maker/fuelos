@@ -187,7 +187,7 @@ export default function MesPlansCoursesPage() {
 
   return (
     <div className="fuel-page">
-      <Header />
+      <Header sticky />
       <main className="fuel-main" style={{ paddingTop: 18 }}>
         <section className="fuel-card" style={{ padding: 20 }}>
           <h1 className="font-display" style={{ margin: 0, fontSize: "clamp(1.35rem, 3.3vw, 1.95rem)" }}>

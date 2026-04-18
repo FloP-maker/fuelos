@@ -60,7 +60,7 @@ export default function RaceDetailPage() {
   if (race === undefined) {
     return (
       <>
-        <Header />
+        <Header sticky />
         <main className="fuel-main mx-auto max-w-2xl px-4 py-8 text-[var(--color-text-muted)]">
           Chargement…
         </main>
@@ -71,7 +71,7 @@ export default function RaceDetailPage() {
   if (!race) {
     return (
       <>
-        <Header />
+        <Header sticky />
         <main className="fuel-main mx-auto max-w-2xl px-4 py-8">
           <p className="text-[var(--color-text-muted)]">Course introuvable.</p>
           <Link href="/mes-plans-courses" className="mt-4 inline-block font-semibold text-[#16a34a] underline">
@@ -84,7 +84,7 @@ export default function RaceDetailPage() {
 
   return (
     <>
-      <Header />
+      <Header sticky />
       <main className="fuel-main mx-auto w-full max-w-2xl px-4 py-8 md:px-6">
         <Link href="/mes-plans-courses" className="mb-6 inline-block text-sm font-semibold text-[#16a34a] hover:underline">
           ← Mes courses

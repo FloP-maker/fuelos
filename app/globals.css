@@ -101,6 +101,8 @@
 
   --color-search-focus: #60a5fa;
   --color-search-ring: color-mix(in srgb, #60a5fa 30%, transparent);
+
+  --fuel-header-inline: 16px;
 }
 
 * {
@@ -127,11 +129,13 @@
 
 html {
   scroll-behavior: smooth;
+  /* Réserve la gouttière scrollbar : largeur stable avant / après connexion */
+  scrollbar-gutter: stable;
 }
 
 html,
 body {
-  max-width: 100vw;
+  max-width: 100%;
   overflow-x: hidden;
   background-color: var(--color-bg);
   color: var(--color-text);
@@ -1674,8 +1678,8 @@ textarea:focus {
     gap: clamp(16px, 2.5vw, 28px);
     min-height: 52px;
     padding-block: 0;
-    /* Aligné sur la landing / avant connexion */
-    padding-inline: var(--fuel-header-inline, 16px);
+    /* Même inset que la landing ; !important évite tout écart lié aux layers / scrollbars */
+    padding-inline: var(--fuel-header-inline) !important;
     min-width: 0;
     --fuel-header-sticky-offset: 52px;
   }

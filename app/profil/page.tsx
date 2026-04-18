@@ -903,7 +903,7 @@ function ProfilPageContent() {
 
   return (
     <>
-      <Header />
+      <Header sticky />
       <main
         className={[
           "fuel-main races-page profil-page",
@@ -1975,7 +1975,7 @@ function ProfilPageContent() {
 
 export default function ProfilPage() {
   return (
-    <Suspense fallback={<><Header /><main className="fuel-main races-page profil-page" /></>}>
+    <Suspense fallback={<><Header sticky /><main className="fuel-main races-page profil-page" /></>}>
       <ProfilPageContent />
     </Suspense>
   );
