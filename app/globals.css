@@ -3315,7 +3315,7 @@ html.dark .fuel-landing-v2__login-btn {
   pointer-events: none;
   z-index: 1;
   transform-origin: 50% 45%;
-  animation: fuel-brand-line-undulate 9.5s ease-in-out infinite;
+  animation: fuel-brand-line-undulate 7.2s ease-in-out infinite;
 }
 
 .fuel-landing-v2__brand-line--left {
@@ -3323,8 +3323,8 @@ html.dark .fuel-landing-v2__login-btn {
 }
 
 .fuel-landing-v2__brand-line--right {
-  animation-duration: 11.2s;
-  animation-delay: -3.4s;
+  animation-duration: 8.6s;
+  animation-delay: -2.8s;
 }
 
 .fuel-landing-v2__brand-line-path {
@@ -3337,16 +3337,16 @@ html.dark .fuel-landing-v2__login-btn {
 @keyframes fuel-brand-line-undulate {
   0%,
   100% {
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0) rotate(0deg);
   }
   25% {
-    transform: translate3d(0.6px, 2px, 0);
+    transform: translate3d(2.5px, 8px, 0) rotate(0.35deg);
   }
   50% {
-    transform: translate3d(-0.4px, -1.5px, 0);
+    transform: translate3d(-2px, -7px, 0) rotate(-0.28deg);
   }
   75% {
-    transform: translate3d(-0.6px, 1.5px, 0);
+    transform: translate3d(-2.5px, 7px, 0) rotate(0.22deg);
   }
 }
 
