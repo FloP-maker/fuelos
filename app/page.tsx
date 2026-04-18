@@ -52,11 +52,13 @@ export default async function Home() {
             <path
               className="fuel-landing-v2__brand-line-path"
               d="M-20 200 C 140 30, 260 240, 420 120 S 700 20, 1020 95"
+              pathLength={1}
               strokeWidth="11"
             />
             <path
               className="fuel-landing-v2__brand-line-path"
               d="M40 165 C 200 55, 320 195, 520 100 S 780 40, 980 130"
+              pathLength={1}
               strokeWidth="6"
               opacity={0.55}
             />
@@ -165,11 +167,13 @@ export default async function Home() {
             <path
               className="fuel-landing-v2__brand-line-path"
               d="M1040 205 C 860 28, 680 245, 440 118 S 140 32, -40 88"
+              pathLength={1}
               strokeWidth="11"
             />
             <path
               className="fuel-landing-v2__brand-line-path"
               d="M980 168 C 820 48, 620 200, 400 92 S 180 38, 20 128"
+              pathLength={1}
               strokeWidth="6"
               opacity={0.55}
             />
