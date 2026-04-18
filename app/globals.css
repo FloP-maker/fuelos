@@ -3335,15 +3335,6 @@ html.dark .fuel-landing-v2__login-btn {
   animation-delay: 260ms;
 }
 
-.fuel-landing-v2__pulse-line {
-  z-index: 1;
-  animation: fuelPulseDrift 7s ease-in-out infinite;
-}
-
-.fuel-landing-v2__pulse-line-path {
-  animation: fuelPulseGlow 2.8s ease-in-out infinite;
-}
-
 .fuel-landing-v2 .fuel-card {
   border-radius: 10px;
 }
@@ -3355,26 +3346,6 @@ html.dark .fuel-landing-v2__login-btn {
 
 .fuel-landing-v2__footer p {
   line-height: 1.35;
-}
-
-@keyframes fuelPulseDrift {
-  0%,
-  100% {
-    transform: translateX(0px);
-  }
-  50% {
-    transform: translateX(-8px);
-  }
-}
-
-@keyframes fuelPulseGlow {
-  0%,
-  100% {
-    opacity: 0.82;
-  }
-  50% {
-    opacity: 1;
-  }
 }
 
 @keyframes fuelOverlayIn {
@@ -3389,9 +3360,6 @@ html.dark .fuel-landing-v2__login-btn {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fuel-landing-v2__pulse-line,
-  .fuel-landing-v2__pulse-line-path,
-  .fuel-landing-v2__brand-line,
   .fuel-landing-v2__overlay-card {
     animation: none !important;
   }

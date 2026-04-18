@@ -157,34 +157,21 @@ export default async function Home() {
           }}
         >
           <svg
-            viewBox="0 0 1000 220"
+            viewBox="0 0 1000 260"
             aria-hidden
-            className="fuel-landing-v2__pulse-line"
-            style={{ position: "absolute", right: -20, bottom: 80, width: "92%", opacity: 0.95 }}
+            className="fuel-landing-v2__brand-line fuel-landing-v2__brand-line--right"
+            style={{ right: "-6%", top: "9%", width: "106%", maxWidth: "none", left: "auto" }}
           >
             <path
-              d="M0 160 C 120 40, 190 210, 300 130 C 395 60, 470 200, 560 120 C 665 30, 760 220, 860 130 C 920 80, 970 150, 1000 125"
-              fill="none"
-              stroke="var(--color-primary-light)"
-              strokeWidth="20"
-              strokeLinecap="round"
-              opacity={0.14}
+              className="fuel-landing-v2__brand-line-path"
+              d="M1040 205 C 860 28, 680 245, 440 118 S 140 32, -40 88"
+              strokeWidth="11"
             />
             <path
-              d="M0 160 C 120 40, 190 210, 300 130 C 395 60, 470 200, 560 120 C 665 30, 760 220, 860 130 C 920 80, 970 150, 1000 125"
-              fill="none"
-              stroke="var(--color-primary)"
-              strokeWidth="9"
-              strokeLinecap="round"
-              opacity={0.2}
-            />
-            <path
-              className="fuel-landing-v2__pulse-line-path"
-              d="M0 160 C 120 40, 190 210, 300 130 C 395 60, 470 200, 560 120 C 665 30, 760 220, 860 130 C 920 80, 970 150, 1000 125"
-              fill="none"
-              stroke="#f97316"
-              strokeWidth="12"
-              strokeLinecap="round"
+              className="fuel-landing-v2__brand-line-path"
+              d="M980 168 C 820 48, 620 200, 400 92 S 180 38, 20 128"
+              strokeWidth="6"
+              opacity={0.55}
             />
           </svg>
           <div
