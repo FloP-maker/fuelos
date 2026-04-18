@@ -1770,8 +1770,6 @@ textarea:focus {
     padding-block: 10px;
     text-decoration: none;
     color: inherit;
-    /* Léger décalage vers la droite (repère ancienne page connexion) */
-    margin-inline-start: 6px;
   }
 
   /* Menu mobile : tiroir plein écran au lieu d’une rangée de 5+ liens illisibles */
@@ -3208,6 +3206,15 @@ textarea:focus {
 }
 
 /* Landing v2 styles (moved from app/page.tsx) */
+/* Gouttière landing (header + footer alignés sur le logo FUELOS) */
+.fuel-landing-v2 {
+  --fuel-landing-inline: 16px;
+}
+
+.fuel-landing-v2 .fuel-header-inner {
+  padding-inline: var(--fuel-landing-inline);
+}
+
 /* Connexion header : bouton contour discret (comme l’ancienne landing) */
 .fuel-landing-v2__login-btn {
   display: inline-flex;

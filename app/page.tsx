@@ -180,7 +180,7 @@ export default async function Home() {
         style={{
           borderTop: "1px solid var(--color-border)",
           background: "var(--color-bg-card)",
-          padding: "12px 16px 14px",
+          padding: "12px var(--fuel-landing-inline) 14px",
           display: "grid",
           gap: 10,
           gridTemplateColumns: "minmax(140px, 220px) repeat(4, minmax(120px, 1fr))",
