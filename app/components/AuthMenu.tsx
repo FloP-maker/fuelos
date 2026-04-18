@@ -203,7 +203,7 @@ export function AuthMenu() {
       {preferredProviderId && (
         <button
           type="button"
-          className="fuel-header-cta fuel-header-cta--compact max-w-[min(220px,46vw)] truncate shrink-0"
+          className="fuel-landing-v2__login-btn shrink-0"
           title="Connexion pour activer la synchronisation cloud (plans, profils, historique)"
           aria-label="Connexion compte utilisateur"
           onClick={() => void handleProviderSignIn(preferredProviderId)}

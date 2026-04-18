@@ -1770,6 +1770,8 @@ textarea:focus {
     padding-block: 10px;
     text-decoration: none;
     color: inherit;
+    /* Léger décalage vers la droite (repère ancienne page connexion) */
+    margin-inline-start: 6px;
   }
 
   /* Menu mobile : tiroir plein écran au lieu d’une rangée de 5+ liens illisibles */
@@ -3206,6 +3208,41 @@ textarea:focus {
 }
 
 /* Landing v2 styles (moved from app/page.tsx) */
+/* Connexion header : bouton contour discret (comme l’ancienne landing) */
+.fuel-landing-v2__login-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--color-bg-card) 88%, var(--color-bg));
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+button.fuel-landing-v2__login-btn {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.fuel-landing-v2__login-btn:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--color-primary) 36%, var(--color-border));
+  box-shadow: 0 8px 20px color-mix(in srgb, #000 10%, transparent);
+}
+
+html.dark .fuel-landing-v2__login-btn {
+  background: color-mix(in srgb, var(--color-bg-card) 94%, var(--color-bg));
+}
+
 .fuel-landing-v2__footer-link {
   transition: color 0.16s ease;
 }
