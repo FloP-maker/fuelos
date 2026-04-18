@@ -3206,24 +3206,6 @@ textarea:focus {
 }
 
 /* Landing v2 styles (moved from app/page.tsx) */
-.fuel-landing-v2__nav-link {
-  transition: color 0.16s ease;
-}
-
-.fuel-landing-v2__nav-link:hover {
-  color: var(--color-text) !important;
-}
-
-.fuel-landing-v2__login-btn {
-  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
-}
-
-.fuel-landing-v2__login-btn:hover {
-  transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--color-primary) 36%, var(--color-border));
-  box-shadow: 0 8px 20px color-mix(in srgb, #000 10%, transparent);
-}
-
 .fuel-landing-v2__footer-link {
   transition: color 0.16s ease;
 }
@@ -3313,7 +3295,7 @@ textarea:focus {
 
 @media (max-width: 1080px) {
   .fuel-landing-v2 {
-    grid-template-rows: 56px auto auto !important;
+    grid-template-rows: auto auto auto !important;
   }
   .fuel-landing-v2__main {
     grid-template-columns: 1fr !important;
@@ -3345,9 +3327,6 @@ textarea:focus {
 @media (max-width: 780px) {
   .fuel-landing-v2__kpis {
     grid-template-columns: 1fr !important;
-  }
-  .fuel-landing-v2__nav {
-    display: none !important;
   }
   .fuel-landing-v2__footer {
     grid-template-columns: 1fr !important;

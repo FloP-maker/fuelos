@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { FuelBrandWordmark } from "./components/FuelBrandWordmark";
+import { Header } from "./components/Header";
 import { LandingAuthPanel } from "./components/LandingAuthPanel";
 
 export default async function Home() {
@@ -16,62 +17,11 @@ export default async function Home() {
       style={{
         minHeight: "100dvh",
         display: "grid",
-        gridTemplateRows: "56px minmax(0,1fr) auto",
+        gridTemplateRows: "auto minmax(0,1fr) auto",
         background: "var(--color-bg)",
       }}
     >
-      <header
-        className="fuel-landing-v2__header"
-        style={{
-          height: 56,
-          borderBottom: "1px solid var(--color-border)",
-          background: "var(--color-bg-card)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 16px",
-          gap: 16,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-          <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
-            <FuelBrandWordmark size={24} />
-          </Link>
-          <nav className="fuel-landing-v2__nav" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }} aria-label="Menus principaux">
-            {[
-              { href: "/profil", label: "Profil" },
-              { href: "/mes-plans-courses", label: "Mes plans courses" },
-              { href: "/race", label: "Mode course" },
-              { href: "/produits", label: "Produits" },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="fuel-landing-v2__nav-link"
-                style={{ fontSize: 13, textDecoration: "none", color: "var(--color-text-muted)", fontWeight: 700 }}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-        <Link
-          href="/api/auth/signin"
-          className="fuel-landing-v2__login-btn"
-          style={{
-            textDecoration: "none",
-            border: "1px solid var(--color-border)",
-            borderRadius: 8,
-            padding: "8px 12px",
-            fontSize: 12,
-            fontWeight: 800,
-            color: "var(--color-text)",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Connexion
-        </Link>
-      </header>
+      <Header sticky />
 
       <main
         className="fuel-landing-v2__main"
