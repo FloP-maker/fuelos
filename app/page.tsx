@@ -38,11 +38,29 @@ export default async function Home() {
             position: "relative",
             overflow: "hidden",
             backgroundImage:
-              "linear-gradient(165deg, rgba(16,42,26,.42), rgba(15,23,42,.5)), url('/landing-left.jpg')",
+              "linear-gradient(165deg, color-mix(in srgb, var(--color-primary) 32%, rgba(16,42,26,.38)), rgba(15,23,42,.48)), url('/landing-left.jpg')",
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
         >
+          <svg
+            viewBox="0 0 1000 260"
+            aria-hidden
+            className="fuel-landing-v2__brand-line"
+            style={{ left: "-8%", top: "10%", width: "108%", maxWidth: "none" }}
+          >
+            <path
+              className="fuel-landing-v2__brand-line-path"
+              d="M-20 200 C 140 30, 260 240, 420 120 S 700 20, 1020 95"
+              strokeWidth="11"
+            />
+            <path
+              className="fuel-landing-v2__brand-line-path"
+              d="M40 165 C 200 55, 320 195, 520 100 S 780 40, 980 130"
+              strokeWidth="6"
+              opacity={0.55}
+            />
+          </svg>
           <div
             className="fuel-landing-v2__overlay-card fuel-landing-v2__overlay-card--left"
             style={{
@@ -133,7 +151,7 @@ export default async function Home() {
             position: "relative",
             overflow: "hidden",
             backgroundImage:
-              "linear-gradient(160deg, rgba(89,36,7,.26), rgba(15,23,42,.45)), url('/landing-right.jpg')",
+              "linear-gradient(160deg, rgba(89,36,7,.22), color-mix(in srgb, var(--color-primary-dark) 18%, rgba(15,23,42,.42))), url('/landing-right.jpg')",
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -144,6 +162,22 @@ export default async function Home() {
             className="fuel-landing-v2__pulse-line"
             style={{ position: "absolute", right: -20, bottom: 80, width: "92%", opacity: 0.95 }}
           >
+            <path
+              d="M0 160 C 120 40, 190 210, 300 130 C 395 60, 470 200, 560 120 C 665 30, 760 220, 860 130 C 920 80, 970 150, 1000 125"
+              fill="none"
+              stroke="var(--color-primary-light)"
+              strokeWidth="20"
+              strokeLinecap="round"
+              opacity={0.14}
+            />
+            <path
+              d="M0 160 C 120 40, 190 210, 300 130 C 395 60, 470 200, 560 120 C 665 30, 760 220, 860 130 C 920 80, 970 150, 1000 125"
+              fill="none"
+              stroke="var(--color-primary)"
+              strokeWidth="9"
+              strokeLinecap="round"
+              opacity={0.2}
+            />
             <path
               className="fuel-landing-v2__pulse-line-path"
               d="M0 160 C 120 40, 190 210, 300 130 C 395 60, 470 200, 560 120 C 665 30, 760 220, 860 130 C 920 80, 970 150, 1000 125"

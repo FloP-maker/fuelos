@@ -3258,7 +3258,75 @@ html.dark .fuel-landing-v2__login-btn {
   color: var(--color-primary) !important;
 }
 
+/* Visuels latéraux : voile vert FuelOS discret (tokens marque) */
+.fuel-landing-v2__visual--left::before,
+.fuel-landing-v2__visual--right::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.fuel-landing-v2__visual--left::before {
+  background:
+    radial-gradient(ellipse 78% 52% at 10% 16%, color-mix(in srgb, var(--color-primary) 26%, transparent) 0%, transparent 58%),
+    radial-gradient(ellipse 50% 42% at 92% 38%, color-mix(in srgb, var(--color-primary-light) 16%, transparent) 0%, transparent 52%),
+    linear-gradient(168deg, color-mix(in srgb, var(--color-primary-dark) 10%, transparent) 0%, transparent 48%);
+}
+
+.fuel-landing-v2__visual--right::before {
+  background:
+    radial-gradient(ellipse 72% 50% at 88% 18%, color-mix(in srgb, var(--color-primary) 24%, transparent) 0%, transparent 56%),
+    radial-gradient(circle at 12% 58%, color-mix(in srgb, var(--color-accent) 12%, transparent) 0%, transparent 48%),
+    linear-gradient(200deg, transparent 40%, color-mix(in srgb, var(--color-primary-dark) 11%, transparent) 100%);
+}
+
+.fuel-landing-v2__visual--left::after,
+.fuel-landing-v2__visual--right::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+  background-image: repeating-linear-gradient(
+    -22deg,
+    transparent 0,
+    transparent 18px,
+    color-mix(in srgb, var(--color-primary) 5%, transparent) 18px,
+    color-mix(in srgb, var(--color-primary) 5%, transparent) 19px
+  );
+  mask-image: radial-gradient(ellipse 95% 80% at 50% 45%, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 95% 80% at 50% 45%, black 0%, transparent 70%);
+}
+
+.fuel-landing-v2__visual--right::after {
+  opacity: 0.32;
+  background-image: repeating-linear-gradient(
+    22deg,
+    transparent 0,
+    transparent 20px,
+    color-mix(in srgb, var(--color-primary-light) 4.5%, transparent) 20px,
+    color-mix(in srgb, var(--color-primary-light) 4.5%, transparent) 21px
+  );
+}
+
+.fuel-landing-v2__brand-line {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.fuel-landing-v2__brand-line-path {
+  fill: none;
+  stroke: var(--color-primary-light);
+  stroke-linecap: round;
+  opacity: 0.22;
+}
+
 .fuel-landing-v2__overlay-card {
+  z-index: 2;
   opacity: 0;
   transform: translateY(6px);
   animation: fuelOverlayIn 520ms ease forwards;
@@ -3274,6 +3342,7 @@ html.dark .fuel-landing-v2__login-btn {
 }
 
 .fuel-landing-v2__pulse-line {
+  z-index: 1;
   animation: fuelPulseDrift 7s ease-in-out infinite;
 }
 
@@ -3328,6 +3397,7 @@ html.dark .fuel-landing-v2__login-btn {
 @media (prefers-reduced-motion: reduce) {
   .fuel-landing-v2__pulse-line,
   .fuel-landing-v2__pulse-line-path,
+  .fuel-landing-v2__brand-line,
   .fuel-landing-v2__overlay-card {
     animation: none !important;
   }
