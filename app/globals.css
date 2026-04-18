@@ -3314,6 +3314,17 @@ html.dark .fuel-landing-v2__login-btn {
   position: absolute;
   pointer-events: none;
   z-index: 1;
+  transform-origin: 50% 45%;
+  animation: fuel-brand-line-undulate 9.5s ease-in-out infinite;
+}
+
+.fuel-landing-v2__brand-line--left {
+  animation-delay: -1.8s;
+}
+
+.fuel-landing-v2__brand-line--right {
+  animation-duration: 11.2s;
+  animation-delay: -3.4s;
 }
 
 .fuel-landing-v2__brand-line-path {
@@ -3321,6 +3332,22 @@ html.dark .fuel-landing-v2__login-btn {
   stroke: var(--color-primary-light);
   stroke-linecap: round;
   opacity: 0.22;
+}
+
+@keyframes fuel-brand-line-undulate {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  25% {
+    transform: translate3d(0.6px, 2px, 0);
+  }
+  50% {
+    transform: translate3d(-0.4px, -1.5px, 0);
+  }
+  75% {
+    transform: translate3d(-0.6px, 1.5px, 0);
+  }
 }
 
 .fuel-landing-v2__overlay-card {
@@ -3370,6 +3397,9 @@ html.dark .fuel-landing-v2__login-btn {
   .fuel-landing-v2__overlay-card {
     opacity: 1 !important;
     transform: none !important;
+  }
+  .fuel-landing-v2__brand-line {
+    animation: none !important;
   }
 }
 

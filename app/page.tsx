@@ -46,7 +46,7 @@ export default async function Home() {
           <svg
             viewBox="0 0 1000 260"
             aria-hidden
-            className="fuel-landing-v2__brand-line"
+            className="fuel-landing-v2__brand-line fuel-landing-v2__brand-line--left"
             style={{ left: "-8%", top: "10%", width: "108%", maxWidth: "none" }}
           >
             <path
