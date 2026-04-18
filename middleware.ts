@@ -31,6 +31,17 @@ export function middleware(req: NextRequest) {
   }
 
   if (hasSession) {
+    const allowedWhenSignedIn = (p: string) =>
+      p === "/mes-plans-courses" ||
+      p.startsWith("/mes-plans-courses/") ||
+      p === "/race" ||
+      p.startsWith("/race/") ||
+      p === "/legal" ||
+      p === "/privacy";
+
+    if (!allowedWhenSignedIn(pathname)) {
+      return NextResponse.redirect(new URL("/mes-plans-courses", req.nextUrl.origin));
+    }
     return NextResponse.next();
   }
 
