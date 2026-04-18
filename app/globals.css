@@ -53,6 +53,8 @@
   --color-search-ring: color-mix(in srgb, #2563eb 34%, transparent);
 
   --fuel-shell-max: 1040px;
+  /* Gouttière header (identique landing / post-connexion) */
+  --fuel-header-inline: 16px;
 }
 
 @media (min-width: 1280px) {
@@ -1672,8 +1674,8 @@ textarea:focus {
     gap: clamp(16px, 2.5vw, 28px);
     min-height: 52px;
     padding-block: 0;
-    /* Même gouttière horizontale que `.fuel-main` (repère page connexion / contenu) */
-    padding-inline: clamp(16px, 4vw, 28px);
+    /* Aligné sur la landing / avant connexion */
+    padding-inline: var(--fuel-header-inline, 16px);
     min-width: 0;
     --fuel-header-sticky-offset: 52px;
   }
@@ -1685,10 +1687,6 @@ textarea:focus {
   }
 
   @media (min-width: 900px) {
-    .fuel-header-inner {
-      padding-inline: clamp(24px, 4.5vw, 40px);
-    }
-
     .fuel-plan-wizard {
       padding-inline: clamp(18px, 4vw, 36px);
     }
@@ -3206,13 +3204,9 @@ textarea:focus {
 }
 
 /* Landing v2 styles (moved from app/page.tsx) */
-/* Gouttière landing (header + footer alignés sur le logo FUELOS) */
+/* Footer landing : même gouttière que le header (`--fuel-header-inline` sur :root) */
 .fuel-landing-v2 {
-  --fuel-landing-inline: 16px;
-}
-
-.fuel-landing-v2 .fuel-header-inner {
-  padding-inline: var(--fuel-landing-inline);
+  --fuel-landing-inline: var(--fuel-header-inline);
 }
 
 /* Connexion header : bouton contour discret (comme l’ancienne landing) */

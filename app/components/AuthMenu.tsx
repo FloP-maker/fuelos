@@ -130,8 +130,13 @@ export function AuthMenu() {
 
   if (session?.user) {
     return (
-      <div className="flex flex-wrap items-center justify-end gap-x-7 gap-y-2 sm:gap-x-9 md:gap-x-10">
-        <button type="button" className="fuel-header-text-btn shrink-0" onClick={() => void signOut()}>
+      <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+        <button
+          type="button"
+          className="fuel-landing-v2__login-btn shrink-0"
+          aria-label="Déconnexion"
+          onClick={() => void signOut()}
+        >
           Déconnexion
         </button>
       </div>
