@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
 import { ThemeToggle } from './ThemeToggle';
 import { AuthMenu } from './AuthMenu';
-import { FuelLogo } from './FuelLogo';
+import { FuelBrandWordmark } from './FuelBrandWordmark';
 
 /** Conservé pour compatibilité avec les pages qui passent `activePage` / `sticky` / `tall`. */
 export type HeaderActivePage =
@@ -43,7 +43,7 @@ export function Header({ sticky, tall, extra }: HeaderProps) {
             className="fuel-header-logo-link shrink-0"
             aria-label="FuelOS — Accueil"
           >
-            <FuelLogo size={34} withWordmark wordmarkClassName="fuel-header-wordmark" />
+            <FuelBrandWordmark />
           </Link>
         </div>
 

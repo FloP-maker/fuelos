@@ -82,7 +82,7 @@ export type CourseMapPanelProps = {
   selectedFuelOrigIdx?: number | null;
   /** Clic sur la trace ou sur le profil : sélection de la ligne timeline la plus proche en km. */
   onSelectFuelOrigIdx?: (origIdx: number) => void;
-  /** Portion parcourue (km cumulés) — ex. GPS projeté sur le tracé ou progression temps/simulation. */
+  /** Portion parcourue (km cumulés) — ex. GPS projeté sur le tracé ou progression estimée au fil du temps. */
   progressKm?: number | null;
   /** Position GPS brute lorsque le pointage est loin du tracé (affichage complémentaire). */
   rawGpsLngLat?: { lng: number; lat: number } | null;
@@ -633,7 +633,7 @@ export default function CourseMapPanel({
             <span>
               {gpsOffCourse && rawGpsLngLat
                 ? "GPS trop loin du tracé — rapproche-toi du parcours pour afficher l’avancée."
-                : "L’avancée sur le tracé apparaît avec le GPS (course réelle) ou le temps écoulé (simulation)."}
+                : "L’avancée sur le tracé suit ton GPS pendant la course (ou le temps écoulé en fin de parcours)."}
             </span>
           )}
         </div>

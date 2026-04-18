@@ -154,63 +154,6 @@ const S = {
     padding: 22,
     boxShadow: '0 18px 50px color-mix(in srgb, #000 35%, transparent)',
   } as CSSProperties,
-  simSpeedBtn: {
-    width: '100%',
-    padding: '10px 6px',
-    borderRadius: 8,
-    background: 'transparent',
-    color: 'var(--color-text)',
-    fontWeight: 600,
-    fontSize: 12,
-    border: '1px solid var(--color-border)',
-    cursor: 'pointer',
-  } as CSSProperties,
-  simSpeedBtnActive: {
-    width: '100%',
-    padding: '10px 6px',
-    borderRadius: 8,
-    background: 'color-mix(in srgb, #7c3aed 16%, var(--color-bg-card))',
-    color: 'var(--color-text)',
-    fontWeight: 800,
-    fontSize: 12,
-    border: '1px solid color-mix(in srgb, #7c3aed 45%, var(--color-border))',
-    cursor: 'pointer',
-  } as CSSProperties,
-  raceTabBar: {
-    display: 'flex',
-    gap: 4,
-    padding: 4,
-    borderRadius: 12,
-    background: 'color-mix(in srgb, var(--color-bg) 55%, var(--color-bg-card))',
-    border: '1px solid var(--color-border)',
-    marginBottom: 10,
-    maxWidth: 440,
-  } as CSSProperties,
-  raceTabBtn: {
-    flex: 1,
-    padding: '10px 12px',
-    borderRadius: 9,
-    border: 'none',
-    background: 'transparent',
-    fontWeight: 800,
-    fontSize: 13,
-    cursor: 'pointer',
-    color: 'var(--color-text-muted)',
-    fontFamily: 'inherit',
-  } as CSSProperties,
-  raceTabBtnActive: {
-    flex: 1,
-    padding: '10px 12px',
-    borderRadius: 9,
-    border: 'none',
-    background: 'var(--color-bg-card)',
-    fontWeight: 800,
-    fontSize: 13,
-    cursor: 'pointer',
-    color: 'var(--color-text)',
-    boxShadow: 'var(--shadow-xs)',
-    fontFamily: 'inherit',
-  } as CSSProperties,
   prepProgressTrack: {
     height: 8,
     borderRadius: 99,
@@ -285,8 +228,6 @@ const S = {
   } as CSSProperties,
 };
 
-const SIMULATION_SPEEDS = [1, 10, 20, 30, 60] as const;
-
 function DestructiveConfirmOverlay({
   open,
   title,
@@ -324,8 +265,6 @@ function DestructiveConfirmOverlay({
   );
 }
 
-type SimulationSpeed = (typeof SIMULATION_SPEEDS)[number];
-
 interface RaceState {
   status: 'idle' | 'running' | 'paused' | 'finished';
   startTime: number | null;
@@ -337,8 +276,6 @@ interface RaceState {
   choConsumed: number;
   waterConsumed: number;
   sodiumConsumed: number;
-  /** 1 = temps réel ; 10–30 = simulation accélérée (×10 / ×20 / ×30). */
-  simulationSpeed: SimulationSpeed;
 }
 
 const INITIAL_RACE_STATE: RaceState = {
@@ -352,7 +289,6 @@ const INITIAL_RACE_STATE: RaceState = {
   choConsumed: 0,
   waterConsumed: 0,
   sodiumConsumed: 0,
-  simulationSpeed: 1,
 };
 
 function formatDuration(ms: number): string {
@@ -392,7 +328,6 @@ function RaceContent() {
   /** Dernière course commitée en mémoire — évite appendDebrief avec un état obsolète (tick / batch React). */
   const raceStateRef = useRef<RaceState>(INITIAL_RACE_STATE);
   raceStateRef.current = raceState;
-  const [raceViewTab, setRaceViewTab] = useState<'real' | 'simulation'>('real');
 
   const [mainPlan, setMainPlan] = useState<FuelPlan | null>(null);
   const [altPlan, setAltPlan] = useState<FuelPlan | null>(null);
@@ -771,18 +706,13 @@ function RaceContent() {
 
     const targetMs =
       event != null ? event.targetTime * 60 * 60 * 1000 : Number.POSITIVE_INFINITY;
-    const speed = raceState.simulationSpeed;
-    const intervalMs = speed === 1 ? 1000 : Math.max(1, 1000 / speed);
+    const intervalMs = 1000;
 
     const tick = () => {
       setRaceState((prev) => {
         if (prev.status !== 'running') return prev;
-        let nextElapsed: number;
-        if (prev.simulationSpeed === 1) {
-          nextElapsed = prev.startTime != null ? Date.now() - prev.startTime : prev.elapsedMs;
-        } else {
-          nextElapsed = prev.elapsedMs + 1000;
-        }
+        const nextElapsed =
+          prev.startTime != null ? Date.now() - prev.startTime : prev.elapsedMs;
         if (nextElapsed >= targetMs) {
           const finishedState: RaceState = {
             ...prev,
@@ -806,7 +736,7 @@ function RaceContent() {
         intervalRef.current = null;
       }
     };
-  }, [raceState.status, raceState.simulationSpeed, event, appendDebrief]);
+  }, [raceState.status, event, appendDebrief]);
 
   useEffect(() => {
     if (!plan || raceState.status !== 'running') return;
@@ -874,16 +804,13 @@ function RaceContent() {
     setRaceState((prev) => ({
       ...prev,
       status: 'running',
-      startTime: prev.simulationSpeed === 1 ? Date.now() - prev.elapsedMs : null,
+      startTime: Date.now() - prev.elapsedMs,
     }));
   }, [ensureAudioContext, plan, event, authSession?.user?.id]);
 
   const handlePause = useCallback(() => {
     raceDispatchRef.current?.({ type: 'SET_STATUS', status: 'paused' });
     setRaceState((prev) => {
-      if (prev.simulationSpeed > 1) {
-        return { ...prev, status: 'paused', startTime: null };
-      }
       const elapsedMs = prev.startTime != null ? Date.now() - prev.startTime : prev.elapsedMs;
       return { ...prev, status: 'paused', startTime: null, elapsedMs };
     });
@@ -894,7 +821,7 @@ function RaceContent() {
     setRaceState((prev) => ({
       ...prev,
       status: 'running',
-      startTime: prev.simulationSpeed === 1 ? Date.now() - prev.elapsedMs : null,
+      startTime: Date.now() - prev.elapsedMs,
     }));
   }, []);
 
@@ -913,7 +840,6 @@ function RaceContent() {
     raceDispatchRef.current?.({ type: 'RESET' });
     alertShownRef.current = new Set();
     setRaceState({ ...INITIAL_RACE_STATE });
-    setRaceViewTab('real');
     setCompletedAtMinByItem({});
     setChoDeficit(0);
     setTimingOffsetMin(0);
@@ -929,7 +855,6 @@ function RaceContent() {
   useEffect(() => {
     const geo = event?.courseGeometry;
     if (!geo || geo.coordinates.length < 2) return;
-    if (raceViewTab !== 'real') return;
     if (raceState.status !== 'running') return;
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setGpsRace((p) => ({ ...p, error: 'Géolocalisation non disponible sur cet appareil.' }));
@@ -972,7 +897,7 @@ function RaceContent() {
     return () => {
       navigator.geolocation.clearWatch(watchId);
     };
-  }, [event?.courseGeometry, raceViewTab, raceState.status]);
+  }, [event?.courseGeometry, raceState.status]);
 
   useEffect(() => {
     if (raceState.status !== 'running' && raceState.status !== 'paused') return;
@@ -1115,35 +1040,6 @@ function RaceContent() {
     };
   }, [handleConsumed, handleSkipped]);
 
-  const handleSimulationSpeedChange = useCallback((speed: SimulationSpeed) => {
-    setRaceState((prev) => {
-      if (speed === prev.simulationSpeed) return prev;
-      if (prev.status === 'running') {
-        if (speed === 1 && prev.simulationSpeed > 1) {
-          return {
-            ...prev,
-            simulationSpeed: speed,
-            startTime: Date.now() - prev.elapsedMs,
-          };
-        }
-        if (speed > 1 && prev.simulationSpeed === 1) {
-          return { ...prev, simulationSpeed: speed, startTime: null };
-        }
-      }
-      return { ...prev, simulationSpeed: speed };
-    });
-  }, []);
-
-  const handleRaceViewTab = useCallback(
-    (tab: 'real' | 'simulation') => {
-      setRaceViewTab(tab);
-      if (tab === 'real') {
-        handleSimulationSpeedChange(1);
-      }
-    },
-    [handleSimulationSpeedChange]
-  );
-
   const savePostRaceFeedback = useCallback(async (payload: {
     feedback: StoredDebrief['feedback'];
     energyLevel: 'good' | 'ok' | 'bad';
@@ -1218,15 +1114,10 @@ function RaceContent() {
         ? `${event.sport} · ${event.distance} km · objectif ${event.targetTime} h`
         : 'Course terminée';
     }
-    if (raceViewTab === 'simulation') {
-      return raceState.simulationSpeed > 1
-        ? `Simulation ×${raceState.simulationSpeed} — temps accéléré pour tester (le plan nutritionnel est inchangé)`
-        : 'Simulation — accélère le chronomètre pour répéter un plan sans attendre des heures.';
-    }
     return event
       ? `${event.sport} · ${event.distance} km · objectif ${event.targetTime} h`
       : 'Exécution du plan';
-  }, [raceState.status, raceState.simulationSpeed, raceViewTab, event]);
+  }, [raceState.status, event]);
 
   const prepProgress = useMemo(() => {
     const completed = [
@@ -1279,15 +1170,6 @@ function RaceContent() {
       };
     }
 
-    if (raceViewTab === 'simulation') {
-      return {
-        progressKm: progressFromElapsed,
-        rawGps: null,
-        offCourse: false,
-        footerExtra: null,
-      };
-    }
-
     if (raceState.status === 'running' || raceState.status === 'paused') {
       return {
         progressKm: gpsRace.onCourseKm,
@@ -1308,7 +1190,6 @@ function RaceContent() {
     event,
     raceState.status,
     raceState.elapsedMs,
-    raceViewTab,
     gpsRace.onCourseKm,
     gpsRace.raw,
     gpsRace.offCourse,
@@ -1689,30 +1570,8 @@ function RaceContent() {
               <div className="font-display" style={{ fontSize: 22, fontWeight: 900, marginBottom: 2 }}>
                 Mode course
               </div>
-            {raceState.status !== 'finished' && (
-              <div role="tablist" aria-label="Type de course" style={S.raceTabBar}>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={raceViewTab === 'real'}
-                  onClick={() => handleRaceViewTab('real')}
-                  style={raceViewTab === 'real' ? S.raceTabBtnActive : S.raceTabBtn}
-                >
-                  Course réelle
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={raceViewTab === 'simulation'}
-                  onClick={() => handleRaceViewTab('simulation')}
-                  style={raceViewTab === 'simulation' ? S.raceTabBtnActive : S.raceTabBtn}
-                >
-                  Simulation
-                </button>
-              </div>
-            )}
-            <div style={{ ...S.muted, fontSize: 13 }}>{raceModeSubtitle}</div>
-          </div>
+              <div style={{ ...S.muted, fontSize: 13, marginTop: 4 }}>{raceModeSubtitle}</div>
+            </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
             {notifEnabled && <span style={{ ...S.badge, borderColor: 'rgba(34,197,94,0.5)', color: 'var(--color-accent)' }}>🔔 notifications</span>}
             {raceState.status === 'running' && (
@@ -1983,72 +1842,6 @@ function RaceContent() {
               rawGpsLngLat={raceCourseMapProps.rawGps}
               gpsOffCourse={raceCourseMapProps.offCourse}
             />
-          </section>
-        )}
-
-        {raceState.status !== 'finished' && raceViewTab === 'simulation' && (
-          <section
-            aria-labelledby="fuel-race-simulation-title"
-            style={{
-              ...S.card,
-              padding: 20,
-              marginBottom: 16,
-              border:
-                raceState.simulationSpeed > 1
-                  ? '2px solid color-mix(in srgb, #a855f7 50%, var(--color-border))'
-                  : '1px solid color-mix(in srgb, var(--color-border) 80%, transparent)',
-              background:
-                raceState.simulationSpeed > 1
-                  ? 'color-mix(in srgb, rgba(124, 58, 237, 0.1), var(--color-bg-card))'
-                  : 'color-mix(in srgb, var(--color-bg) 35%, var(--color-bg-card))',
-              boxShadow:
-                raceState.simulationSpeed > 1 ? '0 8px 32px color-mix(in srgb, #a855f7 12%, transparent)' : 'var(--shadow-xs)',
-            }}
-          >
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
-              <h2
-                id="fuel-race-simulation-title"
-                className="font-display"
-                style={{ fontSize: 16, fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}
-              >
-                Simulation du temps
-              </h2>
-              {raceState.simulationSpeed > 1 ? (
-                <span
-                  style={{
-                    ...S.badge,
-                    borderColor: 'color-mix(in srgb, #a855f7 45%, var(--color-border))',
-                    color: 'color-mix(in srgb, #a855f7 90%, var(--color-text))',
-                    fontSize: 11,
-                  }}
-                >
-                  Actif ×{raceState.simulationSpeed}
-                </span>
-              ) : (
-                <span style={{ ...S.muted, fontSize: 11, fontWeight: 700 }}>Hors ligne — chrono réel ci-dessus</span>
-              )}
-            </div>
-            <p style={{ ...S.muted, fontSize: 13, lineHeight: 1.55, margin: '0 0 16px' }}>
-              Indépendant du <strong style={{ color: 'var(--color-text)' }}>mode course réel</strong> : tu accélères
-              seulement le défilement du chronomètre pour répéter un plan sans attendre des heures. Les rappels et la
-              timeline suivent ce temps « fictif » ; tes données de course ne sont pas celles d&apos;une sortie réelle.
-            </p>
-            <div
-              role="group"
-              aria-label="Vitesse de simulation du chronomètre"
-              style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))', gap: 8 }}
-            >
-              {SIMULATION_SPEEDS.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => handleSimulationSpeedChange(s)}
-                  style={s === raceState.simulationSpeed ? S.simSpeedBtnActive : S.simSpeedBtn}
-                >
-                  {s === 1 ? 'Temps réel' : `×${s}`}
-                </button>
-              ))}
-            </div>
           </section>
         )}
 

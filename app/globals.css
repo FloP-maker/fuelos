@@ -2004,24 +2004,13 @@ textarea:focus {
     }
   }
 
-  /* Wordmark FuelOS : vert marque, graisse forte */
-  .fuel-header-wordmark {
-    font-weight: 800;
-    color: var(--color-accent);
+  /* Logo mot FUELOS (référence landing), lisible aussi en thème sombre */
+  .fuel-brand-wordmark {
+    color: #1b4332;
   }
 
-  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
-    .fuel-header-wordmark {
-      background: linear-gradient(
-        108deg,
-        var(--color-accent) 0%,
-        color-mix(in srgb, var(--color-accent) 40%, var(--color-energy)) 45%,
-        var(--color-energy) 100%
-      );
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
+  html.dark .fuel-brand-wordmark {
+    color: color-mix(in srgb, var(--color-text) 94%, #1b4332 6%);
   }
 
   .fuel-sr-only {

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/auth";
+import { FuelBrandWordmark } from "./components/FuelBrandWordmark";
 import { LandingAuthPanel } from "./components/LandingAuthPanel";
 
 export default async function Home() {
@@ -33,8 +34,8 @@ export default async function Home() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-          <Link href="/" className="font-display" style={{ fontWeight: 900, fontSize: 24, color: "#1B4332", textDecoration: "none" }}>
-            FUELOS
+          <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
+            <FuelBrandWordmark size={24} />
           </Link>
           <nav className="fuel-landing-v2__nav" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }} aria-label="Menus principaux">
             {[
@@ -237,9 +238,7 @@ export default async function Home() {
         }}
       >
         <div>
-          <p className="font-display" style={{ margin: 0, fontWeight: 900, color: "#1B4332", fontSize: 26 }}>
-            FUELOS
-          </p>
+          <FuelBrandWordmark size={26} style={{ display: "block" }} />
           <p style={{ margin: "5px 0 0", fontSize: 11, color: "var(--color-text-muted)" }}>
             Endurance nutrition system
           </p>
