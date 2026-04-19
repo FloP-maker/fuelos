@@ -45,6 +45,8 @@ model User {
   email         String?   @unique
   emailVerified DateTime? @map("email_verified")
   image         String?
+  /// Mot de passe local (scrypt) — null si l’utilisateur n’a que OAuth / lien magique
+  passwordHash  String?   @map("password_hash") @db.Text
 
   accounts              Account[]
   sessions              Session[]
