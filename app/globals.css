@@ -3314,40 +3314,34 @@ html.dark .fuel-landing-v2__login-btn {
   position: absolute;
   pointer-events: none;
   z-index: 1;
+  transform-origin: 50% 50%;
+  animation: fuel-brand-line-wave-drift 5.4s ease-in-out infinite alternate;
 }
 
-/* Vague le long du tracé (pathLength=1) : le tiret « court » sur la courbe, sens gauche → droite à l’écran */
+.fuel-landing-v2__brand-line--left {
+  animation-delay: -0.9s;
+}
+
+.fuel-landing-v2__brand-line--right {
+  animation-duration: 6.2s;
+  animation-delay: -2.2s;
+}
+
+/* Trait vert continu : pas de stroke-dasharray ; le mouvement est sur le groupe SVG (vague gauche ↔ droite) */
 .fuel-landing-v2__brand-line-path {
   fill: none;
   stroke: var(--color-primary-light);
   stroke-linecap: round;
+  stroke-linejoin: round;
   opacity: 0.22;
-  stroke-dasharray: 0.1 0.15;
-  stroke-dashoffset: 0;
-  animation: fuel-brand-line-wave 4.8s linear infinite;
 }
 
-.fuel-landing-v2__brand-line .fuel-landing-v2__brand-line-path:nth-of-type(2) {
-  animation-delay: -1.2s;
-}
-
-/* Tracés partent à droite : reverse pour garder une vague visuelle gauche → droite */
-.fuel-landing-v2__brand-line--right .fuel-landing-v2__brand-line-path {
-  animation-direction: reverse;
-  animation-duration: 5.6s;
-}
-
-.fuel-landing-v2__brand-line--right .fuel-landing-v2__brand-line-path:nth-of-type(2) {
-  animation-delay: -1.8s;
-}
-
-@keyframes fuel-brand-line-wave {
+@keyframes fuel-brand-line-wave-drift {
   from {
-    stroke-dashoffset: 0;
+    transform: translate3d(-14px, 0, 0);
   }
   to {
-    /* période = 0.1 + 0.15 (stroke-dasharray) pour boucle continue */
-    stroke-dashoffset: -0.25;
+    transform: translate3d(14px, 0, 0);
   }
 }
 
@@ -3399,9 +3393,8 @@ html.dark .fuel-landing-v2__login-btn {
     opacity: 1 !important;
     transform: none !important;
   }
-  .fuel-landing-v2__brand-line-path {
+  .fuel-landing-v2__brand-line {
     animation: none !important;
-    stroke-dasharray: unset;
   }
 }
 
