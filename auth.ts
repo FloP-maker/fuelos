@@ -1,11 +1,7 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
-import Apple from "next-auth/providers/apple";
-import Credentials from "next-auth/providers/credentials";
-import Resend from "next-auth/providers/resend";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
-import { verifyPassword } from "@/lib/passwordCredentials";
 
 const DEV_AUTH_SECRET_FALLBACK =
   "fuelos-dev-only-insecure-secret-do-not-use-in-production";
@@ -43,7 +39,7 @@ function resolveAuthSecret(): string | undefined {
   return undefined;
 }
 
-/** Prend en charge les noms courants (Auth.js, ancien NextAuth, Google, Resend, Apple). */
+/** Noms courants (Auth.js, ancien NextAuth, Google). */
 const env = {
   googleId:
     process.env.AUTH_GOOGLE_ID ||
@@ -55,22 +51,9 @@ const env = {
     process.env.AUTH_GOOGLE_CLIENT_SECRET ||
     process.env.GOOGLE_CLIENT_SECRET ||
     process.env.GOOGLE_SECRET,
-  resendKey: process.env.AUTH_RESEND_KEY || process.env.RESEND_API_KEY,
-  appleId:
-    process.env.AUTH_APPLE_ID ||
-    process.env.APPLE_ID ||
-    process.env.APPLE_CLIENT_ID,
-  appleSecret:
-    process.env.AUTH_APPLE_SECRET ||
-    process.env.APPLE_SECRET ||
-    process.env.APPLE_CLIENT_SECRET,
 };
 
 const googleConfigured = Boolean(env.googleId?.trim()) && Boolean(env.googleSecret?.trim());
-
-const resendConfigured = Boolean(env.resendKey?.trim());
-
-const appleConfigured = Boolean(env.appleId?.trim()) && Boolean(env.appleSecret?.trim());
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: resolveAuthSecret(),
@@ -85,81 +68,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }),
         ]
       : []),
-    ...(appleConfigured
-      ? [
-          Apple({
-            clientId: env.appleId!.trim(),
-            clientSecret: env.appleSecret!.trim(),
-          }),
-        ]
-      : []),
-    ...(resendConfigured
-      ? [
-          Resend({
-            apiKey: env.resendKey!.trim(),
-            from:
-              process.env.AUTH_EMAIL_FROM ?? "FuelOS <onboarding@resend.dev>",
-          }),
-        ]
-      : []),
-    Credentials({
-      id: "credentials",
-      name: "E-mail et mot de passe",
-      credentials: {
-        email: { label: "E-mail", type: "email" },
-        password: { label: "Mot de passe", type: "password" },
-      },
-      async authorize(credentials) {
-        const email =
-          typeof credentials?.email === "string"
-            ? credentials.email.trim().toLowerCase()
-            : "";
-        const password =
-          typeof credentials?.password === "string" ? credentials.password : "";
-        if (!email || !password) return null;
-
-        const user = await prisma.user.findUnique({
-          where: { email },
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            image: true,
-            passwordHash: true,
-          },
-        });
-        if (!user?.passwordHash) return null;
-        if (!verifyPassword(password, user.passwordHash)) return null;
-
-        return {
-          id: user.id,
-          email: user.email ?? undefined,
-          name: user.name ?? undefined,
-          image: user.image ?? undefined,
-        };
-      },
-    }),
   ],
   session: {
-    // JWT : aligné sur le flux « credentials » d’Auth.js (cookie chiffré) ; OAuth / lien magique aussi.
-    strategy: "jwt",
+    strategy: "database",
     maxAge: 30 * 24 * 60 * 60,
     updateAge: 24 * 60 * 60,
   },
   trustHost: true,
   callbacks: {
-    jwt({ token, user }) {
-      if (user?.id) {
-        token.sub = user.id;
-        token.id = user.id;
-      }
-      return token;
-    },
-    session({ session, token }) {
-      if (session.user) {
-        const id = (token.sub ?? token.id) as string | undefined;
-        if (id) session.user.id = id;
-      }
+    session({ session, user }) {
+      if (session.user) session.user.id = user.id;
       return session;
     },
   },

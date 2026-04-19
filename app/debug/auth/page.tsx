@@ -86,12 +86,11 @@ export default function AuthDebugPage() {
               lineHeight: 1.55,
             }}
           >
-            <strong>Aucun fournisseur OAuth / e-mail</strong>
+            <strong>Google non configuré</strong>
             <p style={{ margin: "10px 0 0", color: "var(--color-text)" }}>
-              Les boutons Google et « Lien magique » n’apparaissent que si le serveur voit une <strong>paire Google</strong>{' '}
-              (ID + secret) ou une clé <strong>Resend</strong> (<code>AUTH_RESEND_KEY</code> / <code>RESEND_API_KEY</code>
-              ). Ajoute ces variables sur Vercel (Production + Preview), redeploy, puis reviens sur cette page :{' '}
-              <code>providerCount</code> doit être ≥ 1.
+              La connexion n’apparaît que si le serveur voit une <strong>paire Google</strong> (ID + secret). Ajoute les
+              variables sur Vercel (Production + Preview), redeploy, puis reviens sur cette page :{' '}
+              <code>providerCount</code> doit être 1.
             </p>
           </div>
         )}
@@ -108,7 +107,6 @@ export default function AuthDebugPage() {
           <Row label="DATABASE_URL" ok={d.hasDatabaseUrl} />
           <Row label="Google : identifiant client (ID)" ok={d.hasGoogleId} />
           <Row label="Google : secret client" ok={d.hasGoogleSecret} />
-          <Row label="Resend : AUTH_RESEND_KEY ou RESEND_API_KEY" ok={d.hasResendKey} />
         </div>
 
         <p style={{ marginTop: 20, fontSize: 14 }}>

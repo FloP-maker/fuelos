@@ -41,8 +41,6 @@ export function AuthMenu() {
   );
   const [providersFetchFailed, setProvidersFetchFailed] = useState(false);
   const [fetchDetail, setFetchDetail] = useState<string | null>(null);
-  const [email, setEmail] = useState('');
-  const [emailHint, setEmailHint] = useState<'idle' | 'sending' | 'sent' | 'err'>('idle');
 
   const loadProviders = useCallback(() => {
     setProviderMap(undefined);
@@ -106,8 +104,6 @@ export function AuthMenu() {
     async (providerId: string) => {
       try {
         const callbackUrl = buildCallbackUrl();
-        // Avec redirect=true, signIn est typé Promise<void> (pas de résultat exploitable).
-        // Fallback de secours si un navigateur mobile bloque la redirection.
         const fallbackTimer = window.setTimeout(() => {
           forceProviderRedirect(providerId);
         }, 1200);
@@ -189,7 +185,7 @@ export function AuthMenu() {
         <Link href="/debug/auth" style={{ color: 'var(--color-accent)', fontWeight: 600 }} prefetch={false}>
           diagnostic
         </Link>{' '}
-        · configurez Google ou Resend côté serveur.
+        · configurez Google côté serveur.
       </span>
     );
   }
@@ -199,9 +195,7 @@ export function AuthMenu() {
     const t = providerMap[id].type;
     return t === 'oauth' || t === 'oidc';
   });
-  const emailProviderId = ids.find((id) => providerMap[id].type === 'email');
-  const preferredProviderId =
-    oauthIds.find((id) => id === 'google') ?? oauthIds[0] ?? emailProviderId ?? null;
+  const preferredProviderId = oauthIds.find((id) => id === 'google') ?? oauthIds[0] ?? null;
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
@@ -215,53 +209,6 @@ export function AuthMenu() {
         >
           Connexion
         </button>
-      )}
-      {emailProviderId && (
-        <form
-          className="flex flex-wrap items-center gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const trimmed = email.trim();
-            if (!trimmed) return;
-            setEmailHint('sending');
-            void signIn(emailProviderId, { email: trimmed, redirect: false }).then((res) => {
-              if (res?.ok) setEmailHint('sent');
-              else setEmailHint('err');
-            });
-          }}
-        >
-          <input
-            type="email"
-            name="emailInput"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              if (emailHint !== 'idle') setEmailHint('idle');
-            }}
-            placeholder="E-mail"
-            autoComplete="email"
-            className="fuel-input-compact w-[168px] max-w-[46vw] sm:w-[180px]"
-          />
-          <button type="submit" disabled={emailHint === 'sending'} className="fuel-header-text-btn shrink-0">
-            Se connecter par e-mail
-          </button>
-        </form>
-      )}
-      {emailHint === 'sent' && (
-        <span
-          className="w-full text-right text-xs font-semibold sm:text-[13px]"
-          style={{ color: 'var(--color-accent)' }}
-        >
-          E-mail envoyé — ouvrez le lien reçu.
-        </span>
-      )}
-      {emailHint === 'err' && (
-        <span
-          className="w-full text-right text-xs font-medium sm:text-[13px]"
-          style={{ color: 'var(--color-danger)' }}
-        >
-          Envoi impossible. Réessayez plus tard.
-        </span>
       )}
     </div>
   );
