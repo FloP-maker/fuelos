@@ -251,7 +251,7 @@ export function RacesSidebar({
             value={searchQuery}
             onChange={(e) => onSearchQuery(e.target.value)}
             placeholder="Rechercher une course..."
-            className="w-full rounded-[10px] border border-[#e3e3e3] bg-[#f8f8f8] py-2.5 pl-10 pr-3 text-sm font-normal text-[#111] transition placeholder:text-[#9ca3af] focus:border-[var(--color-primary)] focus:bg-white dark:border-[var(--color-border-subtle)] dark:bg-white/[0.06] dark:text-[var(--color-text)] dark:placeholder:text-[var(--color-text-muted)] dark:focus:border-[var(--color-accent)] dark:focus:bg-[var(--color-bg-card)]"
+            className="w-full rounded-[10px] border border-[#e3e3e3] bg-[#f8f8f8] py-2.5 pl-10 pr-3 text-sm font-normal text-[#111] transition placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:bg-white dark:border-[var(--color-border-subtle)] dark:bg-white/[0.06] dark:text-[var(--color-text)] dark:placeholder:text-[var(--color-text-muted)] dark:focus:border-[var(--color-accent)] dark:focus:bg-[var(--color-bg-card)]"
           />
         </div>
       </div>

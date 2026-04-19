@@ -67,8 +67,9 @@
   color-scheme: dark;
   --color-on-primary: #041a0d;
   --color-text-primary: #f4f4f5;
-  --color-text-secondary: #a1a1aa;
-  --color-text-muted: #9ca3af;
+  /* Secondaire un peu plus lisible que l’atténué ; les deux ≥ 4,5:1 sur cartes #121212 */
+  --color-text-secondary: #b3b3b8;
+  --color-text-muted: #a1a1aa;
   --color-bg-subtle: #141816;
   --color-bg: #070707;
   --color-bg-elevated: #0c0c0c;
@@ -82,7 +83,6 @@
   --fuel-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04);
   --fuel-card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.45);
   --color-text: #f4f4f5;
-  --color-text-muted: #a1a1aa;
   --color-accent: #38e07e;
   --color-accent-hover: #2bc96b;
   --color-accent-muted: color-mix(in srgb, var(--color-accent) 18%, transparent);
@@ -202,7 +202,9 @@ textarea {
 
 input::placeholder,
 textarea::placeholder {
-  color: color-mix(in srgb, var(--color-text-muted) 85%, transparent);
+  /* Opacité navigateur (ex. Firefox ~0,54) désactivée pour respecter le contraste */
+  color: var(--color-text-muted);
+  opacity: 1;
 }
 
 input:focus,
@@ -2078,7 +2080,8 @@ textarea:focus {
   }
 
   .fuel-header-search-field::placeholder {
-    color: color-mix(in srgb, var(--color-text-muted) 88%, transparent);
+    color: var(--color-text-muted);
+    opacity: 1;
   }
 
   .fuel-header-search-field:focus {

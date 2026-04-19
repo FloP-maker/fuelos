@@ -270,10 +270,10 @@ export function ElevationProfileChart({
         {vMarks}
         {selectedMark}
         {hoverMark}
-        <text x={4} y={padY + 12} fontSize={10} fill="var(--color-text-muted, #888)">
+        <text x={4} y={padY + 12} fontSize={10} fill="var(--color-text-muted, #5a6a5a)">
           {Math.round(maxEl)} m
         </text>
-        <text x={4} y={padY + innerH} fontSize={10} fill="var(--color-text-muted, #888)">
+        <text x={4} y={padY + innerH} fontSize={10} fill="var(--color-text-muted, #5a6a5a)">
           {Math.round(minEl)} m
         </text>
         <text
@@ -281,7 +281,7 @@ export function ElevationProfileChart({
           y={H - 2}
           fontSize={10}
           textAnchor="middle"
-          fill="var(--color-text-muted, #888)"
+          fill="var(--color-text-muted, #5a6a5a)"
         >
           {maxKm.toFixed(1)} km
         </text>
