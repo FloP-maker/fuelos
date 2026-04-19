@@ -40,7 +40,7 @@ function resolveAuthSecret(): string | undefined {
   return undefined;
 }
 
-/** Prend en charge les noms courants (Auth.js, ancien NextAuth, Google, Resend). */
+/** Prend en charge les noms Courants (Auth.js, ancien NextAuth, Google, Resend). */
 const env = {
   googleId:
     process.env.AUTH_GOOGLE_ID ||
@@ -90,15 +90,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   trustHost: true,
   callbacks: {
-    redirect({ url, baseUrl }) {
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      try {
-        if (new URL(url).origin === new URL(baseUrl).origin) return url;
-      } catch {
-        /* URL invalide */
-      }
-      return `${baseUrl}/mes-plans-courses`;
-    },
     session({ session, user }) {
       if (session.user) session.user.id = user.id;
       return session;

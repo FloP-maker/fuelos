@@ -130,11 +130,13 @@ export function AuthMenu() {
 
   if (session?.user) {
     return (
-      <div className="flex flex-wrap items-center justify-end gap-x-7 gap-y-2 sm:gap-x-9 md:gap-x-10">
-        <Link href="/profil" className="fuel-header-text-link shrink-0">
-          Profil
-        </Link>
-        <button type="button" className="fuel-header-text-btn shrink-0" onClick={() => void signOut()}>
+      <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+        <button
+          type="button"
+          className="fuel-landing-v2__login-btn shrink-0"
+          aria-label="Déconnexion"
+          onClick={() => void signOut()}
+        >
           Déconnexion
         </button>
       </div>
@@ -206,7 +208,7 @@ export function AuthMenu() {
       {preferredProviderId && (
         <button
           type="button"
-          className="fuel-landing-v2__login-btn shrink-0 max-w-[min(220px,46vw)] truncate"
+          className="fuel-landing-v2__login-btn shrink-0"
           title="Connexion pour activer la synchronisation cloud (plans, profils, historique)"
           aria-label="Connexion compte utilisateur"
           onClick={() => void handleProviderSignIn(preferredProviderId)}

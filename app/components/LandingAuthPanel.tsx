@@ -24,7 +24,7 @@ function displayName(id: string, p: ProviderEntry): string {
 export function LandingAuthPanel({
   title = 'Créer un compte (optionnel)',
   subtitle = 'Synchronisez vos plans, profils et historique sur tous vos appareils.',
-  callbackPath = '/mes-plans-courses',
+  callbackPath = '/profil',
 }: {
   title?: string;
   subtitle?: string;
@@ -241,3 +241,4 @@ export function LandingAuthPanel({
     </section>
   );
 }
+
