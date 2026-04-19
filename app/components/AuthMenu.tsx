@@ -89,8 +89,8 @@ export function AuthMenu() {
   }, [loadProviders]);
 
   const buildCallbackUrl = useCallback(() => {
-    if (typeof window === 'undefined') return '/';
-    return `${window.location.origin}/plan?step=profile`;
+    if (typeof window === 'undefined') return '/mes-plans-courses';
+    return `${window.location.origin}/mes-plans-courses`;
   }, []);
 
   const forceProviderRedirect = useCallback(
@@ -131,7 +131,7 @@ export function AuthMenu() {
   if (session?.user) {
     return (
       <div className="flex flex-wrap items-center justify-end gap-x-7 gap-y-2 sm:gap-x-9 md:gap-x-10">
-        <Link href="/plan?step=profile" className="fuel-header-text-link shrink-0">
+        <Link href="/profil" className="fuel-header-text-link shrink-0">
           Profil
         </Link>
         <button type="button" className="fuel-header-text-btn shrink-0" onClick={() => void signOut()}>
@@ -206,7 +206,7 @@ export function AuthMenu() {
       {preferredProviderId && (
         <button
           type="button"
-          className="fuel-header-cta fuel-header-cta--compact max-w-[min(220px,46vw)] truncate shrink-0"
+          className="fuel-landing-v2__login-btn shrink-0 max-w-[min(220px,46vw)] truncate"
           title="Connexion pour activer la synchronisation cloud (plans, profils, historique)"
           aria-label="Connexion compte utilisateur"
           onClick={() => void handleProviderSignIn(preferredProviderId)}

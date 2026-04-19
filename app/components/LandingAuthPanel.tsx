@@ -24,7 +24,7 @@ function displayName(id: string, p: ProviderEntry): string {
 export function LandingAuthPanel({
   title = 'Créer un compte (optionnel)',
   subtitle = 'Synchronisez vos plans, profils et historique sur tous vos appareils.',
-  callbackPath = '/plan?step=profile',
+  callbackPath = '/mes-plans-courses',
 }: {
   title?: string;
   subtitle?: string;
@@ -127,7 +127,7 @@ export function LandingAuthPanel({
         <div style={{ display: 'grid', gap: 10 }}>
           <div style={{ fontSize: 13, color: 'var(--color-text-muted)', lineHeight: 1.55 }}>
             Vous êtes connecté. Vous pouvez aller directement à{' '}
-            <Link href="/plan?step=profile" style={{ color: 'var(--color-accent)', fontWeight: 800 }}>
+            <Link href="/profil" style={{ color: 'var(--color-accent)', fontWeight: 800 }}>
               votre profil
             </Link>
             .

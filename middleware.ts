@@ -34,6 +34,8 @@ export function middleware(req: NextRequest) {
     const allowedWhenSignedIn = (p: string) =>
       p === "/mes-plans-courses" ||
       p.startsWith("/mes-plans-courses/") ||
+      p === "/profil" ||
+      p.startsWith("/profil/") ||
       p === "/race" ||
       p.startsWith("/race/") ||
       p === "/legal" ||
