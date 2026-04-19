@@ -44,7 +44,7 @@ export default function AuthDebugPage() {
         <h1 style={{ margin: "0 0 8px", fontSize: 22 }}>Diagnostic authentification</h1>
         <p style={{ margin: "0 0 20px", color: "var(--color-text-muted)", fontSize: 14, lineHeight: 1.5 }}>
           Indique si le <strong>serveur</strong> voit les variables (oui / non), sans afficher de secrets. Si une ligne est
-          « non » alors que votre <code style={{ fontSize: 13 }}>.env</code> est rempli en local, redémarrez{' '}
+          « non » alors que votre <code style={{ fontSize: 13 }}>.env</code> est rempli en local, redémarrez{" "}
           <code style={{ fontSize: 13 }}>npm run dev</code>. Sur Vercel, configurez les mêmes noms dans Environment
           Variables puis redeployez.
         </p>
@@ -67,7 +67,7 @@ export default function AuthDebugPage() {
               chaîne Postgres (<code>DATABASE_URL</code>), la base et la connexion ne peuvent pas fonctionner correctement.
             </p>
             <p style={{ margin: "8px 0 0", color: "var(--color-text-muted)", fontSize: 13 }}>
-              Crée une base (ex. Supabase, Neon), copie l’URI « Transaction » ou « Direct », ajoute-la sur Vercel sous le nom{' '}
+              Crée une base (ex. Supabase, Neon), copie l’URI « Transaction » ou « Direct », ajoute-la sur Vercel sous le nom{" "}
               <code>DATABASE_URL</code>, lance <code>prisma migrate deploy</code> (CI ou localement pointant vers cette URL),
               puis redeploy.
             </p>
@@ -86,11 +86,12 @@ export default function AuthDebugPage() {
               lineHeight: 1.55,
             }}
           >
-            <strong>Google non configuré</strong>
+            <strong>Aucun fournisseur OAuth / e-mail</strong>
             <p style={{ margin: "10px 0 0", color: "var(--color-text)" }}>
-              La connexion n’apparaît que si le serveur voit une <strong>paire Google</strong> (ID + secret). Ajoute les
-              variables sur Vercel (Production + Preview), redeploy, puis reviens sur cette page :{' '}
-              <code>providerCount</code> doit être 1.
+              Les boutons Google et « Lien magique » n’apparaissent que si le serveur voit une <strong>paire Google</strong>{" "}
+              (ID + secret) ou une clé <strong>Resend</strong> (<code>AUTH_RESEND_KEY</code> / <code>RESEND_API_KEY</code>
+              ). Ajoute ces variables sur Vercel (Production + Preview), redeploy, puis reviens sur cette page :{" "}
+              <code>providerCount</code> doit être ≥ 1.
             </p>
           </div>
         )}
@@ -107,6 +108,7 @@ export default function AuthDebugPage() {
           <Row label="DATABASE_URL" ok={d.hasDatabaseUrl} />
           <Row label="Google : identifiant client (ID)" ok={d.hasGoogleId} />
           <Row label="Google : secret client" ok={d.hasGoogleSecret} />
+          <Row label="Resend : AUTH_RESEND_KEY ou RESEND_API_KEY" ok={d.hasResendKey} />
         </div>
 
         <p style={{ marginTop: 20, fontSize: 14 }}>

@@ -14,10 +14,17 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return Boolean(v) && typeof v === 'object' && !Array.isArray(v);
 }
 
+function displayName(id: string, p: ProviderEntry): string {
+  if (id === 'google') return 'Continuer avec Google';
+  if (id === 'apple') return 'Continuer avec Apple';
+  if (p.type === 'email') return 'Continuer par e-mail';
+  return `Continuer avec ${p.name || id}`;
+}
+
 export function LandingAuthPanel({
   title = 'Créer un compte (optionnel)',
   subtitle = 'Synchronisez vos plans, profils et historique sur tous vos appareils.',
-  callbackPath = '/profil',
+  callbackPath = '/plan?step=profile',
 }: {
   title?: string;
   subtitle?: string;
@@ -26,6 +33,8 @@ export function LandingAuthPanel({
   const { data: session, status } = useSession();
   const [providerMap, setProviderMap] = useState<Record<string, ProviderEntry> | null>(null);
   const [providersFetchFailed, setProvidersFetchFailed] = useState(false);
+  const [email, setEmail] = useState('');
+  const [emailHint, setEmailHint] = useState<'idle' | 'sending' | 'sent' | 'err'>('idle');
 
   useEffect(() => {
     let cancelled = false;
@@ -66,17 +75,27 @@ export function LandingAuthPanel({
     return `${window.location.origin}${callbackPath.startsWith('/') ? '' : '/'}${callbackPath}`;
   }, [callbackPath]);
 
-  const hasGoogle = Boolean(providerMap?.google);
+  const providerIds = providerMap ? Object.keys(providerMap) : [];
+  const oauthIds = providerIds.filter((id) => {
+    const t = providerMap?.[id]?.type;
+    return t === 'oauth' || t === 'oidc';
+  });
+  const emailProviderId = providerIds.find((id) => providerMap?.[id]?.type === 'email') ?? null;
 
-  const handleGoogle = async () => {
+  const sortedOAuth = [...oauthIds].sort((a, b) => {
+    const rank = (id: string) => (id === 'google' ? 0 : id === 'apple' ? 1 : 2);
+    return rank(a) - rank(b);
+  });
+
+  const handleProvider = async (providerId: string) => {
     try {
       const fallbackTimer = window.setTimeout(() => {
-        window.location.assign(`/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+        window.location.assign(`/api/auth/signin/${providerId}?callbackUrl=${encodeURIComponent(callbackUrl)}`);
       }, 1200);
-      await signIn('google', { callbackUrl, redirect: true });
+      await signIn(providerId, { callbackUrl, redirect: true });
       window.clearTimeout(fallbackTimer);
     } catch {
-      window.location.assign(`/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+      window.location.assign(`/api/auth/signin/${providerId}?callbackUrl=${encodeURIComponent(callbackUrl)}`);
     }
   };
 
@@ -108,7 +127,7 @@ export function LandingAuthPanel({
         <div style={{ display: 'grid', gap: 10 }}>
           <div style={{ fontSize: 13, color: 'var(--color-text-muted)', lineHeight: 1.55 }}>
             Vous êtes connecté. Vous pouvez aller directement à{' '}
-            <Link href="/profil" style={{ color: 'var(--color-accent)', fontWeight: 800 }}>
+            <Link href="/plan?step=profile" style={{ color: 'var(--color-accent)', fontWeight: 800 }}>
               votre profil
             </Link>
             .
@@ -118,28 +137,93 @@ export function LandingAuthPanel({
         <div style={{ fontSize: 13, color: 'var(--color-danger)', lineHeight: 1.55 }}>
           Connexion indisponible pour le moment. Vérifiez la configuration Auth (/debug/auth).
         </div>
-      ) : !hasGoogle ? (
-        <div style={{ fontSize: 13, color: 'var(--color-text-muted)', lineHeight: 1.55 }}>
-          Connexion Google non configurée (variables <code style={{ fontSize: 12 }}>AUTH_GOOGLE_ID</code> /{' '}
-          <code style={{ fontSize: 12 }}>AUTH_GOOGLE_SECRET</code>). Voir /debug/auth.
-        </div>
       ) : (
         <div style={{ display: 'grid', gap: 10 }}>
-          <button
-            type="button"
-            className="fuel-btn-pill fuel-touch-btn"
-            style={{
-              justifyContent: 'center',
-              width: '100%',
-              borderRadius: 14,
-              padding: '0.8rem 1rem',
-              fontSize: 14,
-              fontWeight: 800,
-            }}
-            onClick={() => void handleGoogle()}
-          >
-            Continuer avec Google
-          </button>
+          {sortedOAuth.map((id) => {
+            const p = providerMap?.[id];
+            if (!p) return null;
+            return (
+              <button
+                key={id}
+                type="button"
+                className="fuel-btn-pill fuel-touch-btn"
+                style={{
+                  justifyContent: 'center',
+                  width: '100%',
+                  borderRadius: 14,
+                  padding: '0.8rem 1rem',
+                  fontSize: 14,
+                  fontWeight: 800,
+                }}
+                onClick={() => void handleProvider(id)}
+              >
+                {displayName(id, p)}
+              </button>
+            );
+          })}
+
+          {emailProviderId && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const trimmed = email.trim();
+                if (!trimmed) return;
+                setEmailHint('sending');
+                void signIn(emailProviderId, { email: trimmed, redirect: false }).then((res) => {
+                  if (res?.ok) setEmailHint('sent');
+                  else setEmailHint('err');
+                });
+              }}
+              style={{
+                display: 'grid',
+                gap: 10,
+                paddingTop: sortedOAuth.length ? 6 : 0,
+              }}
+            >
+              <label style={{ display: 'grid', gap: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.08em', color: 'var(--color-text-muted)' }}>
+                  E-MAIL
+                </span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (emailHint !== 'idle') setEmailHint('idle');
+                  }}
+                  placeholder="vous@exemple.com"
+                  autoComplete="email"
+                  className="fuel-input-compact"
+                  style={{ padding: '0.75rem 0.85rem', fontSize: 14 }}
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={emailHint === 'sending'}
+                className="fuel-btn-pill fuel-btn-pill-accent fuel-touch-btn font-display"
+                style={{
+                  justifyContent: 'center',
+                  width: '100%',
+                  borderRadius: 14,
+                  padding: '0.85rem 1rem',
+                  fontSize: 14,
+                  fontWeight: 900,
+                }}
+              >
+                Continuer par e-mail
+              </button>
+              {emailHint === 'sent' && (
+                <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--color-accent)' }}>
+                  E-mail envoyé — ouvrez le lien reçu.
+                </div>
+              )}
+              {emailHint === 'err' && (
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-danger)' }}>
+                  Envoi impossible. Réessayez plus tard.
+                </div>
+              )}
+            </form>
+          )}
 
           <div style={{ fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.55, paddingTop: 6 }}>
             En continuant, vous acceptez nos{' '}

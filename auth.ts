@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
+import Resend from "next-auth/providers/resend";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
@@ -39,7 +40,7 @@ function resolveAuthSecret(): string | undefined {
   return undefined;
 }
 
-/** Noms courants (Auth.js, ancien NextAuth, Google). */
+/** Prend en charge les noms courants (Auth.js, ancien NextAuth, Google, Resend). */
 const env = {
   googleId:
     process.env.AUTH_GOOGLE_ID ||
@@ -51,9 +52,12 @@ const env = {
     process.env.AUTH_GOOGLE_CLIENT_SECRET ||
     process.env.GOOGLE_CLIENT_SECRET ||
     process.env.GOOGLE_SECRET,
+  resendKey: process.env.AUTH_RESEND_KEY || process.env.RESEND_API_KEY,
 };
 
 const googleConfigured = Boolean(env.googleId?.trim()) && Boolean(env.googleSecret?.trim());
+
+const resendConfigured = Boolean(env.resendKey?.trim());
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: resolveAuthSecret(),
@@ -68,9 +72,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }),
         ]
       : []),
+    ...(resendConfigured
+      ? [
+          Resend({
+            apiKey: env.resendKey!.trim(),
+            from:
+              process.env.AUTH_EMAIL_FROM ?? "FuelOS <onboarding@resend.dev>",
+          }),
+        ]
+      : []),
   ],
   session: {
     strategy: "database",
+    // Session persistante entre visites (30 jours), prolongée à l'usage.
     maxAge: 30 * 24 * 60 * 60,
     updateAge: 24 * 60 * 60,
   },
