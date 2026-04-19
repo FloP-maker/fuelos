@@ -1,23 +1,19 @@
 import type { NextRequest } from "next/server";
 
 /**
- * Noms de cookies de session Auth.js / NextAuth (v4 compat).
- * Ne pas importer `auth` / Prisma dans le middleware Edge (limite ~1 Mo Vercel).
+ * Détecte un cookie de session Auth.js / NextAuth sans importer Prisma (middleware Edge).
+ * Couvre : `authjs.session-token`, préfixes `__Secure-` / `__Host-`, cookies fragmentés `.0`, `.1`, …
+ * et l’ancien nom `next-auth.session-token`.
  * @see https://authjs.dev/guides/upgrade-to-v5
  */
-const SESSION_COOKIE_NAMES = [
-  "__Host-authjs.session-token",
-  "__Secure-authjs.session-token",
-  "authjs.session-token",
-  "__Host-next-auth.session-token",
-  "__Secure-next-auth.session-token",
-  "next-auth.session-token",
-] as const;
+const SESSION_COOKIE_RE =
+  /^(?:__Secure-|__Host-)?authjs\.session-token(?:\.\d+)?$|^(?:__Secure-|__Host-)?next-auth\.session-token(?:\.\d+)?$/;
 
 export function hasLikelySessionCookie(req: NextRequest): boolean {
-  const jar = req.cookies;
-  return SESSION_COOKIE_NAMES.some((name) => {
-    const v = jar.get(name);
-    return typeof v?.value === "string" && v.value.length > 0;
-  });
+  for (const { name, value } of req.cookies.getAll()) {
+    if (SESSION_COOKIE_RE.test(name) && typeof value === "string" && value.length > 0) {
+      return true;
+    }
+  }
+  return false;
 }

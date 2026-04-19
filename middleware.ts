@@ -13,7 +13,8 @@ export function middleware(req: NextRequest) {
   if (
     pathname.startsWith("/api/auth") ||
     pathname === "/legal" ||
-    pathname === "/privacy"
+    pathname === "/privacy" ||
+    pathname.startsWith("/debug")
   ) {
     return NextResponse.next();
   }
