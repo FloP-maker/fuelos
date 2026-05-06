@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>FuelOS — Wireframes (Print)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Caveat:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; background: #fff; font-family: Inter, system-ui, sans-serif; color: #1a1a1a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .surface-block { padding: 28px 32px 40px; break-after: page; }
+  .surface-block:last-child { break-after: auto; }
+  .surface-meta { font-size: 10px; color: #737373; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  h1.surface-title { font-size: 26px; font-weight: 700; margin: 0 0 6px; }
+  .surface-intro { font-family: 'Caveat', cursive; color: oklch(0.72 0.16 50); font-size: 18px; max-width: 760px; margin-bottom: 18px; line-height: 1.3; }
+  .brand-strip { display: flex; align-items: center; gap: 10px; padding: 10px 32px; border-bottom: 1px solid #e7e5e4; font-weight: 600; }
+  .brand-mark { width: 24px; height: 24px; border-radius: 5px; background: oklch(0.72 0.16 50); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
+  .crumb { font-family: 'Caveat', cursive; color: #737373; font-size: 16px; margin-left: 4px; font-weight: 400; }
+  /* Stack the artboards in their existing column inside each surface */
+  /* No tabs — every surface is rendered in a print-stack */
+  @page { size: 1480px 1000px; margin: 12mm; }
+  @media print {
+    .surface-block { break-after: page; padding: 24px 28px; }
+    body { background: white; }
+  }
+  /* Avoid awkward splits inside artboards */
+  .wf-artboard { break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<div class="brand-strip">
+  <div class="brand-mark">F</div>
+  <span>FuelOS</span>
+  <span class="crumb">— wireframes · print export</span>
+</div>
+
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="wireframe-primitives.jsx"></script>
+<script type="text/babel" src="surfaces/dashboard.jsx"></script>
+<script type="text/babel" src="surfaces/plan-builder.jsx"></script>
+<script type="text/babel" src="surfaces/prep.jsx"></script>
+<script type="text/babel" src="surfaces/race.jsx"></script>
+<script type="text/babel" src="surfaces/debrief.jsx"></script>
+<script type="text/babel" src="surfaces/rest.jsx"></script>
+
+<script type="text/babel">
+const TWEAKS = {
+  sport: "run",
+  length: "medium",
+  daynight: "day",
+  units: "metric",
+  annotations: true,
+};
+
+const SURFACES = [
+  { id: 'dashboard', name: 'Dashboard', intro: 'Entry point — what an athlete sees between races.', key: 'S_Dashboard' },
+  { id: 'plan', name: 'Plan builder', intro: 'Build a fueling plan adapted to event, profile, and constraints.', key: 'S_PlanBuilder' },
+  { id: 'prep', name: 'Prep & protocol', intro: 'The 14 days before the race — checklists, carb load, deload.', key: 'S_Prep' },
+  { id: 'race', name: 'Race day · live', intro: 'Mobile-first. Map + fuel stops along the route.', key: 'S_Race' },
+  { id: 'debrief', name: 'Post-race debrief', intro: 'Turn what happened into a lesson for next time.', key: 'S_Debrief' },
+  { id: 'history', name: 'History', intro: 'Every race ever, searchable & comparable.', key: 'S_History' },
+  { id: 'profile', name: 'Profile', intro: 'Who you are as a fueling athlete.', key: 'S_Profile' },
+  { id: 'integrations', name: 'Integrations', intro: 'Strava, Garmin, Wahoo, Apple Health.', key: 'S_Integrations' },
+];
+
+function PrintApp() {
+  return (
+    <div>
+      {SURFACES.map((s, i) => {
+        const Comp = window[s.key];
+        return (
+          <section key={s.id} className="surface-block">
+            <div className="surface-meta">surface · {i + 1} of 8</div>
+            <h1 className="surface-title">{s.name}</h1>
+            <div className="surface-intro">{s.intro}</div>
+            {Comp && <Comp tweaks={TWEAKS} />}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<PrintApp />);
+
+// Auto-print after fonts + JSX scripts have all loaded
+(async () => {
+  try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) {}
+  // Wait for all babel scripts to have executed (surfaces registered on window)
+  const start = Date.now();
+  while (!window.S_Integrations && Date.now() - start < 5000) {
+    await new Promise(r => setTimeout(r, 100));
+  }
+  await new Promise(r => setTimeout(r, 800));
+  window.print();
+})();
+</script>
+
+</body>
+</html>
