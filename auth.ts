@@ -69,6 +69,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           Google({
             clientId: env.googleId!.trim(),
             clientSecret: env.googleSecret!.trim(),
+            // Avoid OAuthAccountNotLinked when the same verified email already exists
+            // from another provider (e.g. magic link then Google).
+            allowDangerousEmailAccountLinking: true,
           }),
         ]
       : []),
