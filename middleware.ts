@@ -12,6 +12,7 @@ export function middleware(req: NextRequest) {
   // Auth endpoints and public legal pages stay accessible without session.
   if (
     pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/auth/") ||
     pathname === "/legal" ||
     pathname === "/privacy" ||
     pathname.startsWith("/debug")
