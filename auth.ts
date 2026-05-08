@@ -92,6 +92,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     updateAge: 24 * 60 * 60,
   },
   trustHost: true,
+  pages: {
+    error: "/auth/error",
+  },
   callbacks: {
     session({ session, user }) {
       if (session.user) session.user.id = user.id;
