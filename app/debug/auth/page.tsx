@@ -126,6 +126,11 @@ export default function AuthDebugPage() {
           <Link href="/api/debug/auth" style={{ color: "var(--color-accent)" }}>
             /api/debug/auth
           </Link>
+          <br />
+          Runtime DB :{" "}
+          <Link href="/api/debug/auth/runtime" style={{ color: "var(--color-accent)" }}>
+            /api/debug/auth/runtime
+          </Link>
         </p>
       </div>
     </div>
